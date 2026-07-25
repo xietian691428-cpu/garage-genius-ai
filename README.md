@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Garage Genius AI
+
+DIY 汽车教练应用（Chat / RAG / Coach Playbooks / 车辆档案 / Stripe Free·Pro·Heavy）+ **运营 PC 后台**。
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
+cp .env.example .env.local   # 填入 Supabase / Stripe / ADMIN_* 等
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Admin: [http://localhost:3000/admin](http://localhost:3000/admin).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Admin 运营后台
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+登录依赖 `ADMIN_EMAIL` + `ADMIN_PASSWORD_B64`（cookie `gg_admin_session`）。
 
-## Learn More
+| 一级菜单 | 路由 | 说明 |
+|----------|------|------|
+| 主页 · 数据面板 | `/admin` | 今日新增 / DAU / 充值 / AI 调用 / Pro / ARPU + 7·30 天趋势 |
+| 业务管理 | `/admin/business/playbooks` · `/chats` | Coach 反馈筛选与分析、完整对话 |
+| 运营管理 | `/admin/ops` | 转化漏斗、Token 成本 vs 收入、CSV 导出 |
+| AI 知识库 | `/admin/knowledge*` | 条目 / 扩充入口 / 对比测试 |
+| 客户管理 | `/admin/customers` | 档案、车辆、标签备注、归档 |
+| 用户管理 | `/admin/staff` | 后台角色骨架 + 操作日志 |
 
-To learn more about Next.js, take a look at the following resources:
+Supabase：执行 `supabase/migrations/025_admin_ops_console.sql`（及既有 020–024）。  
+集成说明见 [`INTEGRATION.md`](./INTEGRATION.md)、架构见 [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+知识库 seed / Autodata 转换等见 `package.json` 的 `seed:*` / `train:*` 脚本。
 
-## Deploy on Vercel
+## Deploy
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+推荐 Vercel。生产环境勿开启 `NEXT_PUBLIC_QA_UNLOCK`。清单：`DEPLOYMENT_CHECKLIST.md`。

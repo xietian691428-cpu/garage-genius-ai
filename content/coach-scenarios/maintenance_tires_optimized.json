@@ -1,0 +1,538 @@
+{
+  "id": "coach_scenario_tires_v2",
+  "slug": "maintenance_tires",
+  "title": "Tire Check & Seasonal Swap",
+  "subtitle": "Pressure, tread, then rotate or swap — short steps, big visuals, safe calls.",
+  "category": "maintenance",
+  "focus_part": "tires",
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 45,
+    "diy_max": 120,
+    "shop_min": 30,
+    "shop_max": 90
+  },
+  "cost_band_usd": {
+    "diy_min": 0,
+    "diy_max": 80,
+    "shop_min": 20,
+    "shop_max": 200
+  },
+  "tone": "Calm safety mentor. Celebrate monthly pressure checks. Escalate bald/damaged tires clearly. Max 2 buttons. Trust every ~3 steps.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": ["gif", "video"],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure at any point, stop and go to a shop — that's the smart call, not quitting.",
+    "show_progress_bar": true
+  },
+  "prerequisites": [
+    "Door-jamb tire placard (cold PSI)",
+    "Tire pressure gauge",
+    "Tread depth gauge or penny",
+    "For rotation/swap: jack, stands, torque wrench"
+  ],
+  "tools_checklist": [
+    "Tire pressure gauge",
+    "Air compressor or station",
+    "Tread depth gauge",
+    "Jack + stands + torque wrench (rotation/swap)"
+  ],
+  "parts_checklist": [
+    "Valve caps",
+    "Seasonal set if swapping",
+    "Optional TPMS sensors on new tires"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "rotate_5_8k",
+      "when": { "mileage_min": 0 },
+      "coach_note": "Rotate about every 5,000–8,000 miles unless the manual says otherwise.",
+      "interval_miles": 6000
+    },
+    {
+      "id": "winter_belt",
+      "when": { "markets": ["US", "CA"] },
+      "coach_note": "Regular snow/ice? Winter tires beat all-seasons near freezing."
+    },
+    {
+      "id": "ev_weight",
+      "when": { "powertrain": ["bev", "phev", "hybrid"] },
+      "coach_note": "Heavier EVs/hybrids: keep PSI exact and watch inner shoulder wear."
+    },
+    {
+      "id": "truck_tow",
+      "when": { "model_includes": ["f-150", "silverado", "1500", "ram", "tacoma", "wrangler"] },
+      "coach_note": "Tow/dirt use: inspect all four, not just the fronts."
+    },
+    {
+      "id": "staggered_shop",
+      "when": { "brand_includes": ["bmw", "mercedes", "audi", "porsche"] },
+      "coach_note": "Staggered sizes often can't cross-rotate — a tire shop prevents wrong-axle mounts.",
+      "prefer_shop": true
+    },
+    {
+      "id": "bald_stop",
+      "when": {},
+      "coach_note": "Wear bars, cords, sidewall bulge, or sidewall puncture = don't drive far.",
+      "prefer_shop": true
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_tires",
+      "type": "gif",
+      "src": "/coach/tires/hero_tires.gif",
+      "alt": "Gauge and tread tool by a tire",
+      "shot_description": "Soft loop: gauge needle settle + tread tool dip."
+    },
+    {
+      "key": "placard_pressure",
+      "type": "gif",
+      "src": "/coach/tires/placard_pressure.gif",
+      "alt": "Door placard PSI highlight",
+      "shot_description": "Finger points at front/rear PSI on placard."
+    },
+    {
+      "key": "tread_penny_gif",
+      "type": "gif",
+      "src": "/coach/tires/tread_check.gif",
+      "alt": "Tread depth zones",
+      "shot_description": "Green/yellow/red depth zones; wear bar = replace."
+    },
+    {
+      "key": "wear_patterns",
+      "type": "gif",
+      "src": "/coach/tires/wear_patterns.gif",
+      "alt": "Wear pattern causes",
+      "shot_description": "Even / over / under / alignment icons animate."
+    },
+    {
+      "key": "seasonal_swap",
+      "type": "video",
+      "src": "/coach/tires/seasonal_swap.mp4",
+      "poster": "/coach/tires/seasonal_swap_poster.webp",
+      "alt": "Seasonal wheel swap and torque",
+      "shot_description": "Mark positions → swap → star torque."
+    },
+    {
+      "key": "diy_vs_shop_tires",
+      "type": "gif",
+      "src": "/coach/tires/diy_vs_shop.gif",
+      "alt": "DIY pressure vs shop mount",
+      "shot_description": "Crossfade driveway gauge ↔ shop changer."
+    },
+    {
+      "key": "storage_illustration",
+      "type": "gif",
+      "src": "/coach/tires/storage.gif",
+      "alt": "Off-season storage tips",
+      "shot_description": "Cool dry storage bags animation."
+    },
+    {
+      "key": "damage_help_gif",
+      "type": "gif",
+      "src": "/coach/tires/damage_triage.gif",
+      "alt": "Bulge nail puncture triage",
+      "shot_description": "Icons: bulge / nail / wear bar → stop or continue."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Tire check — quick safety win",
+      "coach_encourage": "Monthly pressure checks put you in the top tier of owners.",
+      "personalize": "Tire coaching for your {{year}} {{make}} {{model}}.",
+      "description": "Pressure → tread → then rotate or seasonal swap. Flat or bulge? We'll branch to help first.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_tires",
+      "focus_part": "tires",
+      "duration_minutes": 1,
+      "difficulty": "Easy",
+      "progress": { "index": 1, "total": 7, "label": "Step 1 of 7 · Start", "fraction": 0.14 },
+      "safety_warning": "Bulge, cord, or rapid hiss — park safe, don't highway-drive.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "start_inspect",
+          "label": "Start inspection",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "pressure",
+          "set_flags": { "goal": "inspect" }
+        },
+        {
+          "id": "flat",
+          "label": "Flat / damage help",
+          "style": "danger",
+          "action": "goto",
+          "next_step_id": "damage_help",
+          "set_flags": { "goal": "damage" }
+        }
+      ],
+      "branches": [
+        { "when_button_id": "start_inspect", "goto": "pressure" },
+        { "when_button_id": "flat", "goto": "damage_help" }
+      ]
+    },
+    {
+      "id": "damage_help",
+      "title": "Damage triage",
+      "coach_encourage": "Stopping for a bad tire is courage, not inconvenience.",
+      "description": "Sidewall cut/bulge or cords: don't drive — tow/replace. Nail in tread: spare or plug decision in chat. Wear bars flush: shop tires soon.",
+      "visual_type": "gif",
+      "visual_asset_key": "damage_help_gif",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": { "index": 1, "total": 7, "label": "Urgent path", "fraction": 0.14 },
+      "trust_nudge": "If you're unsure, stop and go to a shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "shop_now",
+          "label": "Shop / tow",
+          "style": "danger",
+          "action": "book_shop"
+        },
+        {
+          "id": "resume",
+          "label": "Safe enough — inspect",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "pressure"
+        }
+      ],
+      "branches": [
+        { "when_button_id": "resume", "goto": "pressure" }
+      ]
+    },
+    {
+      "id": "pressure",
+      "title": "Set cold pressure",
+      "coach_encourage": "Placard PSI beats sidewall 'max' every time.",
+      "description": "Cold tires. Door-jamb numbers for all four (+ spare). TPMS may need a short drive to clear.",
+      "visual_type": "gif",
+      "visual_asset_key": "placard_pressure",
+      "duration_minutes": 10,
+      "difficulty": "Easy",
+      "tools": ["Tire pressure gauge", "Air source"],
+      "progress": { "index": 2, "total": 7, "label": "Step 2 of 7 · Pressure", "fraction": 0.28 },
+      "safety_warning": "Underinflation overheats; overinflation wears the center.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "pressure_done",
+          "label": "Pressures set",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "tread_visual"
+        },
+        {
+          "id": "pressure_help",
+          "label": "Can't find placard / TPMS",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "pressure_help"
+        }
+      ],
+      "branches": [
+        { "when_button_id": "pressure_done", "goto": "tread_visual" },
+        { "when_button_id": "pressure_help", "goto": "pressure_help" }
+      ],
+      "variants": [
+        {
+          "when": { "powertrain": ["bev", "phev"] },
+          "description": "EV tip: wrong PSI shows up as range loss and inner wear — stick to the placard."
+        }
+      ]
+    },
+    {
+      "id": "pressure_help",
+      "title": "Pressure coaching",
+      "coach_encourage": "Asking beats guessing with tires.",
+      "description": "Placard is on the driver door jamb (sometimes fuel door). Still missing? Chat with year/make/model. TPMS on after correct PSI: drive 5–10 min or chat for relearn tips.",
+      "visual_type": "gif",
+      "visual_asset_key": "placard_pressure",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": { "index": 2, "total": 7, "label": "Step 2 · Help", "fraction": 0.28 },
+      "action_buttons": [
+        {
+          "id": "got_it",
+          "label": "Got it — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "tread_visual"
+        },
+        {
+          "id": "ask",
+          "label": "Ask coach in chat",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Help me find correct cold tire pressure / clear TPMS for my vehicle."
+        }
+      ],
+      "branches": [
+        { "when_button_id": "got_it", "goto": "tread_visual" }
+      ]
+    },
+    {
+      "id": "tread_visual",
+      "title": "Tread & damage scan",
+      "coach_encourage": "Two minutes here prevents a roadside story later.",
+      "description": "Measure the shallowest groove. Wear bars (~2/32\") = plan replacement. Scan sidewalls for cracks, nails, bubbles.",
+      "visual_type": "gif",
+      "visual_asset_key": "tread_penny_gif",
+      "duration_minutes": 10,
+      "difficulty": "Easy",
+      "tools": ["Tread depth gauge"],
+      "progress": { "index": 3, "total": 7, "label": "Step 3 of 7 · Tread", "fraction": 0.43 },
+      "safety_warning": "Exposed cord or sidewall bubble — do not drive.",
+      "trust_nudge": "If you're unsure about damage, stop and go to a shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "tread_ok",
+          "label": "Tread healthy",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "wear_pattern",
+          "set_flags": { "tread": "ok" }
+        },
+        {
+          "id": "tread_problem",
+          "label": "Low / damaged",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "tread_help",
+          "set_flags": { "tread": "problem" }
+        }
+      ],
+      "branches": [
+        { "when_button_id": "tread_ok", "goto": "wear_pattern" },
+        { "when_button_id": "tread_problem", "goto": "tread_help" }
+      ]
+    },
+    {
+      "id": "tread_help",
+      "title": "Low tread or damage",
+      "coach_encourage": "Catching this on the driveway beats catching it in rain.",
+      "description": "Near wear bars: shop tires. Unsafe damage: tow/replace. Photo helps me call it.",
+      "visual_type": "gif",
+      "visual_asset_key": "damage_help_gif",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": { "index": 3, "total": 7, "label": "Step 3 · Help", "fraction": 0.43 },
+      "action_buttons": [
+        {
+          "id": "shop_tires",
+          "label": "Shop for tires",
+          "style": "primary",
+          "action": "open_parts",
+          "payload": "tires"
+        },
+        {
+          "id": "photo",
+          "label": "Photo for coach",
+          "style": "secondary",
+          "action": "take_photo"
+        }
+      ]
+    },
+    {
+      "id": "wear_pattern",
+      "title": "What is wear telling us?",
+      "coach_encourage": "Patterns talk — you're learning to listen.",
+      "description": "Even = good. Both edges low ≈ underinflation. Center worn ≈ overinflation. One edge/cupping ≈ alignment.",
+      "visual_type": "gif",
+      "visual_asset_key": "wear_patterns",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": { "index": 4, "total": 7, "label": "Step 4 of 7 · Wear", "fraction": 0.57 },
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "even_ok",
+          "label": "Wear looks even",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "diy_or_shop"
+        },
+        {
+          "id": "uneven",
+          "label": "Uneven — coach me",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "My tire wear is uneven. Help me decide pressure vs alignment vs rotation."
+        }
+      ],
+      "branches": [
+        { "when_button_id": "even_ok", "goto": "diy_or_shop" }
+      ]
+    },
+    {
+      "id": "diy_or_shop",
+      "title": "Rotate, swap, or shop mount?",
+      "coach_encourage": "Inspection-only is a complete win if that's today's goal.",
+      "description": "Pressure + inspect = DIY done. Rotation/seasonal wheel swap = DIY with stands + torque. New tires on rims = shop balancer.",
+      "visual_type": "gif",
+      "visual_asset_key": "diy_vs_shop_tires",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": { "index": 5, "total": 7, "label": "Step 5 of 7 · Path", "fraction": 0.71 },
+      "safety_warning": "Wrong torque or mismatched sizes can destabilize the car.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "diy_rotate",
+          "label": "DIY rotate / seasonal",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "rotate_or_swap",
+          "set_flags": { "path": "diy" }
+        },
+        {
+          "id": "finish_or_shop",
+          "label": "Done inspect / shop mount",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "path_split"
+        }
+      ],
+      "branches": [
+        { "when_button_id": "diy_rotate", "goto": "rotate_or_swap" },
+        { "when_button_id": "finish_or_shop", "goto": "path_split" }
+      ],
+      "variants": [
+        {
+          "when": { "brand_includes": ["bmw", "mercedes", "audi", "porsche"] },
+          "description": "Staggered/run-flat: confirm rotation pattern (sometimes none).",
+          "coach_encourage": "Paying for mount/balance on stagger fitment is smart."
+        }
+      ]
+    },
+    {
+      "id": "path_split",
+      "title": "Finish or book a mount?",
+      "coach_encourage": "Either choice keeps you moving safely.",
+      "description": "Inspection complete → log it. Need new tires mounted/balanced → shop.",
+      "visual_type": "gif",
+      "visual_asset_key": "diy_vs_shop_tires",
+      "duration_minutes": 1,
+      "difficulty": "Easy",
+      "progress": { "index": 5, "total": 7, "label": "Step 5 · Choose", "fraction": 0.71 },
+      "trust_nudge": "If you're unsure about sizes or torque, stop and go to a shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "log_only",
+          "label": "Log inspection",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_tires"
+        },
+        {
+          "id": "shop_mount",
+          "label": "Shop mount & balance",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        { "when_button_id": "log_only", "goto": "log_tires" }
+      ]
+    },
+    {
+      "id": "rotate_or_swap",
+      "title": "Rotate or swap the set",
+      "coach_encourage": "Mark positions before anything comes off — future you will thank you.",
+      "description": "Follow the manual pattern. Seasonal sets: keep each wheel marked. Torque to placard spec in a star after the car is down.",
+      "visual_type": "video",
+      "visual_asset_key": "seasonal_swap",
+      "duration_minutes": 45,
+      "difficulty": "Medium",
+      "tools": ["Jack", "Jack stands", "Torque wrench"],
+      "focus_part": "tires",
+      "progress": { "index": 6, "total": 7, "label": "Step 6 of 7 · Swap", "fraction": 0.86 },
+      "safety_warning": "Jack stands before wheels off. Re-torque after 25–50 miles.",
+      "trust_nudge": "If a lug or wheel is seized and you're unsure, stop and go to a shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "swap_done",
+          "label": "Torqued — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_tires"
+        },
+        {
+          "id": "stuck",
+          "label": "Stuck lug / pattern help",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Tire work: stuck lug or unsure rotation pattern for my drivetrain. Help?"
+        }
+      ],
+      "branches": [
+        { "when_button_id": "swap_done", "goto": "log_tires" }
+      ],
+      "variants": [
+        {
+          "when": { "model_includes": ["wrangler", "4runner", "f-150"] },
+          "description": "AWD/4WD: keep tread depth matched across axles — big mismatches stress the transfer case."
+        }
+      ]
+    },
+    {
+      "id": "log_tires",
+      "title": "Store & log",
+      "coach_encourage": "Habit locked in — your future self has better grip.",
+      "personalize": "Next rotation reminder ~6,000 miles for your {{make}}.",
+      "description": "Bag off-season tires cool and dry. Log pressures, tread, mileage.",
+      "visual_type": "gif",
+      "visual_asset_key": "storage_illustration",
+      "duration_minutes": 5,
+      "difficulty": "Easy",
+      "progress": { "index": 7, "total": 7, "label": "Step 7 of 7 · Finish", "fraction": 1 },
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log tire service",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "tires"
+        },
+        {
+          "id": "buy",
+          "label": "Shop for tires",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "tires"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Tires checked — grip unlocked",
+    "coach_encourage": "You just did something most drivers skip. Respect.",
+    "description": "Recheck pressures next month and after big temperature swings.",
+    "log_category": "tires",
+    "next_check_miles_default": 6000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Noise / pull follow-up",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "My car pulls or tires hum after the check. What next?"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "Coach shell per oil_optimized. Tread GIF autoplays. Damage branch uses danger styling. Max 2 CTAs.",
+    "react_native_pseudocode": "function TiresCoachScreen(props) {\n  return <CoachScenarioPlayer {...props} scenario={tiresOptimized} focusPart=\"tires\" />;\n}"
+  }
+}

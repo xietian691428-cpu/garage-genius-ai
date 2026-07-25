@@ -1,0 +1,690 @@
+{
+  "id": "coach_scenario_check_engine_production",
+  "slug": "diagnosis_check_engine",
+  "title": "Check Engine Light Diagnosis",
+  "subtitle": "Calm triage: solid vs flash → scan → plain English → safe DIY or shop.",
+  "category": "diagnosis",
+  "focus_part": "engine",
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 20,
+    "diy_max": 120,
+    "shop_min": 60,
+    "shop_max": 180
+  },
+  "cost_band_usd": {
+    "diy_min": 0,
+    "diy_max": 150,
+    "shop_min": 100,
+    "shop_max": 1200
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "require_safety_disclaimer_every_step": true,
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "OBD-II scanner or Bluetooth adapter (1996+ US)",
+    "Flashing + rough = reduce load / stop safe ASAP",
+    "Note recent fuel fill-ups"
+  ],
+  "tools_checklist": [
+    "OBD-II reader",
+    "Phone for photos / codes",
+    "Flashlight",
+    "Optional: gas cap, MAF cleaner, gloves"
+  ],
+  "parts_checklist": [
+    "Depends on code — don't buy until codes + symptoms agree"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "flashing_cel",
+      "when": {},
+      "coach_note": "Flashing CEL while driving usually means active misfire — catalytic converter risk.",
+      "prefer_shop": true
+    },
+    {
+      "id": "evap_common",
+      "when": {},
+      "coach_note": "Many solid CELs after fueling are EVAP / loose gas cap — confirm with the code."
+    },
+    {
+      "id": "hybrid_codes",
+      "when": {
+        "powertrain": [
+          "hybrid",
+          "phev"
+        ]
+      },
+      "coach_note": "Hybrids may need more than a $20 generic reader for HV modules.",
+      "prefer_shop": true
+    },
+    {
+      "id": "diesel_def",
+      "when": {
+        "powertrain": [
+          "diesel"
+        ]
+      },
+      "coach_note": "Diesel CELs often involve DPF/DEF/EGR — don't just clear into limp mode.",
+      "prefer_shop": true
+    },
+    {
+      "id": "luxury_modules",
+      "when": {
+        "brand_includes": [
+          "bmw",
+          "mercedes",
+          "audi",
+          "porsche"
+        ]
+      },
+      "coach_note": "Generic OBD may miss module codes — full scan if symptoms persist.",
+      "prefer_shop": true
+    },
+    {
+      "id": "high_miles_misfire",
+      "when": {
+        "mileage_min": 100000
+      },
+      "coach_note": "High-mile misfires often want plugs/coils/vacuum checks — verify the code first."
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_cel",
+      "type": "gif",
+      "src": "/coach/cel/hero_cel.gif",
+      "alt": "CEL soft pulse on dash",
+      "shot_description": "Calm amber CEL pulse — not apocalyptic."
+    },
+    {
+      "key": "obd_port_gif",
+      "type": "gif",
+      "src": "/coach/cel/obd_port.gif",
+      "alt": "Plug into OBD port",
+      "shot_description": "Find port → plug in → code on phone."
+    },
+    {
+      "key": "solid_vs_flash",
+      "type": "gif",
+      "src": "/coach/cel/solid_vs_flash.gif",
+      "alt": "Solid vs flashing urgency",
+      "shot_description": "Two panels animate: solid vs flashing."
+    },
+    {
+      "key": "gas_cap_check",
+      "type": "video",
+      "src": "/coach/cel/gas_cap.mp4",
+      "poster": "/coach/cel/gas_cap_poster.webp",
+      "alt": "Gas cap click check",
+      "shot_description": "Inspect seal → click tight."
+    },
+    {
+      "key": "maf_clean_gif",
+      "type": "gif",
+      "src": "/coach/cel/maf_clean.gif",
+      "alt": "MAF clean carefully",
+      "shot_description": "MAF cleaner only; red X on carb cleaner."
+    },
+    {
+      "key": "diy_vs_shop_cel",
+      "type": "gif",
+      "src": "/coach/cel/diy_vs_shop.gif",
+      "alt": "Home scan vs shop bay",
+      "shot_description": "Crossfade OBD app ↔ smoke machine."
+    },
+    {
+      "key": "code_card_illustration",
+      "type": "gif",
+      "src": "/coach/cel/code_card.gif",
+      "alt": "Plain-English code card",
+      "shot_description": "Code → meaning → DIY vs shop tags."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "We'll sort the light calmly",
+      "coach_encourage": "You're facing the light instead of ignoring it — that's the win.",
+      "personalize": "CEL coaching for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next service window ~{{next_service}} miles.",
+      "description": "First split: solid light and drives OK, or flashing / running rough?",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_cel",
+      "focus_part": "engine",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "label": "Step 1 of 7 · Urgency · 14%",
+        "fraction": 0.14,
+        "percent": 14
+      },
+      "safety_warning": "Flashing + shaking: reduce speed, stop safe. Continuing can kill the catalytic converter.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "solid",
+          "label": "Solid — drives OK",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "scan_codes",
+          "set_flags": {
+            "urgency": "solid"
+          }
+        },
+        {
+          "id": "flashing",
+          "label": "Flashing / rough",
+          "style": "danger",
+          "action": "goto",
+          "next_step_id": "urgency_flashing",
+          "set_flags": {
+            "urgency": "flashing"
+          }
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "solid",
+          "goto": "scan_codes"
+        },
+        {
+          "when_button_id": "flashing",
+          "goto": "urgency_flashing"
+        }
+      ],
+      "is_operational": false,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": null
+    },
+    {
+      "id": "urgency_flashing",
+      "title": "Flashing — protect the cat",
+      "coach_encourage": "Treating this as urgent is exactly right. Slow down.",
+      "description": "Ease off. Avoid hard hills. Scan today if safe, or tow. Do not clear and keep driving on a flash.",
+      "visual_type": "gif",
+      "visual_asset_key": "solid_vs_flash",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "label": "Urgent path · 14%",
+        "fraction": 0.14,
+        "percent": 14
+      },
+      "safety_warning": "Clearing a flashing light hides the warning without fixing the misfire.",
+      "trust_nudge": "If you're unsure, stop and find a nearby shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "scan_now",
+          "label": "I can scan now",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "scan_codes"
+        },
+        {
+          "id": "tow_shop",
+          "label": "Find a nearby shop",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "scan_now",
+          "goto": "scan_codes"
+        }
+      ],
+      "is_operational": true,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": {
+        "required": true,
+        "title": "Flashing CEL — catalyst risk",
+        "body": "Driving hard on a flashing Check Engine light can destroy the catalytic converter and may indicate active misfire. Reduce load; stop safe. Do not clear and keep driving.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "personalize": "For your {{year}} {{make}} {{model}} at {{mileage}} miles — next check near {{next_service}} miles."
+    },
+    {
+      "id": "scan_codes",
+      "title": "Read the code(s)",
+      "coach_encourage": "One code photo saves hours of guessing. Good. Nice momentum — you're about 28% through.",
+      "description": "OBD port is usually left of the steering column under the dash. Key on. Record every code + freeze-frame.",
+      "visual_type": "gif",
+      "visual_asset_key": "obd_port_gif",
+      "duration_minutes": 10,
+      "difficulty": "Easy",
+      "tools": [
+        "OBD-II scanner"
+      ],
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "label": "Step 2 of 7 · Scan · 28%",
+        "fraction": 0.28,
+        "percent": 28
+      },
+      "safety_warning": "Park in park/neutral with brake on.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "have_codes",
+          "label": "I have the code(s)",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "interpret"
+        },
+        {
+          "id": "no_scanner",
+          "label": "No scanner / stuck",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "scan_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "have_codes",
+          "goto": "interpret"
+        },
+        {
+          "when_button_id": "no_scanner",
+          "goto": "scan_help"
+        }
+      ],
+      "personalize": "Pull codes on your {{make}} before buying parts at {{mileage}} mi. Next service window ~{{next_service}} miles.",
+      "is_operational": true,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": null
+    },
+    {
+      "id": "scan_help",
+      "title": "Getting a code without stress",
+      "coach_encourage": "Parts-store scans are fine — keep going. Nice momentum — you're about 28% through.",
+      "description": "Borrow/buy a Bluetooth adapter, visit an auto-parts counter scan, or book a shop. Photo the screen when you have it.",
+      "visual_type": "gif",
+      "visual_asset_key": "obd_port_gif",
+      "duration_minutes": 5,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "label": "Step 2 · Help · 28%",
+        "fraction": 0.28,
+        "percent": 28
+      },
+      "action_buttons": [
+        {
+          "id": "back_scan",
+          "label": "I got codes — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "interpret"
+        },
+        {
+          "id": "chat_options",
+          "label": "More options in chat",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "I don't have an OBD scanner. Cheap ways to read my Check Engine light?"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "back_scan",
+          "goto": "interpret"
+        }
+      ],
+      "is_operational": false,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": null,
+      "personalize": "For your {{year}} {{make}} {{model}} at {{mileage}} miles — next check near {{next_service}} miles."
+    },
+    {
+      "id": "interpret",
+      "title": "Plain-English meaning",
+      "coach_encourage": "We won't shotgun parts — promise. Nice discipline. You're crushing it — roughly 43% done.",
+      "description": "Send the code in chat (e.g. P0302, P0420, P0457). I'll rank likely causes for your mileage and engine.",
+      "visual_type": "gif",
+      "visual_asset_key": "code_card_illustration",
+      "duration_minutes": 5,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "label": "Step 3 of 7 · Decode · 43%",
+        "fraction": 0.43,
+        "percent": 43
+      },
+      "trust_nudge": "If the code is unclear or you're unsure, stop and find a nearby shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "send_code",
+          "label": "Send code to coach",
+          "style": "primary",
+          "action": "open_chat",
+          "payload": "Check Engine code(s): . Mileage and recent work: ."
+        },
+        {
+          "id": "try_diy",
+          "label": "Try safe DIY path",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "diy_or_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "try_diy",
+          "goto": "diy_or_shop"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "mileage_min": 100000
+          },
+          "description": "High-mile context: misfire and catalyst codes show up more — still confirm before buying."
+        },
+        {
+          "when": {
+            "powertrain": [
+              "hybrid",
+              "phev"
+            ]
+          },
+          "description": "Also see Ready/HV warnings? Say so — needs hybrid-capable scan."
+        }
+      ],
+      "personalize": "We'll rank causes for your {{model}} and {{mileage}} miles — no parts shotgun. Next service window ~{{next_service}} miles.",
+      "is_operational": false,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": null
+    },
+    {
+      "id": "diy_or_shop",
+      "title": "Safe DIY vs shop",
+      "coach_encourage": "Shop diagnostics on mystery codes often saves money. Smart options either way. Look at you — about 57% complete. Keep going.",
+      "description": "DIY-friendly: gas cap, air filter, careful MAF clean, plug/coil when a cylinder is named. Shop: catalyst, timing, wiring, diesel emissions, hybrid modules.",
+      "visual_type": "gif",
+      "visual_asset_key": "diy_vs_shop_cel",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "label": "Step 4 of 7 · Path · 57%",
+        "fraction": 0.57,
+        "percent": 57
+      },
+      "safety_warning": "Poor performance, climbing temp, or oil/coolant mix — stop DIY.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "diy_path",
+          "label": "Safe DIY checks",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "diy_gas_cap",
+          "set_flags": {
+            "path": "diy"
+          }
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop",
+          "set_flags": {
+            "path": "shop"
+          }
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "diy_path",
+          "goto": "diy_gas_cap"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "brand_includes": [
+              "bmw",
+              "mercedes",
+              "audi",
+              "porsche"
+            ]
+          },
+          "description": "Vague single generic code? Pay for a full-system scan before ordering sensors."
+        }
+      ],
+      "personalize": "At {{mileage}} mi, misfire/catalyst codes are more common — verify first. Next service window ~{{next_service}} miles.",
+      "is_operational": false,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": null
+    },
+    {
+      "id": "diy_gas_cap",
+      "title": "DIY: gas cap / EVAP",
+      "coach_encourage": "Often the cheapest fix — one careful check. Slowly. Look at you — about 71% complete. Keep going.",
+      "description": "Inspect the seal, tighten until it clicks. Clear only after a real fix — then drive a few cycles. Not EVAP? Skip to other DIY.",
+      "visual_type": "video",
+      "visual_asset_key": "gas_cap_check",
+      "duration_minutes": 15,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "label": "Step 5 of 7 · Cap · 71%",
+        "fraction": 0.71,
+        "percent": 71
+      },
+      "safety_warning": "Don't clear codes just to pass inspection — you lose freeze-frame clues.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "cap_done",
+          "label": "Cap sealed — monitor",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "monitor_log"
+        },
+        {
+          "id": "not_evap",
+          "label": "Not EVAP — other DIY",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "diy_maf"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "cap_done",
+          "goto": "monitor_log"
+        },
+        {
+          "when_button_id": "not_evap",
+          "goto": "diy_maf"
+        }
+      ],
+      "personalize": "EVAP path for your {{make}} — click-tight cap, then monitor. At {{mileage}} miles, next service window ~{{next_service}} miles.",
+      "is_operational": true,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": {
+        "required": true,
+        "title": "EVAP / clear-code caution",
+        "body": "Clearing codes without a fix can hide freeze-frame data and fail inspections later. Fix first, then monitor drive cycles.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      }
+    },
+    {
+      "id": "diy_maf",
+      "title": "Optional: careful MAF clean",
+      "coach_encourage": "This step is important — only if it fits. Skipping is OK. Final stretch — you're about 86% through.",
+      "description": "Engine off. Unplug. MAF cleaner only — never carb cleaner, never touch the wire. Air dry fully.",
+      "visual_type": "gif",
+      "visual_asset_key": "maf_clean_gif",
+      "duration_minutes": 25,
+      "difficulty": "Medium",
+      "tools": [
+        "MAF cleaner",
+        "Gloves"
+      ],
+      "focus_part": "engine",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "label": "Step 6 of 7 · MAF · 86%",
+        "fraction": 0.86,
+        "percent": 86
+      },
+      "safety_warning": "Wrong cleaner destroys the sensor. Unsure it's MAF? Skip.",
+      "trust_nudge": "If you're unsure this is your issue, stop and find a nearby shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "maf_done",
+          "label": "Done — monitor",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "monitor_log"
+        },
+        {
+          "id": "skip_maf",
+          "label": "Skip — not my issue",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "monitor_log"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "maf_done",
+          "goto": "monitor_log"
+        },
+        {
+          "when_button_id": "skip_maf",
+          "goto": "monitor_log"
+        }
+      ],
+      "personalize": "Only if your {{model}} codes point to MAF/fuel trims. At {{mileage}} miles, next service window ~{{next_service}} miles.",
+      "is_operational": true,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": {
+        "required": true,
+        "title": "MAF sensor cleaning",
+        "body": "Wrong cleaner or touching the element can destroy the sensor. Only proceed if codes/symptoms fit. When unsure, skip and see a technician.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      }
+    },
+    {
+      "id": "monitor_log",
+      "title": "Monitor & log",
+      "coach_encourage": "You faced the light with a plan. Well done! You made it through the flow — time to celebrate.",
+      "personalize": "At {{mileage}} miles: Logged for {{make}} {{model}}. Recheck within ~{{next_service}} miles if it returns.",
+      "description": "Write codes, what you tried, mileage. Note if it returns. Monitors may need several drive cycles after a clear.",
+      "visual_type": "gif",
+      "visual_asset_key": "code_card_illustration",
+      "duration_minutes": 5,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 7,
+        "label": "Step 7 of 7 · Finish · 100%",
+        "fraction": 1,
+        "percent": 100
+      },
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log diagnostic session",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "diagnostics"
+        },
+        {
+          "id": "still_on",
+          "label": "Light came back",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "CEL returned after DIY checks. Codes and what I tried:"
+        }
+      ],
+      "is_operational": false,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": null
+    }
+  ],
+  "completion": {
+    "title": "You faced the light",
+    "coach_encourage": "Keep the code list — future you (and your tech) will thank you. You made it through the flow — time to celebrate.",
+    "description": "If it returns with new symptoms, don't clear repeatedly — bring freeze-frame data to a tech.",
+    "log_category": "diagnostics",
+    "next_check_miles_default": 500,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Decode another code",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Help me interpret this OBD code for my vehicle:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390×844 EN coach shell (US/EU)\n• Progress bar + percent label from step.progress\n• Hero GIF/video full-bleed\n• coach_encourage (warm) → personalize (mileage/next_service) → body\n• Sticky footer: short safety_disclaimer on EVERY step\n• Risk modal: full disclaimer + checkbox “I have read and understand the risks”\n• Cancel always: Find a nearby shop → book_shop\n• Max 2 CTAs; graphite/amber workshop palette",
+    "react_native_pseudocode": "See CoachScenarioPlayer.production.tsx.example — load *_production.json only."
+  },
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ]
+}

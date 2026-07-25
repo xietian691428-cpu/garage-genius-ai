@@ -1,0 +1,523 @@
+{
+  "id": "coach_scenario_insurance_post_accident_production",
+  "slug": "diagnosis_insurance_post_accident",
+  "title": "Insurance Claim & Post-Accident Check",
+  "subtitle": "People first, then photos, drive/no-drive, leaks, and SRS/ADAS shop lines — calm steps after a collision.",
+  "category": "safety",
+  "focus_part": "lights",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 25,
+    "diy_max": 75,
+    "shop_min": 120,
+    "shop_max": 2400
+  },
+  "cost_band_usd": {
+    "diy_min": 0,
+    "diy_max": 50,
+    "shop_min": 300,
+    "shop_max": 15000
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel, step feedback Yes/No. Phase 3 insurance: not legal advice; SRS/drive critical.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Scene is safe",
+    "Emergency needs already handled",
+    "Phone for photos / insurer contact"
+  ],
+  "tools_checklist": [
+    "Phone camera",
+    "Insurance card / app",
+    "Notebook for claim #"
+  ],
+  "parts_checklist": [
+    "Tow if unsafe to drive",
+    "Shop: structural / SRS / ADAS calibration"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "eu_claim",
+      "when": {
+        "markets": [
+          "EU",
+          "GB"
+        ]
+      },
+      "coach_note": "European claims often involve specific police/insurance forms — follow local rules; this guide stays general.",
+      "prefer_shop": true
+    },
+    {
+      "id": "adas_car",
+      "when": {},
+      "coach_note": "Any camera, radar, or windshield work usually needs OEM-level ADAS calibration before trusting lane/ACC features.",
+      "prefer_shop": true
+    },
+    {
+      "id": "luxury_claim",
+      "when": {
+        "brand_includes": [
+          "porsche",
+          "bmw",
+          "mercedes",
+          "audi",
+          "tesla"
+        ]
+      },
+      "coach_note": "Luxury/EV platforms may require dealer tooling for SRS and driver-assist — don't accept incomplete calibrations.",
+      "prefer_shop": true
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_claim",
+      "type": "gif",
+      "src": "/coach/insurance/hero.gif",
+      "alt": "Calm post-incident checklist",
+      "shot_description": "Phone + notepad, no gore."
+    },
+    {
+      "key": "document_claim",
+      "type": "gif",
+      "src": "/coach/insurance/document.gif",
+      "alt": "Photographing vehicle damage",
+      "shot_description": "Wide then close-up."
+    },
+    {
+      "key": "drive_decision",
+      "type": "annotated",
+      "src": "/coach/insurance/drive.webp",
+      "alt": "Do not drive callouts",
+      "shot_description": "Airbag/leak icons."
+    },
+    {
+      "key": "leaks_claim",
+      "type": "gif",
+      "src": "/coach/insurance/leaks.gif",
+      "alt": "Fluid leak walk-around",
+      "shot_description": "Puddle color guide."
+    },
+    {
+      "key": "adas_claim",
+      "type": "annotated",
+      "src": "/coach/insurance/adas.webp",
+      "alt": "SRS and camera shop-only",
+      "shot_description": "Yellow connector ban."
+    },
+    {
+      "key": "claim_list",
+      "type": "gif",
+      "src": "/coach/insurance/claim_list.gif",
+      "alt": "Insurance checklist",
+      "shot_description": "Checklist animation."
+    },
+    {
+      "key": "celebrate_claim",
+      "type": "gif",
+      "src": "/coach/insurance/celebrate.gif",
+      "alt": "Post-incident check logged",
+      "shot_description": "Calm checkmark."
+    }
+  ],
+  "steps": [
+    {
+      "safety_warning": "If anyone is injured or the scene is unsafe, call emergency services. This guide is not legal or insurance advice.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "welcome",
+      "title": "After a crash — people first",
+      "coach_encourage": "You're handling a stressful moment. We'll go slow and safe. You're just getting started — I'll stay with you.",
+      "personalize": "Post-incident coach for your {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "Safety and documentation first. We do not DIY structural, airbag, or ADAS repairs — those belong to qualified shops and your insurer's process.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_claim",
+      "focus_part": "lights",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Step 1 of 7 · Start · 14%"
+      },
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "I'm safe — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "document"
+        },
+        {
+          "id": "urgent",
+          "label": "Need emergency help",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "I need guidance on what to do immediately after a collision — safety first."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "document"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "document",
+      "title": "Document the scene (if safe)",
+      "coach_encourage": "Photos protect you later. Nice momentum — you're about 29% through.",
+      "personalize": "Evidence checklist for your {{make}} {{model}}.",
+      "description": "Only if safe and legal: wide shots, damage close-ups, plate, road conditions, and dashboard warnings. Exchange info per local law. Do not admit fault on the roadside.",
+      "visual_type": "gif",
+      "visual_asset_key": "document_claim",
+      "focus_part": "lights",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "fraction": 0.286,
+        "percent": 29,
+        "label": "Step 2 of 7 · Photos · 29%"
+      },
+      "tools": [
+        "Phone camera"
+      ],
+      "action_buttons": [
+        {
+          "id": "photos_done",
+          "label": "Photos / info done",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "drive_decision"
+        },
+        {
+          "id": "chat",
+          "label": "What to photograph",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "What photos should I take after a fender-bender for insurance?"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "photos_done",
+          "goto": "drive_decision"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Driving a damaged vehicle",
+        "body": "Hidden damage can cause brake, steering, or fire hazards. Airbag/SRS faults can leave you unprotected. If anything feels wrong, do not drive — find a nearby shop or tow.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "difficulty": "Medium",
+      "duration_minutes": 3,
+      "id": "drive_decision",
+      "title": "Is it safe to drive?",
+      "coach_encourage": "Limping home can turn a bumper into a tow. You're crushing it — roughly 43% done.",
+      "personalize": "Drive/no-drive call for {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "Do not drive if airbags deployed, fluids leak, steering/ brakes feel wrong, tires damaged, or lights/structure look bent. Tow beats a second crash.",
+      "visual_type": "annotated",
+      "visual_asset_key": "drive_decision",
+      "focus_part": "brakes",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "fraction": 0.429,
+        "percent": 43,
+        "label": "Step 3 of 7 · Drive? · 43%"
+      },
+      "action_buttons": [
+        {
+          "id": "not_driving",
+          "label": "I'll tow / not drive",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "visual_leaks"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "not_driving",
+          "goto": "visual_leaks"
+        }
+      ]
+    },
+    {
+      "safety_warning": "Never crawl under an unsupported damaged car.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Fuel / fluid fire hazard",
+        "body": "Post-crash fuel or oil leaks can ignite. Keep distance, no smoking, and get professional recovery. When unsure, find a nearby shop or emergency services.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "visual_leaks",
+      "title": "Cold visual: leaks & fluids",
+      "coach_encourage": "A calm walk-around catches green puddles early. Look at you — about 57% complete.",
+      "personalize": "Leak walk-around on your {{model}} after the incident.",
+      "description": "With the engine off: look for coolant, oil, fuel, or red transmission fluid. Fuel smell → evacuate and call for help — no sparks.",
+      "visual_type": "gif",
+      "visual_asset_key": "leaks_claim",
+      "focus_part": "engine",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "fraction": 0.571,
+        "percent": 57,
+        "label": "Step 4 of 7 · Leaks · 57%"
+      },
+      "action_buttons": [
+        {
+          "id": "no_fuel",
+          "label": "No fuel smell / major leak",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "adas_airbag"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "no_fuel",
+          "goto": "adas_airbag"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "SRS / ADAS tampering hazard",
+        "body": "Airbags can deploy unexpectedly if mishandled. Camera/radar misalignment can disable safety features. Do not DIY SRS or ADAS repairs — find a nearby qualified shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "adas_airbag",
+      "title": "Airbags, ADAS & glass — shop only",
+      "coach_encourage": "Modern safety systems need calibration, not driveway hope. You're more than halfway — keep that steady pace.",
+      "personalize": "SRS/ADAS reminder for your {{year}} {{make}} {{model}}.",
+      "description": "Never probe yellow SRS connectors. After airbag, bumper, windshield, or radar/camera damage, expect professional repair and calibration. DIY resets are unsafe and can affect claims.",
+      "visual_type": "annotated",
+      "visual_asset_key": "adas_claim",
+      "focus_part": "lights",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "fraction": 0.714,
+        "percent": 71,
+        "label": "Step 5 of 7 · SRS/ADAS · 71%"
+      },
+      "action_buttons": [
+        {
+          "id": "understood",
+          "label": "I understand — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "claim_checklist"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "understood",
+          "goto": "claim_checklist"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "claim_checklist",
+      "title": "Insurance claim checklist",
+      "coach_encourage": "Paperwork is boring — and it saves you money. Almost there — about 86% through.",
+      "personalize": "Claim prep for {{make}} {{model}} at {{mileage}} miles.",
+      "description": "Call your insurer when ready. Save photos, police report number if any, repair estimates, and rental info. This app is not legal or claims advice — follow your policy and local law.",
+      "visual_type": "gif",
+      "visual_asset_key": "claim_list",
+      "focus_part": "lights",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "fraction": 0.857,
+        "percent": 86,
+        "label": "Step 6 of 7 · Claim · 86%"
+      },
+      "action_buttons": [
+        {
+          "id": "checklist_ok",
+          "label": "Checklist noted",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_claim"
+        },
+        {
+          "id": "chat",
+          "label": "What to ask insurer",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "What questions should I ask my insurer after a minor collision?"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "checklist_ok",
+          "goto": "log_claim"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "log_claim",
+      "title": "Log the post-incident check",
+      "coach_encourage": "You chose process over panic — that's strength. You made it through the flow — time to celebrate.",
+      "personalize": "Logged for {{make}} {{model}} at {{mileage}} miles. Follow up before {{next_service}} miles or after repairs.",
+      "description": "Note date, tow/shop, and claim number. After repairs, recheck tire pressures and warning lights before highway driving.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_claim",
+      "progress": {
+        "index": 7,
+        "total": 7,
+        "fraction": 1.0,
+        "percent": 100,
+        "label": "Step 7 of 7 · Finish · 100%"
+      },
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log post-accident check",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "insurance"
+        },
+        {
+          "id": "chat",
+          "label": "Ask about next steps",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Post-accident / insurance next steps for my vehicle:"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Post-incident plan in motion",
+    "coach_encourage": "You put safety and process first. That matters — well done! You made it through the flow — time to celebrate.",
+    "description": "Tow when unsure, never DIY SRS/ADAS, and keep a clean photo + claim paper trail. This is not legal advice.",
+    "log_category": "insurance",
+    "next_check_miles_default": 1000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to guides",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Claim / repair question",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Post-accident repair or insurance question:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION EN insurance/post-accident coach.\n• Drive/no-drive modal\n• SRS ban\n• Feedback on",
+    "react_native_pseudocode": "CoachScenarioPlayer — diagnosis_insurance_post_accident_production.json"
+  }
+}

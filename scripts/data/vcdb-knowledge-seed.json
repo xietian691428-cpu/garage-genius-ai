@@ -1,0 +1,866 @@
+[
+  {
+    "title": "2023 Kia Forte GT-Line — Authoritative configuration card",
+    "content": "Authoritative Vehicle Configuration (AutoCare VCdb) for DIY fitment:\n2023 Kia Forte GT-Line\n- Engine: 2.0L L4 NA GAS\n- Transmission: Transaxle Automatic CVT\n- Drive: FWD\n- Brakes: front Disc, rear Disc, ABS: 4-Wheel ABS\n\nCommon configuration notes:\n- Do not assume AWD, hybrid, or a different engine unless the garage profile says so.\n- Parts searches must include year/make/model/trim/engine: \"2023 Kia Forte GT-Line 2.0L L4 NA GAS\".\n- VCdb VehicleID: 340013.\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Kia",
+    "vehicle_model": "Forte",
+    "vehicle_years": "2023",
+    "category": "general",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 340013,
+      "engine": "2.0L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "config",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2023 Kia Forte GT-Line — Typical faults for this configuration",
+    "content": "Typical DIY-relevant issues for 2023 Kia Forte GT-Line · 2.0L L4 NA GAS · Transaxle Automatic CVT · FWD · front Disc, rear Disc, ABS: 4-Wheel ABS:\n\nConfig context: Drive=FWD, Brakes=front Disc, rear Disc, ABS: 4-Wheel ABS, Engine=2.0L L4 NA GAS.\n\nHigh-probability symptom paths (adjust to mileage / codes):\n1. Brake pedal soft or noise — inspect pads/rotors matching front Disc, rear Disc, ABS: 4-Wheel ABS; bleed if ABS is present.\n2. Rough idle / misfire — check plugs, coils, intake leaks for 2.0L L4 NA GAS; scan for pending codes.\n3. Battery / no-start — verify 12V health before blaming starters; hybrids need OEM-spec batteries if trim is hybrid.\n4. Vibration / pull — tires and alignment first; on FWD do not invent transfer-case issues unless Drive is AWD/4WD.\n\nFocus Mode: pick the system that matches symptoms AND this configuration. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Kia",
+    "vehicle_model": "Forte",
+    "vehicle_years": "2023",
+    "category": "diagnostics",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 340013,
+      "engine": "2.0L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2023 Kia Forte GT-Line — Parts fitment precautions",
+    "content": "Parts fitment precautions for 2023 Kia Forte GT-Line (2.0L L4 NA GAS):\n\n1. Always filter RockAuto / Amazon / AutoZone by exact year + make + model + engine (2.0L L4 NA GAS).\n2. Drive type FWD: never buy AWD-only hubs, prop shafts, or transfer-case parts if the profile is FWD/RWD-only.\n3. Brake kits must match front Disc, rear Disc, ABS: 4-Wheel ABS; ABS vehicles need correct sensor rings / tone wheels.\n4. Filters, plugs, and belts are engine-specific — quote \"2.0L L4 NA GAS\" in the search string.\n5. If OEM number is unknown, say verify with VIN / dealer EPC — do not invent part numbers.\n\nShopping query pattern: \"2023 Kia Forte GT-Line 2.0L L4 NA GAS <part name>\".\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Kia",
+    "vehicle_model": "Forte",
+    "vehicle_years": "2023",
+    "category": "parts",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 340013,
+      "engine": "2.0L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "parts",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2023 Kia Forte GT-Line — Front brake pad DIY checklist",
+    "content": "Vehicle config (AutoCare VCdb): 2023 Kia Forte GT-Line · 2.0L L4 NA GAS · Transaxle Automatic CVT · FWD · front Disc, rear Disc, ABS: 4-Wheel ABS.\nBrake system: front Disc, rear Disc, ABS: 4-Wheel ABS. Drive: FWD.\n\nDIY focus for this configuration:\n1. Confirm pad wear indicators and rotor thickness before ordering.\n2. Match parts to 2023 Kia Forte GT-Line 2.0L L4 NA GAS — avoid \"universal\" kits when ABS is listed (ABS: yes on this profile).\n3. Tools: jack + stands, lug wrench, C-clamp or caliper tool, torque wrench, brake cleaner.\n4. After install: pump pedal until firm; bed-in with 8–10 moderate stops from ~40 mph.\n5. Search: \"2023 Kia Forte GT-Line 2.0L L4 NA GAS front brake pads\".\n\nSafety: never work under a vehicle supported only by a jack. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Kia",
+    "vehicle_model": "Forte",
+    "vehicle_years": "2023",
+    "category": "brake",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 340013,
+      "engine": "2.0L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2017 Volkswagen Touareg Sportline — Authoritative configuration card",
+    "content": "Authoritative Vehicle Configuration (AutoCare VCdb) for DIY fitment:\n2017 Volkswagen Touareg Sportline\n- Engine: 3.6L V6 NA GAS\n- Transmission: 8 Transmission Automatic\n- Drive: AWD\n- Brakes: front Disc, rear Disc, ABS: 4-Wheel ABS\n\nCommon configuration notes:\n- Do not assume AWD, hybrid, or a different engine unless the garage profile says so.\n- Parts searches must include year/make/model/trim/engine: \"2017 Volkswagen Touareg Sportline 3.6L V6 NA GAS\".\n- VCdb VehicleID: 245590.\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Volkswagen",
+    "vehicle_model": "Touareg",
+    "vehicle_years": "2017",
+    "category": "general",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 245590,
+      "engine": "3.6L V6 NA GAS",
+      "drive": "AWD",
+      "rag_tier": "config",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2017 Volkswagen Touareg Sportline — Typical faults for this configuration",
+    "content": "Typical DIY-relevant issues for 2017 Volkswagen Touareg Sportline · 3.6L V6 NA GAS · 8 Transmission Automatic · AWD · front Disc, rear Disc, ABS: 4-Wheel ABS:\n\nConfig context: Drive=AWD, Brakes=front Disc, rear Disc, ABS: 4-Wheel ABS, Engine=3.6L V6 NA GAS.\n\nHigh-probability symptom paths (adjust to mileage / codes):\n1. Brake pedal soft or noise — inspect pads/rotors matching front Disc, rear Disc, ABS: 4-Wheel ABS; bleed if ABS is present.\n2. Rough idle / misfire — check plugs, coils, intake leaks for 3.6L V6 NA GAS; scan for pending codes.\n3. Battery / no-start — verify 12V health before blaming starters; hybrids need OEM-spec batteries if trim is hybrid.\n4. Vibration / pull — tires and alignment first; on AWD do not invent transfer-case issues unless Drive is AWD/4WD.\n\nFocus Mode: pick the system that matches symptoms AND this configuration. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Volkswagen",
+    "vehicle_model": "Touareg",
+    "vehicle_years": "2017",
+    "category": "diagnostics",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 245590,
+      "engine": "3.6L V6 NA GAS",
+      "drive": "AWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2017 Volkswagen Touareg Sportline — Parts fitment precautions",
+    "content": "Parts fitment precautions for 2017 Volkswagen Touareg Sportline (3.6L V6 NA GAS):\n\n1. Always filter RockAuto / Amazon / AutoZone by exact year + make + model + engine (3.6L V6 NA GAS).\n2. Drive type AWD: never buy AWD-only hubs, prop shafts, or transfer-case parts if the profile is FWD/RWD-only.\n3. Brake kits must match front Disc, rear Disc, ABS: 4-Wheel ABS; ABS vehicles need correct sensor rings / tone wheels.\n4. Filters, plugs, and belts are engine-specific — quote \"3.6L V6 NA GAS\" in the search string.\n5. If OEM number is unknown, say verify with VIN / dealer EPC — do not invent part numbers.\n\nShopping query pattern: \"2017 Volkswagen Touareg Sportline 3.6L V6 NA GAS <part name>\".\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Volkswagen",
+    "vehicle_model": "Touareg",
+    "vehicle_years": "2017",
+    "category": "parts",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 245590,
+      "engine": "3.6L V6 NA GAS",
+      "drive": "AWD",
+      "rag_tier": "parts",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2017 Volkswagen Touareg Sportline — Front brake pad DIY checklist",
+    "content": "Vehicle config (AutoCare VCdb): 2017 Volkswagen Touareg Sportline · 3.6L V6 NA GAS · 8 Transmission Automatic · AWD · front Disc, rear Disc, ABS: 4-Wheel ABS.\nBrake system: front Disc, rear Disc, ABS: 4-Wheel ABS. Drive: AWD.\n\nDIY focus for this configuration:\n1. Confirm pad wear indicators and rotor thickness before ordering.\n2. Match parts to 2017 Volkswagen Touareg Sportline 3.6L V6 NA GAS — avoid \"universal\" kits when ABS is listed (ABS: yes on this profile).\n3. Tools: jack + stands, lug wrench, C-clamp or caliper tool, torque wrench, brake cleaner.\n4. After install: pump pedal until firm; bed-in with 8–10 moderate stops from ~40 mph.\n5. Search: \"2017 Volkswagen Touareg Sportline 3.6L V6 NA GAS front brake pads\".\n\nSafety: never work under a vehicle supported only by a jack. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Volkswagen",
+    "vehicle_model": "Touareg",
+    "vehicle_years": "2017",
+    "category": "brake",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 245590,
+      "engine": "3.6L V6 NA GAS",
+      "drive": "AWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2024 Lexus LX600 Base — Authoritative configuration card",
+    "content": "Authoritative Vehicle Configuration (AutoCare VCdb) for DIY fitment:\n2024 Lexus LX600 Base\n- Engine: 3.4L V6 Turbocharged GAS\n- Transmission: 10 Transmission Automatic\n- Drive: AWD\n- Brakes: front Disc, rear Disc, ABS: 4-Wheel ABS\n\nCommon configuration notes:\n- Do not assume AWD, hybrid, or a different engine unless the garage profile says so.\n- Parts searches must include year/make/model/trim/engine: \"2024 Lexus LX600 Base 3.4L V6 Turbocharged GAS\".\n- VCdb VehicleID: 360184.\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Lexus",
+    "vehicle_model": "LX600",
+    "vehicle_years": "2024",
+    "category": "general",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 360184,
+      "engine": "3.4L V6 Turbocharged GAS",
+      "drive": "AWD",
+      "rag_tier": "config",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2024 Lexus LX600 Base — Typical faults for this configuration",
+    "content": "Typical DIY-relevant issues for 2024 Lexus LX600 Base · 3.4L V6 Turbocharged GAS · 10 Transmission Automatic · AWD · front Disc, rear Disc, ABS: 4-Wheel ABS:\n\nConfig context: Drive=AWD, Brakes=front Disc, rear Disc, ABS: 4-Wheel ABS, Engine=3.4L V6 Turbocharged GAS.\n\nHigh-probability symptom paths (adjust to mileage / codes):\n1. Brake pedal soft or noise — inspect pads/rotors matching front Disc, rear Disc, ABS: 4-Wheel ABS; bleed if ABS is present.\n2. Rough idle / misfire — check plugs, coils, intake leaks for 3.4L V6 Turbocharged GAS; scan for pending codes.\n3. Battery / no-start — verify 12V health before blaming starters; hybrids need OEM-spec batteries if trim is hybrid.\n4. Vibration / pull — tires and alignment first; on AWD do not invent transfer-case issues unless Drive is AWD/4WD.\n\nFocus Mode: pick the system that matches symptoms AND this configuration. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Lexus",
+    "vehicle_model": "LX600",
+    "vehicle_years": "2024",
+    "category": "diagnostics",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 360184,
+      "engine": "3.4L V6 Turbocharged GAS",
+      "drive": "AWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2024 Lexus LX600 Base — Parts fitment precautions",
+    "content": "Parts fitment precautions for 2024 Lexus LX600 Base (3.4L V6 Turbocharged GAS):\n\n1. Always filter RockAuto / Amazon / AutoZone by exact year + make + model + engine (3.4L V6 Turbocharged GAS).\n2. Drive type AWD: never buy AWD-only hubs, prop shafts, or transfer-case parts if the profile is FWD/RWD-only.\n3. Brake kits must match front Disc, rear Disc, ABS: 4-Wheel ABS; ABS vehicles need correct sensor rings / tone wheels.\n4. Filters, plugs, and belts are engine-specific — quote \"3.4L V6 Turbocharged GAS\" in the search string.\n5. If OEM number is unknown, say verify with VIN / dealer EPC — do not invent part numbers.\n\nShopping query pattern: \"2024 Lexus LX600 Base 3.4L V6 Turbocharged GAS <part name>\".\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Lexus",
+    "vehicle_model": "LX600",
+    "vehicle_years": "2024",
+    "category": "parts",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 360184,
+      "engine": "3.4L V6 Turbocharged GAS",
+      "drive": "AWD",
+      "rag_tier": "parts",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2024 Lexus LX600 Base — Front brake pad DIY checklist",
+    "content": "Vehicle config (AutoCare VCdb): 2024 Lexus LX600 Base · 3.4L V6 Turbocharged GAS · 10 Transmission Automatic · AWD · front Disc, rear Disc, ABS: 4-Wheel ABS.\nBrake system: front Disc, rear Disc, ABS: 4-Wheel ABS. Drive: AWD.\n\nDIY focus for this configuration:\n1. Confirm pad wear indicators and rotor thickness before ordering.\n2. Match parts to 2024 Lexus LX600 Base 3.4L V6 Turbocharged GAS — avoid \"universal\" kits when ABS is listed (ABS: yes on this profile).\n3. Tools: jack + stands, lug wrench, C-clamp or caliper tool, torque wrench, brake cleaner.\n4. After install: pump pedal until firm; bed-in with 8–10 moderate stops from ~40 mph.\n5. Search: \"2024 Lexus LX600 Base 3.4L V6 Turbocharged GAS front brake pads\".\n\nSafety: never work under a vehicle supported only by a jack. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Lexus",
+    "vehicle_model": "LX600",
+    "vehicle_years": "2024",
+    "category": "brake",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 360184,
+      "engine": "3.4L V6 Turbocharged GAS",
+      "drive": "AWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2015 Hyundai Elantra GT L — Authoritative configuration card",
+    "content": "Authoritative Vehicle Configuration (AutoCare VCdb) for DIY fitment:\n2015 Hyundai Elantra GT L\n- Engine: 2.0L L4 NA GAS\n- Transmission: 6 Transaxle Manual\n- Drive: FWD\n- Brakes: front Disc, rear Disc, ABS: 4-Wheel ABS\n\nCommon configuration notes:\n- Do not assume AWD, hybrid, or a different engine unless the garage profile says so.\n- Parts searches must include year/make/model/trim/engine: \"2015 Hyundai Elantra GT L 2.0L L4 NA GAS\".\n- VCdb VehicleID: 215333.\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Hyundai",
+    "vehicle_model": "Elantra GT",
+    "vehicle_years": "2015",
+    "category": "general",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 215333,
+      "engine": "2.0L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "config",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2015 Hyundai Elantra GT L — Typical faults for this configuration",
+    "content": "Typical DIY-relevant issues for 2015 Hyundai Elantra GT L · 2.0L L4 NA GAS · 6 Transaxle Manual · FWD · front Disc, rear Disc, ABS: 4-Wheel ABS:\n\nConfig context: Drive=FWD, Brakes=front Disc, rear Disc, ABS: 4-Wheel ABS, Engine=2.0L L4 NA GAS.\n\nHigh-probability symptom paths (adjust to mileage / codes):\n1. Brake pedal soft or noise — inspect pads/rotors matching front Disc, rear Disc, ABS: 4-Wheel ABS; bleed if ABS is present.\n2. Rough idle / misfire — check plugs, coils, intake leaks for 2.0L L4 NA GAS; scan for pending codes.\n3. Battery / no-start — verify 12V health before blaming starters; hybrids need OEM-spec batteries if trim is hybrid.\n4. Vibration / pull — tires and alignment first; on FWD do not invent transfer-case issues unless Drive is AWD/4WD.\n\nFocus Mode: pick the system that matches symptoms AND this configuration. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Hyundai",
+    "vehicle_model": "Elantra GT",
+    "vehicle_years": "2015",
+    "category": "diagnostics",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 215333,
+      "engine": "2.0L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2015 Hyundai Elantra GT L — Parts fitment precautions",
+    "content": "Parts fitment precautions for 2015 Hyundai Elantra GT L (2.0L L4 NA GAS):\n\n1. Always filter RockAuto / Amazon / AutoZone by exact year + make + model + engine (2.0L L4 NA GAS).\n2. Drive type FWD: never buy AWD-only hubs, prop shafts, or transfer-case parts if the profile is FWD/RWD-only.\n3. Brake kits must match front Disc, rear Disc, ABS: 4-Wheel ABS; ABS vehicles need correct sensor rings / tone wheels.\n4. Filters, plugs, and belts are engine-specific — quote \"2.0L L4 NA GAS\" in the search string.\n5. If OEM number is unknown, say verify with VIN / dealer EPC — do not invent part numbers.\n\nShopping query pattern: \"2015 Hyundai Elantra GT L 2.0L L4 NA GAS <part name>\".\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Hyundai",
+    "vehicle_model": "Elantra GT",
+    "vehicle_years": "2015",
+    "category": "parts",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 215333,
+      "engine": "2.0L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "parts",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2015 Hyundai Elantra GT L — Front brake pad DIY checklist",
+    "content": "Vehicle config (AutoCare VCdb): 2015 Hyundai Elantra GT L · 2.0L L4 NA GAS · 6 Transaxle Manual · FWD · front Disc, rear Disc, ABS: 4-Wheel ABS.\nBrake system: front Disc, rear Disc, ABS: 4-Wheel ABS. Drive: FWD.\n\nDIY focus for this configuration:\n1. Confirm pad wear indicators and rotor thickness before ordering.\n2. Match parts to 2015 Hyundai Elantra GT L 2.0L L4 NA GAS — avoid \"universal\" kits when ABS is listed (ABS: yes on this profile).\n3. Tools: jack + stands, lug wrench, C-clamp or caliper tool, torque wrench, brake cleaner.\n4. After install: pump pedal until firm; bed-in with 8–10 moderate stops from ~40 mph.\n5. Search: \"2015 Hyundai Elantra GT L 2.0L L4 NA GAS front brake pads\".\n\nSafety: never work under a vehicle supported only by a jack. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Hyundai",
+    "vehicle_model": "Elantra GT",
+    "vehicle_years": "2015",
+    "category": "brake",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 215333,
+      "engine": "2.0L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2012 Dodge Challenger R/T Classic — Authoritative configuration card",
+    "content": "Authoritative Vehicle Configuration (AutoCare VCdb) for DIY fitment:\n2012 Dodge Challenger R/T Classic\n- Engine: 5.7L V8 NA GAS\n- Transmission: 5 Transmission Automatic\n- Drive: RWD\n- Brakes: front Disc, rear Disc, ABS: 4-Wheel ABS\n\nCommon configuration notes:\n- Do not assume AWD, hybrid, or a different engine unless the garage profile says so.\n- Parts searches must include year/make/model/trim/engine: \"2012 Dodge Challenger R/T Classic 5.7L V8 NA GAS\".\n- VCdb VehicleID: 191078.\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Dodge",
+    "vehicle_model": "Challenger",
+    "vehicle_years": "2012",
+    "category": "general",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 191078,
+      "engine": "5.7L V8 NA GAS",
+      "drive": "RWD",
+      "rag_tier": "config",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2012 Dodge Challenger R/T Classic — Typical faults for this configuration",
+    "content": "Typical DIY-relevant issues for 2012 Dodge Challenger R/T Classic · 5.7L V8 NA GAS · 5 Transmission Automatic · RWD · front Disc, rear Disc, ABS: 4-Wheel ABS:\n\nConfig context: Drive=RWD, Brakes=front Disc, rear Disc, ABS: 4-Wheel ABS, Engine=5.7L V8 NA GAS.\n\nHigh-probability symptom paths (adjust to mileage / codes):\n1. Brake pedal soft or noise — inspect pads/rotors matching front Disc, rear Disc, ABS: 4-Wheel ABS; bleed if ABS is present.\n2. Rough idle / misfire — check plugs, coils, intake leaks for 5.7L V8 NA GAS; scan for pending codes.\n3. Battery / no-start — verify 12V health before blaming starters; hybrids need OEM-spec batteries if trim is hybrid.\n4. Vibration / pull — tires and alignment first; on RWD do not invent transfer-case issues unless Drive is AWD/4WD.\n\nFocus Mode: pick the system that matches symptoms AND this configuration. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Dodge",
+    "vehicle_model": "Challenger",
+    "vehicle_years": "2012",
+    "category": "diagnostics",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 191078,
+      "engine": "5.7L V8 NA GAS",
+      "drive": "RWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2012 Dodge Challenger R/T Classic — Parts fitment precautions",
+    "content": "Parts fitment precautions for 2012 Dodge Challenger R/T Classic (5.7L V8 NA GAS):\n\n1. Always filter RockAuto / Amazon / AutoZone by exact year + make + model + engine (5.7L V8 NA GAS).\n2. Drive type RWD: never buy AWD-only hubs, prop shafts, or transfer-case parts if the profile is FWD/RWD-only.\n3. Brake kits must match front Disc, rear Disc, ABS: 4-Wheel ABS; ABS vehicles need correct sensor rings / tone wheels.\n4. Filters, plugs, and belts are engine-specific — quote \"5.7L V8 NA GAS\" in the search string.\n5. If OEM number is unknown, say verify with VIN / dealer EPC — do not invent part numbers.\n\nShopping query pattern: \"2012 Dodge Challenger R/T Classic 5.7L V8 NA GAS <part name>\".\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Dodge",
+    "vehicle_model": "Challenger",
+    "vehicle_years": "2012",
+    "category": "parts",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 191078,
+      "engine": "5.7L V8 NA GAS",
+      "drive": "RWD",
+      "rag_tier": "parts",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2012 Dodge Challenger R/T Classic — Front brake pad DIY checklist",
+    "content": "Vehicle config (AutoCare VCdb): 2012 Dodge Challenger R/T Classic · 5.7L V8 NA GAS · 5 Transmission Automatic · RWD · front Disc, rear Disc, ABS: 4-Wheel ABS.\nBrake system: front Disc, rear Disc, ABS: 4-Wheel ABS. Drive: RWD.\n\nDIY focus for this configuration:\n1. Confirm pad wear indicators and rotor thickness before ordering.\n2. Match parts to 2012 Dodge Challenger R/T Classic 5.7L V8 NA GAS — avoid \"universal\" kits when ABS is listed (ABS: yes on this profile).\n3. Tools: jack + stands, lug wrench, C-clamp or caliper tool, torque wrench, brake cleaner.\n4. After install: pump pedal until firm; bed-in with 8–10 moderate stops from ~40 mph.\n5. Search: \"2012 Dodge Challenger R/T Classic 5.7L V8 NA GAS front brake pads\".\n\nSafety: never work under a vehicle supported only by a jack. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Dodge",
+    "vehicle_model": "Challenger",
+    "vehicle_years": "2012",
+    "category": "brake",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 191078,
+      "engine": "5.7L V8 NA GAS",
+      "drive": "RWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2017 Nissan Juke Nismo — Authoritative configuration card",
+    "content": "Authoritative Vehicle Configuration (AutoCare VCdb) for DIY fitment:\n2017 Nissan Juke Nismo\n- Engine: 1.6L L4 Turbocharged GAS\n- Transmission: Transaxle Automatic CVT\n- Drive: FWD\n- Brakes: front Disc, rear Disc, ABS: 4-Wheel ABS\n\nCommon configuration notes:\n- Do not assume AWD, hybrid, or a different engine unless the garage profile says so.\n- Parts searches must include year/make/model/trim/engine: \"2017 Nissan Juke Nismo 1.6L L4 Turbocharged GAS\".\n- VCdb VehicleID: 239871.\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Nissan",
+    "vehicle_model": "Juke",
+    "vehicle_years": "2017",
+    "category": "general",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 239871,
+      "engine": "1.6L L4 Turbocharged GAS",
+      "drive": "FWD",
+      "rag_tier": "config",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2017 Nissan Juke Nismo — Typical faults for this configuration",
+    "content": "Typical DIY-relevant issues for 2017 Nissan Juke Nismo · 1.6L L4 Turbocharged GAS · Transaxle Automatic CVT · FWD · front Disc, rear Disc, ABS: 4-Wheel ABS:\n\nConfig context: Drive=FWD, Brakes=front Disc, rear Disc, ABS: 4-Wheel ABS, Engine=1.6L L4 Turbocharged GAS.\n\nHigh-probability symptom paths (adjust to mileage / codes):\n1. Brake pedal soft or noise — inspect pads/rotors matching front Disc, rear Disc, ABS: 4-Wheel ABS; bleed if ABS is present.\n2. Rough idle / misfire — check plugs, coils, intake leaks for 1.6L L4 Turbocharged GAS; scan for pending codes.\n3. Battery / no-start — verify 12V health before blaming starters; hybrids need OEM-spec batteries if trim is hybrid.\n4. Vibration / pull — tires and alignment first; on FWD do not invent transfer-case issues unless Drive is AWD/4WD.\n\nFocus Mode: pick the system that matches symptoms AND this configuration. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Nissan",
+    "vehicle_model": "Juke",
+    "vehicle_years": "2017",
+    "category": "diagnostics",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 239871,
+      "engine": "1.6L L4 Turbocharged GAS",
+      "drive": "FWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2017 Nissan Juke Nismo — Parts fitment precautions",
+    "content": "Parts fitment precautions for 2017 Nissan Juke Nismo (1.6L L4 Turbocharged GAS):\n\n1. Always filter RockAuto / Amazon / AutoZone by exact year + make + model + engine (1.6L L4 Turbocharged GAS).\n2. Drive type FWD: never buy AWD-only hubs, prop shafts, or transfer-case parts if the profile is FWD/RWD-only.\n3. Brake kits must match front Disc, rear Disc, ABS: 4-Wheel ABS; ABS vehicles need correct sensor rings / tone wheels.\n4. Filters, plugs, and belts are engine-specific — quote \"1.6L L4 Turbocharged GAS\" in the search string.\n5. If OEM number is unknown, say verify with VIN / dealer EPC — do not invent part numbers.\n\nShopping query pattern: \"2017 Nissan Juke Nismo 1.6L L4 Turbocharged GAS <part name>\".\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Nissan",
+    "vehicle_model": "Juke",
+    "vehicle_years": "2017",
+    "category": "parts",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 239871,
+      "engine": "1.6L L4 Turbocharged GAS",
+      "drive": "FWD",
+      "rag_tier": "parts",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2017 Nissan Juke Nismo — Front brake pad DIY checklist",
+    "content": "Vehicle config (AutoCare VCdb): 2017 Nissan Juke Nismo · 1.6L L4 Turbocharged GAS · Transaxle Automatic CVT · FWD · front Disc, rear Disc, ABS: 4-Wheel ABS.\nBrake system: front Disc, rear Disc, ABS: 4-Wheel ABS. Drive: FWD.\n\nDIY focus for this configuration:\n1. Confirm pad wear indicators and rotor thickness before ordering.\n2. Match parts to 2017 Nissan Juke Nismo 1.6L L4 Turbocharged GAS — avoid \"universal\" kits when ABS is listed (ABS: yes on this profile).\n3. Tools: jack + stands, lug wrench, C-clamp or caliper tool, torque wrench, brake cleaner.\n4. After install: pump pedal until firm; bed-in with 8–10 moderate stops from ~40 mph.\n5. Search: \"2017 Nissan Juke Nismo 1.6L L4 Turbocharged GAS front brake pads\".\n\nSafety: never work under a vehicle supported only by a jack. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Nissan",
+    "vehicle_model": "Juke",
+    "vehicle_years": "2017",
+    "category": "brake",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 239871,
+      "engine": "1.6L L4 Turbocharged GAS",
+      "drive": "FWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2021 Volkswagen GTI Autobahn — Authoritative configuration card",
+    "content": "Authoritative Vehicle Configuration (AutoCare VCdb) for DIY fitment:\n2021 Volkswagen GTI Autobahn\n- Engine: 2.0L L4 Turbocharged GAS\n- Transmission: 6 Transaxle Manual\n- Drive: FWD\n- Brakes: front Disc, rear Disc, ABS: 4-Wheel ABS\n\nCommon configuration notes:\n- Do not assume AWD, hybrid, or a different engine unless the garage profile says so.\n- Parts searches must include year/make/model/trim/engine: \"2021 Volkswagen GTI Autobahn 2.0L L4 Turbocharged GAS\".\n- VCdb VehicleID: 276014.\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Volkswagen",
+    "vehicle_model": "GTI",
+    "vehicle_years": "2021",
+    "category": "general",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 276014,
+      "engine": "2.0L L4 Turbocharged GAS",
+      "drive": "FWD",
+      "rag_tier": "config",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2021 Volkswagen GTI Autobahn — Typical faults for this configuration",
+    "content": "Typical DIY-relevant issues for 2021 Volkswagen GTI Autobahn · 2.0L L4 Turbocharged GAS · 6 Transaxle Manual · FWD · front Disc, rear Disc, ABS: 4-Wheel ABS:\n\nConfig context: Drive=FWD, Brakes=front Disc, rear Disc, ABS: 4-Wheel ABS, Engine=2.0L L4 Turbocharged GAS.\n\nHigh-probability symptom paths (adjust to mileage / codes):\n1. Brake pedal soft or noise — inspect pads/rotors matching front Disc, rear Disc, ABS: 4-Wheel ABS; bleed if ABS is present.\n2. Rough idle / misfire — check plugs, coils, intake leaks for 2.0L L4 Turbocharged GAS; scan for pending codes.\n3. Battery / no-start — verify 12V health before blaming starters; hybrids need OEM-spec batteries if trim is hybrid.\n4. Vibration / pull — tires and alignment first; on FWD do not invent transfer-case issues unless Drive is AWD/4WD.\n\nFocus Mode: pick the system that matches symptoms AND this configuration. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Volkswagen",
+    "vehicle_model": "GTI",
+    "vehicle_years": "2021",
+    "category": "diagnostics",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 276014,
+      "engine": "2.0L L4 Turbocharged GAS",
+      "drive": "FWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2021 Volkswagen GTI Autobahn — Parts fitment precautions",
+    "content": "Parts fitment precautions for 2021 Volkswagen GTI Autobahn (2.0L L4 Turbocharged GAS):\n\n1. Always filter RockAuto / Amazon / AutoZone by exact year + make + model + engine (2.0L L4 Turbocharged GAS).\n2. Drive type FWD: never buy AWD-only hubs, prop shafts, or transfer-case parts if the profile is FWD/RWD-only.\n3. Brake kits must match front Disc, rear Disc, ABS: 4-Wheel ABS; ABS vehicles need correct sensor rings / tone wheels.\n4. Filters, plugs, and belts are engine-specific — quote \"2.0L L4 Turbocharged GAS\" in the search string.\n5. If OEM number is unknown, say verify with VIN / dealer EPC — do not invent part numbers.\n\nShopping query pattern: \"2021 Volkswagen GTI Autobahn 2.0L L4 Turbocharged GAS <part name>\".\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Volkswagen",
+    "vehicle_model": "GTI",
+    "vehicle_years": "2021",
+    "category": "parts",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 276014,
+      "engine": "2.0L L4 Turbocharged GAS",
+      "drive": "FWD",
+      "rag_tier": "parts",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2021 Volkswagen GTI Autobahn — Front brake pad DIY checklist",
+    "content": "Vehicle config (AutoCare VCdb): 2021 Volkswagen GTI Autobahn · 2.0L L4 Turbocharged GAS · 6 Transaxle Manual · FWD · front Disc, rear Disc, ABS: 4-Wheel ABS.\nBrake system: front Disc, rear Disc, ABS: 4-Wheel ABS. Drive: FWD.\n\nDIY focus for this configuration:\n1. Confirm pad wear indicators and rotor thickness before ordering.\n2. Match parts to 2021 Volkswagen GTI Autobahn 2.0L L4 Turbocharged GAS — avoid \"universal\" kits when ABS is listed (ABS: yes on this profile).\n3. Tools: jack + stands, lug wrench, C-clamp or caliper tool, torque wrench, brake cleaner.\n4. After install: pump pedal until firm; bed-in with 8–10 moderate stops from ~40 mph.\n5. Search: \"2021 Volkswagen GTI Autobahn 2.0L L4 Turbocharged GAS front brake pads\".\n\nSafety: never work under a vehicle supported only by a jack. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Volkswagen",
+    "vehicle_model": "GTI",
+    "vehicle_years": "2021",
+    "category": "brake",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 276014,
+      "engine": "2.0L L4 Turbocharged GAS",
+      "drive": "FWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2024 Mazda 3 Sport GT — Authoritative configuration card",
+    "content": "Authoritative Vehicle Configuration (AutoCare VCdb) for DIY fitment:\n2024 Mazda 3 Sport GT\n- Engine: 2.5L L4 NA GAS\n- Transmission: 6 Transaxle Automatic\n- Drive: FWD\n- Brakes: front Disc, rear Disc, ABS: 4-Wheel ABS\n\nCommon configuration notes:\n- Do not assume AWD, hybrid, or a different engine unless the garage profile says so.\n- Parts searches must include year/make/model/trim/engine: \"2024 Mazda 3 Sport GT 2.5L L4 NA GAS\".\n- VCdb VehicleID: 369154.\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Mazda",
+    "vehicle_model": "3 Sport",
+    "vehicle_years": "2024",
+    "category": "general",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 369154,
+      "engine": "2.5L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "config",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2024 Mazda 3 Sport GT — Typical faults for this configuration",
+    "content": "Typical DIY-relevant issues for 2024 Mazda 3 Sport GT · 2.5L L4 NA GAS · 6 Transaxle Automatic · FWD · front Disc, rear Disc, ABS: 4-Wheel ABS:\n\nConfig context: Drive=FWD, Brakes=front Disc, rear Disc, ABS: 4-Wheel ABS, Engine=2.5L L4 NA GAS.\n\nHigh-probability symptom paths (adjust to mileage / codes):\n1. Brake pedal soft or noise — inspect pads/rotors matching front Disc, rear Disc, ABS: 4-Wheel ABS; bleed if ABS is present.\n2. Rough idle / misfire — check plugs, coils, intake leaks for 2.5L L4 NA GAS; scan for pending codes.\n3. Battery / no-start — verify 12V health before blaming starters; hybrids need OEM-spec batteries if trim is hybrid.\n4. Vibration / pull — tires and alignment first; on FWD do not invent transfer-case issues unless Drive is AWD/4WD.\n\nFocus Mode: pick the system that matches symptoms AND this configuration. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Mazda",
+    "vehicle_model": "3 Sport",
+    "vehicle_years": "2024",
+    "category": "diagnostics",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 369154,
+      "engine": "2.5L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2024 Mazda 3 Sport GT — Parts fitment precautions",
+    "content": "Parts fitment precautions for 2024 Mazda 3 Sport GT (2.5L L4 NA GAS):\n\n1. Always filter RockAuto / Amazon / AutoZone by exact year + make + model + engine (2.5L L4 NA GAS).\n2. Drive type FWD: never buy AWD-only hubs, prop shafts, or transfer-case parts if the profile is FWD/RWD-only.\n3. Brake kits must match front Disc, rear Disc, ABS: 4-Wheel ABS; ABS vehicles need correct sensor rings / tone wheels.\n4. Filters, plugs, and belts are engine-specific — quote \"2.5L L4 NA GAS\" in the search string.\n5. If OEM number is unknown, say verify with VIN / dealer EPC — do not invent part numbers.\n\nShopping query pattern: \"2024 Mazda 3 Sport GT 2.5L L4 NA GAS <part name>\".\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Mazda",
+    "vehicle_model": "3 Sport",
+    "vehicle_years": "2024",
+    "category": "parts",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 369154,
+      "engine": "2.5L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "parts",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2024 Mazda 3 Sport GT — Front brake pad DIY checklist",
+    "content": "Vehicle config (AutoCare VCdb): 2024 Mazda 3 Sport GT · 2.5L L4 NA GAS · 6 Transaxle Automatic · FWD · front Disc, rear Disc, ABS: 4-Wheel ABS.\nBrake system: front Disc, rear Disc, ABS: 4-Wheel ABS. Drive: FWD.\n\nDIY focus for this configuration:\n1. Confirm pad wear indicators and rotor thickness before ordering.\n2. Match parts to 2024 Mazda 3 Sport GT 2.5L L4 NA GAS — avoid \"universal\" kits when ABS is listed (ABS: yes on this profile).\n3. Tools: jack + stands, lug wrench, C-clamp or caliper tool, torque wrench, brake cleaner.\n4. After install: pump pedal until firm; bed-in with 8–10 moderate stops from ~40 mph.\n5. Search: \"2024 Mazda 3 Sport GT 2.5L L4 NA GAS front brake pads\".\n\nSafety: never work under a vehicle supported only by a jack. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Mazda",
+    "vehicle_model": "3 Sport",
+    "vehicle_years": "2024",
+    "category": "brake",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 369154,
+      "engine": "2.5L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2023 Chevrolet Trailblazer LT — Authoritative configuration card",
+    "content": "Authoritative Vehicle Configuration (AutoCare VCdb) for DIY fitment:\n2023 Chevrolet Trailblazer LT\n- Engine: 1.2L L3 Turbocharged GAS\n- Transmission: 9 Transaxle Automatic\n- Drive: FWD\n- Brakes: front Disc, rear Disc, ABS: 4-Wheel ABS\n\nCommon configuration notes:\n- Do not assume AWD, hybrid, or a different engine unless the garage profile says so.\n- Parts searches must include year/make/model/trim/engine: \"2023 Chevrolet Trailblazer LT 1.2L L3 Turbocharged GAS\".\n- VCdb VehicleID: 301235.\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Chevrolet",
+    "vehicle_model": "Trailblazer",
+    "vehicle_years": "2023",
+    "category": "general",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 301235,
+      "engine": "1.2L L3 Turbocharged GAS",
+      "drive": "FWD",
+      "rag_tier": "config",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2023 Chevrolet Trailblazer LT — Typical faults for this configuration",
+    "content": "Typical DIY-relevant issues for 2023 Chevrolet Trailblazer LT · 1.2L L3 Turbocharged GAS · 9 Transaxle Automatic · FWD · front Disc, rear Disc, ABS: 4-Wheel ABS:\n\nConfig context: Drive=FWD, Brakes=front Disc, rear Disc, ABS: 4-Wheel ABS, Engine=1.2L L3 Turbocharged GAS.\n\nHigh-probability symptom paths (adjust to mileage / codes):\n1. Brake pedal soft or noise — inspect pads/rotors matching front Disc, rear Disc, ABS: 4-Wheel ABS; bleed if ABS is present.\n2. Rough idle / misfire — check plugs, coils, intake leaks for 1.2L L3 Turbocharged GAS; scan for pending codes.\n3. Battery / no-start — verify 12V health before blaming starters; hybrids need OEM-spec batteries if trim is hybrid.\n4. Vibration / pull — tires and alignment first; on FWD do not invent transfer-case issues unless Drive is AWD/4WD.\n\nFocus Mode: pick the system that matches symptoms AND this configuration. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Chevrolet",
+    "vehicle_model": "Trailblazer",
+    "vehicle_years": "2023",
+    "category": "diagnostics",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 301235,
+      "engine": "1.2L L3 Turbocharged GAS",
+      "drive": "FWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2023 Chevrolet Trailblazer LT — Parts fitment precautions",
+    "content": "Parts fitment precautions for 2023 Chevrolet Trailblazer LT (1.2L L3 Turbocharged GAS):\n\n1. Always filter RockAuto / Amazon / AutoZone by exact year + make + model + engine (1.2L L3 Turbocharged GAS).\n2. Drive type FWD: never buy AWD-only hubs, prop shafts, or transfer-case parts if the profile is FWD/RWD-only.\n3. Brake kits must match front Disc, rear Disc, ABS: 4-Wheel ABS; ABS vehicles need correct sensor rings / tone wheels.\n4. Filters, plugs, and belts are engine-specific — quote \"1.2L L3 Turbocharged GAS\" in the search string.\n5. If OEM number is unknown, say verify with VIN / dealer EPC — do not invent part numbers.\n\nShopping query pattern: \"2023 Chevrolet Trailblazer LT 1.2L L3 Turbocharged GAS <part name>\".\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Chevrolet",
+    "vehicle_model": "Trailblazer",
+    "vehicle_years": "2023",
+    "category": "parts",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 301235,
+      "engine": "1.2L L3 Turbocharged GAS",
+      "drive": "FWD",
+      "rag_tier": "parts",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2023 Chevrolet Trailblazer LT — Front brake pad DIY checklist",
+    "content": "Vehicle config (AutoCare VCdb): 2023 Chevrolet Trailblazer LT · 1.2L L3 Turbocharged GAS · 9 Transaxle Automatic · FWD · front Disc, rear Disc, ABS: 4-Wheel ABS.\nBrake system: front Disc, rear Disc, ABS: 4-Wheel ABS. Drive: FWD.\n\nDIY focus for this configuration:\n1. Confirm pad wear indicators and rotor thickness before ordering.\n2. Match parts to 2023 Chevrolet Trailblazer LT 1.2L L3 Turbocharged GAS — avoid \"universal\" kits when ABS is listed (ABS: yes on this profile).\n3. Tools: jack + stands, lug wrench, C-clamp or caliper tool, torque wrench, brake cleaner.\n4. After install: pump pedal until firm; bed-in with 8–10 moderate stops from ~40 mph.\n5. Search: \"2023 Chevrolet Trailblazer LT 1.2L L3 Turbocharged GAS front brake pads\".\n\nSafety: never work under a vehicle supported only by a jack. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Chevrolet",
+    "vehicle_model": "Trailblazer",
+    "vehicle_years": "2023",
+    "category": "brake",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 301235,
+      "engine": "1.2L L3 Turbocharged GAS",
+      "drive": "FWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2013 Hyundai Santa Fe Sport Base — Authoritative configuration card",
+    "content": "Authoritative Vehicle Configuration (AutoCare VCdb) for DIY fitment:\n2013 Hyundai Santa Fe Sport Base\n- Engine: 2.4L L4 NA GAS\n- Transmission: 6 Transaxle Automatic\n- Drive: FWD\n- Brakes: front Disc, rear Disc, ABS: 4-Wheel ABS\n\nCommon configuration notes:\n- Do not assume AWD, hybrid, or a different engine unless the garage profile says so.\n- Parts searches must include year/make/model/trim/engine: \"2013 Hyundai Santa Fe Sport Base 2.4L L4 NA GAS\".\n- VCdb VehicleID: 199915.\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Hyundai",
+    "vehicle_model": "Santa Fe Sport",
+    "vehicle_years": "2013",
+    "category": "general",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 199915,
+      "engine": "2.4L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "config",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2013 Hyundai Santa Fe Sport Base — Typical faults for this configuration",
+    "content": "Typical DIY-relevant issues for 2013 Hyundai Santa Fe Sport Base · 2.4L L4 NA GAS · 6 Transaxle Automatic · FWD · front Disc, rear Disc, ABS: 4-Wheel ABS:\n\nConfig context: Drive=FWD, Brakes=front Disc, rear Disc, ABS: 4-Wheel ABS, Engine=2.4L L4 NA GAS.\n\nHigh-probability symptom paths (adjust to mileage / codes):\n1. Brake pedal soft or noise — inspect pads/rotors matching front Disc, rear Disc, ABS: 4-Wheel ABS; bleed if ABS is present.\n2. Rough idle / misfire — check plugs, coils, intake leaks for 2.4L L4 NA GAS; scan for pending codes.\n3. Battery / no-start — verify 12V health before blaming starters; hybrids need OEM-spec batteries if trim is hybrid.\n4. Vibration / pull — tires and alignment first; on FWD do not invent transfer-case issues unless Drive is AWD/4WD.\n\nFocus Mode: pick the system that matches symptoms AND this configuration. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Hyundai",
+    "vehicle_model": "Santa Fe Sport",
+    "vehicle_years": "2013",
+    "category": "diagnostics",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 199915,
+      "engine": "2.4L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2013 Hyundai Santa Fe Sport Base — Parts fitment precautions",
+    "content": "Parts fitment precautions for 2013 Hyundai Santa Fe Sport Base (2.4L L4 NA GAS):\n\n1. Always filter RockAuto / Amazon / AutoZone by exact year + make + model + engine (2.4L L4 NA GAS).\n2. Drive type FWD: never buy AWD-only hubs, prop shafts, or transfer-case parts if the profile is FWD/RWD-only.\n3. Brake kits must match front Disc, rear Disc, ABS: 4-Wheel ABS; ABS vehicles need correct sensor rings / tone wheels.\n4. Filters, plugs, and belts are engine-specific — quote \"2.4L L4 NA GAS\" in the search string.\n5. If OEM number is unknown, say verify with VIN / dealer EPC — do not invent part numbers.\n\nShopping query pattern: \"2013 Hyundai Santa Fe Sport Base 2.4L L4 NA GAS <part name>\".\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Hyundai",
+    "vehicle_model": "Santa Fe Sport",
+    "vehicle_years": "2013",
+    "category": "parts",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 199915,
+      "engine": "2.4L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "parts",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2013 Hyundai Santa Fe Sport Base — Front brake pad DIY checklist",
+    "content": "Vehicle config (AutoCare VCdb): 2013 Hyundai Santa Fe Sport Base · 2.4L L4 NA GAS · 6 Transaxle Automatic · FWD · front Disc, rear Disc, ABS: 4-Wheel ABS.\nBrake system: front Disc, rear Disc, ABS: 4-Wheel ABS. Drive: FWD.\n\nDIY focus for this configuration:\n1. Confirm pad wear indicators and rotor thickness before ordering.\n2. Match parts to 2013 Hyundai Santa Fe Sport Base 2.4L L4 NA GAS — avoid \"universal\" kits when ABS is listed (ABS: yes on this profile).\n3. Tools: jack + stands, lug wrench, C-clamp or caliper tool, torque wrench, brake cleaner.\n4. After install: pump pedal until firm; bed-in with 8–10 moderate stops from ~40 mph.\n5. Search: \"2013 Hyundai Santa Fe Sport Base 2.4L L4 NA GAS front brake pads\".\n\nSafety: never work under a vehicle supported only by a jack. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Hyundai",
+    "vehicle_model": "Santa Fe Sport",
+    "vehicle_years": "2013",
+    "category": "brake",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 199915,
+      "engine": "2.4L L4 NA GAS",
+      "drive": "FWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2015 Subaru WRX STI Launch Edition — Authoritative configuration card",
+    "content": "Authoritative Vehicle Configuration (AutoCare VCdb) for DIY fitment:\n2015 Subaru WRX STI Launch Edition\n- Engine: 2.5L H4 Turbocharged GAS\n- Transmission: 6 Transaxle Manual\n- Drive: AWD\n- Brakes: front Disc, rear Disc, ABS: 4-Wheel ABS\n\nCommon configuration notes:\n- Do not assume AWD, hybrid, or a different engine unless the garage profile says so.\n- Parts searches must include year/make/model/trim/engine: \"2015 Subaru WRX STI Launch Edition 2.5L H4 Turbocharged GAS\".\n- VCdb VehicleID: 211183.\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Subaru",
+    "vehicle_model": "WRX STI",
+    "vehicle_years": "2015",
+    "category": "general",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 211183,
+      "engine": "2.5L H4 Turbocharged GAS",
+      "drive": "AWD",
+      "rag_tier": "config",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2015 Subaru WRX STI Launch Edition — Typical faults for this configuration",
+    "content": "Typical DIY-relevant issues for 2015 Subaru WRX STI Launch Edition · 2.5L H4 Turbocharged GAS · 6 Transaxle Manual · AWD · front Disc, rear Disc, ABS: 4-Wheel ABS:\n\nConfig context: Drive=AWD, Brakes=front Disc, rear Disc, ABS: 4-Wheel ABS, Engine=2.5L H4 Turbocharged GAS.\n\nHigh-probability symptom paths (adjust to mileage / codes):\n1. Brake pedal soft or noise — inspect pads/rotors matching front Disc, rear Disc, ABS: 4-Wheel ABS; bleed if ABS is present.\n2. Rough idle / misfire — check plugs, coils, intake leaks for 2.5L H4 Turbocharged GAS; scan for pending codes.\n3. Battery / no-start — verify 12V health before blaming starters; hybrids need OEM-spec batteries if trim is hybrid.\n4. Vibration / pull — tires and alignment first; on AWD do not invent transfer-case issues unless Drive is AWD/4WD.\n\nFocus Mode: pick the system that matches symptoms AND this configuration. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Subaru",
+    "vehicle_model": "WRX STI",
+    "vehicle_years": "2015",
+    "category": "diagnostics",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 211183,
+      "engine": "2.5L H4 Turbocharged GAS",
+      "drive": "AWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2015 Subaru WRX STI Launch Edition — Parts fitment precautions",
+    "content": "Parts fitment precautions for 2015 Subaru WRX STI Launch Edition (2.5L H4 Turbocharged GAS):\n\n1. Always filter RockAuto / Amazon / AutoZone by exact year + make + model + engine (2.5L H4 Turbocharged GAS).\n2. Drive type AWD: never buy AWD-only hubs, prop shafts, or transfer-case parts if the profile is FWD/RWD-only.\n3. Brake kits must match front Disc, rear Disc, ABS: 4-Wheel ABS; ABS vehicles need correct sensor rings / tone wheels.\n4. Filters, plugs, and belts are engine-specific — quote \"2.5L H4 Turbocharged GAS\" in the search string.\n5. If OEM number is unknown, say verify with VIN / dealer EPC — do not invent part numbers.\n\nShopping query pattern: \"2015 Subaru WRX STI Launch Edition 2.5L H4 Turbocharged GAS <part name>\".\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Subaru",
+    "vehicle_model": "WRX STI",
+    "vehicle_years": "2015",
+    "category": "parts",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 211183,
+      "engine": "2.5L H4 Turbocharged GAS",
+      "drive": "AWD",
+      "rag_tier": "parts",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2015 Subaru WRX STI Launch Edition — Front brake pad DIY checklist",
+    "content": "Vehicle config (AutoCare VCdb): 2015 Subaru WRX STI Launch Edition · 2.5L H4 Turbocharged GAS · 6 Transaxle Manual · AWD · front Disc, rear Disc, ABS: 4-Wheel ABS.\nBrake system: front Disc, rear Disc, ABS: 4-Wheel ABS. Drive: AWD.\n\nDIY focus for this configuration:\n1. Confirm pad wear indicators and rotor thickness before ordering.\n2. Match parts to 2015 Subaru WRX STI Launch Edition 2.5L H4 Turbocharged GAS — avoid \"universal\" kits when ABS is listed (ABS: yes on this profile).\n3. Tools: jack + stands, lug wrench, C-clamp or caliper tool, torque wrench, brake cleaner.\n4. After install: pump pedal until firm; bed-in with 8–10 moderate stops from ~40 mph.\n5. Search: \"2015 Subaru WRX STI Launch Edition 2.5L H4 Turbocharged GAS front brake pads\".\n\nSafety: never work under a vehicle supported only by a jack. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "Subaru",
+    "vehicle_model": "WRX STI",
+    "vehicle_years": "2015",
+    "category": "brake",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 211183,
+      "engine": "2.5L H4 Turbocharged GAS",
+      "drive": "AWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2017 BMW M3 Base — Authoritative configuration card",
+    "content": "Authoritative Vehicle Configuration (AutoCare VCdb) for DIY fitment:\n2017 BMW M3 Base\n- Engine: 3.0L L6 Turbocharged GAS\n- Transmission: 6 Transaxle Manual\n- Drive: RWD\n- Brakes: front Disc, rear Disc, ABS: 4-Wheel ABS\n\nCommon configuration notes:\n- Do not assume AWD, hybrid, or a different engine unless the garage profile says so.\n- Parts searches must include year/make/model/trim/engine: \"2017 BMW M3 Base 3.0L L6 Turbocharged GAS\".\n- VCdb VehicleID: 241133.\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "BMW",
+    "vehicle_model": "M3",
+    "vehicle_years": "2017",
+    "category": "general",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 241133,
+      "engine": "3.0L L6 Turbocharged GAS",
+      "drive": "RWD",
+      "rag_tier": "config",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2017 BMW M3 Base — Typical faults for this configuration",
+    "content": "Typical DIY-relevant issues for 2017 BMW M3 Base · 3.0L L6 Turbocharged GAS · 6 Transaxle Manual · RWD · front Disc, rear Disc, ABS: 4-Wheel ABS:\n\nConfig context: Drive=RWD, Brakes=front Disc, rear Disc, ABS: 4-Wheel ABS, Engine=3.0L L6 Turbocharged GAS.\n\nHigh-probability symptom paths (adjust to mileage / codes):\n1. Brake pedal soft or noise — inspect pads/rotors matching front Disc, rear Disc, ABS: 4-Wheel ABS; bleed if ABS is present.\n2. Rough idle / misfire — check plugs, coils, intake leaks for 3.0L L6 Turbocharged GAS; scan for pending codes.\n3. Battery / no-start — verify 12V health before blaming starters; hybrids need OEM-spec batteries if trim is hybrid.\n4. Vibration / pull — tires and alignment first; on RWD do not invent transfer-case issues unless Drive is AWD/4WD.\n\nFocus Mode: pick the system that matches symptoms AND this configuration. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "BMW",
+    "vehicle_model": "M3",
+    "vehicle_years": "2017",
+    "category": "diagnostics",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 241133,
+      "engine": "3.0L L6 Turbocharged GAS",
+      "drive": "RWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2017 BMW M3 Base — Parts fitment precautions",
+    "content": "Parts fitment precautions for 2017 BMW M3 Base (3.0L L6 Turbocharged GAS):\n\n1. Always filter RockAuto / Amazon / AutoZone by exact year + make + model + engine (3.0L L6 Turbocharged GAS).\n2. Drive type RWD: never buy AWD-only hubs, prop shafts, or transfer-case parts if the profile is FWD/RWD-only.\n3. Brake kits must match front Disc, rear Disc, ABS: 4-Wheel ABS; ABS vehicles need correct sensor rings / tone wheels.\n4. Filters, plugs, and belts are engine-specific — quote \"3.0L L6 Turbocharged GAS\" in the search string.\n5. If OEM number is unknown, say verify with VIN / dealer EPC — do not invent part numbers.\n\nShopping query pattern: \"2017 BMW M3 Base 3.0L L6 Turbocharged GAS <part name>\".\n\nNot professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "BMW",
+    "vehicle_model": "M3",
+    "vehicle_years": "2017",
+    "category": "parts",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 241133,
+      "engine": "3.0L L6 Turbocharged GAS",
+      "drive": "RWD",
+      "rag_tier": "parts",
+      "generated": true
+    },
+    "is_active": true
+  },
+  {
+    "title": "2017 BMW M3 Base — Front brake pad DIY checklist",
+    "content": "Vehicle config (AutoCare VCdb): 2017 BMW M3 Base · 3.0L L6 Turbocharged GAS · 6 Transaxle Manual · RWD · front Disc, rear Disc, ABS: 4-Wheel ABS.\nBrake system: front Disc, rear Disc, ABS: 4-Wheel ABS. Drive: RWD.\n\nDIY focus for this configuration:\n1. Confirm pad wear indicators and rotor thickness before ordering.\n2. Match parts to 2017 BMW M3 Base 3.0L L6 Turbocharged GAS — avoid \"universal\" kits when ABS is listed (ABS: yes on this profile).\n3. Tools: jack + stands, lug wrench, C-clamp or caliper tool, torque wrench, brake cleaner.\n4. After install: pump pedal until firm; bed-in with 8–10 moderate stops from ~40 mph.\n5. Search: \"2017 BMW M3 Base 3.0L L6 Turbocharged GAS front brake pads\".\n\nSafety: never work under a vehicle supported only by a jack. Not professional mechanic advice. Verify with the official service manual and a certified technician when unsure.",
+    "source": "vcdb_config",
+    "vehicle_make": "BMW",
+    "vehicle_model": "M3",
+    "vehicle_years": "2017",
+    "category": "brake",
+    "metadata": {
+      "region": "US/EU",
+      "vcdb_vehicle_id": 241133,
+      "engine": "3.0L L6 Turbocharged GAS",
+      "drive": "RWD",
+      "rag_tier": "repair",
+      "generated": true
+    },
+    "is_active": true
+  }
+]

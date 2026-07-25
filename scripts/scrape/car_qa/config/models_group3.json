@@ -1,0 +1,149 @@
+[
+  {
+    "brand": "BMW",
+    "model": "X5",
+    "year_range": "2018-2025",
+    "slug": "bmw-x5",
+    "group": 3,
+    "luxury": true,
+    "nhtsa_models": ["X5", "X5 HYBRID", "X5 M"],
+    "luxury_keywords": [
+      "common issues",
+      "maintenance cost",
+      "long term reliability",
+      "oil leak",
+      "coolant",
+      "air suspension",
+      "transfer case"
+    ]
+  },
+  {
+    "brand": "Mercedes-Benz",
+    "model": "GLE",
+    "year_range": "2018-2025",
+    "slug": "mercedes-benz-gle",
+    "group": 3,
+    "luxury": true,
+    "nhtsa_models": ["GLE CLASS", "GLE-CLASS COUPE", "GLE 350 4MATIC", "GLE"],
+    "luxury_keywords": [
+      "common issues",
+      "maintenance cost",
+      "long term reliability",
+      "air suspension",
+      "transmission",
+      "electrical"
+    ]
+  },
+  {
+    "brand": "Hyundai",
+    "model": "Tucson",
+    "year_range": "2018-2025",
+    "slug": "hyundai-tucson",
+    "group": 3,
+    "nhtsa_models": ["TUCSON"]
+  },
+  {
+    "brand": "Hyundai",
+    "model": "Santa Fe",
+    "year_range": "2018-2025",
+    "slug": "hyundai-santa-fe",
+    "group": 3,
+    "nhtsa_models": ["SANTA FE"]
+  },
+  {
+    "brand": "Audi",
+    "model": "Q5",
+    "year_range": "2018-2025",
+    "slug": "audi-q5",
+    "group": 3,
+    "luxury": true,
+    "nhtsa_models": ["Q5"],
+    "luxury_keywords": [
+      "common issues",
+      "maintenance cost",
+      "long term reliability",
+      "oil consumption",
+      "timing chain"
+    ]
+  },
+  {
+    "brand": "Lexus",
+    "model": "RX",
+    "year_range": "2018-2025",
+    "slug": "lexus-rx",
+    "group": 3,
+    "luxury": true,
+    "nhtsa_models": ["RX 350", "RX 350L", "RX 450H", "RX 450HL", "RX"],
+    "luxury_keywords": [
+      "common issues",
+      "maintenance cost",
+      "long term reliability",
+      "hybrid"
+    ]
+  },
+  {
+    "brand": "Acura",
+    "model": "MDX",
+    "year_range": "2018-2025",
+    "slug": "acura-mdx",
+    "group": 3,
+    "luxury": true,
+    "nhtsa_models": ["MDX"],
+    "luxury_keywords": [
+      "common issues",
+      "maintenance cost",
+      "long term reliability"
+    ]
+  },
+  {
+    "brand": "Volvo",
+    "model": "XC90",
+    "year_range": "2018-2025",
+    "slug": "volvo-xc90",
+    "group": 3,
+    "luxury": true,
+    "nhtsa_models": ["XC90 T5", "XC90 T6", "XC90 T8", "XC90H", "XC90"],
+    "luxury_keywords": [
+      "common issues",
+      "maintenance cost",
+      "long term reliability",
+      "air suspension"
+    ]
+  },
+  {
+    "brand": "Porsche",
+    "model": "Cayenne",
+    "year_range": "2018-2025",
+    "slug": "porsche-cayenne",
+    "group": 3,
+    "luxury": true,
+    "nhtsa_models": [
+      "CAYENNE",
+      "CAYENNE S",
+      "CAYENNE E-HYBRID",
+      "CAYENNE COUPE",
+      "CAYENNE TURBO"
+    ],
+    "luxury_keywords": [
+      "common issues",
+      "maintenance cost",
+      "long term reliability",
+      "coolant pipe",
+      "pdk"
+    ]
+  },
+  {
+    "brand": "Genesis",
+    "model": "GV80",
+    "year_range": "2021-2025",
+    "slug": "genesis-gv80",
+    "group": 3,
+    "luxury": true,
+    "nhtsa_models": ["GV80"],
+    "luxury_keywords": [
+      "common issues",
+      "maintenance cost",
+      "long term reliability"
+    ]
+  }
+]

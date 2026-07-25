@@ -1,0 +1,777 @@
+{
+  "id": "coach_scenario_battery_production",
+  "slug": "maintenance_battery",
+  "title": "12V Battery Check & Replacement",
+  "subtitle": "Test, clean, replace — clamp order on a GIF, encouragement every step.",
+  "category": "maintenance",
+  "focus_part": "battery",
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 30,
+    "diy_max": 75,
+    "shop_min": 20,
+    "shop_max": 60
+  },
+  "cost_band_usd": {
+    "diy_min": 120,
+    "diy_max": 280,
+    "shop_min": 180,
+    "shop_max": 450
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "require_safety_disclaimer_every_step": true,
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Correct group size / CCA",
+    "Eye protection and gloves",
+    "Match AGM vs flooded to OEM design",
+    "Memory saver optional"
+  ],
+  "tools_checklist": [
+    "10mm (or vehicle-specific) wrench",
+    "Terminal brush",
+    "Multimeter or load tester",
+    "Terminal protectant"
+  ],
+  "parts_checklist": [
+    "Replacement 12V (correct group + type)",
+    "Terminal hardware if damaged",
+    "Hold-down if missing/rusted"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "age_3_5",
+      "when": {},
+      "coach_note": "Many 12V batteries fade between years 3–5 — test before a cold snap."
+    },
+    {
+      "id": "start_stop_agm",
+      "when": {
+        "model_includes": [
+          "rav4",
+          "cr-v",
+          "tucson",
+          "telluride",
+          "x5",
+          "gle"
+        ]
+      },
+      "coach_note": "Start-stop usually needs AGM (or OEM type). Wrong chemistry shortens life."
+    },
+    {
+      "id": "hybrid_ev_12v",
+      "when": {
+        "powertrain": [
+          "hybrid",
+          "phev",
+          "bev"
+        ]
+      },
+      "coach_note": "Hybrids/EVs still need 12V for computers. Orange HV cables are off-limits.",
+      "prefer_shop": true
+    },
+    {
+      "id": "luxury_ibs",
+      "when": {
+        "brand_includes": [
+          "bmw",
+          "mercedes",
+          "audi",
+          "porsche"
+        ]
+      },
+      "coach_note": "Many European cars need battery registration after replacement.",
+      "prefer_shop": true
+    },
+    {
+      "id": "truck_cca",
+      "when": {
+        "model_includes": [
+          "f-150",
+          "silverado",
+          "1500",
+          "ram"
+        ]
+      },
+      "coach_note": "Trucks with accessories need the right CCA — don't mix old/new randomly on dual setups."
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_battery",
+      "type": "gif",
+      "src": "/coach/battery/hero_battery.gif",
+      "alt": "12V battery and multimeter loop",
+      "shot_description": "Soft pan across AGM + meter + gloves."
+    },
+    {
+      "key": "voltage_test_gif",
+      "type": "gif",
+      "src": "/coach/battery/voltage_test.gif",
+      "alt": "Multimeter on posts",
+      "shot_description": "Probes → ~12.6 rest / ~14.x charging (UI captions)."
+    },
+    {
+      "key": "corrosion_clean",
+      "type": "gif",
+      "src": "/coach/battery/corrosion_clean.gif",
+      "alt": "Before/after terminal clean",
+      "shot_description": "Corrosion wipe loop."
+    },
+    {
+      "key": "clamp_order_gif",
+      "type": "gif",
+      "src": "/coach/battery/clamp_order.gif",
+      "alt": "Neg first off, neg last on",
+      "shot_description": "Animated clamp order with +/− icons."
+    },
+    {
+      "key": "diy_vs_shop_battery",
+      "type": "gif",
+      "src": "/coach/battery/diy_vs_shop.gif",
+      "alt": "DIY vs parts-store install",
+      "shot_description": "Crossfade driveway ↔ lot install."
+    },
+    {
+      "key": "hold_down_video",
+      "type": "video",
+      "src": "/coach/battery/install_holddown.mp4",
+      "poster": "/coach/battery/install_poster.webp",
+      "alt": "Hold-down and terminals",
+      "shot_description": "Seat → hold-down → terminals → protectant."
+    },
+    {
+      "key": "hv_warning_illustration",
+      "type": "gif",
+      "src": "/coach/battery/hv_warning.gif",
+      "alt": "Stay off orange HV cables",
+      "shot_description": "12V highlight, orange HV crossed out."
+    },
+    {
+      "key": "celebrate_battery",
+      "type": "gif",
+      "src": "/coach/battery/celebrate.gif",
+      "alt": "Battery birthday logged",
+      "shot_description": "Calendar stamp + checkmark."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Check the 12V heartbeat",
+      "coach_encourage": "Slow cranks happen — catching them early is smart. Good call.",
+      "personalize": "12V coaching for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next service window ~{{next_service}} miles.",
+      "description": "We'll measure first. No shame if it's due — heat and short trips are hard on batteries.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_battery",
+      "focus_part": "battery",
+      "duration_minutes": 1,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "label": "Step 1 of 7 · Start · 14%",
+        "fraction": 0.14,
+        "percent": 14
+      },
+      "safety_warning": "Eye protection on. Never lean over while clamping near a gassing battery.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "start_test",
+          "label": "Test the battery",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "voltage_test"
+        },
+        {
+          "id": "wont_start",
+          "label": "Won't start / jump help",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "jump_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start_test",
+          "goto": "voltage_test"
+        },
+        {
+          "when_button_id": "wont_start",
+          "goto": "jump_help"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "powertrain": [
+              "hybrid",
+              "phev",
+              "bev"
+            ]
+          },
+          "title": "12V still matters on hybrids/EVs",
+          "coach_encourage": "Staying on the small 12V only — perfect.",
+          "description": "Orange high-voltage cables are off-limits. If access is buried near HV, prefer a shop.",
+          "visual_asset_key": "hv_warning_illustration",
+          "safety_warning": "Do not cut, unbolt, or probe orange HV cables."
+        }
+      ],
+      "is_operational": false,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": null
+    },
+    {
+      "id": "jump_help",
+      "title": "Safe jump / no-start",
+      "coach_encourage": "We'll get you a path without frying modules. Slowly.",
+      "description": "Use a quality jump pack on the correct posts/jump points. Still dead after a healthy jump? Test/replace path. Chat for model-specific jump points.",
+      "visual_type": "gif",
+      "visual_asset_key": "voltage_test_gif",
+      "duration_minutes": 5,
+      "difficulty": "Medium",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "label": "No-start path · 14%",
+        "fraction": 0.14,
+        "percent": 14
+      },
+      "trust_nudge": "If you're unsure about jump points, stop and find a nearby shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "can_test",
+          "label": "I can test voltage now",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "voltage_test"
+        },
+        {
+          "id": "chat_jump",
+          "label": "Coach me in chat",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "My car needs a jump or won't start. Safe jump-pack steps for my vehicle?"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "can_test",
+          "goto": "voltage_test"
+        }
+      ],
+      "is_operational": true,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": {
+        "required": true,
+        "title": "Jump-start risk",
+        "body": "Wrong jump points can damage modules. Use vehicle-specific jump posts when marked. When unsure, roadside/shop help.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "personalize": "For your {{year}} {{make}} {{model}} at {{mileage}} miles — next check near {{next_service}} miles."
+    },
+    {
+      "id": "voltage_test",
+      "title": "Resting & charging voltage",
+      "coach_encourage": "Numbers remove the guesswork — nice work. Nice momentum — you're about 28% through.",
+      "description": "Engine off ~12.4–12.7V rested is healthy. Below ~12.1V is discharged. Running often ~13.7–14.7V if charging.",
+      "visual_type": "gif",
+      "visual_asset_key": "voltage_test_gif",
+      "duration_minutes": 8,
+      "difficulty": "Easy",
+      "tools": [
+        "Multimeter"
+      ],
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "label": "Step 2 of 7 · Test · 28%",
+        "fraction": 0.28,
+        "percent": 28
+      },
+      "safety_warning": "Don't short probes across posts. Keep jewelry clear.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "healthy",
+          "label": "Looks healthy",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "clean_terminals",
+          "set_flags": {
+            "voltage": "ok"
+          }
+        },
+        {
+          "id": "weak",
+          "label": "Weak / not sure",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "voltage_help",
+          "set_flags": {
+            "voltage": "weak_or_unsure"
+          }
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "healthy",
+          "goto": "clean_terminals"
+        },
+        {
+          "when_button_id": "weak",
+          "goto": "voltage_help"
+        }
+      ],
+      "personalize": "At {{mileage}} mi, many batteries are in the 3–5 year fade window — measure first. Next service window ~{{next_service}} miles.",
+      "is_operational": true,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": null
+    },
+    {
+      "id": "voltage_help",
+      "title": "Reading the meter together",
+      "coach_encourage": "Photo beats guessing. You're doing this right. Nice momentum — you're about 28% through.",
+      "description": "Weak resting voltage or fails load test → replace path. Healthy but weird symptoms → clean terminals first. Photo the reading if you want a second opinion.",
+      "visual_type": "gif",
+      "visual_asset_key": "voltage_test_gif",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "label": "Step 2 · Help · 28%",
+        "fraction": 0.28,
+        "percent": 28
+      },
+      "action_buttons": [
+        {
+          "id": "replace_path",
+          "label": "Replace path — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "diy_or_shop"
+        },
+        {
+          "id": "photo_meter",
+          "label": "Photo the reading",
+          "style": "secondary",
+          "action": "take_photo"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "replace_path",
+          "goto": "diy_or_shop"
+        }
+      ],
+      "is_operational": true,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": null,
+      "personalize": "For your {{year}} {{make}} {{model}} at {{mileage}} miles — next check near {{next_service}} miles."
+    },
+    {
+      "id": "clean_terminals",
+      "title": "Clean corrosion",
+      "coach_encourage": "This quick win fixes many 'dead battery' ghosts. Keep going! You're crushing it — roughly 43% done.",
+      "description": "Fuzzy white/green? Brush clean (baking soda mix for flooded). Tight, clean clamps matter.",
+      "visual_type": "gif",
+      "visual_asset_key": "corrosion_clean",
+      "duration_minutes": 15,
+      "difficulty": "Easy",
+      "tools": [
+        "Terminal brush",
+        "Gloves",
+        "Eye protection"
+      ],
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "label": "Step 3 of 7 · Clean · 43%",
+        "fraction": 0.43,
+        "percent": 43
+      },
+      "safety_warning": "Disconnect negative first if clamps come off. Wash skin if splashed.",
+      "trust_nudge": "If you're unsure about disconnect order, stop and find a nearby shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "cleaned_ok",
+          "label": "Starts fine now",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_battery",
+          "set_flags": {
+            "fixed_by_clean": true
+          }
+        },
+        {
+          "id": "still_weak",
+          "label": "Still weak — replace",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "diy_or_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "cleaned_ok",
+          "goto": "log_battery",
+          "note": "Fixed by clean"
+        },
+        {
+          "when_button_id": "still_weak",
+          "goto": "diy_or_shop"
+        }
+      ],
+      "personalize": "Clean clamps on your {{make}} before condemning the battery. At {{mileage}} miles, next service window ~{{next_service}} miles.",
+      "is_operational": true,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": {
+        "required": true,
+        "title": "Battery acid & sparks",
+        "body": "Corrosion cleaners and sparks near a gassing battery can injure eyes/skin or cause explosion risk. Eye protection on. Neg first if clamps come off.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      }
+    },
+    {
+      "id": "diy_or_shop",
+      "title": "DIY swap or shop coding?",
+      "coach_encourage": "Paying for registration on a Euro car is wisdom. Look at you — about 57% complete. Keep going.",
+      "description": "Many gas cars are straightforward DIY. AGM start-stop, trunk batteries, IBS, or European registration → parts-store or indie shop.",
+      "visual_type": "gif",
+      "visual_asset_key": "diy_vs_shop_battery",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "label": "Step 4 of 7 · Path · 57%",
+        "fraction": 0.57,
+        "percent": 57
+      },
+      "safety_warning": "Wrong AGM/flooded type or skipping registration can cause charging faults.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "diy",
+          "label": "DIY — coach me",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "remove_install",
+          "set_flags": {
+            "path": "diy"
+          }
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop",
+          "set_flags": {
+            "path": "shop"
+          }
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "diy",
+          "goto": "remove_install"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "brand_includes": [
+              "bmw",
+              "mercedes",
+              "audi"
+            ]
+          },
+          "description": "Plan battery registration with a scan tool. No tool? Buy battery + pay for coding.",
+          "coach_encourage": "Unregistered batteries can over/under charge — shop is fine. Look at you — about 57% complete. Keep going."
+        },
+        {
+          "when": {
+            "powertrain": [
+              "hybrid",
+              "phev",
+              "bev"
+            ]
+          },
+          "description": "Tight access near HV → shop. Your job is 12V only.",
+          "safety_warning": "Orange cables = stop."
+        }
+      ],
+      "personalize": "For your {{model}}, AGM/registration rules may favor a shop install. At {{mileage}} miles, next service window ~{{next_service}} miles.",
+      "is_operational": false,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": null
+    },
+    {
+      "id": "remove_install",
+      "title": "Clamp order: remove & install",
+      "coach_encourage": "This step is important — watch the clamp-order GIF, then go slow. Look at you — about 71% complete. Keep going.",
+      "description": "Neg (−) off first, then pos (+). Swap, secure hold-down. Pos on first, neg last. Light protectant. No tools left on posts.",
+      "visual_type": "gif",
+      "visual_asset_key": "clamp_order_gif",
+      "duration_minutes": 25,
+      "difficulty": "Medium",
+      "tools": [
+        "Wrench",
+        "Hold-down tools",
+        "Grease"
+      ],
+      "focus_part": "battery",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "label": "Step 5 of 7 · Install · 71%",
+        "fraction": 0.71,
+        "percent": 71
+      },
+      "safety_warning": "Neg first off / last on reduces short risk if a wrench hits ground.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "installed",
+          "label": "New battery secured",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "verify_relearn"
+        },
+        {
+          "id": "problem",
+          "label": "Hold-down / order help",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "install_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "installed",
+          "goto": "verify_relearn"
+        },
+        {
+          "when_button_id": "problem",
+          "goto": "install_help"
+        }
+      ],
+      "personalize": "Clamp order on your {{make}}: neg off first, neg on last. At {{mileage}} miles, next service window ~{{next_service}} miles.",
+      "is_operational": true,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": {
+        "required": true,
+        "title": "12V disconnect / reconnect",
+        "body": "Wrong clamp order can short the electrical system. Hybrids/EVs: 12V only — never disturb orange HV cables. Registration may be required on some brands.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      }
+    },
+    {
+      "id": "install_help",
+      "title": "Stuck tray or order refresh",
+      "coach_encourage": "Pausing on a rusted hold-down beats a cracked case. Look at you — about 71% complete. Keep going.",
+      "description": "Replay clamp-order GIF. Rusted hold-down: penetrating oil, correct tools — or shop. Never pry against the battery case hard.",
+      "visual_type": "gif",
+      "visual_asset_key": "clamp_order_gif",
+      "duration_minutes": 5,
+      "difficulty": "Medium",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "label": "Step 5 · Help · 71%",
+        "fraction": 0.71,
+        "percent": 71
+      },
+      "trust_nudge": "If you're unsure, stop and find a nearby shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "continue",
+          "label": "Resolved — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "verify_relearn"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "continue",
+          "goto": "verify_relearn"
+        }
+      ],
+      "is_operational": true,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": null,
+      "personalize": "For your {{year}} {{make}} {{model}} at {{mileage}} miles — next check near {{next_service}} miles."
+    },
+    {
+      "id": "verify_relearn",
+      "title": "Start, verify, relearn",
+      "coach_encourage": "Final checks — almost celebrating. Take your time. Final stretch — you're about 86% through.",
+      "description": "Start, recheck charging voltage, note warnings. Windows may need up+hold relearn; some cars need scan-tool registration.",
+      "visual_type": "video",
+      "visual_asset_key": "hold_down_video",
+      "duration_minutes": 15,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "label": "Step 6 of 7 · Verify · 86%",
+        "fraction": 0.86,
+        "percent": 86
+      },
+      "safety_warning": "Sulfur smell, smoke, or hot cables — shut down and get help.",
+      "trust_nudge": "If warning lights remain and you're unsure, stop and find a nearby shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "all_good",
+          "label": "Starts & charges OK",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_battery"
+        },
+        {
+          "id": "warnings",
+          "label": "Warnings remain",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "After battery replacement I still have warning lights. Registration vs other faults?"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "all_good",
+          "goto": "log_battery"
+        }
+      ],
+      "personalize": "After install on your {{model}}, confirm charging voltage before a long trip. At {{mileage}} miles, next service window ~{{next_service}} miles.",
+      "is_operational": true,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": {
+        "required": true,
+        "title": "Post-install electrical check",
+        "body": "Smoke, sulfur smell, or hot cables means shut down and get help. Unregistered Euro batteries can charge incorrectly.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      }
+    },
+    {
+      "id": "log_battery",
+      "title": "Log the battery birthday",
+      "coach_encourage": "Roadside drama avoided — excellent work! You made it through the flow — time to celebrate.",
+      "personalize": "Birthday logged for {{make}} {{model}}. Retest before winter. At {{mileage}} miles, next service window ~{{next_service}} miles.",
+      "description": "Save install date, brand, group size. Recycle the old battery (core credit). Nice job.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_battery",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 7,
+        "label": "Step 7 of 7 · Finish · 100%",
+        "fraction": 1,
+        "percent": 100
+      },
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log battery service",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "battery"
+        },
+        {
+          "id": "parts",
+          "label": "Find a battery",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "battery"
+        }
+      ],
+      "is_operational": false,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "risk_confirm": null
+    }
+  ],
+  "completion": {
+    "title": "12V service done",
+    "coach_encourage": "Systems online — you handled the electrics calmly. You made it through the flow — time to celebrate.",
+    "description": "Expect 3–5+ years from a quality AGM in moderate climates. Retest before winter on short-trip duty cycles.",
+    "log_category": "battery",
+    "next_check_miles_default": 15000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Charging system Qs",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "How do I know if my alternator or DC-DC is healthy after a battery swap?"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390×844 EN coach shell (US/EU)\n• Progress bar + percent label from step.progress\n• Hero GIF/video full-bleed\n• coach_encourage (warm) → personalize (mileage/next_service) → body\n• Sticky footer: short safety_disclaimer on EVERY step\n• Risk modal: full disclaimer + checkbox “I have read and understand the risks”\n• Cancel always: Find a nearby shop → book_shop\n• Max 2 CTAs; graphite/amber workshop palette",
+    "react_native_pseudocode": "See CoachScenarioPlayer.production.tsx.example — load *_production.json only."
+  },
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ]
+}

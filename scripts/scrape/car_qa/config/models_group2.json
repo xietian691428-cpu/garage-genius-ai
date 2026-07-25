@@ -1,0 +1,98 @@
+[
+  {
+    "brand": "Kia",
+    "model": "Telluride",
+    "year_range": "2018-2025",
+    "slug": "kia-telluride",
+    "group": 2,
+    "nhtsa_models": ["TELLURIDE"]
+  },
+  {
+    "brand": "Ram",
+    "model": "1500",
+    "year_range": "2018-2025",
+    "slug": "ram-1500",
+    "group": 2,
+    "nhtsa_models": ["1500", "1500 CLASSIC", "1500 CREW CAB TRX"]
+  },
+  {
+    "brand": "Subaru",
+    "model": "Forester",
+    "year_range": "2018-2025",
+    "slug": "subaru-forester",
+    "group": 2,
+    "nhtsa_models": ["FORESTER"]
+  },
+  {
+    "brand": "Subaru",
+    "model": "Outback",
+    "year_range": "2018-2025",
+    "slug": "subaru-outback",
+    "group": 2,
+    "nhtsa_models": ["OUTBACK"]
+  },
+  {
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "year_range": "2018-2025",
+    "slug": "jeep-wrangler",
+    "group": 2,
+    "nhtsa_models": ["WRANGLER", "WRANGLER 4XE"]
+  },
+  {
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "year_range": "2018-2025",
+    "slug": "jeep-grand-cherokee",
+    "group": 2,
+    "nhtsa_models": ["GRAND CHEROKEE", "GRAND CHEROKEE L", "GRAND CHEROKEE 4XE"]
+  },
+  {
+    "brand": "Tesla",
+    "model": "Model Y",
+    "year_range": "2020-2025",
+    "slug": "tesla-model-y",
+    "group": 2,
+    "ev": true,
+    "nhtsa_models": [
+      "MODEL Y 5-SEAT",
+      "MODEL Y 7-SEAT",
+      "MODEL Y  5-SEAT",
+      "MODEL Y",
+      "Model Y"
+    ],
+    "ev_keywords": [
+      "battery degradation",
+      "charging",
+      "software update",
+      "range",
+      "phantom drain",
+      "heat pump",
+      "supercharger"
+    ]
+  },
+  {
+    "brand": "Hyundai",
+    "model": "Tucson",
+    "year_range": "2018-2025",
+    "slug": "hyundai-tucson",
+    "group": 2,
+    "nhtsa_models": ["TUCSON"]
+  },
+  {
+    "brand": "Hyundai",
+    "model": "Santa Fe",
+    "year_range": "2018-2025",
+    "slug": "hyundai-santa-fe",
+    "group": 2,
+    "nhtsa_models": ["SANTA FE"]
+  },
+  {
+    "brand": "Mazda",
+    "model": "CX-5",
+    "year_range": "2018-2025",
+    "slug": "mazda-cx-5",
+    "group": 2,
+    "nhtsa_models": ["CX-5", "CX5"]
+  }
+]

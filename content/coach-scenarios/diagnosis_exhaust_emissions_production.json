@@ -1,0 +1,619 @@
+{
+  "id": "coach_scenario_exhaust_emissions_production",
+  "slug": "diagnosis_exhaust_emissions",
+  "title": "Exhaust System & Emissions Issues",
+  "subtitle": "Rattles, sulfur smells, and catalyst codes — safe inspection first, emissions legality always.",
+  "category": "diagnosis",
+  "focus_part": "engine",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 20,
+    "diy_max": 60,
+    "shop_min": 60,
+    "shop_max": 240
+  },
+  "cost_band_usd": {
+    "diy_min": 0,
+    "diy_max": 80,
+    "shop_min": 150,
+    "shop_max": 2500
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel, step feedback Yes/No. Phase 3 exhaust: no illegal delete advice; heat and CO hazards.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Cold or cool exhaust for close visuals",
+    "OBD helpful for P0420/P0430 etc."
+  ],
+  "tools_checklist": [
+    "Flashlight",
+    "Gloves",
+    "OBD scanner",
+    "Jack stands if underbody visual"
+  ],
+  "parts_checklist": [
+    "Gaskets/hangers DIY sometimes",
+    "Catalysts/DPF = shop + legal paths only"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "catalyst_code",
+      "when": {},
+      "coach_note": "P0420/P0430 often needs confirmation — don't replace a cat on a code alone without upstream fixes.",
+      "prefer_shop": true
+    },
+    {
+      "id": "diesel_dpf",
+      "when": {
+        "powertrain": [
+          "diesel"
+        ]
+      },
+      "coach_note": "Diesel DPF/DEF issues need proper regen diagnosis — forced deletes are illegal in many regions.",
+      "prefer_shop": true
+    },
+    {
+      "id": "high_miles_ex",
+      "when": {
+        "mileage_min": 100000
+      },
+      "coach_note": "High-mile exhaust: hangers, flex pipes, and heat shields rattle before cats fail.",
+      "interval_miles": 5000
+    },
+    {
+      "id": "euro_emissions",
+      "when": {
+        "markets": [
+          "EU",
+          "GB"
+        ]
+      },
+      "coach_note": "EU/UK MOT/emissions rules are strict — keep original emissions equipment intact.",
+      "prefer_shop": true
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_ex",
+      "type": "gif",
+      "src": "/coach/exhaust/hero.gif",
+      "alt": "Exhaust system undercarriage calm",
+      "shot_description": "No sparks/race deletes."
+    },
+    {
+      "key": "heat_shield",
+      "type": "gif",
+      "src": "/coach/exhaust/heat_shield.gif",
+      "alt": "Rattling heat shield",
+      "shot_description": "Shield vibration icon."
+    },
+    {
+      "key": "smell_triage",
+      "type": "gif",
+      "src": "/coach/exhaust/smell.gif",
+      "alt": "Exhaust smell triage",
+      "shot_description": "Sulfur / exhaust in cabin icons."
+    },
+    {
+      "key": "obd_cat",
+      "type": "gif",
+      "src": "/coach/exhaust/obd_cat.gif",
+      "alt": "Catalyst efficiency code card",
+      "shot_description": "P0420 plain English."
+    },
+    {
+      "key": "underbody",
+      "type": "video",
+      "src": "/coach/exhaust/underbody.mp4",
+      "alt": "Cool exhaust visual",
+      "shot_description": "25s hangers and rust — cool only.",
+      "poster": "/coach/exhaust/underbody_poster.webp"
+    },
+    {
+      "key": "legal_note",
+      "type": "gif",
+      "src": "/coach/exhaust/legal.gif",
+      "alt": "Keep emissions equipment",
+      "shot_description": "Cat/DPF stay on vehicle."
+    },
+    {
+      "key": "celebrate_ex",
+      "type": "gif",
+      "src": "/coach/exhaust/celebrate.gif",
+      "alt": "Exhaust check logged",
+      "shot_description": "Quiet pipe checkmark."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Exhaust & emissions — calm triage",
+      "coach_encourage": "We'll keep you legal and away from hot pipes. Good call starting here. You're just getting started — I'll stay with you.",
+      "personalize": "Exhaust coach for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next check ~{{next_service}} miles.",
+      "description": "Rattles, smells, and catalyst codes. We will not coach illegal emissions deletes — keep the equipment intact.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_ex",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 8,
+        "fraction": 0.125,
+        "percent": 13,
+        "label": "Step 1 of 8 · Start · 13%"
+      },
+      "safety_warning": "Exhaust gases contain carbon monoxide — never run the engine in a closed garage for diagnosis.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start triage",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "urgency"
+        },
+        {
+          "id": "cabin",
+          "label": "Exhaust smell in cabin",
+          "style": "danger",
+          "action": "goto",
+          "next_step_id": "co_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "urgency"
+        },
+        {
+          "when_button_id": "cabin",
+          "goto": "co_help"
+        }
+      ]
+    },
+    {
+      "id": "co_help",
+      "title": "Cabin exhaust smell — stop",
+      "coach_encourage": "Treating this as urgent is exactly right. You're just getting started — I'll stay with you.",
+      "personalize": "Safety first for your {{make}} at {{mileage}} miles — resolve before {{next_service}} miles of driving.",
+      "description": "Open windows, avoid enclosed spaces, and find a nearby shop. Cabin exhaust smell can mean a leak ahead of the cabin intake — CO risk.",
+      "visual_type": "gif",
+      "visual_asset_key": "smell_triage",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 8,
+        "fraction": 0.125,
+        "percent": 13,
+        "label": "Urgent path · 13%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Carbon monoxide hazard",
+        "body": "Exhaust odor in the cabin can indicate a dangerous leak. Do not continue DIY diagnosis in an enclosed space. Get fresh air and find a nearby shop immediately.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "danger",
+          "action": "book_shop"
+        },
+        {
+          "id": "chat",
+          "label": "Describe the smell",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Exhaust smell in cabin. When it happens:"
+        }
+      ]
+    },
+    {
+      "id": "urgency",
+      "title": "What brought you here?",
+      "coach_encourage": "Clear starting points make faster fixes. Nice momentum — you're about 25% through.",
+      "personalize": "Path pick for your {{model}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Heat-shield rattle, sulfur/rotten-egg smell, CEL with catalyst code, or underbody rust/leak — choose closest.",
+      "visual_type": "gif",
+      "visual_asset_key": "smell_triage",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 8,
+        "fraction": 0.25,
+        "percent": 25,
+        "label": "Step 2 of 8 · Path · 25%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "rattle",
+          "label": "Rattle / shield",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "cool_visual",
+          "set_flags": {
+            "symptom": "rattle"
+          }
+        },
+        {
+          "id": "codes",
+          "label": "CEL / emissions code",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "scan",
+          "set_flags": {
+            "symptom": "code"
+          }
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "rattle",
+          "goto": "cool_visual"
+        },
+        {
+          "when_button_id": "codes",
+          "goto": "scan"
+        }
+      ]
+    },
+    {
+      "id": "scan",
+      "title": "Read emissions-related codes",
+      "coach_encourage": "Codes first — cats are expensive to guess. You're crushing it — roughly 38% done.",
+      "personalize": "Scan your {{make}} at {{mileage}} miles before buying parts near {{next_service}} miles.",
+      "description": "Record P0420/P0430 and upstream O2/misfire codes. Fix misfires and exhaust leaks before condemning a catalyst.",
+      "visual_type": "gif",
+      "visual_asset_key": "obd_cat",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 8,
+        "fraction": 0.375,
+        "percent": 38,
+        "label": "Step 3 of 8 · Scan · 38%"
+      },
+      "tools": [
+        "OBD-II scanner"
+      ],
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "have",
+          "label": "Codes saved",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "legal"
+        },
+        {
+          "id": "chat",
+          "label": "Send codes to coach",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Emissions/exhaust codes:"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "have",
+          "goto": "legal"
+        }
+      ]
+    },
+    {
+      "id": "cool_visual",
+      "title": "Inspect only when cool",
+      "coach_encourage": "This step is important — hot exhaust burns instantly. You're crushing it — roughly 50% done.",
+      "personalize": "Cool visual for your {{model}} at {{mileage}} miles. Recheck hangers by ~{{next_service}} miles.",
+      "description": "With the exhaust cool, look for broken hangers, loose heat shields, rust holes, and soot at joints. Don't grab pipes to test heat.",
+      "visual_type": "video",
+      "visual_asset_key": "underbody",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 8,
+        "fraction": 0.5,
+        "percent": 50,
+        "label": "Step 4 of 8 · Visual · 50%"
+      },
+      "safety_warning": "Burns and CO risk — engine off, system cool, ventilated area.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Hot exhaust & underbody risk",
+        "body": "Exhaust components cause severe burns. Never support the car on a jack alone for underbody work. If you must lift, use stands — or find a nearby shop for inspection.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "seen",
+          "label": "Visual done",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "legal"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "seen",
+          "goto": "legal"
+        }
+      ]
+    },
+    {
+      "id": "legal",
+      "title": "Keep emissions equipment legal",
+      "coach_encourage": "Staying compliant protects you at inspection time. Look at you — about 63% complete. Keep going.",
+      "personalize": "Compliance note for your {{make}} at {{mileage}} miles in your market. Recheck before {{next_service}} miles / next test.",
+      "description": "Do not remove catalytic converters, DPFs, or defeat emissions monitors. 'Off-road' deletes can be illegal for street use and fail inspection.",
+      "visual_type": "gif",
+      "visual_asset_key": "legal_note",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 8,
+        "fraction": 0.625,
+        "percent": 63,
+        "label": "Step 5 of 8 · Legal · 63%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Emissions tampering is illegal in many regions",
+        "body": "Removing or defeating required emissions equipment can violate law and create unsafe exhaust conditions. Continue only with legal repair paths. When unsure, find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "legal_ok",
+          "label": "I understand — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "repair_path"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "legal_ok",
+          "goto": "repair_path"
+        }
+      ]
+    },
+    {
+      "id": "repair_path",
+      "title": "DIY vs shop repairs",
+      "coach_encourage": "Heat shields can be DIY; cats usually aren't. Look at you — about 75% complete. Keep going.",
+      "personalize": "Repair path for your {{model}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Owner-possible: heat-shield screws/clamps when cool and accessible. Shop: welded pipes, catalysts, DPF, flex pipe, oxygen sensors in tight heat shields.",
+      "visual_type": "gif",
+      "visual_asset_key": "heat_shield",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 8,
+        "fraction": 0.75,
+        "percent": 75,
+        "label": "Step 6 of 8 · Path · 75%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "primary",
+          "action": "book_shop"
+        },
+        {
+          "id": "finish",
+          "label": "Log inspection",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "log_ex"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "finish",
+          "goto": "log_ex"
+        }
+      ]
+    },
+    {
+      "id": "monitor",
+      "title": "Monitor after upstream fixes",
+      "coach_encourage": "Patience on catalyst codes saves money. Final stretch — you're about 88% through.",
+      "personalize": "Monitor window for your {{make}} at {{mileage}} miles toward {{next_service}} miles.",
+      "description": "After fixing misfires/leaks, drive through ready cycles before replacing a cat. If sulfur smell is strong with a fresh cat concern, shop diagnosis beats guesswork.",
+      "visual_type": "gif",
+      "visual_asset_key": "obd_cat",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 8,
+        "fraction": 0.875,
+        "percent": 88,
+        "label": "Step 7 of 8 · Monitor · 88%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "ok",
+          "label": "Finish & log",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_ex"
+        },
+        {
+          "id": "still",
+          "label": "Smell/code remains",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "ok",
+          "goto": "log_ex"
+        }
+      ]
+    },
+    {
+      "id": "log_ex",
+      "title": "Log exhaust / emissions notes",
+      "coach_encourage": "Quiet, legal, documented — that's the win. Well done! You made it through the flow — time to celebrate.",
+      "personalize": "Logged for {{make}} {{model}} at {{mileage}} miles. Next emissions-minded check ~{{next_service}} miles.",
+      "description": "Save codes, smell timing, and shield notes. Retest after upstream engine fixes before replacing a catalyst.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_ex",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 8,
+        "total": 8,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 8 of 8 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log exhaust session",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "exhaust"
+        },
+        {
+          "id": "chat",
+          "label": "Ask about my code",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Help interpret this exhaust/emissions code:"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Exhaust / emissions triage complete",
+    "coach_encourage": "You stayed legal and heat-safe. Well done! You made it through the flow — time to celebrate.",
+    "description": "Keep codes and smell notes. Fix upstream misfires before condemning a catalytic converter.",
+    "log_category": "exhaust",
+    "next_check_miles_default": 5000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to guides",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Decode a code",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Exhaust/emissions code or smell for my vehicle:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390×844 EN exhaust coach.\n• Never CTA deletes\n• Hot exhaust risk\n• Feedback on",
+    "react_native_pseudocode": "CoachScenarioPlayer — load diagnosis_exhaust_emissions_production.json"
+  }
+}

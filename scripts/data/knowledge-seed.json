@@ -1,0 +1,325 @@
+[
+  {
+    "title": "2018-2022 Toyota Camry 2.5L Dynamic Force Engine: Intermittent Rough Idle and Misfire Codes P0300-P0304",
+    "content": "A common fault on the 2018-2022 Camry with the A25A-FKS engine involves intermittent rough idle, especially when the engine is warm and the A/C is on. Drivers may notice a slight shudder at stoplights and, in some cases, the MIL illuminates with random or cylinder-specific misfire codes (P0300, P0301-P0304). The root cause is often carbon buildup on the intake valves due to the direct-injection system, which disrupts airflow at low RPM. Additionally, the high-pressure fuel pump may produce excessive noise and cause fuel pressure fluctuations.\n\n**Diagnostic Procedure:**\n1. Connect a scan tool and monitor Fuel Rail Pressure (FRP) at idle; it should be ~4-6 MPa. If pressure oscillates more than 0.5 MPa, suspect the high-pressure pump.\n2. Perform a cylinder contribution test using the scan tool's active test function.\n3. Inspect the intake manifold for excessive carbon deposits; a borescope through the throttle body can confirm.\n4. Check the MAF sensor readings; clean if contaminated.\n\n**Repair Procedure:**\n- Perform a professional intake valve cleaning using walnut blasting or a chemical carbon-cleaning system (e.g., BG GDI). Do not use throttle-body cleaner as it will not reach the intake valves.\n- If fuel pressure is unstable, replace the high-pressure fuel pump assembly (Toyota P/N 23100-0P010) and update the engine ECU calibration to the latest T-SB-0123-21, which improves fuel pressure control logic.\n- Clear codes and perform idle re-learn procedure: turn ignition ON (engine off) for 2 minutes, then start engine and let idle with all accessories off for 5 minutes.\n\n**Preventive Maintenance:** Recommend using Top Tier detergent gasoline and performing an intake valve cleaning every 30,000 miles. Also, change engine oil at 5,000-mile intervals (not 10,000) to reduce blow-by and carbon formation.\n\n**Safety:** High-pressure fuel systems can spray fuel at dangerous pressure. Relieve fuel pressure before opening lines. Not professional mechanic advice — seek a shop if you are unsure.",
+    "source": "common_fault",
+    "vehicle_make": "Toyota",
+    "vehicle_model": "Camry",
+    "vehicle_years": "2018-2022",
+    "category": "engine",
+    "metadata": {
+      "severity": "medium",
+      "common_mileage": 40000,
+      "estimated_repair_cost": "$450 - $850",
+      "region": "US/EU",
+      "dtc": ["P0300", "P0301", "P0302", "P0303", "P0304"]
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Honda Civic 1.5L Turbo: Oil Dilution and Fuel Smell in Cabin (TSB 18-100)",
+    "content": "Owners of the 2018-2022 Civic with the L15B7 turbo engine frequently report a strong fuel odor in the cabin during cold starts and an engine oil level that rises above the full mark. This is due to oil dilution from unburned fuel during cold-start enrichment, particularly in short-trip, cold-weather driving. Honda issued TSB 18-100 (multiple revisions) to address this. The TSB requires replacing the PCV valve, updating the Powertrain Control Module (PCM) software, and, in severe cases, installing an oil pan heater for extreme climates.\n\n**Diagnostic Steps:**\n- Verify the customer's driving pattern; short trips under 10 minutes are a strong indicator.\n- Check the oil level; if it's 10mm or more above the max line, proceed.\n- Perform an oil analysis to confirm fuel contamination percentage (should be under 2.5%).\n- Inspect the PCV valve for sticking; replace if necessary.\n\n**Repair Procedure:**\n1. Update the PCM with the latest calibration from TSB 18-100 (part of the software suite version 3.2.1 or higher).\n2. Replace PCV valve (Honda P/N 17130-59B-003).\n3. Change engine oil and filter with 0W-20 API SN Plus or higher.\n4. If the customer lives in a region with average temperatures below -10°C (14°F), install the optional oil pan heater kit (Honda P/N 08T44-TBA-100).\n\n**Customer Guidance:** Advise owners to let the engine idle for 30-60 seconds on cold starts before driving and to take occasional longer highway drives (20+ minutes) to allow the oil to reach full operating temperature and evaporate fuel from the crankcase.\n\n**Safety:** Fuel-diluted oil reduces lubrication — do not delay oil service if the level is rising. Not professional mechanic advice.",
+    "source": "tsb",
+    "vehicle_make": "Honda",
+    "vehicle_model": "Civic",
+    "vehicle_years": "2018-2022",
+    "category": "engine",
+    "metadata": {
+      "severity": "medium",
+      "common_mileage": 15000,
+      "estimated_repair_cost": "$0 - $200 (software update under warranty, PCV part ~$25)",
+      "tsb": "18-100",
+      "region": "US/EU"
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Toyota Camry: Front Brake Squeal and Premature Pad Wear (TSB-0042-20)",
+    "content": "A persistent front brake squeal during light-to-moderate pedal application is a common complaint on the 2018-2022 Camry, especially in humid climates. Toyota TSB-0042-20 identifies the cause as vibration between the brake pad shim and the caliper bracket. The factory pad material also tends to wear unevenly, causing taper wear. The repair involves installing updated brake pad kits with new, thicker shims and a revised anti-squeal adhesive.\n\n**Diagnostic Confirmation:**\n- Road test and confirm squeal occurs between 10-30 mph with light pedal pressure.\n- Inspect pad thickness; if inner pad is 2mm thinner than outer, taper wear is confirmed.\n- Check rotor runout; if over 0.05mm, machine or replace rotors.\n\n**Repair Procedure:**\n1. Remove front brake pads and clean the caliper bracket sliding pins with brake cleaner; re-grease with silicone-based brake grease.\n2. Install new brake pad kit (Toyota P/N 04465-06340 for 2018-2020, or 04465-06410 for 2021-2022) which includes modified shims.\n3. Apply the included anti-squeal compound to the back of the outer pad and the shim contact points.\n4. If rotors are scored or below minimum thickness (26mm), replace with new rotors (Toyota P/N 43512-06220).\n5. Perform the brake pedal stroke learning procedure: pump pedal 5 times with engine off, then start engine and pump 5 more times to set pad clearance.\n\n**Post-Repair Test:** Perform 5 moderate stops from 30 mph to bed the new pads.\n\n**Safety:** Always support the vehicle on jack stands. Never work under a car supported only by a jack. Not professional mechanic advice.",
+    "source": "tsb",
+    "vehicle_make": "Toyota",
+    "vehicle_model": "Camry",
+    "vehicle_years": "2018-2022",
+    "category": "brake",
+    "metadata": {
+      "severity": "low",
+      "common_mileage": 25000,
+      "estimated_repair_cost": "$180 - $350",
+      "tsb": "TSB-0042-20",
+      "oem_parts": ["04465-06340", "04465-06410", "43512-06220"]
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Honda Civic: Adaptive Cruise Control (ACC) and Collision Mitigation Braking System (CMBS) Error - Radar Obstruction",
+    "content": "The Honda Sensing suite in the 2018-2022 Civic frequently displays 'Adaptive Cruise Control Problem' and 'Collision Mitigation System Problem' warnings on the instrument cluster. In most cases, the issue is not a hardware failure but a misalignment or obstruction of the front millimeter-wave radar sensor located behind the front Honda emblem. Ice, snow, mud, or even a cracked emblem can cause false blockage detection. However, after minor front-end impacts, the radar bracket may bend, requiring recalibration.\n\n**Diagnostic Steps:**\n1. Physically inspect the front emblem for dirt, cracks, or aftermarket film covers. Clean with a soft cloth and warm water; do not use wax or polish.\n2. Using the HDS (Honda Diagnostic System), check for DTCs C1000 (Radar Sensor Malfunction) or C1004 (Radar Axis Misalignment).\n3. If C1004 is present, perform the radar aiming procedure using the special SRS target board (Honda P/N 07PAA-TL1A100).\n\n**Repair Procedure:**\n- If the radar is clean but misaligned, adjust the radar's vertical and horizontal axis using the HDS aiming guidance. This requires a level floor and a target placed exactly 3 meters in front of the vehicle center.\n- If the bracket is bent, replace the radar bracket (Honda P/N 71155-TBA-A00) and then perform the aiming procedure.\n- If the radar unit is faulty (rare), replace the radar sensor (Honda P/N 36800-TBA-A12) and perform the aiming procedure. Note: The radar cannot be repaired; it must be replaced as a sealed unit.\n\n**Important:** After any battery disconnect or radar replacement, the system requires a short drive (above 25 mph) for self-calibration, but the aiming procedure is mandatory for bracket replacements.\n\n**Safety:** Do not drive with ADAS disabled if you rely on it for highway use. Professional aiming equipment is often required — seek a shop when C1004 persists after cleaning.",
+    "source": "common_fault",
+    "vehicle_make": "Honda",
+    "vehicle_model": "Civic",
+    "vehicle_years": "2018-2022",
+    "category": "electrical",
+    "metadata": {
+      "severity": "medium",
+      "common_mileage": 10000,
+      "estimated_repair_cost": "$150 - $600 (alignment vs. replacement)",
+      "dtc": ["C1000", "C1004"]
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Toyota Camry: Engine Oil Leak from Timing Chain Cover - 2.5L A25A-FKS",
+    "content": "A weeping oil leak originating from the front of the engine, near the timing chain cover, has been observed on the 2018-2022 Camry. The leak is typically slow but leaves a visible oil residue on the oil pan and lower splash shield. This is caused by insufficient sealant application at the factory where the timing cover meets the cylinder head and block. Toyota has issued an internal service bulletin recommending a revised sealant application pattern.\n\n**Diagnostic Confirmation:**\n- Lift the vehicle and remove the lower engine cover. Look for oil tracking from the timing cover bolts down to the oil pan flange.\n- Use an oil dye and UV light; after 50 miles of driving, inspect the seam between the timing cover and cylinder head.\n- Confirm that the leak is not from the valve cover gasket or oil pressure sensor (common misdiagnosis).\n\n**Repair Procedure:**\n1. Drain engine oil and coolant (since the water pump is driven by the timing chain on this engine).\n2. Remove the valve cover, front engine mount, accessory belt, and crankshaft pulley.\n3. Remove the timing chain cover. Clean all old sealant from the cover, cylinder head, and block using a razor blade and non-abrasive disc; ensure surfaces are free of oil.\n4. Apply Toyota FIPG (Formed-In-Place Gasket) sealant (P/N 08826-00100) in a continuous 3.5mm bead, focusing extra sealant at the 'T' junctions where the cover meets the head and block.\n5. Install the cover within 10 minutes of sealant application. Torque bolts in a spiral pattern to 21 N·m (15 ft-lb) + 90°.\n6. Refill with 0W-16 oil and Toyota Super Long Life Coolant.\n\n**Caution:** This is a 6-8 hour labor job. If the leak is minor and the customer is the original owner, check for warranty extension—some vehicles qualify for coverage up to 100,000 miles. DIY only if you have timing-cover experience; incorrect sealant can cause worse leaks. Not professional mechanic advice.",
+    "source": "tsb",
+    "vehicle_make": "Toyota",
+    "vehicle_model": "Camry",
+    "vehicle_years": "2018-2022",
+    "category": "engine",
+    "metadata": {
+      "severity": "medium",
+      "common_mileage": 50000,
+      "estimated_repair_cost": "$900 - $1,400",
+      "diy_difficulty": "advanced"
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Honda Civic: Rear Shock Absorber Leak and Clunk Over Bumps",
+    "content": "A common suspension complaint on the 2018-2022 Civic (especially sedan and hatchback models) is a clunking noise from the rear when going over speed bumps or potholes. Upon visual inspection, the rear shock absorbers are often found to be leaking oil. This is due to the internal seals degrading, particularly on vehicles driven on rough roads. Honda issued a running change in production; however, replacements may still be needed.\n\n**Diagnostic Procedure:**\n- Bounce the rear of the vehicle; if it rebounds more than twice, suspect worn shocks.\n- Inspect for visible oil weeping down the shock body. A slight film is acceptable, but active dripping requires replacement.\n- Check the upper and lower shock bushings for play; worn bushings can also produce a clunk.\n\n**Repair Procedure:**\n1. Replace rear shock absorbers in pairs (Honda P/N 52610-TBA-A02 for left, 52620-TBA-A02 for right).\n2. Replace the upper shock mount bushings (Honda P/N 52631-TBA-A00) as they are often deformed.\n3. Torque the upper mount nut to 44 N·m and lower bolt to 70 N·m with the vehicle's weight on the suspension (use a jack to compress the suspension before final tightening).\n4. Road test to confirm noise elimination.\n\n**Alternative:** For owners wanting improved ride quality, aftermarket options like KYB or Bilstein are available, but OEM replacements are recommended for maintaining factory ride height and comfort.\n\n**Safety:** Support the vehicle safely. Final-torque lower bolts with suspension loaded. Not professional mechanic advice.",
+    "source": "common_fault",
+    "vehicle_make": "Honda",
+    "vehicle_model": "Civic",
+    "vehicle_years": "2018-2022",
+    "category": "suspension",
+    "metadata": {
+      "severity": "low",
+      "common_mileage": 45000,
+      "estimated_repair_cost": "$350 - $550 (both rear shocks)"
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Toyota Camry: Fuel Tank Sending Unit Failure - Inaccurate Fuel Gauge",
+    "content": "A known electrical fault on the 2018-2022 Camry involves the fuel level sending unit (fuel pump module). Owners report the fuel gauge showing empty even when the tank is full, or it drops erratically. The cause is a corrosion buildup on the internal resistive strip of the sender, caused by sulfur compounds in certain fuels. Toyota has released a revised fuel sender unit with gold-plated contacts to prevent corrosion.\n\n**Diagnostic Confirmation:**\n- Connect a scan tool and read the fuel level sensor voltage. At full tank, voltage should be ~0.5V; at empty, ~4.5V. If the voltage is stuck at a value or jumps erratically, the sender is faulty.\n- Perform the instrument cluster self-test: hold the trip reset button while turning the ignition to ON; the gauges will sweep. If the gauge moves smoothly, the cluster is fine.\n\n**Repair Procedure:**\n1. Relieve fuel pressure and remove the rear seat cushion to access the fuel pump cover.\n2. Remove the fuel pump assembly (Toyota P/N 77020-0P040 for non-hybrid, verify VIN).\n3. Replace the entire fuel pump module; do not attempt to replace only the sender as it is not sold separately.\n4. Install the new module, ensuring the O-ring is seated correctly and the locking ring is torqued to 50 N·m.\n5. Reconnect the battery and cycle the ignition ON/OFF three times to prime the system; check for leaks.\n\n**Cost Note:** The fuel pump module is expensive ($300-$400 part). Labor is ~1.5 hours. This repair often occurs between 40,000-60,000 miles.\n\n**Safety:** Work in a well-ventilated area; no sparks or open flame. Relieve fuel pressure first. Not professional mechanic advice.",
+    "source": "common_fault",
+    "vehicle_make": "Toyota",
+    "vehicle_model": "Camry",
+    "vehicle_years": "2018-2022",
+    "category": "electrical",
+    "metadata": {
+      "severity": "medium",
+      "common_mileage": 50000,
+      "estimated_repair_cost": "$550 - $750",
+      "oem_parts": ["77020-0P040"]
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Honda Civic: CVT Transmission Shudder at Low Speeds (TSB 19-063)",
+    "content": "A shudder or vibration felt during light acceleration from a stop, particularly between 10-20 mph, is a known characteristic of the Honda CVT in the 2018-2022 Civic. This is caused by the torque converter lock-up clutch engaging too early or slipping intermittently. Honda TSB 19-063 addresses this with a PCM software update and, in some cases, a CVT fluid flush using Honda HCF-2 fluid.\n\n**Diagnostic Process:**\n- Road test: accelerate gently from a stop; if shudder is felt similar to driving over rumble strips, the condition is confirmed.\n- Check for DTCs; none are typically stored.\n- Check the CVT fluid level with the engine running at operating temperature; ensure the fluid is not burnt (should be reddish, not dark brown).\n\n**Repair Procedure:**\n1. Perform a CVT fluid drain and fill (not a full flush) using 3.5 quarts of Honda HCF-2 (P/N 08200-HCF2).\n2. Update the PCM to the latest calibration (Version 3.3.0 or higher, per TSB 19-063).\n3. Perform the CVT learning procedure: drive at 30 mph for 10 seconds, then accelerate to 60 mph, then decelerate to a stop without braking; repeat 5 times.\n\n**Important:** Do not use aftermarket CVT fluids; only Honda HCF-2 is approved. If the shudder persists after the software and fluid change, the torque converter may need replacement, but this is rarely necessary.\n\n**Safety:** Incorrect CVT fluid can destroy the transmission. Prefer dealer software update when possible. Not professional mechanic advice.",
+    "source": "tsb",
+    "vehicle_make": "Honda",
+    "vehicle_model": "Civic",
+    "vehicle_years": "2018-2022",
+    "category": "transmission",
+    "metadata": {
+      "severity": "low",
+      "common_mileage": 30000,
+      "estimated_repair_cost": "$150 - $300",
+      "tsb": "19-063"
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Toyota Camry: Cabin Air Filter Clog and Reduced A/C Performance",
+    "content": "The 2018-2022 Camry has a highly effective but easily clogged cabin air filter located behind the glove box. Owners often complain of weak airflow from the vents and a musty odor, especially in humid climates. The filter captures fine dust and pollen but can become fully blocked within 15,000 miles if driven in dusty conditions or with recirculation mode constantly on. This is a consumable maintenance item that is often overlooked.\n\n**Inspection:**\n- Remove the glove box (push both side stops inward) and open the filter cover.\n- Pull out the filter; if it is dark grey and holds its shape when shaken, it is clogged.\n- Check the blower motor resistor for overheating; a clogged filter can cause the blower motor to draw higher current.\n\n**Replacement Procedure:**\n1. Purchase an OEM Toyota cabin filter (P/N 88508-06020) or a high-quality aftermarket like WIX 24485. Ensure the airflow arrow points DOWNWARD.\n2. Vacuum the filter housing before inserting the new filter.\n3. Reinstall the glove box and test airflow.\n\n**Odor Fix:** If musty, spray an evaporator cleaner (like KlimaCleaner) into the A/C drain tube to kill bacteria.\n\n**Recommendation:** Replace every 12 months or 12,000 miles, and more frequently in high-dust areas. This is a 10-minute DIY but is often charged at 0.5 hours in a shop.",
+    "source": "manual",
+    "vehicle_make": "Toyota",
+    "vehicle_model": "Camry",
+    "vehicle_years": "2018-2022",
+    "category": "filter",
+    "metadata": {
+      "severity": "low",
+      "common_mileage": 15000,
+      "estimated_repair_cost": "$30 - $80",
+      "diy_difficulty": "easy",
+      "oem_parts": ["88508-06020"]
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Honda Civic: Air Conditioning Not Cooling - Condenser Leak",
+    "content": "A very frequent failure on the 2018-2022 Civic is the A/C condenser developing a leak, leading to a gradual loss of refrigerant and warm air from the vents. The leak typically occurs at the upper right corner of the condenser, where the aluminum tube meets the header tank, due to stress and corrosion. Honda issued a warranty extension on the condenser for some models (up to 10 years/unlimited miles) due to this known defect.\n\n**Diagnostic Procedure:**\n- Connect an A/C manifold gauge; static pressure will be low (under 50 psi on both sides).\n- Perform a UV dye test: inject dye, run the A/C for 10 minutes, and inspect the condenser with a UV light—bright green dye will be visible at the leak point.\n- Check the A/C compressor clutch; ensure it engages—if pressure is too low, the clutch will not engage.\n\n**Repair Procedure:**\n1. Recover the remaining refrigerant using an R-1234yf recovery machine (do not vent to atmosphere).\n2. Remove the front bumper cover to access the condenser (requires removing ~10 clips and 4 bolts).\n3. Replace the condenser with the updated part (Honda P/N 80110-TBA-A11). The new part has a reinforced header.\n4. Replace the receiver/drier (integrated into the condenser on this model).\n5. Vacuum the system for 30 minutes to remove moisture, then recharge with R-1234yf (spec: 420g ± 15g).\n6. Perform a leak test with nitrogen or an electronic sniffer.\n\n**Warranty Check:** Always verify the VIN with Honda's warranty system; many owners qualify for a free replacement under the extended warranty.\n\n**Safety:** R-1234yf recovery requires certified equipment — DIY refrigerant venting is illegal in the US/EU. Prefer a shop for recharge. Not professional mechanic advice.",
+    "source": "common_fault",
+    "vehicle_make": "Honda",
+    "vehicle_model": "Civic",
+    "vehicle_years": "2018-2022",
+    "category": "hvac",
+    "metadata": {
+      "severity": "medium",
+      "common_mileage": 35000,
+      "estimated_repair_cost": "$600 - $900 (unless warranty covers)",
+      "oem_parts": ["80110-TBA-A11"]
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Toyota Camry: Engine Air Filter Replacement and MAF Sensor Cleaning",
+    "content": "The 2018-2022 Camry's 2.5L and 3.5L engines require a clean engine air filter to maintain optimal fuel trims and throttle response. A dirty filter can cause the MAF sensor to read higher air velocity, leading to lean fuel trims and potential hesitation. This is a simple but crucial consumable service.\n\n**Inspection:**\n- Open the airbox (4 clips) and inspect the filter. Hold it up to a light; if light does not pass through, replace it.\n- Check the MAF sensor for dust accumulation; a dirty MAF can cause long-term fuel trim values above 10%.\n\n**Replacement Procedure:**\n1. Use OEM Toyota air filter (P/N 17801-0P050 for 2.5L, or 17801-0P060 for 3.5L). Aftermarket filters like Denso or WIX are acceptable.\n2. While the filter is removed, spray MAF cleaner (CRC 05110) onto the MAF sensor hot wire—do not touch it with fingers; allow to dry completely.\n3. Install the new filter with the rubber seal facing upward, and ensure the airbox snaps closed fully.\n\n**Maintenance Schedule:** Replace every 20,000-30,000 miles in normal conditions, or every 15,000 in dusty environments. The MAF sensor cleaning is recommended every 30,000 miles.\n\n**Labor Time:** 0.2 hours. DIY-friendly.",
+    "source": "manual",
+    "vehicle_make": "Toyota",
+    "vehicle_model": "Camry",
+    "vehicle_years": "2018-2022",
+    "category": "filter",
+    "metadata": {
+      "severity": "low",
+      "common_mileage": 20000,
+      "estimated_repair_cost": "$25 - $60",
+      "diy_difficulty": "easy",
+      "oem_parts": ["17801-0P050", "17801-0P060"]
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Honda Civic: Battery Drain and Parasitic Draw from Infotainment System",
+    "content": "A parasitic battery draw on the 2018-2022 Civic causing a dead battery after 3-4 days of no use has been traced to the infotainment system (Display Audio) not fully shutting down. The telematics control unit (TCU) and audio unit can keep the CAN network active, drawing 150-200mA (normal draw should be <50mA). A software update for the audio unit and an update to the Body Control Module (BCM) are required.\n\n**Diagnostic Procedure:**\n- Perform a parasitic draw test: with the ignition off, doors closed, and all systems asleep (wait 20 minutes), measure current across the battery negative cable using an ammeter. If >80mA, proceed.\n- Disconnect the audio unit fuse (No. 23 in the under-dash fuse box); if the draw drops to <50mA, the audio unit is the culprit.\n- Check the TCU (telematics) fuse; if the draw drops, the TCU has a fault.\n\n**Repair Procedure:**\n1. Update the Display Audio system to the latest firmware (version 1.F1.9.0 or higher) via USB—download from Honda's service portal.\n2. Update the BCM and TCU software using the HDS (Honda Diagnostic System) with a J2534 pass-thru device.\n3. If the TCU is faulty (common on 2019-2020 models), replace the TCU (Honda P/N 39810-TBA-A12).\n4. Perform a battery reset: disconnect negative terminal for 5 minutes, then reconnect and drive the vehicle at >30 mph for 10 minutes to reset the charging strategy.\n\n**Customer Advice:** If the owner frequently parks the car for long periods, recommend a battery maintainer or disconnecting the negative terminal.\n\n**Safety:** Disconnect battery safely; note radio codes / window auto-up may need reset. Not professional mechanic advice.",
+    "source": "tsb",
+    "vehicle_make": "Honda",
+    "vehicle_model": "Civic",
+    "vehicle_years": "2018-2022",
+    "category": "electrical",
+    "metadata": {
+      "severity": "medium",
+      "common_mileage": 20000,
+      "estimated_repair_cost": "$0 - $450 (free update under warranty, TCU ~$350)"
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Toyota Camry: Rear Brake Pad Wear Indicator Scraping Prematurely",
+    "content": "Owners of the 2018-2022 Camry report a metal-on-metal scraping noise from the rear brakes at around 20,000-25,000 miles, which is earlier than expected. The rear brake pads on the Camry (especially with the electronic parking brake) have a small wear indicator tab that makes contact with the rotor earlier due to the pad compound being softer on the rear axle to balance brake feel. However, the real issue is often that the rear caliper slide pins are sticking, causing the inner pad to wear faster.\n\n**Diagnostic Steps:**\n- Visually inspect the rear inner brake pad; if the friction material is under 2mm while the outer pad is at 6mm, the slide pin is seized.\n- Check the rotor for scoring; if the scraping noise is present, the rotor is likely damaged.\n\n**Repair Procedure:**\n1. Remove rear calipers (requires entering maintenance mode for the electronic parking brake—use a scan tool to retract the piston).\n2. Clean the caliper bracket and slide pins with brake cleaner; remove all old grease.\n3. Apply silicone-based high-temperature grease to the slide pins and rubber boots.\n4. Install new rear brake pads (Toyota P/N 04466-06110) and, if scored, new rotors (Toyota P/N 42431-06170).\n5. Perform electronic parking brake initialization: depress brake pedal, engage and release the parking brake twice, then drive slowly to set the pads.\n\n**Preventive Maintenance:** Clean and grease rear slide pins every 20,000 miles as part of routine brake service.\n\n**Safety:** Electronic parking brake must be in service mode before piston retraction. Support vehicle on jack stands. Not professional mechanic advice.",
+    "source": "common_fault",
+    "vehicle_make": "Toyota",
+    "vehicle_model": "Camry",
+    "vehicle_years": "2018-2022",
+    "category": "brake",
+    "metadata": {
+      "severity": "low",
+      "common_mileage": 22000,
+      "estimated_repair_cost": "$200 - $400",
+      "oem_parts": ["04466-06110", "42431-06170"]
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Honda Civic: Steering Wheel Off-Center and Vibration at Highway Speeds",
+    "content": "The 2018-2022 Civic has a sensitive electric power steering (EPS) system that can amplify minor alignment issues. A common complaint is the steering wheel being off-center (not level) when driving straight, accompanied by a vibration at 60-70 mph. This is often due to the factory alignment tolerances being too wide, combined with the EPS system's active torque compensation.\n\n**Diagnostic Process:**\n- Check tire pressures; ensure they are at 35 psi (door placard).\n- Perform a road force balance on all four tires using a Hunter GSP9700 machine. The road force value should be under 15 lbs per wheel; if over, rotate the tire on the rim or replace the tire.\n- Check the steering angle sensor readings using a scan tool; if the value is not within ±3° of 0° when the wheel is straight, perform a calibration.\n\n**Repair Procedure:**\n1. Perform a four-wheel alignment with the steering wheel locked centered using a steering wheel holder. Set front toe to 0.00° ± 0.05° and rear toe to 0.10° ± 0.05° per wheel (Honda spec).\n2. After alignment, perform the EPS neutral position calibration: using the HDS, select 'EPS' -> 'Sensor Adjustment' -> follow the on-screen instructions to drive straight for 10 seconds at 20 mph.\n3. If vibration persists, inspect the front lower control arm bushings for cracks; replace if necessary (Honda P/N 51320-TBA-A02).\n\n**Important:** Do not skip the EPS calibration; otherwise, the steering will feel heavy or pull.\n\n**Safety:** Uneven tire wear and pull can be unsafe at highway speeds — get alignment done promptly. Not professional mechanic advice.",
+    "source": "common_fault",
+    "vehicle_make": "Honda",
+    "vehicle_model": "Civic",
+    "vehicle_years": "2018-2022",
+    "category": "suspension",
+    "metadata": {
+      "severity": "low",
+      "common_mileage": 30000,
+      "estimated_repair_cost": "$120 - $250"
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Toyota Camry: Water Pump Coolant Leak - 2.5L and 3.5L",
+    "content": "The water pump on the 2018-2022 Camry, particularly the 2.5L A25A and 3.5L 2GR-FKS, has been known to develop a slight coolant weep from the bleeder hole, indicating seal failure. This is a gradual leak that can go unnoticed until the coolant level drops below the minimum mark. The pump is driven by the accessory belt, not the timing chain, making it more accessible.\n\n**Diagnosis:**\n- Inspect under the water pump pulley for pinkish-red crystallized coolant (Toyota Super Long Life Coolant).\n- Pressure test the cooling system to 15 psi; if the pressure drops slowly, and wetness appears at the pump's bleeder hole, the pump is failing.\n\n**Repair Procedure:**\n1. Drain the coolant (capture for reuse if not contaminated).\n2. Remove the accessory belt and the water pump pulley.\n3. Remove the water pump (Toyota P/N 16100-0P040 for 2.5L, or 16100-0P050 for 3.5L).\n4. Clean the mounting surface on the engine block; do not use a gasket scraper that could damage the aluminum.\n5. Install the new water pump with a new O-ring; torque the bolts to 21 N·m in a crisscross pattern.\n6. Refill with 50/50 Toyota SLLC and distilled water. Bleed the system using the bleed valve on the thermostat housing.\n\n**Replacement Interval:** Although the manual says 100,000 miles, early failures at 40,000-60,000 miles are common. Always replace the serpentine belt if it shows cracks (P/N 90916-02600).\n\n**Safety:** Never open a hot cooling system. Allow engine to cool fully. Not professional mechanic advice.",
+    "source": "common_fault",
+    "vehicle_make": "Toyota",
+    "vehicle_model": "Camry",
+    "vehicle_years": "2018-2022",
+    "category": "engine",
+    "metadata": {
+      "severity": "medium",
+      "common_mileage": 50000,
+      "estimated_repair_cost": "$500 - $800",
+      "oem_parts": ["16100-0P040", "16100-0P050", "90916-02600"]
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Honda Civic: Windshield Wiper Motor Failure - Slow or Intermittent Wiping",
+    "content": "The windshield wiper motor on the 2018-2022 Civic has a known failure where the internal commutator and brushes wear prematurely, causing the wipers to move slowly, stop intermittently, or fail to park at the bottom of the windshield. This is usually noticeable after heavy rain or when the wipers are used in 'high' speed. The motor is not serviced separately; the entire wiper motor assembly must be replaced.\n\n**Diagnostic Verification:**\n- Turn the wipers on; measure voltage at the motor connector (Black wire ground, Yellow wire low speed, Blue wire high speed). If 12V is present but the motor does not run, the motor is faulty.\n- Check the wiper linkage for binding by disconnecting the motor and manually moving the linkage; if smooth, the motor is the issue.\n\n**Repair Procedure:**\n1. Remove the cowl cover (plastic clips and wiper arms require a puller tool).\n2. Disconnect the linkage arm from the motor (one 12mm nut).\n3. Remove the wiper motor (Honda P/N 76550-TBA-A01) and transfer the wiper arm crank to the new motor, ensuring alignment marks are matched.\n4. Install the new motor and reconnect the linkage.\n5. Reinstall the cowl cover and wiper arms, positioning them at the correct parking position (45mm from the windshield base to the bottom edge of the blade).\n\n**Note:** Some 2018-2019 models had a recall; check VIN eligibility before ordering parts.\n\n**Safety:** Failed wipers are a visibility hazard — repair before driving in rain. Not professional mechanic advice.",
+    "source": "common_fault",
+    "vehicle_make": "Honda",
+    "vehicle_model": "Civic",
+    "vehicle_years": "2018-2022",
+    "category": "electrical",
+    "metadata": {
+      "severity": "low",
+      "common_mileage": 40000,
+      "estimated_repair_cost": "$300 - $450",
+      "oem_parts": ["76550-TBA-A01"]
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Toyota Camry: Engine Mount Deterioration - Excessive Vibration in Gear",
+    "content": "A noticeable increase in cabin vibration when the Camry is in 'Drive' or 'Reverse' with the brake applied (e.g., at a stoplight) is a common complaint. The front engine mount, a fluid-filled hydraulic mount, often loses its damping fluid due to a ruptured diaphragm, transferring engine harmonics directly to the chassis. The mount is located on the passenger side of the engine, near the timing cover.\n\n**Diagnostic Steps:**\n- Visually inspect the front mount; if there is fluid residue or cracks on the rubber, it is failing.\n- Perform the engine rock test: manually rock the engine side-to-side (with the engine off and safety in place); excessive movement (>10mm) indicates a bad mount.\n- Use a stethoscope to listen for knocking noises from the mount area.\n\n**Repair Procedure:**\n1. Support the engine with a hoist or jack under the oil pan (use a wood block).\n2. Remove the front engine mount bolts (3x 17mm bolts on the engine side, 2x 14mm on the chassis side).\n3. Replace with the updated mount (Toyota P/N 12361-0P011), which has a reinforced internal baffle.\n4. Torque the bolts to 64 N·m for the engine side and 47 N·m for the chassis side. Lower the engine and road test.\n\n**Cost:** The mount is relatively affordable (~$120), but labor is 1.0-1.5 hours. This is a high-wear item in stop-and-go traffic.\n\n**Safety:** Always support the engine before removing mounts. Not professional mechanic advice.",
+    "source": "common_fault",
+    "vehicle_make": "Toyota",
+    "vehicle_model": "Camry",
+    "vehicle_years": "2018-2022",
+    "category": "engine",
+    "metadata": {
+      "severity": "low",
+      "common_mileage": 35000,
+      "estimated_repair_cost": "$250 - $400",
+      "oem_parts": ["12361-0P011"]
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Honda Civic: Low Beam Headlight LED DRL Failure - Driver Side",
+    "content": "On the 2018-2022 Civic with LED headlights (Touring and Sport Touring trims), a common failure is the driver-side LED daytime running light (DRL) or low beam stopping function. The LED driver module inside the headlight assembly overheats and fails, causing a partial or full loss of the low beam/DRL. This is a non-serviceable component; the entire headlight housing must be replaced.\n\n**Diagnostic Process:**\n- Turn on the ignition and headlights; if the driver-side LED strip or low beam does not illuminate while the passenger side does, the issue is localized.\n- Check the fuse #14 (Headlight, Left) in the under-hood fuse box; if blown, replace once and check for shorts. If it blows again, the headlight internal circuit has a short.\n- Use a scan tool to check for DTC B2400 (Headlight Left Circuit Malfunction).\n\n**Repair Procedure:**\n1. Remove the front bumper cover to access the headlight mounting bolts (requires removing wheel well clips and 10mm bolts).\n2. Remove the headlight assembly (Honda P/N 33100-TBA-A11 for left side, 33150-TBA-A11 for right).\n3. Transfer the ballast and control module (if separate) to the new unit.\n4. Install the new headlight and align the beam using a headlight aimer or against a wall at 25 feet.\n5. Clear the DTC and verify operation.\n\n**Note:** The headlight assembly is expensive ($800-$1,200) and often not covered under standard warranty if the vehicle has over 36,000 miles. Some owners opt for used or aftermarket assemblies, but quality varies.\n\n**Safety:** Driving with one low beam out is illegal in many US/EU jurisdictions. Aim headlights after replacement. Not professional mechanic advice.",
+    "source": "common_fault",
+    "vehicle_make": "Honda",
+    "vehicle_model": "Civic",
+    "vehicle_years": "2018-2022",
+    "category": "electrical",
+    "metadata": {
+      "severity": "medium",
+      "common_mileage": 30000,
+      "estimated_repair_cost": "$850 - $1,400",
+      "dtc": ["B2400"]
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Toyota Camry: Inner Tie Rod End Wear - Steering Wander",
+    "content": "Owners of the 2018-2022 Camry may notice a loose steering feel, wandering on the highway, or a clunk when turning the wheel at parking speeds. The inner tie rod ends on the Camry have been known to develop play earlier than expected, especially on vehicles driven in urban areas with potholes. This is a critical steering component that can affect safety.\n\n**Inspection:**\n- Lift the front wheels off the ground. Grab the tire at 9 and 3 o'clock and rock side-to-side. If there is more than 5mm of play, inspect the tie rod.\n- Visually inspect the inner tie rod end's boot for tears; if torn, grease and dirt ingress has likely worn the ball joint.\n\n**Repair Procedure:**\n1. Remove the outer tie rod end from the knuckle using a ball joint puller.\n2. Loosen the locknut and use a tie rod tool to unscrew the inner tie rod from the steering rack (Toyota P/N 45503-06230 for left, 45504-06230 for right).\n3. Install the new inner tie rod, torquing to 44 N·m, and adjust the outer tie rod to achieve the correct toe setting.\n4. Perform a wheel alignment after replacement.\n\n**Alignment Spec:** Front toe should be set to 0.00° ± 0.04° per side. Replacing tie rods without an alignment will cause uneven tire wear.\n\n**Recommended Service:** Replace inner and outer tie rods in pairs if one has failed, as they have similar mileage.\n\n**Safety:** Steering play is a safety-critical issue — do not delay repair. Always get a professional alignment after. Not professional mechanic advice.",
+    "source": "common_fault",
+    "vehicle_make": "Toyota",
+    "vehicle_model": "Camry",
+    "vehicle_years": "2018-2022",
+    "category": "suspension",
+    "metadata": {
+      "severity": "medium",
+      "common_mileage": 50000,
+      "estimated_repair_cost": "$400 - $650 (including alignment)",
+      "oem_parts": ["45503-06230", "45504-06230"]
+    },
+    "is_active": true
+  },
+  {
+    "title": "2018-2022 Honda Civic: Spark Plug Replacement and Ignition Coil Inspection (1.5L Turbo)",
+    "content": "The 2018-2022 Civic 1.5L turbo engine requires spark plug replacement at 60,000 miles due to the turbo's higher cylinder pressures. A common issue is premature ignition coil boot degradation, leading to misfires under heavy load (e.g., accelerating onto a highway). The coil boots become brittle and allow spark leakage, which can be felt as a stutter at 3,500-4,000 RPM. No TSB exists; this is a high-mileage maintenance item.\n\n**Diagnostic Procedure:**\n- Connect a scan tool and monitor misfire counters for each cylinder (PIDs for Misfire Cyl 1-4).\n- Remove the ignition coils and inspect the rubber boots for cracks or carbon tracks (black lines).\n\n**Replacement Procedure:**\n1. Use NGK ILZKAR8H8S (Honda P/N 12290-59B-005) spark plugs; they are iridium and pre-gapped.\n2. Remove the coils (10mm bolt each). Disconnect the harness carefully.\n3. Inspect the coil boots; if any cracks are found, replace the coil assembly (Honda P/N 30520-59B-003) or replace just the boot (sold separately by NGK).\n4. Apply a thin layer of dielectric grease to the inside of the boot to prevent future sticking.\n5. Install the spark plugs, torquing to 18 N·m (do not over-torque). Reinstall the coils and torque to 9 N·m.\n6. Clear the misfire codes and road test.\n\n**Labor Time:** 1.0 hour. This is a straightforward job on the 1.5L engine, as the plugs are accessible on the front of the engine.\n\n**Safety:** Work on a cool engine. Do not drop debris into spark plug wells. Not professional mechanic advice.",
+    "source": "manual",
+    "vehicle_make": "Honda",
+    "vehicle_model": "Civic",
+    "vehicle_years": "2018-2022",
+    "category": "engine",
+    "metadata": {
+      "severity": "low",
+      "common_mileage": 60000,
+      "estimated_repair_cost": "$250 - $400",
+      "diy_difficulty": "moderate",
+      "oem_parts": ["12290-59B-005", "30520-59B-003"]
+    },
+    "is_active": true
+  }
+]

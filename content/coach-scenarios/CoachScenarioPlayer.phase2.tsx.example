@@ -1,0 +1,132 @@
+/**
+ * Phase 2 CoachScenarioPlayer usage (EN-US, US/EU).
+ * Same player as Phase 1 — only the production JSON changes.
+ *
+ * Playbooks:
+ *  - maintenance_ev_charging_production.json
+ *  - maintenance_ac_cooling_production.json
+ *  - maintenance_winter_prep_production.json
+ *  - maintenance_transmission_cvt_production.json
+ *  - maintenance_road_trip_production.json
+ *  - maintenance_high_mileage_production.json
+ *  - inspection_used_car_production.json
+ *
+ * Full player: CoachScenarioPlayer.production.tsx.example
+ * Contract: INTEGRATION.md
+ */
+import React from "react";
+import type { CoachScenario } from "../../lib/types/coach-scenario";
+import { CoachScenarioPlayer } from "./CoachScenarioPlayer.production"; // copy example into app
+
+import evCharging from "./maintenance_ev_charging_production.json";
+import acCooling from "./maintenance_ac_cooling_production.json";
+import winterPrep from "./maintenance_winter_prep_production.json";
+import transmissionCvt from "./maintenance_transmission_cvt_production.json";
+import roadTrip from "./maintenance_road_trip_production.json";
+import highMileage from "./maintenance_high_mileage_production.json";
+import usedCar from "./inspection_used_car_production.json";
+
+export const PHASE2_SCENARIOS = {
+  maintenance_ev_charging: evCharging as unknown as CoachScenario,
+  maintenance_ac_cooling: acCooling as unknown as CoachScenario,
+  maintenance_winter_prep: winterPrep as unknown as CoachScenario,
+  maintenance_transmission_cvt: transmissionCvt as unknown as CoachScenario,
+  maintenance_road_trip: roadTrip as unknown as CoachScenario,
+  maintenance_high_mileage: highMileage as unknown as CoachScenario,
+  inspection_used_car: usedCar as unknown as CoachScenario,
+} as const;
+
+export type Phase2Slug = keyof typeof PHASE2_SCENARIOS;
+
+/** Map Focus / chat intents → Phase 2 playbook */
+export function resolvePhase2Scenario(input: {
+  intent?:
+    | "ev_charging"
+    | "ac"
+    | "winter"
+    | "transmission"
+    | "road_trip"
+    | "high_mileage"
+    | "used_car";
+  powertrain?: string;
+  brand?: string;
+  mileage?: number;
+  month?: number; // 1–12
+}): Phase2Slug {
+  if (input.intent === "used_car") return "inspection_used_car";
+  if (input.intent === "transmission") return "maintenance_transmission_cvt";
+  if (input.intent === "road_trip") return "maintenance_road_trip";
+  if (input.intent === "high_mileage") return "maintenance_high_mileage";
+  if (input.intent === "ac") return "maintenance_ac_cooling";
+  if (input.intent === "winter") return "maintenance_winter_prep";
+  if (input.intent === "ev_charging") return "maintenance_ev_charging";
+
+  if ((input.mileage ?? 0) >= 100000) return "maintenance_high_mileage";
+
+  const m = input.month ?? new Date().getMonth() + 1;
+  if (m >= 11 || m <= 2) return "maintenance_winter_prep";
+  if (["bev", "phev", "hybrid"].includes((input.powertrain || "").toLowerCase())) {
+    return "maintenance_ev_charging";
+  }
+  if (m >= 5 && m <= 9) return "maintenance_ac_cooling";
+  return "maintenance_ev_charging";
+}
+
+/**
+ * Example screen
+ *
+ * <Phase2CoachScreen
+ *   slug="maintenance_transmission_cvt"
+ *   vehicle={{ year: 2018, make: "Nissan", model: "Rogue", mileage: 98000 }}
+ *   navigation={navigation}
+ * />
+ */
+export function Phase2CoachScreen({
+  slug,
+  vehicle,
+  userName,
+  navigation,
+}: {
+  slug: Phase2Slug;
+  vehicle: {
+    year?: number;
+    make?: string;
+    model?: string;
+    mileage?: number;
+    powertrain?: string;
+  };
+  userName?: string;
+  navigation: {
+    navigate: (route: string, params?: Record<string, unknown>) => void;
+    goBack: () => void;
+  };
+}) {
+  const scenario = PHASE2_SCENARIOS[slug];
+
+  return (
+    <CoachScenarioPlayer
+      scenario={scenario}
+      vehicle={vehicle}
+      userName={userName}
+      onClose={() => navigation.goBack()}
+      openChat={(prefill) => navigation.navigate("Chat", { prefill })}
+      openParts={(q) => navigation.navigate("Parts", { q })}
+      openShop={() => navigation.navigate("ShopFinder", { near: "me", reason: slug })}
+      logMaintenance={(category) =>
+        navigation.navigate("MaintenanceLog", { category, mileage: vehicle.mileage })
+      }
+      takePhoto={() => navigation.navigate("Camera", { returnTo: "Coach" })}
+      emitFocus={(part, action) => {
+        navigation.navigate("Dashboard", { focus: { part, action } });
+      }}
+    />
+  );
+}
+
+/*
+ * Deep links:
+ *   coach://scenario/maintenance_transmission_cvt
+ *   coach://scenario/maintenance_road_trip
+ *   coach://scenario/maintenance_high_mileage
+ *   coach://scenario/inspection_used_car
+ */

@@ -1,0 +1,572 @@
+{
+  "id": "coach_scenario_suspension_struts_production",
+  "slug": "maintenance_suspension_struts",
+  "title": "Suspension & Shock / Strut Check",
+  "subtitle": "Clunks, bounce, and nose-dive — driveway tests first, then honest shop calls for springs and struts.",
+  "category": "safety",
+  "focus_part": "suspension",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 25,
+    "diy_max": 75,
+    "shop_min": 90,
+    "shop_max": 300
+  },
+  "cost_band_usd": {
+    "diy_min": 0,
+    "diy_max": 50,
+    "shop_min": 400,
+    "shop_max": 1800
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel, step feedback Yes/No. Phase 3 suspension: bounce test DIY; spring compressors = shop.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Level ground",
+    "Note which corner clunks",
+    "Tire pressures set"
+  ],
+  "tools_checklist": [
+    "Flashlight",
+    "Wheel chocks",
+    "Optional jack stands for visual only"
+  ],
+  "parts_checklist": [
+    "Shop: struts/shocks, mounts, links — not DIY compressed springs"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "air_susp",
+      "when": {
+        "brand_includes": [
+          "mercedes",
+          "audi",
+          "bmw",
+          "tesla",
+          "genesis",
+          "range rover",
+          "land rover"
+        ]
+      },
+      "coach_note": "Air suspension faults need scan data and specialty tools — don't DIY air lines casually.",
+      "prefer_shop": true
+    },
+    {
+      "id": "high_miles_susp",
+      "when": {
+        "mileage_min": 80000
+      },
+      "coach_note": "Past 80k, bushings and sway links often clunk before shocks are fully dead.",
+      "prefer_shop": true,
+      "interval_miles": 10000
+    },
+    {
+      "id": "truck_susp",
+      "when": {
+        "model_includes": [
+          "f-150",
+          "silverado",
+          "1500",
+          "ram"
+        ]
+      },
+      "coach_note": "Trucks that haul: check rear shocks and leaf bushings — squat and bounce tell stories."
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_susp",
+      "type": "gif",
+      "src": "/coach/suspension/hero.gif",
+      "alt": "Strut and spring illustration",
+      "shot_description": "Clean strut cutaway."
+    },
+    {
+      "key": "bounce_test",
+      "type": "gif",
+      "src": "/coach/suspension/bounce.gif",
+      "alt": "Corner bounce test",
+      "shot_description": "Push fender 2–3 times."
+    },
+    {
+      "key": "visual_leaks",
+      "type": "video",
+      "src": "/coach/suspension/leaks.mp4",
+      "alt": "Shock body oil leak check",
+      "shot_description": "20s flashlight on shock.",
+      "poster": "/coach/suspension/leaks_poster.webp"
+    },
+    {
+      "key": "clunk_map",
+      "type": "gif",
+      "src": "/coach/suspension/clunk.gif",
+      "alt": "Clunk location map",
+      "shot_description": "Front/rear/link icons."
+    },
+    {
+      "key": "shop_strut",
+      "type": "gif",
+      "src": "/coach/suspension/shop.gif",
+      "alt": "Spring compressor shop only",
+      "shot_description": "Red X on DIY compressor."
+    },
+    {
+      "key": "celebrate_susp",
+      "type": "gif",
+      "src": "/coach/suspension/celebrate.gif",
+      "alt": "Suspension check logged",
+      "shot_description": "Smooth road icon."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Let's quiet the clunks safely",
+      "coach_encourage": "Chassis noises are solvable — we'll stay out of spring-compressor danger. You're just getting started — I'll stay with you.",
+      "personalize": "Suspension coach for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next look ~{{next_service}} miles.",
+      "description": "Driveway bounce tests and leak visuals first. Strut/spring replacement is shop territory for most owners.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_susp",
+      "focus_part": "suspension",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Step 1 of 7 · Start · 14%"
+      },
+      "safety_warning": "Never disassemble a coil spring without proper tools/training.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start inspection",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "symptom"
+        },
+        {
+          "id": "air",
+          "label": "Air suspension warning",
+          "style": "danger",
+          "action": "goto",
+          "next_step_id": "air_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "symptom"
+        },
+        {
+          "when_button_id": "air",
+          "goto": "air_help"
+        }
+      ]
+    },
+    {
+      "id": "air_help",
+      "title": "Air suspension — shop path",
+      "coach_encourage": "Calling a specialist early protects bags and compressors. You're just getting started — I'll stay with you.",
+      "personalize": "Air suspension on your {{make}} at {{mileage}} miles needs pro tools before {{next_service}} miles of risk.",
+      "description": "Don't crawl under a sagging air-sprung car. Scan for compressor/leak codes and find a nearby shop familiar with the system.",
+      "visual_type": "gif",
+      "visual_asset_key": "shop_strut",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Air path · 14%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Air suspension hazard",
+        "body": "A vehicle resting on failed air springs can be unstable. Do not DIY air line repairs under a poorly supported car. Find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "danger",
+          "action": "book_shop"
+        },
+        {
+          "id": "continue",
+          "label": "Continue visual checks",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "symptom"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "continue",
+          "goto": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "symptom",
+      "title": "What are you feeling?",
+      "coach_encourage": "Clear symptoms speed diagnosis. Nice. Nice momentum — you're about 29% through.",
+      "personalize": "At {{mileage}} miles on your {{model}}, pick the closest symptom before {{next_service}} miles.",
+      "description": "Clunk over bumps, excessive bounce after dips, nose-dive braking, or corner lean — choose the best match.",
+      "visual_type": "gif",
+      "visual_asset_key": "clunk_map",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "fraction": 0.286,
+        "percent": 29,
+        "label": "Step 2 of 7 · Symptom · 29%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "bounce",
+          "label": "Bounce / float",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "bounce_test",
+          "set_flags": {
+            "symptom": "bounce"
+          }
+        },
+        {
+          "id": "clunk",
+          "label": "Clunk / rattle",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "bounce_test",
+          "set_flags": {
+            "symptom": "clunk"
+          }
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "bounce",
+          "goto": "bounce_test"
+        },
+        {
+          "when_button_id": "clunk",
+          "goto": "bounce_test"
+        }
+      ]
+    },
+    {
+      "id": "bounce_test",
+      "title": "Corner bounce test",
+      "coach_encourage": "This step is important — slow pushes, watch rebounds. You're crushing it — roughly 43% done.",
+      "personalize": "Bounce test for your {{make}} at {{mileage}} miles. Recheck after repairs by ~{{next_service}} miles.",
+      "description": "On level ground, push down firmly on each corner and release. More than ~1–1.5 gentle rebounds often means weak dampers. Compare side to side.",
+      "visual_type": "gif",
+      "visual_asset_key": "bounce_test",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "fraction": 0.429,
+        "percent": 43,
+        "label": "Step 3 of 7 · Bounce · 43%"
+      },
+      "safety_warning": "Keep feet clear of wheels. Don't bounce near traffic.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "tested",
+          "label": "Test done",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "visual_leaks"
+        },
+        {
+          "id": "unsafe",
+          "label": "Car feels unstable",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "tested",
+          "goto": "visual_leaks"
+        }
+      ]
+    },
+    {
+      "id": "visual_leaks",
+      "title": "Shock body leak visual",
+      "coach_encourage": "Wet shiny shock bodies are loud hints. Look at you — about 57% complete. Keep going.",
+      "personalize": "Leak look on your {{model}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Flashlight on strut/shock bodies for oil wetness (not just road film). Broken dust boots and torn bump stops matter too. Jack only if you can use stands — otherwise shop.",
+      "visual_type": "video",
+      "visual_asset_key": "visual_leaks",
+      "duration_minutes": 3,
+      "difficulty": "Medium",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "fraction": 0.571,
+        "percent": 57,
+        "label": "Step 4 of 7 · Visual · 57%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Under-vehicle visual inspection risk",
+        "body": "Never work under a vehicle supported only by a jack. Use rated stands on correct points or skip underbody visuals and find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "seen",
+          "label": "Visual complete",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "diy_limits"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "seen",
+          "goto": "diy_limits"
+        }
+      ]
+    },
+    {
+      "id": "diy_limits",
+      "title": "No DIY spring compressors",
+      "coach_encourage": "Skipping dangerous DIY is technician-level judgment. Look at you — about 71% complete. Keep going.",
+      "personalize": "Repair path for your {{make}} at {{mileage}} miles. Aim to resolve before {{next_service}} miles if unsafe.",
+      "description": "Sway bar links can be DIY for some owners. Loaded strut/spring assemblies are shop jobs — spring compressors injure people every year. Replace dampers in pairs on an axle.",
+      "visual_type": "gif",
+      "visual_asset_key": "shop_strut",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "fraction": 0.714,
+        "percent": 71,
+        "label": "Step 5 of 7 · Limits · 71%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Coil spring energy hazard",
+        "body": "Compressed coil springs store lethal energy. Do not attempt DIY strut disassembly with improvised compressors. Find a nearby shop for strut/spring service.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "book",
+          "label": "Find a nearby shop",
+          "style": "primary",
+          "action": "book_shop"
+        },
+        {
+          "id": "log_only",
+          "label": "Inspection only — finish",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "log_susp"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "log_only",
+          "goto": "log_susp"
+        }
+      ]
+    },
+    {
+      "id": "align_after",
+      "title": "Plan alignment after strut work",
+      "coach_encourage": "New struts without alignment waste tire money. Final stretch — you're about 86% through.",
+      "personalize": "After repairs on your {{model}} at {{mileage}} miles, align before {{next_service}} miles of tire wear.",
+      "description": "Any strut or control-arm work changes geometry. Book four-wheel alignment after the repair — same trip if possible.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_susp",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "fraction": 0.857,
+        "percent": 86,
+        "label": "Step 6 of 7 · Align · 86%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "ok",
+          "label": "Got it — finish",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_susp"
+        },
+        {
+          "id": "align_guide",
+          "label": "Open alignment guide later",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Remind me why alignment matters after strut replacement."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "ok",
+          "goto": "log_susp"
+        }
+      ]
+    },
+    {
+      "id": "log_susp",
+      "title": "Log suspension findings",
+      "coach_encourage": "You gathered real chassis data. Well done! You made it through the flow — time to celebrate.",
+      "personalize": "Logged for {{make}} {{model}} at {{mileage}} miles. Next chassis peek ~{{next_service}} miles.",
+      "description": "Note which corners failed bounce/leak checks. After strut replacement, schedule alignment.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_susp",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 7,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 7 of 7 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log suspension check",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "suspension"
+        },
+        {
+          "id": "chat",
+          "label": "Describe the clunk",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Suspension symptom details for my vehicle:"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Suspension check complete",
+    "coach_encourage": "You respected springs and stayed safe. Well done! You made it through the flow — time to celebrate.",
+    "description": "Replace shocks/struts in axle pairs when worn. After strut work, plan an alignment.",
+    "log_category": "suspension",
+    "next_check_miles_default": 10000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to guides",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Still clunking",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Suspension clunk or bounce persists. Corner and when:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390×844 EN suspension coach.\n• No DIY spring compressor CTA\n• Bounce test visual\n• Feedback on",
+    "react_native_pseudocode": "CoachScenarioPlayer — load maintenance_suspension_struts_production.json"
+  }
+}

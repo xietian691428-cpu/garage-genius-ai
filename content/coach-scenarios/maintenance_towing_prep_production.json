@@ -1,0 +1,565 @@
+{
+  "id": "coach_scenario_towing_prep_production",
+  "slug": "maintenance_towing_prep",
+  "title": "Trailer / Towing Prep",
+  "subtitle": "Ratings, hitch, tires, cooling, lights, and tongue weight — a calm pre-tow so the trailer stays attached and cool.",
+  "category": "safety",
+  "focus_part": "transmission",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 40,
+    "diy_max": 120,
+    "shop_min": 60,
+    "shop_max": 300
+  },
+  "cost_band_usd": {
+    "diy_min": 0,
+    "diy_max": 250,
+    "shop_min": 80,
+    "shop_max": 1200
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel, step feedback Yes/No. Phase 3 towing: ratings first; hitch/overheat = critical.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Know trailer GVWR",
+    "Owner's manual tow chart",
+    "Working trailer plug"
+  ],
+  "tools_checklist": [
+    "Tire gauge",
+    "Flashlight",
+    "Hitch pin/clip",
+    "Helper for light check"
+  ],
+  "parts_checklist": [
+    "Correct hitch ball size",
+    "Wiring adapter if needed",
+    "Spare trailer bulbs / fuses"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "truck_suv",
+      "when": {},
+      "coach_note": "Always use the lowest rating that applies to your exact engine, axle, and tow package — marketing tow numbers can mislead.",
+      "prefer_shop": false
+    },
+    {
+      "id": "ev_tow",
+      "when": {
+        "powertrain": [
+          "bev",
+          "phev"
+        ]
+      },
+      "coach_note": "EV towing drains range fast — plan chargers, watch motor/temps, and stay inside the OEM tow rating.",
+      "prefer_shop": false
+    },
+    {
+      "id": "high_miles_tow",
+      "when": {
+        "mileage_min": 120000
+      },
+      "coach_note": "Higher-mile tow vehicles: prioritize cooling system health and transmission service history before heavy loads.",
+      "prefer_shop": true
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_tow",
+      "type": "gif",
+      "src": "/coach/towing/hero.gif",
+      "alt": "SUV hitched to trailer",
+      "shot_description": "Daytime hitch overview."
+    },
+    {
+      "key": "ratings_tow",
+      "type": "annotated",
+      "src": "/coach/towing/ratings.webp",
+      "alt": "Door placard and tow chart",
+      "shot_description": "Callouts GVWR/payload."
+    },
+    {
+      "key": "hitch_tow",
+      "type": "gif",
+      "src": "/coach/towing/hitch.gif",
+      "alt": "Coupler and chains",
+      "shot_description": "Latch + crossed chains."
+    },
+    {
+      "key": "tires_brakes_tow",
+      "type": "gif",
+      "src": "/coach/towing/tires.gif",
+      "alt": "Tire pressure for tow",
+      "shot_description": "Gauge + placard."
+    },
+    {
+      "key": "cooling_tow",
+      "type": "gif",
+      "src": "/coach/towing/cooling.gif",
+      "alt": "Coolant and temp gauge",
+      "shot_description": "Cold overflow + dash gauge."
+    },
+    {
+      "key": "lights_tow",
+      "type": "video",
+      "src": "/coach/towing/lights.mp4",
+      "poster": "/coach/towing/lights_poster.webp",
+      "alt": "Trailer light walk-around",
+      "shot_description": "20s turn/brake demo."
+    },
+    {
+      "key": "tongue_tow",
+      "type": "gif",
+      "src": "/coach/towing/tongue.gif",
+      "alt": "Tongue weight balance",
+      "shot_description": "60/40 load graphic."
+    },
+    {
+      "key": "celebrate_tow",
+      "type": "gif",
+      "src": "/coach/towing/celebrate.gif",
+      "alt": "Towing prep logged",
+      "shot_description": "Checkmark on hitch."
+    }
+  ],
+  "steps": [
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "welcome",
+      "title": "Towing prep — ratings first",
+      "coach_encourage": "Safe towing starts with numbers, not vibes. You're just getting started — I'll stay with you.",
+      "personalize": "Tow coach for your {{year}} {{make}} {{model}} at {{mileage}} miles. Recheck before {{next_service}} miles of hauling.",
+      "description": "Confirm tow rating, hitch class, tires/brakes/cooling, trailer lights, and tongue weight before you hitch up.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_tow",
+      "focus_part": "transmission",
+      "progress": {
+        "index": 1,
+        "total": 8,
+        "fraction": 0.125,
+        "percent": 12,
+        "label": "Step 1 of 8 · Start · 12%"
+      },
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start towing prep",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "ratings"
+        },
+        {
+          "id": "unsure",
+          "label": "Don't know my rating",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Help me find tow rating for my vehicle and hitch class."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "ratings"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "ratings",
+      "title": "Tow rating, GVWR & payload",
+      "coach_encourage": "Door stickers beat forum guesses. Nice momentum — you're about 25% through.",
+      "personalize": "Capacity check for your {{make}} {{model}} at {{mileage}} miles.",
+      "description": "Read the owner's manual tow chart for your engine/axle. Include passengers + cargo in payload. Never exceed GCWR / tongue limits.",
+      "visual_type": "annotated",
+      "visual_asset_key": "ratings_tow",
+      "focus_part": "transmission",
+      "progress": {
+        "index": 2,
+        "total": 8,
+        "fraction": 0.25,
+        "percent": 25,
+        "label": "Step 2 of 8 · Ratings · 25%"
+      },
+      "tools": [
+        "Owner's manual / app",
+        "Door placard"
+      ],
+      "action_buttons": [
+        {
+          "id": "within",
+          "label": "Within ratings",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "hitch"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "within",
+          "goto": "hitch"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Hitch / coupler failure risk",
+        "body": "Improper hitch setup can release a trailer at speed. If the receiver, ball, or coupler is worn, cracked, or undersized, stop and find a nearby shop or hitch specialist.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "hitch",
+      "title": "Hitch, receiver & safety chains",
+      "coach_encourage": "Hardware failure on the highway is not a DIY oops. You're crushing it — roughly 38% done.",
+      "personalize": "Hitch hardware check for {{model}} at {{mileage}} miles.",
+      "description": "Match hitch class to load. Pin/clip secure. Chains crossed under coupler. Weight-distribution / sway control if required by the trailer maker.",
+      "visual_type": "gif",
+      "visual_asset_key": "hitch_tow",
+      "focus_part": "suspension",
+      "progress": {
+        "index": 3,
+        "total": 8,
+        "fraction": 0.375,
+        "percent": 38,
+        "label": "Step 3 of 8 · Hitch · 38%"
+      },
+      "action_buttons": [
+        {
+          "id": "hitch_ok",
+          "label": "Hitch secured",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "tires_brakes_tow"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "hitch_ok",
+          "goto": "tires_brakes_tow"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "tires_brakes_tow",
+      "title": "Tow vehicle tires & brakes",
+      "coach_encourage": "Heat and load punish weak rubber and pads. Look at you — about 50% complete.",
+      "personalize": "Load-ready rubber/brakes on your {{make}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Cold PSI to placard (or tow supplement). Check tow-vehicle and trailer tire age/tread. Confirm brake feel — soft pedal → shop before towing.",
+      "visual_type": "gif",
+      "visual_asset_key": "tires_brakes_tow",
+      "focus_part": "tires",
+      "progress": {
+        "index": 4,
+        "total": 8,
+        "fraction": 0.5,
+        "percent": 50,
+        "label": "Step 4 of 8 · Tires/Brakes · 50%"
+      },
+      "tools": [
+        "Tire gauge"
+      ],
+      "action_buttons": [
+        {
+          "id": "ok",
+          "label": "Tires & brakes OK",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "cooling_trans"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "ok",
+          "goto": "cooling_trans"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Overheat / transmission damage risk",
+        "body": "Towing with low coolant or a failing transmission cooler can destroy the powertrain. Never open a hot cooling system. If temps climb, stop and find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "cooling_trans",
+      "title": "Cooling & transmission health",
+      "coach_encourage": "Grades + trailers cook transmissions. You're more than halfway — keep that steady pace.",
+      "personalize": "Cooling/trans glance for {{model}} at {{mileage}} miles.",
+      "description": "Cold coolant level correct. Know if you have a tow package / trans cooler. Burning smell or high temp on hills → pull over and get help.",
+      "visual_type": "gif",
+      "visual_asset_key": "cooling_tow",
+      "focus_part": "transmission",
+      "progress": {
+        "index": 5,
+        "total": 8,
+        "fraction": 0.625,
+        "percent": 62,
+        "label": "Step 5 of 8 · Cooling · 62%"
+      },
+      "action_buttons": [
+        {
+          "id": "cool_ok",
+          "label": "Cooling looks ready",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "lights_tow"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "cool_ok",
+          "goto": "lights_tow"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "lights_tow",
+      "title": "Trailer lights & brake controller",
+      "coach_encourage": "Other drivers need to see your intentions. Almost there — about 75% through.",
+      "personalize": "Lighting check for your {{year}} {{make}} tow setup.",
+      "description": "Plug in: running, brake, turn, reverse if equipped. Confirm electric brake controller gain if the trailer has brakes. Fix wiring before the trip — not on the shoulder at night.",
+      "visual_type": "video",
+      "visual_asset_key": "lights_tow",
+      "focus_part": "lights",
+      "progress": {
+        "index": 6,
+        "total": 8,
+        "fraction": 0.75,
+        "percent": 75,
+        "label": "Step 6 of 8 · Lights · 75%"
+      },
+      "action_buttons": [
+        {
+          "id": "lights_ok",
+          "label": "Lights verified",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "tongue_weight"
+        },
+        {
+          "id": "chat",
+          "label": "Wiring help",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Trailer lights / brake controller not working — help diagnose safely."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "lights_ok",
+          "goto": "tongue_weight"
+        }
+      ]
+    },
+    {
+      "safety_warning": "Sway at speed = reduce speed gradually; do not slam trailer brakes alone if unstable — get trained help.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "tongue_weight",
+      "title": "Tongue weight & sway check",
+      "coach_encourage": "Balance keeps the trailer from wagging the dog. Nearly done — about 88%.",
+      "personalize": "Load balance for {{model}} at {{mileage}} miles.",
+      "description": "Aim for the trailer maker's tongue-weight %. Load heavy items over the axle, not behind it. Test at low speed in an empty lot before highway speeds.",
+      "visual_type": "gif",
+      "visual_asset_key": "tongue_tow",
+      "focus_part": "suspension",
+      "progress": {
+        "index": 7,
+        "total": 8,
+        "fraction": 0.875,
+        "percent": 88,
+        "label": "Step 7 of 8 · Balance · 88%"
+      },
+      "action_buttons": [
+        {
+          "id": "stable",
+          "label": "Load feels stable",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_tow"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "stable",
+          "goto": "log_tow"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "log_tow",
+      "title": "Log towing readiness",
+      "coach_encourage": "You're hitch-ready the smart way. You made it through the flow — time to celebrate.",
+      "personalize": "Logged for {{make}} {{model}} at {{mileage}} miles. Next tow check before {{next_service}} miles.",
+      "description": "Note hitch class, trailer GVWR, and any tire/light fixes. Recheck after the first 50 miles of a trip.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_tow",
+      "progress": {
+        "index": 8,
+        "total": 8,
+        "fraction": 1.0,
+        "percent": 100,
+        "label": "Step 8 of 8 · Finish · 100%"
+      },
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log towing prep",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "towing"
+        },
+        {
+          "id": "chat",
+          "label": "Ask about my trailer",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Towing / trailer question for my vehicle:"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Tow-ready checklist done",
+    "coach_encourage": "You respected the ratings. Safe miles ahead — well done! You made it through the flow — time to celebrate.",
+    "description": "Recheck lug nuts, tire pressures, and hitch hardware after the first 50 miles. Never exceed tongue or GCWR limits.",
+    "log_category": "towing",
+    "next_check_miles_default": 5000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to guides",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Towing question",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Towing / trailer question:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION EN towing coach.\n• Ratings annotated\n• Hitch critical modal\n• Feedback on",
+    "react_native_pseudocode": "CoachScenarioPlayer — maintenance_towing_prep_production.json"
+  }
+}

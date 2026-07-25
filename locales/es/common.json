@@ -1,0 +1,45 @@
+{
+  "common": {
+    "appName": "Garage Genius",
+    "loading": "Cargando…",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "back": "Atrás",
+    "continue": "Continuar"
+  },
+  "locale": {
+    "label": "Idioma",
+    "en-US": "English (US)",
+    "es": "Español"
+  },
+  "coach": {
+    "title": "Guías del Coach",
+    "subtitle": "{{count}} guías DIY de producción — paso a paso, con seguridad primero, adaptadas a {{vehicle}}.",
+    "yourVehicle": "tu {{vehicle}}",
+    "yourGarage": "tu vehículo del garaje",
+    "recommended": "Guías recomendadas",
+    "recommendedFor": "Seleccionadas para tu {{vehicle}} según kilometraje, temporada, tren motriz y etiquetas del perfil.",
+    "recommendedEmpty": "Añade un perfil de vehículo para personalizar estas recomendaciones.",
+    "allGuides": "Todas las guías",
+    "feedbackPrompt": "¿Te resultó útil este paso?",
+    "feedbackYes": "Sí",
+    "feedbackNo": "No",
+    "feedbackThanks": "Gracias — nos ayuda a mejorar esta guía.",
+    "feedbackLocalOnly": "Guardado en esta sesión (inicia sesión para sincronizar).",
+    "feedbackWhyNot": "¿Qué se podría aclarar? (opcional)",
+    "feedbackNotePlaceholder": "Demasiado largo, falta un tip visual, línea de seguridad poco clara…",
+    "feedbackSubmit": "Enviar comentario",
+    "feedbackSkipNote": "Omitir nota"
+  },
+  "onboarding": {
+    "welcomeEyebrow": "Bienvenido a Garage Genius",
+    "welcomeTitle": "Tu coach DIY en el garaje",
+    "setUpVehicle": "Configurar mi vehículo",
+    "mileageLabel": "Kilometraje actual (opcional)",
+    "tagsLabel": "Etiquetas del perfil (opcional — mejora las guías recomendadas)"
+  },
+  "settings": {
+    "languageTitle": "Idioma",
+    "languageHint": "Idioma de la interfaz para Coach Guides y cuenta. Los pasos de las guías permanecen en su idioma de autoría por ahora."
+  }
+}

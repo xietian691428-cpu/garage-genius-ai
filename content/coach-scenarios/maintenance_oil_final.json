@@ -1,0 +1,930 @@
+{
+  "id": "coach_scenario_oil_filter_final",
+  "slug": "maintenance_oil",
+  "title": "Oil & Filter Service",
+  "subtitle": "I'll stay with you step by step — short checks, big visuals, zero judgment.",
+  "category": "maintenance",
+  "focus_part": "engine",
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 35,
+    "diy_max": 60,
+    "shop_min": 20,
+    "shop_max": 45
+  },
+  "cost_band_usd": {
+    "diy_min": 45,
+    "diy_max": 120,
+    "shop_min": 80,
+    "shop_max": 180
+  },
+  "tone": "Live coach: warm, short, celebrate micro-wins. Max 2 buttons. GIF/video first. Branch on 'done' vs 'problem'. Trust nudge every ~3 steps. Final: legal disclaimer on operational steps; high-risk modal + checkbox before continue.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and go to a shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "此为通用指导，最终请参考您的车辆手册或咨询授权技师。本App不对DIY操作导致的损坏负责。",
+    "risk_checkbox_label_default": "我已阅读并理解风险"
+  },
+  "prerequisites": [
+    "Vehicle on level ground",
+    "Engine cool enough to touch the drain area safely (warm OK; hot not)",
+    "Correct oil viscosity (door-jamb sticker or manual)",
+    "Matching oil filter + drain pan"
+  ],
+  "tools_checklist": [
+    "Jack + stands or ramps (if needed)",
+    "Drain-plug socket",
+    "Oil filter wrench",
+    "Funnel, gloves, rags",
+    "Torque wrench (recommended)"
+  ],
+  "parts_checklist": [
+    "Engine oil (correct spec & quantity)",
+    "Oil filter",
+    "Crush washer if required"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "interval_normal_gas",
+      "when": {
+        "powertrain": [
+          "gas"
+        ],
+        "mileage_max": 150000
+      },
+      "coach_note": "Most gas engines on full synthetic: plan ~5,000–7,500 miles (manual wins).",
+      "interval_miles": 6000,
+      "oil_spec_hint": "Use the viscosity on the door jamb (often 0W-20 or 5W-30)."
+    },
+    {
+      "id": "interval_hybrid",
+      "when": {
+        "powertrain": [
+          "hybrid",
+          "phev"
+        ]
+      },
+      "coach_note": "Hybrids still need oil — short trips create moisture even when the ICE naps.",
+      "interval_miles": 6000,
+      "oil_spec_hint": "Many hybrids want 0W-16 or 0W-20 — confirm on the oil cap."
+    },
+    {
+      "id": "severe_high_miles",
+      "when": {
+        "mileage_min": 100000
+      },
+      "coach_note": "Past 100k — nice longevity. Prefer the shorter interval and peek for leaks under there.",
+      "interval_miles": 5000
+    },
+    {
+      "id": "early_breakin",
+      "when": {
+        "mileage_max": 10000
+      },
+      "coach_note": "Newer vehicle — follow the first oil-change window in the manual.",
+      "interval_miles": 5000
+    },
+    {
+      "id": "diesel",
+      "when": {
+        "powertrain": [
+          "diesel"
+        ]
+      },
+      "coach_note": "Diesel needs the right API/ACEA class — don't sub regular gas oil.",
+      "oil_spec_hint": "Match diesel rating exactly."
+    },
+    {
+      "id": "luxury_shop_nudge",
+      "when": {
+        "brand_includes": [
+          "bmw",
+          "mercedes",
+          "audi",
+          "porsche",
+          "lexus"
+        ]
+      },
+      "coach_note": "This brand often wants OEM-approved oil. Unsure of the code? A specialist oil change is smart.",
+      "prefer_shop": true
+    },
+    {
+      "id": "bev_skip",
+      "when": {
+        "powertrain": [
+          "bev"
+        ]
+      },
+      "coach_note": "EVs don't take engine oil. Tell me if you meant another fluid and we'll switch.",
+      "prefer_shop": false
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_oil_service",
+      "type": "gif",
+      "src": "/coach/oil/hero_oil_kit.gif",
+      "alt": "Oil jug, filter, and gloves looping gently",
+      "shot_description": "3s loop: soft pan across oil + filter kit. Warm garage light. No text."
+    },
+    {
+      "key": "mileage_check",
+      "type": "gif",
+      "src": "/coach/oil/mileage_due.gif",
+      "alt": "Odometer ticking toward oil due",
+      "shot_description": "Simple motion: mileage → oil can icon → checkmark window."
+    },
+    {
+      "key": "diy_vs_shop",
+      "type": "gif",
+      "src": "/coach/oil/diy_vs_shop.gif",
+      "alt": "Split DIY driveway vs quick-lube",
+      "shot_description": "2s crossfade DIY ↔ shop. Friendly, not gated."
+    },
+    {
+      "key": "parts_laydown",
+      "type": "gif",
+      "src": "/coach/oil/parts_check.gif",
+      "alt": "Parts checklist animation",
+      "shot_description": "Items pop in: oil, filter, washer, funnel."
+    },
+    {
+      "key": "safety_jack_stands",
+      "type": "gif",
+      "src": "/coach/oil/safety_jack_stands.gif",
+      "alt": "Jack stand placement loop",
+      "shot_description": "Jack → stand on pinch weld → shake test. Red X on jack-only."
+    },
+    {
+      "key": "drain_plug_video",
+      "type": "video",
+      "src": "/coach/oil/drain_plug.mp4",
+      "poster": "/coach/oil/drain_plug_poster.webp",
+      "alt": "Draining oil into pan",
+      "shot_description": "15–25s vertical: crack plug → hand finish → drain. Gloves on."
+    },
+    {
+      "key": "filter_swap_gif",
+      "type": "gif",
+      "src": "/coach/oil/filter_swap.gif",
+      "alt": "Filter remove and install",
+      "shot_description": "Remove → lube gasket → hand-tighten."
+    },
+    {
+      "key": "refill_level",
+      "type": "video",
+      "src": "/coach/oil/refill_dipstick.mp4",
+      "poster": "/coach/oil/refill_poster.webp",
+      "alt": "Pour and dipstick check",
+      "shot_description": "Pour → idle → wipe stick → correct range."
+    },
+    {
+      "key": "stuck_help_gif",
+      "type": "gif",
+      "src": "/coach/oil/stuck_plug_help.gif",
+      "alt": "Safe approach for a stuck drain plug",
+      "shot_description": "Penetrating oil → correct socket → stop before rounding."
+    },
+    {
+      "key": "celebrate_log",
+      "type": "gif",
+      "src": "/coach/oil/celebrate_log.gif",
+      "alt": "Health file checkmark celebration",
+      "shot_description": "Clipboard check + soft confetti (subtle)."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Let's protect that engine",
+      "coach_encourage": "You're already ahead of most owners just by being here — nice.",
+      "personalize": "Coaching your {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "I'll confirm the vehicle, then we'll pick DIY or a shop. Either path keeps the engine happy — I'll celebrate the wins either way.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_oil_service",
+      "focus_part": "engine",
+      "duration_minutes": 1,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 8,
+        "label": "Step 1 of 8 · Start",
+        "fraction": 0.125
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "confirm_vehicle",
+          "label": "Looks right — let's go",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "assess_interval"
+        },
+        {
+          "id": "fix_vehicle",
+          "label": "Update vehicle first",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Please update my year, make, model, engine, and current mileage before oil service."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "confirm_vehicle",
+          "goto": "assess_interval"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "powertrain": [
+              "bev"
+            ]
+          },
+          "title": "Quick check — may not apply",
+          "coach_encourage": "Good catch verifying this early.",
+          "description": "Battery EVs don't take engine oil. Tell me in chat if you meant another fluid.",
+          "personalize": "Your {{year}} {{make}} {{model}} is an EV — engine oil service doesn't apply."
+        }
+      ],
+      "is_operational": false,
+      "safety_disclaimer": null,
+      "risk_confirm": null
+    },
+    {
+      "id": "assess_interval",
+      "title": "Are you due?",
+      "coach_encourage": "No wrong answer. We'll match timing to your car.",
+      "personalize": "At {{mileage}} miles, I'd plan the next oil window around {{next_service_miles}} miles (manual still wins).",
+      "description": "Match mileage and powertrain to a sensible window. Your owner's manual always overrides generic advice.",
+      "visual_type": "gif",
+      "visual_asset_key": "mileage_check",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 8,
+        "label": "Step 2 of 8 · Timing",
+        "fraction": 0.25
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "due_yes",
+          "label": "I'm due — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "diy_or_shop",
+          "set_flags": {
+            "oil_due": true
+          }
+        },
+        {
+          "id": "not_sure",
+          "label": "Not sure / not yet",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "interval_help",
+          "set_flags": {
+            "oil_due": "unsure"
+          }
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "due_yes",
+          "goto": "diy_or_shop",
+          "note": "Main path"
+        },
+        {
+          "when_button_id": "not_sure",
+          "goto": "interval_help",
+          "note": "Detailed guidance branch"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "mileage_min": 100000
+          },
+          "description": "High-mile champ — lean toward ~5k synthetic intervals and peek for leaks."
+        },
+        {
+          "when": {
+            "powertrain": [
+              "hybrid",
+              "phev"
+            ]
+          },
+          "description": "Hybrid note: keep oil fresh even if the gas engine naps a lot."
+        }
+      ],
+      "is_operational": false,
+      "safety_disclaimer": null,
+      "risk_confirm": null
+    },
+    {
+      "id": "interval_help",
+      "title": "Let's decide together",
+      "coach_encourage": "Asking is smart ownership. I've got you.",
+      "description": "If last service is unknown, treat it as due soon and prepare parts. If you're within ~1,000 miles, buy oil + filter now and schedule. Want a precise call? Send last date + mileage in chat.",
+      "visual_type": "gif",
+      "visual_asset_key": "mileage_check",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 8,
+        "label": "Step 2 · Coach check",
+        "fraction": 0.25
+      },
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "prep_anyway",
+          "label": "Prepare parts now",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "diy_or_shop"
+        },
+        {
+          "id": "ask_coach",
+          "label": "Ask coach in chat",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Help me decide if my oil change is due based on my mileage and last service date."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "prep_anyway",
+          "goto": "diy_or_shop"
+        }
+      ],
+      "is_operational": false,
+      "safety_disclaimer": null,
+      "risk_confirm": null
+    },
+    {
+      "id": "diy_or_shop",
+      "title": "DIY or shop?",
+      "coach_encourage": "Both paths are wins. Pick what fits today.",
+      "personalize": "For your {{make}} at {{mileage}} mi, DIY is usually $45–$120 if you have safe access.",
+      "description": "DIY if you have stands/ramps and the right oil. Shop if tools, space, or OEM oil codes feel fuzzy.",
+      "visual_type": "gif",
+      "visual_asset_key": "diy_vs_shop",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 8,
+        "label": "Step 3 of 8 · Path",
+        "fraction": 0.375
+      },
+      "safety_warning": "Never work under a car on a jack alone.",
+      "trust_nudge": "If you're unsure about lifting or oil spec, stop and go to a shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "choose_diy",
+          "label": "I'll DIY — coach me",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "parts_check",
+          "set_flags": {
+            "path": "diy"
+          }
+        },
+        {
+          "id": "choose_shop",
+          "label": "Book a shop",
+          "style": "secondary",
+          "action": "book_shop",
+          "set_flags": {
+            "path": "shop"
+          }
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "choose_diy",
+          "goto": "parts_check"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "brand_includes": [
+              "bmw",
+              "mercedes",
+              "audi",
+              "porsche"
+            ]
+          },
+          "description": "Confirm OEM oil approval first. No code on the jug? Specialist quick-lube is wise.",
+          "coach_encourage": "Choosing a shop for the right oil is pro-level thinking."
+        }
+      ],
+      "is_operational": false,
+      "safety_disclaimer": null,
+      "risk_confirm": null
+    },
+    {
+      "id": "parts_check",
+      "title": "Parts ready?",
+      "coach_encourage": "Lay it out once — the job feels half done. Good habit.",
+      "description": "Oil (viscosity + quantity), matching filter, crush washer if needed. Photo the oil-cap sticker if you want a double-check.",
+      "visual_type": "gif",
+      "visual_asset_key": "parts_laydown",
+      "duration_minutes": 5,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 8,
+        "label": "Step 4 of 8 · Parts",
+        "fraction": 0.5
+      },
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "parts_ready",
+          "label": "Parts ready",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "safety_setup"
+        },
+        {
+          "id": "need_parts",
+          "label": "Help me get parts",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "parts_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "parts_ready",
+          "goto": "safety_setup"
+        },
+        {
+          "when_button_id": "need_parts",
+          "goto": "parts_help",
+          "note": "Problem → detailed guidance"
+        }
+      ],
+      "personalize": "Match oil + filter to your {{year}} {{make}} {{model}} — door sticker beats memory.",
+      "is_operational": true,
+      "safety_disclaimer": "此为通用指导，最终请参考您的车辆手册或咨询授权技师。本App不对DIY操作导致的损坏负责。",
+      "risk_confirm": null
+    },
+    {
+      "id": "parts_help",
+      "title": "Let's nail the spec",
+      "coach_encourage": "Better to pause for the right jug than guess. Well done.",
+      "description": "Snap the oil-cap / door sticker, or open parts for oil + filter matched to your garage profile.",
+      "visual_type": "gif",
+      "visual_asset_key": "parts_laydown",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 8,
+        "label": "Step 4 · Spec help",
+        "fraction": 0.5
+      },
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "photo_spec",
+          "label": "Photo oil-cap sticker",
+          "style": "primary",
+          "action": "take_photo"
+        },
+        {
+          "id": "buy_parts",
+          "label": "Find parts to buy",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "oil_filter"
+        }
+      ],
+      "is_operational": true,
+      "safety_disclaimer": "此为通用指导，最终请参考您的车辆手册或咨询授权技师。本App不对DIY操作导致的损坏负责。",
+      "risk_confirm": null
+    },
+    {
+      "id": "safety_setup",
+      "title": "Make the car safe",
+      "coach_encourage": "This step is important — take it slow. Safety first.",
+      "description": "Level ground, park/brake, chock wheels. Stands on pinch welds, then a firm shake test. Watch the GIF once.",
+      "visual_type": "gif",
+      "visual_asset_key": "safety_jack_stands",
+      "duration_minutes": 8,
+      "difficulty": "Medium",
+      "tools": [
+        "Jack",
+        "Jack stands or ramps",
+        "Wheel chocks",
+        "Gloves"
+      ],
+      "progress": {
+        "index": 5,
+        "total": 8,
+        "label": "Step 5 of 8 · Safety",
+        "fraction": 0.625
+      },
+      "safety_warning": "Never rely on a jack alone. Hot exhaust burns — stay clear.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "safe_ready",
+          "label": "Car is secure",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "drain_oil"
+        },
+        {
+          "id": "abort_shop",
+          "label": "Feels unsafe — shop",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "safe_ready",
+          "goto": "drain_oil"
+        }
+      ],
+      "personalize": "{{mileage}} miles in — let's protect you and the undercarriage.",
+      "is_operational": true,
+      "safety_disclaimer": "此为通用指导，最终请参考您的车辆手册或咨询授权技师。本App不对DIY操作导致的损坏负责。",
+      "risk_confirm": {
+        "required": true,
+        "title": "Safety check before you lift",
+        "body": "Working under a vehicle can cause serious injury. Use jack stands on correct points. Never rely on a jack alone. Confirm your owner's manual jack points.",
+        "checkbox_label": "我已阅读并理解风险",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Back / choose a shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high"
+      }
+    },
+    {
+      "id": "drain_oil",
+      "title": "Drain the old oil",
+      "coach_encourage": "Steady hands. You're in the middle of a real service.",
+      "description": "Pan under the plug. Crack with a wrench, finish by hand, let it drain. Keep the plug somewhere clean.",
+      "visual_type": "video",
+      "visual_asset_key": "drain_plug_video",
+      "duration_minutes": 12,
+      "difficulty": "Medium",
+      "tools": [
+        "Drain pan",
+        "Correct socket",
+        "Gloves"
+      ],
+      "focus_part": "engine",
+      "progress": {
+        "index": 6,
+        "total": 8,
+        "label": "Step 6 of 8 · Drain",
+        "fraction": 0.75
+      },
+      "safety_warning": "Oil can burn. Last threads release a sudden flow.",
+      "trust_nudge": "If the plug feels like it might round off or you're unsure, stop and go to a shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "drained",
+          "label": "Done draining",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "replace_filter"
+        },
+        {
+          "id": "stuck_plug",
+          "label": "Problem — stuck / stripped",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "drain_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "drained",
+          "goto": "replace_filter",
+          "note": "I checked → next"
+        },
+        {
+          "when_button_id": "stuck_plug",
+          "goto": "drain_help",
+          "note": "Problem → detail"
+        }
+      ],
+      "personalize": "Draining on your {{make}} {{model}} — gloves on, pan ready.",
+      "is_operational": true,
+      "safety_disclaimer": "此为通用指导，最终请参考您的车辆手册或咨询授权技师。本App不对DIY操作导致的损坏负责。",
+      "risk_confirm": {
+        "required": true,
+        "title": "Hot oil & under-car work",
+        "body": "Engine oil can burn skin. A rounded drain plug can damage the oil pan. Stop if anything feels wrong and use a shop.",
+        "checkbox_label": "我已阅读并理解风险",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Back / choose a shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high"
+      }
+    },
+    {
+      "id": "drain_help",
+      "title": "Stuck plug — slow down",
+      "coach_encourage": "Stopping before you round a plug? That's technician instinct.",
+      "description": "Use the correct socket (not 12-point if it's rounded). Penetrating oil, steady pressure — no cheater pipes. If it still fights, shop/heli-coil beats a ruined pan.",
+      "visual_type": "gif",
+      "visual_asset_key": "stuck_help_gif",
+      "duration_minutes": 5,
+      "difficulty": "Hard",
+      "progress": {
+        "index": 6,
+        "total": 8,
+        "label": "Step 6 · Help",
+        "fraction": 0.75
+      },
+      "safety_warning": "Forcing a rounded plug can turn a $60 job into a $600 pan repair.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "resolved",
+          "label": "It's loose now — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "replace_filter"
+        },
+        {
+          "id": "shop_now",
+          "label": "Stop — get shop help",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "resolved",
+          "goto": "replace_filter"
+        }
+      ],
+      "is_operational": true,
+      "safety_disclaimer": "此为通用指导，最终请参考您的车辆手册或咨询授权技师。本App不对DIY操作导致的损坏负责。",
+      "risk_confirm": null
+    },
+    {
+      "id": "replace_filter",
+      "title": "Swap the filter",
+      "coach_encourage": "Great progress — filter, then fill. You've got this.",
+      "description": "Remove old filter (expect a drip). Wipe mount. Oil the new gasket. Hand-tight — usually ¾–1 turn after contact.",
+      "visual_type": "gif",
+      "visual_asset_key": "filter_swap_gif",
+      "duration_minutes": 8,
+      "difficulty": "Medium",
+      "tools": [
+        "Oil filter wrench",
+        "Rags",
+        "Gloves"
+      ],
+      "progress": {
+        "index": 7,
+        "total": 8,
+        "label": "Step 7 of 8 · Filter",
+        "fraction": 0.875
+      },
+      "safety_warning": "Start by hand only — cross-threading dumps oil on a hot exhaust.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "filter_done",
+          "label": "New filter on",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "refill_check"
+        },
+        {
+          "id": "filter_stuck",
+          "label": "Old filter won't budge",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "My oil filter is stuck. Coach me through safe removal options."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "filter_done",
+          "goto": "refill_check"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "brand_includes": [
+              "bmw",
+              "mercedes"
+            ],
+            "model_includes": [
+              "x5",
+              "gle"
+            ]
+          },
+          "description": "Cartridge filter: replace all O-rings, oil lightly, torque the cap to spec."
+        }
+      ],
+      "personalize": "Filter swap for your {{make}} — hand-start only.",
+      "is_operational": true,
+      "safety_disclaimer": "此为通用指导，最终请参考您的车辆手册或咨询授权技师。本App不对DIY操作导致的损坏负责。",
+      "risk_confirm": {
+        "required": true,
+        "title": "Oil filter install risk",
+        "body": "A cross-threaded filter can dump oil onto a hot exhaust. Start by hand only and follow your filter/housing torque guidance.",
+        "checkbox_label": "我已阅读并理解风险",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Back / choose a shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high"
+      }
+    },
+    {
+      "id": "refill_check",
+      "title": "Refill & verify",
+      "coach_encourage": "Last stretch. Slow and careful wins here.",
+      "description": "Plug + washer to torque. Fill just under capacity, idle 30–60s, shut off, wait, read dipstick. Top off gradually. Check for drips.",
+      "visual_type": "video",
+      "visual_asset_key": "refill_level",
+      "duration_minutes": 10,
+      "difficulty": "Easy",
+      "tools": [
+        "Funnel",
+        "Dipstick",
+        "Torque wrench"
+      ],
+      "progress": {
+        "index": 8,
+        "total": 8,
+        "label": "Step 8 of 8 · Fill",
+        "fraction": 1
+      },
+      "safety_warning": "Overfilling hurts seals — add slowly.",
+      "trust_nudge": "If you see a leak or the level won't settle and you're unsure, stop and go to a shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "level_good",
+          "label": "Level good — no leaks",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "reset_and_log"
+        },
+        {
+          "id": "level_problem",
+          "label": "Level / leak problem",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "refill_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "level_good",
+          "goto": "reset_and_log"
+        },
+        {
+          "when_button_id": "level_problem",
+          "goto": "refill_help"
+        }
+      ],
+      "personalize": "Fill to the capacity for your {{model}}; recheck at {{mileage}} after the first short drive.",
+      "is_operational": true,
+      "safety_disclaimer": "此为通用指导，最终请参考您的车辆手册或咨询授权技师。本App不对DIY操作导致的损坏负责。",
+      "risk_confirm": {
+        "required": true,
+        "title": "Overfill & leak check",
+        "body": "Overfilling can damage seals and catalysts. Confirm no active leaks before driving. Manual capacity wins over guesswork.",
+        "checkbox_label": "我已阅读并理解风险",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Back / choose a shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high"
+      }
+    },
+    {
+      "id": "refill_help",
+      "title": "Let's fix the level safely",
+      "coach_encourage": "You caught it early — that's the whole point of coaching.",
+      "description": "Low: add 0.25 qt, recheck. High: drain a little from the plug or extract — don't drive overfilled. Fresh drip at plug/filter: snug carefully, recheck. Still unsure? Shop.",
+      "visual_type": "video",
+      "visual_asset_key": "refill_level",
+      "duration_minutes": 5,
+      "difficulty": "Medium",
+      "progress": {
+        "index": 8,
+        "total": 8,
+        "label": "Step 8 · Help",
+        "fraction": 1
+      },
+      "safety_warning": "Active leak onto exhaust = stop. Don't drive.",
+      "action_buttons": [
+        {
+          "id": "fixed",
+          "label": "Fixed — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "reset_and_log"
+        },
+        {
+          "id": "need_shop",
+          "label": "I need a shop",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "fixed",
+          "goto": "reset_and_log"
+        }
+      ],
+      "is_operational": true,
+      "safety_disclaimer": "此为通用指导，最终请参考您的车辆手册或咨询授权技师。本App不对DIY操作导致的损坏负责。",
+      "risk_confirm": null
+    },
+    {
+      "id": "reset_and_log",
+      "title": "Log the win",
+      "coach_encourage": "You just bought quieter miles. Seriously — well done!",
+      "personalize": "Logged for {{make}} {{model}}. Next nudge near {{next_service_miles}} miles.",
+      "description": "Reset the oil light if your model has one, then save mileage + oil type to the health file.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_log",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 8,
+        "total": 8,
+        "label": "Complete",
+        "fraction": 1
+      },
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "log_service",
+          "label": "Log oil change",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "oil"
+        },
+        {
+          "id": "how_reset",
+          "label": "How do I reset the light?",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "How do I reset the oil maintenance reminder on my vehicle?"
+        }
+      ],
+      "is_operational": false,
+      "safety_disclaimer": null,
+      "risk_confirm": null
+    }
+  ],
+  "completion": {
+    "title": "Oil service complete",
+    "coach_encourage": "Proud of you — that's real garage ownership.",
+    "description": "Default next check ~5,000–7,500 miles (we adapt to powertrain + manual). Keep a photo of the jug in your health file.",
+    "log_category": "oil",
+    "next_check_miles_default": 6000,
+    "action_buttons": [
+      {
+        "id": "done_home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask_more",
+        "label": "Ask a follow-up",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "I just finished an oil and filter change. Any post-service checks this week?"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "FRAME 390×844\n• Top: continuous progress bar + step label (from step.progress) + Close\n• Hero: full-bleed GIF/video 390×240 (autoplay muted loop) — no badges on media\n• Brand 14/600 → Title 22/700 → coach_encourage 14/500 amber-tint → personalize 13/400 muted\n• Body ≤3 short lines\n• trust_nudge (every ~3 steps): soft slate banner, Shield icon, 13/500 — NOT overlaid on media\n• Safety: stronger amber/red bar when present\n• Actions: max 2 — primary full-width 52h; secondary text or outline\n• Workshop graphite + amber accent; no purple, no cream-serif\n• FINAL: footer safety_disclaimer on operational steps (zh legal copy)\n• High-risk: full-screen confirm modal; primary disabled until checkbox 「我已阅读并理解风险」\n• Max 2 CTAs; progress + coach_encourage + personalize with {{mileage}} / {{next_service_miles}}",
+    "react_native_pseudocode": "See content/coach-scenarios/CoachScenarioPlayer.final.tsx.example — shared player for all *_final.json"
+  },
+  "version": "final"
+}

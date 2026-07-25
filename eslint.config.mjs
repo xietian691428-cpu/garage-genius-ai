@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Scrapers / Python tooling (not app source)
+    "scripts/scrape/**",
+    "**/.venv/**",
+    "**/node_modules/**",
+    "manuals/**",
+    "content/**/*.json",
   ]),
 ]);
 

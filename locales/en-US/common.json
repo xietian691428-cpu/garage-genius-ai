@@ -1,0 +1,45 @@
+{
+  "common": {
+    "appName": "Garage Genius",
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "continue": "Continue"
+  },
+  "locale": {
+    "label": "Language",
+    "en-US": "English (US)",
+    "es": "Español"
+  },
+  "coach": {
+    "title": "Coach Guides",
+    "subtitle": "{{count}} production DIY playbooks — step-by-step, safety-first, tailored to {{vehicle}}.",
+    "yourVehicle": "your {{vehicle}}",
+    "yourGarage": "your garage vehicle",
+    "recommended": "Recommended Guides",
+    "recommendedFor": "Pushed for your {{vehicle}} based on mileage, season, powertrain, and profile tags.",
+    "recommendedEmpty": "Add a vehicle profile to personalize these recommendations.",
+    "allGuides": "All Guides",
+    "feedbackPrompt": "Was this step useful?",
+    "feedbackYes": "Yes",
+    "feedbackNo": "No",
+    "feedbackThanks": "Thanks — that helps us improve this guide.",
+    "feedbackLocalOnly": "Saved locally this session (sign in to sync).",
+    "feedbackWhyNot": "What could be clearer? (optional)",
+    "feedbackNotePlaceholder": "Too long, missing a photo tip, unclear safety line…",
+    "feedbackSubmit": "Send feedback",
+    "feedbackSkipNote": "Skip note"
+  },
+  "onboarding": {
+    "welcomeEyebrow": "Welcome to Garage Genius",
+    "welcomeTitle": "Your DIY coach in the garage",
+    "setUpVehicle": "Set up my vehicle",
+    "mileageLabel": "Current mileage (optional)",
+    "tagsLabel": "Profile tags (optional — improves Recommended Guides)"
+  },
+  "settings": {
+    "languageTitle": "Language",
+    "languageHint": "UI language for Coach Guides chrome and account screens. Playbook steps stay in their authored locale for now."
+  }
+}

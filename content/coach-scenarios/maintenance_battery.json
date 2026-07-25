@@ -1,0 +1,377 @@
+{
+  "id": "coach_scenario_battery",
+  "slug": "maintenance_battery",
+  "title": "12V Battery Check & Replacement",
+  "subtitle": "Slow cranks and random electronics glitches often start at the 12V battery — we'll test, clean, and replace safely.",
+  "category": "maintenance",
+  "focus_part": "battery",
+  "estimated_total_minutes": {
+    "diy_min": 30,
+    "diy_max": 75,
+    "shop_min": 20,
+    "shop_max": 60
+  },
+  "cost_band_usd": {
+    "diy_min": 120,
+    "diy_max": 280,
+    "shop_min": 180,
+    "shop_max": 450
+  },
+  "tone": "Encouraging coach with strong electrical safety. Hybrids/EVs still have a 12V battery — call that out early. Prefer short steps + GIFs for clamp order.",
+  "prerequisites": [
+    "Correct group size / cold cranking amps (CCA) for your vehicle",
+    "Memory saver optional (radio/windows may need relearn)",
+    "Eye protection and gloves",
+    "For AGM vs flooded: match what the car was designed for"
+  ],
+  "tools_checklist": [
+    "10mm (or vehicle-specific) wrench",
+    "Terminal brush / baking soda + water for corrosion",
+    "Multimeter or battery/load tester",
+    "Dielectric grease or terminal protectant",
+    "Optional: memory saver, code reader"
+  ],
+  "parts_checklist": [
+    "Replacement 12V battery (correct group + type AGM/flooded)",
+    "Terminal hardware if damaged",
+    "Hold-down clamp if missing/rusted"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "age_3_5",
+      "when": {},
+      "coach_note": "Many 12V batteries fade between years 3–5 (heat kills them faster in hot climates). Test before a cold snap."
+    },
+    {
+      "id": "start_stop_agm",
+      "when": {
+        "model_includes": ["rav4", "cr-v", "tucson", "telluride", "x5", "gle"]
+      },
+      "coach_note": "Start-stop systems usually need AGM (or the OEM-specified type). Putting a cheap flooded battery in an AGM car shortens life and can set charging faults.",
+      "prefer_shop": false,
+      "oil_spec_hint": null
+    },
+    {
+      "id": "hybrid_ev_12v",
+      "when": { "powertrain": ["hybrid", "phev", "bev"] },
+      "coach_note": "Hybrids and EVs still rely on a 12V battery for computers and contactors. A 'dead EV' is often a 12V issue — but high-voltage orange cables are off-limits.",
+      "prefer_shop": true
+    },
+    {
+      "id": "luxury_ibs",
+      "when": {
+        "brand_includes": ["bmw", "mercedes", "audi", "porsche"]
+      },
+      "coach_note": "Many European cars need battery registration / coding after replacement. DIY swap is possible, but a shop with a scan tool prevents charging errors.",
+      "prefer_shop": true
+    },
+    {
+      "id": "truck_cca",
+      "when": {
+        "model_includes": ["f-150", "silverado", "1500", "ram"]
+      },
+      "coach_note": "Trucks with winches, plows, or dual batteries need the right CCA and sometimes a matched pair — don't mix old/new randomly."
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_battery",
+      "type": "image",
+      "src": "/coach/battery/hero_battery.webp",
+      "alt": "12V battery with multimeter and gloves",
+      "shot_description": "Hero: AGM battery, multimeter probes, gloves. Clean bay light."
+    },
+    {
+      "key": "voltage_test_gif",
+      "type": "gif",
+      "src": "/coach/battery/voltage_test.gif",
+      "alt": "Multimeter on battery posts showing voltage",
+      "shot_description": "Loop: probes on +/− → display ~12.6 rest / ~14.x charging callouts as UI captions, not burned text."
+    },
+    {
+      "key": "corrosion_clean",
+      "type": "image",
+      "src": "/coach/battery/corrosion_clean.webp",
+      "alt": "Corroded terminal before and after cleaning",
+      "shot_description": "Before/after split of white/green corrosion cleaned with brush."
+    },
+    {
+      "key": "clamp_order_gif",
+      "type": "gif",
+      "src": "/coach/battery/clamp_order.gif",
+      "alt": "Disconnect negative first, reconnect negative last",
+      "shot_description": "Animated order: remove NEG (−) first → POS (+) → install POS → NEG last. Big minus/plus icons."
+    },
+    {
+      "key": "diy_vs_shop_battery",
+      "type": "image",
+      "src": "/coach/battery/diy_vs_shop.webp",
+      "alt": "DIY battery swap vs parts-store install",
+      "shot_description": "Split driveway DIY vs parts store lot install van."
+    },
+    {
+      "key": "hold_down_video",
+      "type": "video",
+      "src": "/coach/battery/install_holddown.mp4",
+      "poster": "/coach/battery/install_poster.webp",
+      "alt": "Securing battery hold-down and terminals",
+      "shot_description": "20s: seat battery → hold-down tight → terminals torqued snug → protectant."
+    },
+    {
+      "key": "hv_warning_illustration",
+      "type": "illustration",
+      "src": "/coach/battery/hv_warning.svg",
+      "alt": "Stay away from orange high-voltage cables",
+      "shot_description": "Diagram: 12V battery highlighted, orange HV cables crossed out."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Let's check the 12V heartbeat",
+      "description": "Slow crank, clicking starter, flickering lights, or a car that 'randomly dies' — we'll measure the 12V battery first. No shame if it's due; heat and short trips are hard on them.",
+      "visual_type": "image",
+      "visual_asset_key": "hero_battery",
+      "focus_part": "battery",
+      "duration_minutes": 1,
+      "difficulty": "Easy",
+      "safety_warning": "Batteries can explode from sparks near charging/gassing. Eye protection on. Never lean over while clamping.",
+      "action_buttons": [
+        {
+          "id": "start_test",
+          "label": "Test the battery",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "already_dead",
+          "label": "Won't start / jump needed",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "My car needs a jump or won't start. Coach me on safe jump-pack use for my vehicle."
+        }
+      ],
+      "variants": [
+        {
+          "when": { "powertrain": ["hybrid", "phev", "bev"] },
+          "title": "12V still matters on hybrids/EVs",
+          "description": "We'll stay on the small 12V battery only. Orange high-voltage cables and under-hood junction boxes are off-limits.",
+          "safety_warning": "Do not cut, unbolt, or probe orange HV cables. If the 12V is buried or in the trunk with HV nearby, prefer a shop.",
+          "visual_asset_key": "hv_warning_illustration"
+        }
+      ]
+    },
+    {
+      "id": "voltage_test",
+      "title": "Resting & charging voltage",
+      "description": "Engine off ~12.4–12.7V is healthy for a rested flooded/AGM. Below ~12.1V is discharged. Running often ~13.7–14.7V if the alternator/DC-DC is charging. Pair with a load test when you can.",
+      "visual_type": "gif",
+      "visual_asset_key": "voltage_test_gif",
+      "duration_minutes": 8,
+      "difficulty": "Easy",
+      "tools": ["Multimeter"],
+      "safety_warning": "Don't short the probes across posts. Keep jewelry away from terminals.",
+      "action_buttons": [
+        {
+          "id": "healthy",
+          "label": "Voltage looks healthy",
+          "style": "secondary",
+          "action": "skip_to",
+          "payload": "clean_terminals"
+        },
+        {
+          "id": "weak",
+          "label": "Weak / failing — replace path",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "photo_meter",
+          "label": "Photo the reading",
+          "style": "ghost",
+          "action": "take_photo"
+        }
+      ]
+    },
+    {
+      "id": "clean_terminals",
+      "title": "Clean corrosion (quick DIY win)",
+      "description": "If posts are fuzzy white/green, clean with a terminal brush (baking soda mix for flooded corrosion). Tight, clean clamps fix many 'dead battery' ghosts.",
+      "visual_type": "image",
+      "visual_asset_key": "corrosion_clean",
+      "duration_minutes": 15,
+      "difficulty": "Easy",
+      "tools": ["Terminal brush", "Gloves", "Eye protection"],
+      "safety_warning": "Disconnect negative first if you remove clamps to clean. Neutralize acid residue; wash skin if splashed.",
+      "action_buttons": [
+        {
+          "id": "cleaned_ok",
+          "label": "Cleaned — starts fine now",
+          "style": "primary",
+          "action": "skip_to",
+          "payload": "log_battery"
+        },
+        {
+          "id": "still_weak",
+          "label": "Still weak — replace",
+          "style": "secondary",
+          "action": "next_step"
+        }
+      ]
+    },
+    {
+      "id": "diy_or_shop",
+      "title": "DIY swap or let a shop code it?",
+      "description": "Many gas cars are a straightforward DIY. AGM start-stop, trunk batteries, IBS sensors, or European registration push this toward a parts-store install or indie shop — still a smart call.",
+      "visual_type": "image",
+      "visual_asset_key": "diy_vs_shop_battery",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "safety_warning": "Wrong battery type (AGM vs flooded) or skipping registration can cause charging faults.",
+      "action_buttons": [
+        {
+          "id": "diy",
+          "label": "DIY replace — coach me",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "shop",
+          "label": "Shop / parts-store install",
+          "style": "secondary",
+          "action": "book_shop"
+        },
+        {
+          "id": "parts",
+          "label": "Find the right battery",
+          "style": "ghost",
+          "action": "open_parts",
+          "payload": "battery"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "brand_includes": ["bmw", "mercedes", "audi"]
+          },
+          "description": "Plan on battery registration with a scan tool after the swap. If you don't have one, buy the battery and pay for install/coding.",
+          "safety_warning": "Unregistered batteries may over/under charge."
+        },
+        {
+          "when": { "powertrain": ["hybrid", "phev", "bev"] },
+          "description": "If access is tight near HV components, choose a shop. Your job is the 12V only.",
+          "safety_warning": "Orange cables = stop."
+        }
+      ]
+    },
+    {
+      "id": "remove_install",
+      "title": "Remove old, install new (clamp order)",
+      "description": "Negative (−) off first, then positive (+). Swap the battery, secure the hold-down, connect positive first, negative last. Coat terminals lightly. Confirm no tools left on the posts.",
+      "visual_type": "gif",
+      "visual_asset_key": "clamp_order_gif",
+      "duration_minutes": 25,
+      "difficulty": "Medium",
+      "tools": ["Wrench", "Hold-down tools", "Grease"],
+      "safety_warning": "Sparks near a gassing battery are dangerous — negative first off / last on reduces short risk if a wrench hits ground.",
+      "focus_part": "battery",
+      "action_buttons": [
+        {
+          "id": "installed",
+          "label": "New battery secured",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "watch",
+          "label": "Replay clamp-order GIF",
+          "style": "ghost",
+          "action": "show_video",
+          "payload": "clamp_order_gif"
+        },
+        {
+          "id": "stuck_holddown",
+          "label": "Hold-down / tray rusted",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Battery hold-down or tray is rusted/seized. How do I proceed safely?"
+        }
+      ]
+    },
+    {
+      "id": "verify_relearn",
+      "title": "Start, verify, relearn windows/radio",
+      "description": "Start the car, recheck charging voltage, clear any obvious warnings. You may need window 'up + hold' relearns, clock/radio codes, or a scan tool for battery registration.",
+      "visual_type": "video",
+      "visual_asset_key": "hold_down_video",
+      "duration_minutes": 15,
+      "difficulty": "Easy",
+      "safety_warning": "If you smell sulfur, see smoke, or cables heat up, shut down and disconnect carefully — get help.",
+      "action_buttons": [
+        {
+          "id": "all_good",
+          "label": "Starts & charges normally",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "warning_lights",
+          "label": "Warning lights remain",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "After battery replacement I still have warning lights. Help me sort registration vs other faults."
+        }
+      ]
+    },
+    {
+      "id": "log_battery",
+      "title": "Log the battery birthday",
+      "description": "Save install date, brand, and group size in your health file. Recycle the old battery (most parts stores credit the core). Nice work keeping roadside drama away.",
+      "visual_type": "illustration",
+      "visual_asset_key": "hv_warning_illustration",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "safety_warning": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log battery service",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "battery"
+        },
+        {
+          "id": "finish",
+          "label": "Finish",
+          "style": "ghost",
+          "action": "mark_done"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "12V service done — systems online",
+    "description": "Expect 3–5+ years from a quality AGM in moderate climates. Retest before winter if you take lots of short trips.",
+    "log_category": "battery",
+    "next_check_miles_default": 15000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Charging system questions",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "How do I know if my alternator or DC-DC charger is healthy after a battery swap?"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "390×844 coach shell.\n• Clamp-order GIF is the visual hero of the install step (full width)\n• Hybrid/EV welcome variant swaps in HV warning illustration\n• DIY/Shop cards emphasize 'registration required' chip when adaptive prefer_shop\n• Focus: battery region on dashboard silhouette",
+    "react_native_pseudocode": "function BatteryCoachScreen({ vehicle, scenario }) {\n  const rules = matchAdaptiveRules(scenario.adaptive_rules, vehicle);\n  const [i, setI] = useState(0);\n  const step = applyVariants(scenario.steps[i], vehicle);\n  useEffect(() => emitFocus({ part: 'battery', action: step.id }), [step.id]);\n  return (\n    <CoachShell\n      media={resolveAsset(scenario, step)}\n      title={step.title}\n      body={injectCoachNotes(step.description, rules)}\n      safety={step.safety_warning}\n      actions={step.action_buttons}\n      onAction={(btn) => handleCoachAction(btn, { setI, scenario })}\n    />\n  );\n}"
+  }
+}

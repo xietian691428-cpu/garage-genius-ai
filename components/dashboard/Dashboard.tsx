@@ -1,0 +1,1976 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Activity,
+  AlertTriangle,
+  Bell,
+  Bluetooth,
+  Camera,
+  CheckCircle,
+  Clock,
+  FileDown,
+  Plus,
+  Search,
+  Thermometer,
+  TrendingUp,
+} from "lucide-react";
+import { DASHBOARD_REGIONS } from "@/lib/dashboard-regions";
+import {
+  loadInspectionCache,
+  loadLatestRegionCache,
+  saveInspectionCache,
+} from "@/lib/inspection-cache";
+import type { DashboardRegion, RegionInspection } from "@/lib/types/dashboard";
+import type { VehicleInfo } from "@/lib/types/chat";
+import type { FocusCommand } from "@/lib/types/focus";
+import {
+  formatVehicleYmmMarket,
+  normalizeVehicleMarket,
+  VEHICLE_MARKETS,
+  type VehicleMarketCode,
+} from "@/lib/types/vehicle-market";
+import { getDashboardRegion } from "@/lib/dashboard-regions";
+import RegionDetailPanel from "./RegionDetailPanel";
+import FocusOverlay from "./FocusOverlay";
+import FocusPanel from "./FocusPanel";
+import UpgradeButton from "@/components/ui/UpgradeButton";
+import { useSubscription } from "@/hooks/useSubscription";
+import { focusPartToRegionId } from "@/lib/types/focus";
+import AddVehicleModal from "@/components/vehicles/AddVehicleModal";
+import CameraCapture from "@/components/chat/CameraCapture";
+import {
+  buildCodesAskPrompt,
+  buildReminders,
+  computeHealthScore,
+  demoObdSnapshot,
+  estimateMarketBand,
+  estimateMilesToService,
+  fluidTone,
+  healthTrendLabel,
+  levelFromValue,
+  loadVehicleVitals,
+  saveVehicleVitals,
+  severityTone,
+  type DiagnosticCode,
+  type FluidStatus,
+  type VehicleVitals,
+} from "@/lib/vehicle-vitals";
+import {
+  applyVisionToVitals,
+  vehicleVitalsCloud,
+  type VehicleVitalsRow,
+  type VisionVehicleAnalysis,
+} from "@/lib/supabase-vehicle-vitals";
+import { supabase } from "@/lib/supabase";
+import {
+  getObdConnector,
+  isWebBluetoothAvailable,
+  LIVE_SENSOR_PIDS,
+  formatLiveSensorValue,
+  hasLiveSensorData,
+  type ObdLiveSensors,
+} from "@/lib/obd";
+import {
+  getAffiliateLinks,
+  partQueryForDtc,
+} from "@/lib/affiliate-links";
+import {
+  isReminderSnoozed,
+  shouldRemindService,
+  snoozeReminder,
+  upcomingMaintenanceCopy,
+} from "@/lib/reminders";
+import { enableWebPushReminders, isWebPushSupported, syncWebPushIfGranted } from "@/lib/push-client";
+import {
+  listReminderInbox,
+  markAllRemindersRead,
+  markReminderRead,
+  type ReminderInboxItem,
+} from "@/lib/reminder-inbox";
+import { exportVehicleReportPdf } from "@/lib/export-vehicle-report";
+import { exportAnnualHealthReportPdf } from "@/lib/export-annual-health-report";
+import { listRecommendedCoachPlaybooks } from "@/lib/coach-scenarios/catalog";
+import { maintenanceService } from "@/lib/maintenance-records";
+import UpgradeModal from "@/components/ui/UpgradeModal";
+
+interface Props {
+  onAskAI?: (prompt: string, options?: { images?: string[] }) => void;
+  /** Focus Mode payload from Chat (AI <focus> / focus-data) */
+  focusCommand?: FocusCommand | null;
+  onFocusConsumed?: () => void;
+  vehicles: VehicleInfo[];
+  currentVehicle: VehicleInfo | null;
+  vehiclesLoading?: boolean;
+  onVehicleChange: (vehicle: VehicleInfo) => void | Promise<void>;
+  onAddVehicle?: (vehicle: VehicleInfo) => void | Promise<VehicleInfo>;
+  onUpdateVehicle?: (vehicle: VehicleInfo) => void | Promise<VehicleInfo>;
+}
+
+export default function Dashboard({
+  onAskAI,
+  focusCommand = null,
+  onFocusConsumed,
+  vehicles,
+  currentVehicle,
+  vehiclesLoading = false,
+  onVehicleChange,
+  onAddVehicle,
+  onUpdateVehicle,
+}: Props) {
+  const { isFree, features } = useSubscription();
+  const vehicle = currentVehicle;
+  const [marketFilter, setMarketFilter] = useState<"ALL" | VehicleMarketCode>(
+    "ALL",
+  );
+  const [editingVehicle, setEditingVehicle] = useState<VehicleInfo | null>(
+    null,
+  );
+  const [showAddVehicle, setShowAddVehicle] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState<DashboardRegion | null>(
+    null,
+  );
+  const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [symptoms, setSymptoms] = useState("");
+  const [inspection, setInspection] = useState<RegionInspection | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fromCache, setFromCache] = useState(false);
+  const [activeFocus, setActiveFocus] = useState<FocusCommand | null>(null);
+  const [vitals, setVitals] = useState<VehicleVitals | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [obdNote, setObdNote] = useState<string | null>(null);
+  const [liveSensors, setLiveSensors] = useState<ObdLiveSensors | null>(null);
+  const [isRefreshingSensors, setIsRefreshingSensors] = useState(false);
+  const [reminderSnoozed, setReminderSnoozed] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [inbox, setInbox] = useState<ReminderInboxItem[]>([]);
+  const [inboxLoading, setInboxLoading] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
+  const [visionNote, setVisionNote] = useState<string | null>(null);
+  const [manualCode, setManualCode] = useState("");
+  const [annualBusy, setAnnualBusy] = useState(false);
+  const [showAnnualUpgrade, setShowAnnualUpgrade] = useState(false);
+  const [manualDesc, setManualDesc] = useState("");
+  const [vitalsHistory, setVitalsHistory] = useState<VehicleVitalsRow[]>([]);
+
+  const loadVitalsHistory = useCallback(async (vehicleId: string) => {
+    const rows = await vehicleVitalsCloud.listRecent(vehicleId, 5);
+    setVitalsHistory(rows);
+  }, []);
+
+  const loadInbox = useCallback(async (vehicleId?: string | null) => {
+    setInboxLoading(true);
+    try {
+      const rows = await listReminderInbox(vehicleId, 12);
+      setInbox(rows);
+    } finally {
+      setInboxLoading(false);
+    }
+  }, []);
+
+  // Quiet push re-sync when permission already granted
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (cancelled || !session?.access_token) return;
+      await syncWebPushIfGranted(session.access_token);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Hydrate when active garage vehicle changes
+  useEffect(() => {
+    if (!vehicle?.id) {
+      setVitals(null);
+      setVitalsHistory([]);
+      setLiveSensors(null);
+      setReminderSnoozed(false);
+      setInbox([]);
+      return;
+    }
+    let cancelled = false;
+    setVisionNote(null);
+    setObdNote(null);
+    setLiveSensors(null);
+    setReminderSnoozed(isReminderSnoozed(vehicle.id));
+    void (async () => {
+      try {
+        const hydrated = await vehicleVitalsCloud.hydrateLocal(vehicle.id);
+        if (!cancelled) setVitals(hydrated);
+      } catch {
+        if (!cancelled) setVitals(loadVehicleVitals(vehicle.id));
+      }
+      if (!cancelled) {
+        await loadVitalsHistory(vehicle.id);
+        await loadInbox(vehicle.id);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [vehicle?.id, loadVitalsHistory, loadInbox]);
+
+  const loadLatestVitals = useCallback(async (vehicleId: string) => {
+    try {
+      const hydrated = await vehicleVitalsCloud.hydrateLocal(vehicleId);
+      setVitals(hydrated);
+      await loadVitalsHistory(vehicleId);
+      return hydrated;
+    } catch {
+      const local = loadVehicleVitals(vehicleId);
+      setVitals(local);
+      return local;
+    }
+  }, [loadVitalsHistory]);
+
+  const restoreSnapshot = useCallback(
+    (row: VehicleVitalsRow) => {
+      if (!vehicle) return;
+      const historyScores = [...vitalsHistory]
+        .filter((r) => typeof r.health_score === "number")
+        .map((r) => ({
+          at: r.snapshot_at,
+          score: r.health_score as number,
+        }))
+        .reverse();
+      const restored = vehicleVitalsCloud.snapshotToLocal(
+        vehicle.id,
+        row,
+        historyScores,
+      );
+      setVitals(restored);
+      saveVehicleVitals(restored);
+      setVisionNote(
+        `Restored snapshot from ${new Date(row.snapshot_at).toLocaleString()} (${row.source})`,
+      );
+    },
+    [vehicle, vitalsHistory],
+  );
+
+  /** Chart points: oldest → newest, padded SVG coords */
+  const healthChart = useMemo(() => {
+    const series = [...vitalsHistory]
+      .filter((r) => typeof r.health_score === "number")
+      .reverse();
+    if (!series.length) return { points: "", dots: [] as { x: number; y: number; score: number }[] };
+
+    const w = 400;
+    const h = 160;
+    const padX = 24;
+    const padY = 16;
+    const n = series.length;
+    const dots = series.map((r, i) => {
+      const score = r.health_score as number;
+      const x =
+        n === 1 ? w / 2 : padX + (i * (w - padX * 2)) / Math.max(n - 1, 1);
+      const y = padY + ((100 - score) / 100) * (h - padY * 2);
+      return { x, y, score };
+    });
+    const points = dots.map((d) => `${d.x},${d.y}`).join(" ");
+    return { points, dots };
+  }, [vitalsHistory]);
+
+  const persistVitals = useCallback(
+    (next: VehicleVitals, options?: { recordHealth?: boolean }) => {
+      const score = vehicle ? computeHealthScore(vehicle, next) : 0;
+      const stamped: VehicleVitals = {
+        ...next,
+        healthHistory: options?.recordHealth
+          ? [
+              ...next.healthHistory.slice(-29),
+              { at: new Date().toISOString(), score },
+            ]
+          : next.healthHistory,
+        updatedAt: new Date().toISOString(),
+      };
+      setVitals(stamped);
+      saveVehicleVitals(stamped);
+    },
+    [vehicle],
+  );
+
+  const health = useMemo(() => {
+    if (!vehicle || !vitals) return null;
+    // Prefer latest snapshot score (Vision / OBD) when present
+    const last = vitals.healthHistory[vitals.healthHistory.length - 1];
+    if (last && Date.now() - Date.parse(last.at) < 24 * 60 * 60 * 1000) {
+      return last.score;
+    }
+    return computeHealthScore(vehicle, vitals);
+  }, [vehicle, vitals]);
+
+  const serviceEta = useMemo(
+    () => (vehicle ? estimateMilesToService(vehicle) : null),
+    [vehicle],
+  );
+
+  const marketBand = useMemo(
+    () => (vehicle ? estimateMarketBand(vehicle) : "—"),
+    [vehicle],
+  );
+
+  const reminders = useMemo(() => {
+    if (!vehicle || !vitals || health == null) return [];
+    return buildReminders(vehicle, vitals, health);
+  }, [vehicle, vitals, health]);
+
+  const serviceDue = useMemo(
+    () => (vehicle ? shouldRemindService(vehicle) : false),
+    [vehicle],
+  );
+
+  const maintenanceCopy = useMemo(() => {
+    if (!vehicle) return null;
+    return upcomingMaintenanceCopy(vehicle);
+  }, [vehicle]);
+
+  const handleSetReminder = () => {
+    if (!vehicle) return;
+    snoozeReminder(vehicle.id, 7, "In-app snooze");
+    setReminderSnoozed(true);
+    alert(
+      "Reminder snoozed for 7 days on this device.\nEnable Push below for email / browser alerts when due.",
+    );
+  };
+
+  const handleEnablePush = async () => {
+    setPushBusy(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        alert("Please sign in to enable push reminders.");
+        return;
+      }
+      const result = await enableWebPushReminders(session.access_token);
+      alert(result.message);
+      if (result.ok && vehicle?.id) await loadInbox(vehicle.id);
+    } catch (err) {
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Could not enable push reminders.",
+      );
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
+  const handleExportReport = () => {
+    if (!vehicle) {
+      alert("Please select a vehicle first.");
+      return;
+    }
+    exportVehicleReportPdf({
+      vehicle,
+      vitals,
+      health,
+      liveSensors,
+    });
+  };
+
+  const handleAnnualHealthReport = async () => {
+    if (!vehicle) {
+      alert("Please select a vehicle first.");
+      return;
+    }
+    if (!features.annualHealthReport) {
+      setShowAnnualUpgrade(true);
+      return;
+    }
+    setAnnualBusy(true);
+    try {
+      const { records } = await maintenanceService.list({
+        vehicleId: vehicle.id,
+        isPro: features.maintenanceHistory,
+      });
+      exportAnnualHealthReportPdf({
+        vehicle,
+        vitals,
+        health,
+        liveSensors,
+        maintenanceRecords: records,
+        recommendedGuides: listRecommendedCoachPlaybooks(vehicle, { limit: 5 }),
+      });
+    } catch (err) {
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Could not generate the annual health report.",
+      );
+    } finally {
+      setAnnualBusy(false);
+    }
+  };
+
+  const handleRefreshSensors = async () => {
+    const obd = getObdConnector();
+    if (!obd.isConnected) {
+      alert("Connect OBD first (OBD Diagnose), then refresh sensors.");
+      return;
+    }
+    setIsRefreshingSensors(true);
+    try {
+      const sensors = await obd.readLiveSensors();
+      setLiveSensors(sensors);
+    } catch (err) {
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Could not read live PIDs from the adapter.",
+      );
+    } finally {
+      setIsRefreshingSensors(false);
+    }
+  };
+
+  const alertCount = vitals
+    ? vitals.codes.filter(
+        (c) => c.severity === "High" || c.severity === "Moderate",
+      ).length +
+      vitals.fluids.filter(
+        (f) => f.level === "low" || f.level === "critical",
+      ).length
+    : 0;
+
+  const applyObdSnapshot = useCallback(
+    (
+      source: "obd" | "demo",
+      note: string,
+      scannedCodes?: DiagnosticCode[],
+    ) => {
+      if (!vehicle) return;
+      const current = vitals ?? loadVehicleVitals(vehicle.id);
+      const snap = demoObdSnapshot();
+      const codes: DiagnosticCode[] = (scannedCodes?.length
+        ? scannedCodes
+        : snap.codes.map((c) => ({ ...c, source }))
+      ).map((c) => ({
+        ...c,
+        source,
+        recordedAt: c.recordedAt || new Date().toISOString(),
+      }));
+
+      // Keep existing fluids when a live OBD scan only returns DTCs
+      const nextFluids =
+        source === "obd" && scannedCodes
+          ? current.fluids.some((f) => f.level !== "unknown")
+            ? current.fluids
+            : snap.fluids
+          : snap.fluids;
+
+      const nextCodes = [...codes, ...current.codes]
+        .filter(
+          (c, i, arr) => arr.findIndex((x) => x.code === c.code) === i,
+        )
+        .slice(0, 8);
+
+      persistVitals(
+        {
+          ...current,
+          fluids: nextFluids,
+          codes: nextCodes,
+          lastObdAt: new Date().toISOString(),
+        },
+        { recordHealth: true },
+      );
+      setObdNote(note);
+      const score = computeHealthScore(vehicle, {
+        ...current,
+        fluids: nextFluids,
+        codes: nextCodes,
+      });
+      void vehicleVitalsCloud
+        .insertSnapshot({
+          vehicle,
+          fluids: nextFluids,
+          codes: nextCodes,
+          healthScore: score,
+          notes: note,
+          source,
+        })
+        .then(() => {
+          void loadVitalsHistory(vehicle.id);
+        });
+    },
+    [persistVitals, vehicle, vitals, loadVitalsHistory],
+  );
+
+  const handleOBDScan = async () => {
+    if (!vehicle) {
+      alert("Please select a vehicle first.");
+      return;
+    }
+    if (isScanning) return;
+
+    const base = vitals ?? loadVehicleVitals(vehicle.id);
+    if (!vitals) setVitals(base);
+
+    setIsScanning(true);
+    setObdNote(null);
+
+    try {
+      if (!isWebBluetoothAvailable()) {
+        applyObdSnapshot(
+          "demo",
+          "Web Bluetooth is not available in this browser. Use Chrome on Android with a BLE ELM327 adapter — a demo snapshot was saved so you can keep DIY coaching.",
+        );
+        alert(
+          "Web Bluetooth unavailable.\nUse Chrome on Android + a powered BLE ELM327 near your phone.\nA demo snapshot was saved for now.",
+        );
+        return;
+      }
+
+      const obd = getObdConnector();
+      const connected = await obd.connect();
+
+      if (!connected) {
+        alert(
+          "OBD connection failed.\nMake sure your ELM327 adapter is powered on and close to your phone, then try again.",
+        );
+        setObdNote("OBD connection failed or cancelled.");
+        return;
+      }
+
+      const dtcs = await obd.readDTCs();
+      const scanned: DiagnosticCode[] = dtcs.map((c) => ({
+        code: c.code,
+        desc: c.desc,
+        severity: c.severity,
+        source: "obd" as const,
+        recordedAt: new Date().toISOString(),
+      }));
+
+      try {
+        const sensors = await obd.readLiveSensors();
+        setLiveSensors(sensors);
+      } catch {
+        setLiveSensors(null);
+      }
+
+      const note = scanned.length
+        ? `Detected ${scanned.length} code(s) from ${obd.deviceName}. Review and Ask AI for DIY next steps.`
+        : `OBD scan complete on ${obd.deviceName} — no stored/pending DTCs reported. Vehicle looks healthy.`;
+
+      const healthScore = scanned.length > 0 ? 75 : 92;
+
+      // Prefer keeping existing fluids; fill demo fluids only if never checked
+      const nextFluids = base.fluids.some((f) => f.level !== "unknown")
+        ? base.fluids
+        : demoObdSnapshot().fluids;
+
+      const nextCodes = [...scanned, ...base.codes]
+        .filter((c, i, arr) => arr.findIndex((x) => x.code === c.code) === i)
+        .slice(0, 8);
+
+      const withScore: VehicleVitals = {
+        ...base,
+        fluids: nextFluids,
+        codes: nextCodes,
+        lastObdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        healthHistory: [
+          ...base.healthHistory.slice(-29),
+          { at: new Date().toISOString(), score: healthScore },
+        ],
+      };
+
+      setVitals(withScore);
+      saveVehicleVitals(withScore);
+      setObdNote(note);
+
+      await vehicleVitalsCloud.insertSnapshot({
+        vehicle,
+        fluids: nextFluids,
+        codes: nextCodes,
+        healthScore,
+        notes: note,
+        source: "obd",
+      });
+      await loadVitalsHistory(vehicle.id);
+
+      alert(
+        scanned.length
+          ? `✅ OBD scan complete!\n${scanned.map((c) => `${c.code}: ${c.desc}`).join("\n")}`
+          : "✅ OBD scan complete!\nNo diagnostic trouble codes found.",
+      );
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "OBD scan failed unexpectedly.";
+      setObdNote(msg);
+      alert(`OBD error: ${msg}`);
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  /** Open in-app camera for Vision → Dashboard writeback */
+  const handlePhotoDiagnosis = () => {
+    if (!vehicle) {
+      alert("Please select a vehicle first.");
+      return;
+    }
+    if (!vitals) {
+      setVitals(loadVehicleVitals(vehicle.id));
+    }
+    setShowCamera(true);
+  };
+
+  /**
+   * After CameraCapture: Vision API → persist vehicle_vitals → update UI.
+   * Keeps Bearer auth (required for /api/vision/analyze-vehicle).
+   */
+  const handlePhotoCapture = async (imageBase64: string) => {
+    if (!vehicle) return;
+    const base = vitals ?? loadVehicleVitals(vehicle.id);
+    setShowCamera(false);
+    setIsAnalyzingPhoto(true);
+    setVisionNote(null);
+    setObdNote(null);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        throw new Error("Please sign in to analyze photos.");
+      }
+
+      const response = await fetch("/api/vision/analyze-vehicle", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          image: imageBase64,
+          imageBase64,
+          vehicle: {
+            year: vehicle.year,
+            make: vehicle.make,
+            model: vehicle.model,
+            market: vehicle.market,
+            engine: vehicle.engine,
+          },
+        }),
+      });
+
+      const payload = (await response.json()) as VisionVehicleAnalysis & {
+        success?: boolean;
+        data?: VisionVehicleAnalysis;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Vision analysis failed");
+      }
+
+      const visionData: VisionVehicleAnalysis = payload.data ?? payload;
+      const next = applyVisionToVitals(base, visionData, vehicle);
+      const score =
+        typeof visionData.health_score === "number"
+          ? visionData.health_score
+          : computeHealthScore(vehicle, next);
+
+      const withScore: VehicleVitals = {
+        ...next,
+        healthHistory:
+          typeof visionData.health_score === "number"
+            ? next.healthHistory
+            : [
+                ...next.healthHistory.slice(-29),
+                { at: new Date().toISOString(), score },
+              ],
+      };
+
+      setVitals(withScore);
+      saveVehicleVitals(withScore);
+
+      await vehicleVitalsCloud.insertSnapshot({
+        vehicle,
+        fluids: withScore.fluids,
+        codes: withScore.codes,
+        healthScore: score,
+        notes: visionData.notes,
+        source: "photo",
+      });
+
+      await loadVitalsHistory(vehicle.id);
+
+      const summary =
+        visionData.notes?.trim() ||
+        "Photo analyzed — fluids / codes updated on this Dashboard.";
+      setVisionNote(summary);
+      alert(`✅ Dashboard updated!\n${summary}`);
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Could not analyze photo. Try again with better lighting.";
+      setVisionNote(msg);
+      alert(`❌ ${msg}`);
+    } finally {
+      setIsAnalyzingPhoto(false);
+    }
+  };
+
+  const handleFluidEdit = (key: FluidStatus["key"], value: string) => {
+    if (!vitals) return;
+    persistVitals({
+      ...vitals,
+      fluids: vitals.fluids.map((f) =>
+        f.key === key
+          ? { ...f, value, level: levelFromValue(value) }
+          : f,
+      ),
+    });
+  };
+
+  const handleAddManualCode = () => {
+    if (!vitals || !manualCode.trim()) return;
+    const code = manualCode.trim().toUpperCase();
+    const entry: DiagnosticCode = {
+      code,
+      desc: manualDesc.trim() || "Manually logged code",
+      severity: /^P0|^C0|^B0|^U0/.test(code) ? "Moderate" : "Info",
+      source: "manual",
+      recordedAt: new Date().toISOString(),
+    };
+    persistVitals(
+      {
+        ...vitals,
+        codes: [entry, ...vitals.codes].slice(0, 8),
+      },
+      { recordHealth: true },
+    );
+    setManualCode("");
+    setManualDesc("");
+  };
+
+  const handleAskAboutCodes = () => {
+    if (!vehicle || !vitals?.codes.length) return;
+    onAskAI?.(buildCodesAskPrompt(vehicle, vitals.codes));
+  };
+
+  // Chat → Dashboard Focus Mode
+  useEffect(() => {
+    if (!focusCommand) return;
+    const region = getDashboardRegion(focusCommand.part);
+    if (!region) return;
+    setSelectedRegion(null);
+    setInspection(null);
+    setActiveFocus(focusCommand);
+    setHoveredRegion(focusCommand.part);
+  }, [focusCommand]);
+
+  const focusRegion = activeFocus
+    ? getDashboardRegion(activeFocus.part) ?? null
+    : null;
+
+  const clearFocus = () => {
+    setActiveFocus(null);
+    setHoveredRegion(null);
+    onFocusConsumed?.();
+  };
+
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const filteredRegions = DASHBOARD_REGIONS.filter((region) =>
+    region.name.toLowerCase().includes(normalizedSearch),
+  );
+
+  const fetchInspection = useCallback(
+    async (
+      region: DashboardRegion,
+      currentVehicle: VehicleInfo,
+      userSymptoms: string,
+      options: { forceRefresh?: boolean; allowGeneral?: boolean } = {},
+    ) => {
+      const { forceRefresh = false, allowGeneral = false } = options;
+      const trimmed = userSymptoms.trim();
+
+      if (!allowGeneral && !forceRefresh) {
+        const cached = loadInspectionCache(
+          currentVehicle.id,
+          region.id,
+          trimmed,
+        );
+        if (cached) {
+          setInspection(cached.inspection);
+          setFromCache(true);
+          setError(null);
+          return;
+        }
+      }
+
+      setLoading(true);
+      setError(null);
+      if (forceRefresh) {
+        setInspection(null);
+        setFromCache(false);
+      }
+
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const accessToken = session?.access_token;
+        if (!accessToken) {
+          throw new Error("Please sign in to run AI inspection.");
+        }
+
+        const response = await fetch("/api/dashboard/inspect", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            regionId: region.id,
+            symptoms: trimmed,
+            allowGeneral,
+            currentVehicle: currentVehicle,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error ?? "Inspection failed");
+        }
+
+        setInspection(data.inspection);
+        setFromCache(false);
+        saveInspectionCache(
+          currentVehicle.id,
+          region.id,
+          allowGeneral ? "" : trimmed,
+          data.inspection,
+        );
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "AI inspection is temporarily unavailable.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  const handleRegionClick = (region: DashboardRegion) => {
+    if (!vehicle) return;
+
+    setSelectedRegion(region);
+    setSymptoms("");
+    setError(null);
+    setLoading(false);
+
+    const cached = loadLatestRegionCache(vehicle.id, region.id);
+    if (cached) {
+      setSymptoms(cached.symptoms);
+      setInspection(cached.inspection);
+      setFromCache(true);
+    } else {
+      setInspection(null);
+      setFromCache(false);
+    }
+  };
+
+  const handleRequestAI = () => {
+    if (!selectedRegion || !vehicle) return;
+    if (symptoms.trim().length < 3) {
+      setError(
+        "Describe your symptoms (at least 3 characters) — or use Chat for a quick free conversation.",
+      );
+      return;
+    }
+    void fetchInspection(selectedRegion, vehicle, symptoms);
+  };
+
+  const handleGeneralOverview = () => {
+    if (!selectedRegion || !vehicle) return;
+    void fetchInspection(selectedRegion, vehicle, "", { allowGeneral: true });
+  };
+
+  const handleRefreshAI = () => {
+    if (!selectedRegion || !vehicle) return;
+    void fetchInspection(selectedRegion, vehicle, symptoms, {
+      forceRefresh: true,
+      allowGeneral: !symptoms.trim(),
+    });
+  };
+
+  const handleClose = () => {
+    setSelectedRegion(null);
+    setSymptoms("");
+    setInspection(null);
+    setError(null);
+    setFromCache(false);
+    setLoading(false);
+  };
+
+  const handleAskAI = (prompt: string) => {
+    handleClose();
+    onAskAI?.(prompt);
+  };
+
+  const isRegionVisible = (region: DashboardRegion) => {
+    if (!normalizedSearch) return true;
+    return filteredRegions.some((r) => r.id === region.id);
+  };
+
+  const isRegionHighlighted = (region: DashboardRegion) => {
+    if (
+      activeFocus &&
+      focusPartToRegionId(activeFocus.part) === region.id
+    ) {
+      return true;
+    }
+    if (!normalizedSearch) return false;
+    return filteredRegions.some((r) => r.id === region.id);
+  };
+
+  const vehicleLabel = vehicle
+    ? formatVehicleYmmMarket(vehicle)
+    : vehiclesLoading
+      ? "Loading garage…"
+      : "No vehicle yet";
+
+  const marketsInGarage = VEHICLE_MARKETS.filter((m) =>
+    vehicles.some((v) => normalizeVehicleMarket(v.market) === m.code),
+  );
+
+  const vehiclesForSelect =
+    marketFilter === "ALL"
+      ? vehicles
+      : vehicles.filter(
+          (v) => normalizeVehicleMarket(v.market) === marketFilter,
+        );
+
+  const canAdd =
+    Boolean(onAddVehicle) && features.canAddVehicle(vehicles.length);
+
+  const handleAddVehicle = async (next: VehicleInfo) => {
+    if (!onAddVehicle) return;
+    if (!features.canAddVehicle(vehicles.length)) {
+      alert(
+        `Your plan allows up to ${features.maxVehicles} vehicle${
+          features.maxVehicles === 1 ? "" : "s"
+        }. Upgrade for more.`,
+      );
+      return;
+    }
+    await onAddVehicle(next);
+  };
+
+  return (
+    <div className="relative flex-1 overflow-auto bg-[#0a0f1c] p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-6 flex flex-col gap-3 sm:mb-10 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+          <div>
+            <h1 className="text-2xl font-bold sm:text-3xl lg:text-4xl">
+              Vehicle Dashboard
+            </h1>
+            <p className="mt-1 text-sm text-slate-400 sm:text-base">
+              {vehicleLabel} • Tap an area — instant checklist, AI only when you
+              need it
+            </p>
+            {vehicles.length >= 1 && (
+              <div className="mt-3 max-w-md space-y-3">
+                {marketsInGarage.length > 1 && (
+                  <label className="block text-sm text-slate-400">
+                    Filter by market
+                    <select
+                      className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-base text-slate-100 outline-none focus:border-cyan-400"
+                      value={marketFilter}
+                      onChange={(e) =>
+                        setMarketFilter(
+                          e.target.value as "ALL" | VehicleMarketCode,
+                        )
+                      }
+                    >
+                      <option value="ALL">All markets</option>
+                      {marketsInGarage.map((m) => (
+                        <option key={m.code} value={m.code}>
+                          {m.code} · {m.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                <label className="block text-sm text-slate-400">
+                  Active vehicle
+                  <select
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-base text-slate-100 outline-none focus:border-cyan-400"
+                    value={
+                      vehiclesForSelect.some((v) => v.id === vehicle?.id)
+                        ? (vehicle?.id ?? "")
+                        : ""
+                    }
+                    disabled={vehiclesLoading}
+                    onChange={(e) => {
+                      const next = vehicles.find(
+                        (v) => v.id === e.target.value,
+                      );
+                      if (next) void onVehicleChange(next);
+                    }}
+                  >
+                    {vehiclesForSelect.length === 0 && (
+                      <option value="">No vehicles in this market</option>
+                    )}
+                    {vehiclesForSelect.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.name} — {formatVehicleYmmMarket(v)}
+                        {v.vcdb?.source === "vcdb" ? " ✓ VCdb" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {onUpdateVehicle && vehicle && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingVehicle(vehicle)}
+                    className="text-sm text-cyan-400 hover:text-cyan-300"
+                  >
+                    Edit vehicle (market &amp; config)
+                  </button>
+                )}
+              </div>
+            )}
+            {!vehiclesLoading && vehicles.length === 0 && (
+              <div className="mt-4 max-w-md rounded-2xl border border-cyan-500/30 bg-cyan-500/5 p-4">
+                <p className="text-sm text-slate-300">
+                  Add your first vehicle to unlock inspections, DIY chat, and
+                  fitment-accurate parts.
+                </p>
+                {canAdd && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddVehicle(true)}
+                    className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-cyan-500 px-4 text-sm font-medium text-slate-950"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add vehicle
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            {vehicle && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleExportReport}
+                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-slate-700 px-3 text-sm text-slate-200 hover:border-cyan-500/50"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Export Snapshot
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleAnnualHealthReport()}
+                  disabled={annualBusy}
+                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3 text-sm font-medium text-cyan-200 hover:border-cyan-400/60 disabled:opacity-60"
+                >
+                  <FileDown className="h-4 w-4" />
+                  {annualBusy
+                    ? "Building…"
+                    : features.annualHealthReport
+                      ? "Annual Health Report"
+                      : "Annual Report (Pro)"}
+                </button>
+              </>
+            )}
+            {isFree && <UpgradeButton label="Upgrade to Pro" />}
+            {canAdd && vehicles.length >= 1 && (
+              <button
+                type="button"
+                onClick={() => setShowAddVehicle(true)}
+                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-slate-700 px-3 text-sm text-slate-200 hover:border-cyan-500/50"
+              >
+                <Plus className="h-4 w-4" />
+                Add vehicle
+              </button>
+            )}
+            <div className="flex items-center gap-2 text-sm text-emerald-400">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+              {vehicle?.vcdb?.source === "vcdb"
+                ? "VCdb config synced"
+                : vehicles.length === 0
+                  ? "Garage empty"
+                  : "AI Inspection Ready"}
+            </div>
+          </div>
+        </div>
+
+        {onAddVehicle && (
+          <AddVehicleModal
+            open={showAddVehicle}
+            onClose={() => setShowAddVehicle(false)}
+            onAdd={handleAddVehicle}
+          />
+        )}
+        {onUpdateVehicle && (
+          <AddVehicleModal
+            open={Boolean(editingVehicle)}
+            onClose={() => setEditingVehicle(null)}
+            initialVehicle={editingVehicle}
+            onSave={async (next) => {
+              await onUpdateVehicle(next);
+              setEditingVehicle(null);
+            }}
+          />
+        )}
+
+        <div className="relative mb-6 max-w-md">
+          <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search areas (brake, engine, battery...)"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded-2xl border border-slate-700 bg-slate-900 py-4 pl-12 pr-4 text-base outline-none focus:border-cyan-400"
+          />
+        </div>
+
+        {normalizedSearch && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            {filteredRegions.length > 0 ? (
+              filteredRegions.map((region) => (
+                <button
+                  key={region.id}
+                  type="button"
+                  onClick={() => handleRegionClick(region)}
+                  className="rounded-full border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-300 hover:bg-cyan-500/20"
+                >
+                  {region.name}
+                </button>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">No areas match your search.</p>
+            )}
+          </div>
+        )}
+
+        {/* Interactive map — large tap regions */}
+        <div className="relative mb-10 overflow-hidden rounded-3xl border border-slate-700 bg-[#111827] p-4 sm:p-10">
+          <div className="mb-6 text-center sm:mb-8">
+            <h2 className="text-2xl font-semibold sm:text-3xl">
+              Interactive Vehicle Map
+            </h2>
+            <p className="mt-2 text-slate-400">
+              {activeFocus
+                ? "AI Focus Mode — primary issue highlighted"
+                : "Tap a zone for instant checklist + AI · OBD / Photo / manual shortcuts fill the status cards"}
+            </p>
+          </div>
+
+          {vehicle && (
+            <div className="mb-5 flex flex-col items-center gap-3">
+              <div className="flex w-full max-w-xl flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={handlePhotoDiagnosis}
+                  disabled={isAnalyzingPhoto}
+                  className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-sm font-medium text-white hover:brightness-110 disabled:opacity-40"
+                >
+                  <Camera className="h-5 w-5" />
+                  {isAnalyzingPhoto
+                    ? "Analyzing…"
+                    : "Photo diagnosis & update"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleOBDScan()}
+                  disabled={isScanning}
+                  className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-40"
+                >
+                  <Bluetooth className="h-5 w-5" />
+                  {isScanning ? "Scanning…" : "OBD diagnose"}
+                </button>
+              </div>
+              <div className="flex flex-wrap justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const engine = DASHBOARD_REGIONS.find(
+                      (r) => r.id === "engine",
+                    );
+                    if (engine) handleRegionClick(engine);
+                  }}
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-5 text-sm font-medium text-amber-200"
+                >
+                  Quick: Engine bay
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const brakes = DASHBOARD_REGIONS.find(
+                      (r) => r.id === "brakes",
+                    );
+                    if (brakes) handleRegionClick(brakes);
+                  }}
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-2xl border border-rose-500/40 bg-rose-500/10 px-5 text-sm font-medium text-rose-200"
+                >
+                  Quick: Brakes
+                </button>
+              </div>
+            </div>
+          )}
+          {obdNote && (
+            <p className="mb-4 text-center text-xs text-slate-400">{obdNote}</p>
+          )}
+          {visionNote && (
+            <p className="mb-4 text-center text-xs text-cyan-300/90">
+              {visionNote}
+            </p>
+          )}
+          {isAnalyzingPhoto && (
+            <p className="mb-4 text-center text-sm text-cyan-400">
+              DeepSeek Vision is reading your photo for {vehicleLabel}…
+            </p>
+          )}
+
+          <div className="relative flex justify-center overflow-hidden rounded-2xl bg-[#0a0f1c]/60 p-2 sm:p-6">
+            <svg
+              width="760"
+              height="360"
+              viewBox="0 0 760 360"
+              className="w-full max-w-[760px] drop-shadow-2xl"
+              aria-label="Interactive vehicle map"
+            >
+              {/* Car body */}
+              <path
+                d="M130 175 Q210 95 390 90 Q610 100 650 175 Q700 220 650 270 Q390 305 130 265 Z"
+                fill="#1e2937"
+                stroke="#67e8f9"
+                strokeWidth="20"
+              />
+              <path
+                d="M250 145 Q360 125 510 150"
+                fill="none"
+                stroke="#67e8f9"
+                strokeWidth="16"
+                opacity="0.35"
+              />
+              <circle
+                cx="255"
+                cy="255"
+                r="48"
+                fill="#0f172a"
+                stroke="#67e8f9"
+                strokeWidth="14"
+              />
+              <circle
+                cx="535"
+                cy="255"
+                r="48"
+                fill="#0f172a"
+                stroke="#67e8f9"
+                strokeWidth="14"
+              />
+
+              {/* Large clickable zones */}
+              {DASHBOARD_REGIONS.map((region) => {
+                const visible = isRegionVisible(region);
+                const highlighted = isRegionHighlighted(region);
+                const hovered = hoveredRegion === region.id;
+                const focusRegionId = activeFocus
+                  ? focusPartToRegionId(activeFocus.part)
+                  : null;
+                const active =
+                  selectedRegion?.id === region.id ||
+                  focusRegionId === region.id;
+                const focused = focusRegionId === region.id;
+
+                return (
+                  <g
+                    key={region.id}
+                    className={`${visible ? "cursor-pointer" : "pointer-events-none"} ${focused ? "focus-hotspot-group" : ""}`}
+                    style={
+                      focused
+                        ? {
+                            transformOrigin: `${region.center.x}px ${region.center.y}px`,
+                          }
+                        : undefined
+                    }
+                    onClick={() => visible && handleRegionClick(region)}
+                    onMouseEnter={() => setHoveredRegion(region.id)}
+                    onMouseLeave={() =>
+                      setHoveredRegion(focusRegionId ?? null)
+                    }
+                    role="button"
+                    tabIndex={visible ? 0 : -1}
+                    aria-label={region.name}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        if (visible) handleRegionClick(region);
+                      }
+                    }}
+                  >
+                    <path
+                      d={region.hitPath}
+                      fill={region.color}
+                      fillOpacity={
+                        !visible
+                          ? 0.05
+                          : focused
+                            ? 0.55
+                            : active || hovered
+                              ? 0.45
+                              : highlighted
+                                ? 0.35
+                                : 0.22
+                      }
+                      stroke={region.color}
+                      strokeWidth={focused ? 4 : active || hovered ? 3 : 1.5}
+                      strokeOpacity={visible ? 0.9 : 0.2}
+                      className={`transition-all duration-300 ${focused ? "focus-hotspot" : ""}`}
+                    />
+                    <text
+                      x={region.center.x}
+                      y={region.center.y}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill="white"
+                      fontSize="13"
+                      fontWeight="700"
+                      opacity={visible ? 1 : 0.25}
+                      className="pointer-events-none select-none"
+                    >
+                      {region.shortLabel}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+
+            {focusRegion && (
+              <FocusOverlay region={focusRegion} active={Boolean(activeFocus)} />
+            )}
+          </div>
+
+          <div className="mt-4 flex justify-start gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:mt-6 sm:flex-wrap sm:justify-center sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+            {DASHBOARD_REGIONS.map((region) => (
+              <button
+                key={`legend-${region.id}`}
+                type="button"
+                onClick={() => handleRegionClick(region)}
+                className="flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm"
+                style={{
+                  backgroundColor:
+                    focusPartToRegionId(activeFocus?.part ?? "") === region.id ||
+                    selectedRegion?.id === region.id
+                      ? region.color
+                      : `${region.color}22`,
+                  color:
+                    focusPartToRegionId(activeFocus?.part ?? "") === region.id ||
+                    selectedRegion?.id === region.id
+                      ? "#000"
+                      : region.color,
+                  border: `1px solid ${region.color}55`,
+                }}
+              >
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: region.color }}
+                />
+                {region.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Status cards — dynamic from vitals + vehicle */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-[#111827] to-[#0a0f1c] p-4 sm:rounded-3xl sm:p-6 lg:p-7">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs text-emerald-400 sm:text-sm">Overall Health</p>
+                <p className="mt-1.5 text-3xl font-bold sm:mt-2 sm:text-4xl lg:text-5xl">
+                  {health != null ? `${health}%` : "—"}
+                </p>
+                <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-500 sm:text-xs">
+                  <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">
+                    {vitals ? healthTrendLabel(vitals.healthHistory) : "Add a vehicle"}
+                  </span>
+                </p>
+              </div>
+              <CheckCircle className="h-7 w-7 shrink-0 text-emerald-400 sm:h-10 sm:w-10 lg:h-12 lg:w-12" />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-[#111827] to-[#0a0f1c] p-4 sm:rounded-3xl sm:p-6 lg:p-7">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs text-amber-400 sm:text-sm">Next Service</p>
+                <p className="mt-1.5 text-2xl font-bold sm:mt-2 sm:text-3xl lg:text-4xl">
+                  {serviceEta?.miles === 0
+                    ? "Due"
+                    : serviceEta?.miles != null
+                      ? serviceEta.miles.toLocaleString()
+                      : "—"}
+                </p>
+                <p className="text-xs text-slate-400 sm:text-sm">
+                  {serviceEta?.miles === 0 ? "service now" : "miles"}
+                </p>
+              </div>
+              <Clock className="h-7 w-7 shrink-0 text-amber-400 sm:h-10 sm:w-10 lg:h-12 lg:w-12" />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-red-500/30 bg-gradient-to-br from-[#111827] to-[#0a0f1c] p-4 sm:rounded-3xl sm:p-6 lg:p-7">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs text-red-400 sm:text-sm">Active Alerts</p>
+                <p className="mt-1.5 text-3xl font-bold sm:mt-2 sm:text-4xl lg:text-5xl">
+                  {vehicle ? alertCount : "—"}
+                </p>
+                <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">
+                  DTCs + fluid warnings
+                </p>
+              </div>
+              <AlertTriangle className="h-7 w-7 shrink-0 text-red-400 sm:h-10 sm:w-10 lg:h-12 lg:w-12" />
+            </div>
+          </div>
+
+          <div className="col-span-2 rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-[#111827] to-[#0a0f1c] p-4 sm:col-span-1 sm:rounded-3xl sm:p-6 lg:col-span-1 lg:p-7">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs text-cyan-400 sm:text-sm">Est. Market Band</p>
+                <p className="mt-1.5 text-3xl font-bold sm:mt-2 sm:text-4xl lg:text-5xl">
+                  {vehicle ? marketBand : "—"}
+                </p>
+                <p className="mt-1 truncate text-[11px] text-slate-500 sm:text-xs">
+                  DIY ballpark · {vehicle ? normalizeVehicleMarket(vehicle.market) : "—"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-3xl border border-slate-700 bg-[#111827] p-6 sm:p-8">
+            <h3 className="mb-2 flex items-center gap-3 text-xl font-semibold">
+              <Thermometer className="h-6 w-6 text-cyan-400" /> Fluid Levels &amp;
+              Tire Pressure
+            </h3>
+            <p className="mb-5 text-xs text-slate-500">
+              From OBD / photo / tap to edit — feeds health score
+            </p>
+            <div className="space-y-4">
+              {(vitals?.fluids ?? []).map((item) => (
+                <div
+                  key={item.key}
+                  className="flex flex-col gap-1 border-b border-slate-800 pb-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <span className="text-sm text-slate-300">{item.label}</span>
+                  <input
+                    type="text"
+                    value={item.value}
+                    onChange={(e) => handleFluidEdit(item.key, e.target.value)}
+                    disabled={!vitals}
+                    className={`w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm sm:max-w-[220px] ${fluidTone(item.level)} focus:border-cyan-400 focus:outline-none`}
+                  />
+                </div>
+              ))}
+              {!vehicle && (
+                <p className="text-sm text-slate-500">Select a vehicle to track fluids.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-slate-700 bg-[#111827] p-6 sm:p-8">
+            <h3 className="mb-2 text-xl font-semibold">Recent Diagnostic Codes</h3>
+            <p className="mb-5 text-xs text-slate-500">
+              OBD scan, photo vision, or manual entry · Ask AI uses market + RAG
+            </p>
+            <div className="space-y-3 text-sm">
+              {(vitals?.codes ?? []).length === 0 ? (
+                <p className="rounded-2xl border border-dashed border-slate-700 px-4 py-6 text-center text-slate-500">
+                  No codes yet — Connect OBD, Photo diagnosis, or add one below.
+                </p>
+              ) : (
+                vitals!.codes.map((c) => (
+                  <div
+                    key={`${c.code}-${c.recordedAt}`}
+                    className="flex justify-between gap-3 rounded-2xl bg-slate-900 p-4"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-mono font-semibold text-white">
+                        {c.code}
+                      </div>
+                      <div className="truncate text-slate-400">{c.desc}</div>
+                      <div className="mt-1 text-[10px] uppercase tracking-wide text-slate-600">
+                        {c.source}
+                      </div>
+                    </div>
+                    <span className={`shrink-0 ${severityTone(c.severity)}`}>
+                      {c.severity}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Recommended Parts - Market-aware Affiliate Links */}
+            {vehicle && vitals && vitals.codes.length > 0 && (
+              <div className="mt-6 border-t border-slate-800 pt-5">
+                <h4 className="mb-3 text-sm font-medium text-slate-200">
+                  Recommended Parts
+                </h4>
+                <p className="mb-3 text-xs text-slate-500">
+                  Market-aware shop links for {vehicle.market || "US"} • Verify
+                  fitment before buying
+                </p>
+
+                {vitals.codes.slice(0, 2).map((c: DiagnosticCode) => {
+                  const part = partQueryForDtc(c.code, c.desc);
+                  const aff = getAffiliateLinks({
+                    part,
+                    vehicle,
+                  });
+
+                  return (
+                    <a
+                      key={`${c.code}-${c.recordedAt || "link"}`}
+                      href={aff.primaryUrl}
+                      target="_blank"
+                      rel="noopener noreferrer sponsored"
+                      className="mb-3 block rounded-2xl bg-slate-900 p-4 transition hover:bg-slate-800"
+                    >
+                      <div className="font-mono text-sm font-semibold text-white">
+                        Fix for {c.code}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-400">
+                        {aff.partLabel} — {aff.shop}
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+
+            {vehicle && (
+              <div className="mt-5 space-y-2 border-t border-slate-800 pt-4">
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="text"
+                    placeholder="Code e.g. P0300"
+                    value={manualCode}
+                    onChange={(e) => setManualCode(e.target.value)}
+                    className="min-h-[42px] flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm focus:border-cyan-400 focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Short description"
+                    value={manualDesc}
+                    onChange={(e) => setManualDesc(e.target.value)}
+                    className="min-h-[42px] flex-[1.4] rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm focus:border-cyan-400 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddManualCode}
+                    disabled={!manualCode.trim()}
+                    className="min-h-[42px] rounded-xl bg-slate-700 px-4 text-sm disabled:opacity-40"
+                  >
+                    Add
+                  </button>
+                </div>
+                {vitals && vitals.codes.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleAskAboutCodes}
+                    className="text-sm text-cyan-400 hover:text-cyan-300"
+                  >
+                    Ask AI about these codes →
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Health Trend — SVG sparkline + last 5 snapshots */}
+          <div className="rounded-2xl border border-slate-700 bg-[#111827] p-4 sm:rounded-3xl sm:p-6 md:col-span-2 lg:col-span-1 lg:p-8">
+            <div className="mb-4 flex items-center gap-3">
+              <TrendingUp className="h-6 w-6 text-emerald-400" />
+              <h3 className="text-xl font-semibold">Health Trend</h3>
+            </div>
+
+            <div className="relative h-48 rounded-2xl bg-black/40 p-4">
+              <svg
+                width="100%"
+                height="100%"
+                viewBox="0 0 400 160"
+                className="overflow-visible"
+                aria-label="Health score trend"
+              >
+                <line
+                  x1="24"
+                  y1="144"
+                  x2="376"
+                  y2="144"
+                  stroke="#334155"
+                  strokeWidth="1"
+                />
+                <line
+                  x1="24"
+                  y1="16"
+                  x2="24"
+                  y2="144"
+                  stroke="#334155"
+                  strokeWidth="1"
+                />
+                {healthChart.points ? (
+                  <>
+                    <polyline
+                      points={healthChart.points}
+                      fill="none"
+                      stroke="#22c55e"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    {healthChart.dots.map((d, i) => (
+                      <g key={`dot-${i}`}>
+                        <circle cx={d.x} cy={d.y} r="5" fill="#22c55e" />
+                        <text
+                          x={d.x}
+                          y={d.y - 10}
+                          textAnchor="middle"
+                          fill="#94a3b8"
+                          fontSize="10"
+                        >
+                          {d.score}
+                        </text>
+                      </g>
+                    ))}
+                  </>
+                ) : null}
+              </svg>
+              <div className="absolute bottom-3 left-6 text-xs text-slate-500">
+                {vitalsHistory.length
+                  ? "Last 5 snapshots — tap a point to restore"
+                  : "No history yet — run Photo or OBD scan"}
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-2 text-sm">
+              {vitalsHistory.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-slate-700 px-4 py-5 text-center text-slate-500">
+                  Photo / OBD scans will appear here. Tap a row to restore.
+                </p>
+              ) : (
+                vitalsHistory.map((row) => (
+                  <button
+                    key={row.id}
+                    type="button"
+                    onClick={() => restoreSnapshot(row)}
+                    className="flex w-full items-center justify-between gap-3 rounded-xl bg-slate-900/80 px-4 py-3 text-left hover:bg-slate-800"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Clock className="h-4 w-4 shrink-0 text-slate-500" />
+                      <span className="truncate text-slate-300">
+                        {new Date(row.snapshot_at).toLocaleDateString()}{" "}
+                        {new Date(row.snapshot_at).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <span className="font-medium text-emerald-400">
+                        {row.health_score != null ? `${row.health_score}%` : "—"}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                        {row.source}
+                      </span>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Real-time Sensors — after Fluids / Codes / Trend (product layout) */}
+        {vehicle && (
+          <div className="mt-8 rounded-3xl border border-slate-700 bg-[#111827] p-4 sm:p-6 lg:p-8">
+            <h3 className="mb-4 flex items-center gap-3 text-lg font-semibold sm:mb-6 sm:text-xl">
+              <Activity className="h-5 w-5 text-cyan-400 sm:h-6 sm:w-6" />
+              Real-time Sensors
+            </h3>
+            <div className="grid grid-cols-2 gap-3 text-sm sm:gap-4 md:grid-cols-3">
+              {LIVE_SENSOR_PIDS.map(({ key, label, unit }) => (
+                <div
+                  key={key}
+                  className="rounded-2xl bg-black/40 p-3 sm:p-4"
+                >
+                  <div className="text-xs text-cyan-400 sm:text-sm">{label}</div>
+                  <div className="mt-1 font-mono text-xl text-white sm:text-2xl">
+                    {formatLiveSensorValue(liveSensors?.[key] ?? null, unit)}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {!hasLiveSensorData(liveSensors) && (
+              <p className="mt-4 text-center text-xs text-slate-500">
+                No live data yet — run OBD Diagnose (Chrome + BLE ELM327), then
+                Refresh Sensors.
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => void handleRefreshSensors()}
+              disabled={isRefreshingSensors || isScanning}
+              className="mt-6 text-sm font-medium text-cyan-400 hover:text-cyan-300 disabled:opacity-40"
+            >
+              {isRefreshingSensors ? "Reading…" : "Refresh Sensors"}
+            </button>
+          </div>
+        )}
+
+        {/* Upcoming Maintenance card */}
+        {vehicle && maintenanceCopy && !reminderSnoozed && (
+          <div
+            className={`mt-8 rounded-3xl border p-6 sm:p-8 ${
+              serviceDue
+                ? "border-amber-800 bg-amber-950"
+                : "border-slate-700 bg-[#111827]"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h3
+                  className={`flex items-center gap-3 text-lg font-semibold sm:text-xl ${
+                    serviceDue ? "text-amber-400" : "text-white"
+                  }`}
+                >
+                  <Clock className="h-6 w-6 shrink-0" />
+                  Upcoming Maintenance
+                </h3>
+                <p
+                  className={`mt-2 text-sm sm:text-base ${
+                    serviceDue ? "text-amber-300" : "text-slate-400"
+                  }`}
+                >
+                  {maintenanceCopy.detail}
+                </p>
+                {reminders.length > 0 && (
+                  <ul
+                    className={`mt-3 space-y-1 text-sm ${
+                      serviceDue ? "text-amber-200/80" : "text-slate-400"
+                    }`}
+                  >
+                    {reminders.slice(0, 2).map((r) => (
+                      <li key={r}>• {r}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-2">
+                <button
+                  type="button"
+                  onClick={handleSetReminder}
+                  className={`text-sm hover:underline ${
+                    serviceDue
+                      ? "text-amber-400"
+                      : "text-cyan-400"
+                  }`}
+                >
+                  Snooze 7 days
+                </button>
+                {isWebPushSupported() && (
+                  <button
+                    type="button"
+                    onClick={() => void handleEnablePush()}
+                    disabled={pushBusy}
+                    className="text-xs text-emerald-400 hover:underline disabled:opacity-40"
+                  >
+                    {pushBusy ? "Enabling…" : "Enable Push"}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {onAskAI && (
+              <button
+                type="button"
+                onClick={() =>
+                  onAskAI(
+                    `Help me plan upcoming maintenance for my ${vehicle.year} ${vehicle.make} ${vehicle.model} (${vehicle.market || "US"}). Current mileage: ${vehicle.mileage || "unknown"}. Last service: ${vehicle.lastMaintenance || "unknown"}.`,
+                  )
+                }
+                className={`mt-6 w-full rounded-2xl py-3 text-sm font-medium text-white transition ${
+                  serviceDue
+                    ? "bg-amber-600 hover:bg-amber-700"
+                    : "bg-cyan-600 hover:bg-cyan-500"
+                }`}
+              >
+                Ask AI Maintenance Plan
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleExportReport}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-600 py-2.5 text-sm text-slate-300 hover:border-cyan-500/40 hover:text-cyan-300"
+            >
+              <FileDown className="h-4 w-4" />
+              Export Snapshot (PDF)
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleAnnualHealthReport()}
+              disabled={annualBusy}
+              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-500/40 bg-cyan-500/10 py-2.5 text-sm font-medium text-cyan-200 hover:border-cyan-400/60 disabled:opacity-60"
+            >
+              <FileDown className="h-4 w-4" />
+              {annualBusy
+                ? "Building annual report…"
+                : features.annualHealthReport
+                  ? "Annual Health Report (PDF)"
+                  : "Annual Health Report (Pro)"}
+            </button>
+          </div>
+        )}
+
+        {vehicle && reminderSnoozed && (
+          <p className="mt-6 text-center text-xs text-slate-500">
+            Maintenance reminder snoozed on this device for 7 days.
+          </p>
+        )}
+
+        {/* Notifications inbox — reminder_deliveries (Edge / cron / in_app) */}
+        {vehicle && (
+          <div className="mt-8 rounded-3xl border border-slate-700 bg-[#111827] p-4 sm:p-6 lg:p-8">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h3 className="flex items-center gap-3 text-lg font-semibold sm:text-xl">
+                <Bell className="h-5 w-5 text-cyan-400 sm:h-6 sm:w-6" />
+                Notifications
+              </h3>
+              {inbox.some((n) => !n.read_at) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void markAllRemindersRead(vehicle.id).then(() =>
+                      loadInbox(vehicle.id),
+                    )
+                  }
+                  className="text-xs text-cyan-400 hover:underline"
+                >
+                  Mark all read
+                </button>
+              )}
+            </div>
+            <p className="mb-4 text-xs text-slate-500">
+              From maintenance cron / email / push · run migration 017–019
+            </p>
+            {inboxLoading ? (
+              <p className="text-sm text-slate-500">Loading…</p>
+            ) : inbox.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-slate-700 px-4 py-6 text-center text-sm text-slate-500">
+                No reminders yet. Enable Push above and deploy the daily Edge /
+                cron job when ready.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {inbox.map((n) => (
+                  <li key={n.id}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void markReminderRead(n.id).then(() =>
+                          loadInbox(vehicle.id),
+                        )
+                      }
+                      className={`w-full rounded-2xl px-4 py-3 text-left transition ${
+                        n.read_at
+                          ? "bg-slate-950/50 text-slate-400"
+                          : "bg-slate-900 text-slate-200 hover:bg-slate-800"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {n.title || "Maintenance reminder"}
+                          </p>
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            {n.body || n.reason || "Service recommended"}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-[10px] uppercase tracking-wide text-slate-600">
+                          {n.channel}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-[10px] text-slate-600">
+                        {new Date(n.sent_at).toLocaleString()}
+                        {!n.read_at ? " · unread" : ""}
+                      </p>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+
+      <CameraCapture
+        open={showCamera}
+        onClose={() => setShowCamera(false)}
+        onCapture={handlePhotoCapture}
+      />
+
+      {selectedRegion && vehicle && !activeFocus && (
+        <RegionDetailPanel
+          region={selectedRegion}
+          vehicle={vehicle}
+          symptoms={symptoms}
+          onSymptomsChange={(value) => {
+            setSymptoms(value);
+            setError(null);
+          }}
+          inspection={inspection}
+          loading={loading}
+          error={error}
+          fromCache={fromCache}
+          onClose={handleClose}
+          onRequestAI={handleRequestAI}
+          onGeneralOverview={handleGeneralOverview}
+          onRefreshAI={handleRefreshAI}
+          onAskAI={handleAskAI}
+        />
+      )}
+
+      {activeFocus && focusRegion && (
+        <FocusPanel
+          region={focusRegion}
+          command={activeFocus}
+          onClose={clearFocus}
+        />
+      )}
+
+      <UpgradeModal
+        open={showAnnualUpgrade}
+        onClose={() => setShowAnnualUpgrade(false)}
+        reason="annual"
+      />
+    </div>
+  );
+}

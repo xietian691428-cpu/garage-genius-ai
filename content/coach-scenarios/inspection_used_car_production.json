@@ -1,0 +1,683 @@
+{
+  "id": "coach_scenario_used_car_inspection_production",
+  "slug": "inspection_used_car",
+  "title": "Used Car Purchase Checklist",
+  "subtitle": "Walkaround, test drive, paperwork, and PPI — buy with a cool head and a coach in your pocket.",
+  "category": "diagnosis",
+  "focus_part": "engine",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 45,
+    "diy_max": 180,
+    "shop_min": 90,
+    "shop_max": 240
+  },
+  "cost_band_usd": {
+    "diy_min": 0,
+    "diy_max": 50,
+    "shop_min": 120,
+    "shop_max": 250
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel. Phase 2 used car: never skip PPI on expensive buys; flood/salvage caution.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Daylight inspection when possible",
+    "VIN for history report",
+    "Budget for a pre-purchase inspection (PPI)"
+  ],
+  "tools_checklist": [
+    "Flashlight",
+    "Phone camera",
+    "OBD scanner / Bluetooth adapter",
+    "Magnet (optional body filler clue)",
+    "Notebook for VIN and promises"
+  ],
+  "parts_checklist": [],
+  "adaptive_rules": [
+    {
+      "id": "ev_used",
+      "when": {
+        "powertrain": [
+          "bev",
+          "phev"
+        ]
+      },
+      "coach_note": "Used EV: demand battery health report / range test, check for HV warnings, and confirm 12V age. Prefer EV-capable PPI.",
+      "prefer_shop": true
+    },
+    {
+      "id": "tesla_used",
+      "when": {
+        "brand_includes": [
+          "tesla"
+        ]
+      },
+      "coach_note": "Used Tesla: review service history in-app if possible, check for structural repair clues, and verify Autopilot hardware claims in writing.",
+      "prefer_shop": true
+    },
+    {
+      "id": "cvt_used",
+      "when": {
+        "brand_includes": [
+          "nissan",
+          "subaru",
+          "mitsubishi"
+        ]
+      },
+      "coach_note": "CVT-equipped used cars: prioritize transmission behavior cold/hot and service records — budget for specialist PPI.",
+      "prefer_shop": true
+    },
+    {
+      "id": "high_miles_used",
+      "when": {
+        "mileage_min": 100000
+      },
+      "coach_note": "High-mile purchase: PPI is non-negotiable. Timing belt, rust, and leak history matter more than shiny paint.",
+      "prefer_shop": true,
+      "interval_miles": 3000
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_used",
+      "type": "gif",
+      "src": "/coach/used/hero_used.gif",
+      "alt": "Buyer inspecting a used car",
+      "shot_description": "Daylight walkaround, calm and thorough."
+    },
+    {
+      "key": "body_walk",
+      "type": "video",
+      "src": "/coach/used/body_walk.mp4",
+      "alt": "Body panel and rust walkaround",
+      "shot_description": "30s: gaps, rust, tires, glass.",
+      "poster": "/coach/used/body_walk_poster.webp"
+    },
+    {
+      "key": "interior_obd",
+      "type": "gif",
+      "src": "/coach/used/interior_obd.gif",
+      "alt": "Interior wear and OBD scan",
+      "shot_description": "Seat wear → OBD codes photo."
+    },
+    {
+      "key": "test_drive",
+      "type": "gif",
+      "src": "/coach/used/test_drive.gif",
+      "alt": "Structured test drive loop",
+      "shot_description": "City + highway icons with checklist."
+    },
+    {
+      "key": "ppi_shop",
+      "type": "gif",
+      "src": "/coach/used/ppi_shop.gif",
+      "alt": "Pre-purchase inspection at shop",
+      "shot_description": "Independent lift inspection."
+    },
+    {
+      "key": "paperwork",
+      "type": "gif",
+      "src": "/coach/used/paperwork.gif",
+      "alt": "Title history and bill of sale",
+      "shot_description": "VIN → report → title check."
+    },
+    {
+      "key": "celebrate_used",
+      "type": "gif",
+      "src": "/coach/used/celebrate.gif",
+      "alt": "Buyer decision logged",
+      "shot_description": "Thumbs-up checklist or walk-away."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Buy cool-headed — I'll coach the checklist",
+      "coach_encourage": "Walking away is always allowed. You're in control. You're just getting started — I'll stay with you.",
+      "personalize": "Used-car coach for a candidate near {{mileage}} miles showing. Next ownership check ~{{next_service}} miles if you buy.",
+      "description": "Order: paperwork/VIN → exterior → interior/OBD → test drive → independent PPI. Never skip daylight if you can help it.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_used",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 8,
+        "fraction": 0.125,
+        "percent": 13,
+        "label": "Step 1 of 8 · Start · 13%"
+      },
+      "safety_warning": "Do not test-drive a vehicle with unsafe brakes, bald tires, or a seller who refuses a PPI on a high-value car.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start checklist",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "paperwork"
+        },
+        {
+          "id": "flood",
+          "label": "Flood / salvage concern",
+          "style": "danger",
+          "action": "goto",
+          "next_step_id": "red_flag"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "paperwork"
+        },
+        {
+          "when_button_id": "flood",
+          "goto": "red_flag"
+        }
+      ]
+    },
+    {
+      "id": "red_flag",
+      "title": "Red flags — pause the deal",
+      "coach_encourage": "Spotting flood/salvage risk early saves years of pain. You're just getting started — I'll stay with you.",
+      "personalize": "At ~{{mileage}} miles advertised, title issues matter more than gadgets. If you buy clean, first service ~{{next_service}} miles.",
+      "description": "Musty carpets, silt under carpets, fresh undercoating hiding rust, mismatched VIN stickers, or salvage titles need extreme caution. Prefer walking away or specialist inspection.",
+      "visual_type": "gif",
+      "visual_asset_key": "paperwork",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 8,
+        "fraction": 0.125,
+        "percent": 13,
+        "label": "Red flag path · 13%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "High-risk title / flood acknowledgment",
+        "body": "Flood and salvage vehicles can hide electrical and structural hazards. Continuing without a specialist inspection can lead to unsafe ownership. When in doubt, walk away or find a nearby shop for PPI.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "walk",
+          "label": "Walk away / PPI only",
+          "style": "danger",
+          "action": "book_shop"
+        },
+        {
+          "id": "continue_careful",
+          "label": "Continue carefully",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "paperwork"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "continue_careful",
+          "goto": "paperwork"
+        }
+      ]
+    },
+    {
+      "id": "paperwork",
+      "title": "VIN, history & title",
+      "coach_encourage": "Paper trails beat polish. Nice discipline. Nice momentum — you're about 25% through.",
+      "personalize": "VIN check before loving the paint. If purchased at {{mileage}} miles, plan service by ~{{next_service}} miles.",
+      "description": "Match VIN on dash/door/title. Run a history report. Confirm title brand, lien status, and seller identity. Get promises in writing.",
+      "visual_type": "gif",
+      "visual_asset_key": "paperwork",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 8,
+        "fraction": 0.25,
+        "percent": 25,
+        "label": "Step 2 of 8 · Paper · 25%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "paper_ok",
+          "label": "Paper looks clean",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "exterior"
+        },
+        {
+          "id": "paper_bad",
+          "label": "History concerns",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Used-car history report concerns. VIN issues and what I see:"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "paper_ok",
+          "goto": "exterior"
+        }
+      ]
+    },
+    {
+      "id": "exterior",
+      "title": "Exterior walkaround",
+      "coach_encourage": "Slow laps find the stories paint tries to hide. You're crushing it — roughly 38% done.",
+      "personalize": "Body/tire read at advertised ~{{mileage}} miles. Budget first services near {{next_service}} miles.",
+      "description": "Panel gaps, color mismatch, rust at rockers/wheel arches, windshield chips, and tire date codes/uneven wear. Photo anything odd.",
+      "visual_type": "video",
+      "visual_asset_key": "body_walk",
+      "focus_part": "tires",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 8,
+        "fraction": 0.375,
+        "percent": 38,
+        "label": "Step 3 of 8 · Exterior · 38%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "ext_ok",
+          "label": "Exterior noted",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "interior_obd"
+        },
+        {
+          "id": "photo",
+          "label": "Photo concerns",
+          "style": "secondary",
+          "action": "take_photo"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "ext_ok",
+          "goto": "interior_obd"
+        }
+      ]
+    },
+    {
+      "id": "interior_obd",
+      "title": "Interior wear & OBD scan",
+      "coach_encourage": "Codes and wear should match the odometer story. You're crushing it — roughly 50% done.",
+      "personalize": "Interior/OBD for a {{mileage}}-mile story on this {{make}} {{model}}. Early service ~{{next_service}} miles if you buy.",
+      "description": "Seat bolsters, pedal rubber, and steering wear should roughly match mileage. Scan for codes with key on. Cleared codes with a rough car = walk or PPI.",
+      "visual_type": "gif",
+      "visual_asset_key": "interior_obd",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 8,
+        "fraction": 0.5,
+        "percent": 50,
+        "label": "Step 4 of 8 · Interior · 50%"
+      },
+      "tools": [
+        "OBD-II scanner"
+      ],
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "obd_ok",
+          "label": "Scan done — test drive",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "test_drive"
+        },
+        {
+          "id": "codes",
+          "label": "Codes / mismatch",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Used-car OBD codes and wear vs mileage concerns:"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "obd_ok",
+          "goto": "test_drive"
+        }
+      ]
+    },
+    {
+      "id": "test_drive",
+      "title": "Structured test drive",
+      "coach_encourage": "This step is important — drive the checklist, not the sales pitch. Look at you — about 63% complete. Keep going.",
+      "personalize": "Test drive like the next {{next_service}} miles depend on it — at {{mileage}} miles showing.",
+      "description": "Cold start, idle quality, brakes straight/firm, steering play, shifts/CVT behavior, highway vibration, and A/C. End the drive if anything feels unsafe.",
+      "visual_type": "gif",
+      "visual_asset_key": "test_drive",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 8,
+        "fraction": 0.625,
+        "percent": 63,
+        "label": "Step 5 of 8 · Drive · 63%"
+      },
+      "safety_warning": "Wear your belt. Obey traffic laws. Do not test-drive without insurance permission if required.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Test-drive safety acknowledgment",
+        "body": "Test-driving an unfamiliar vehicle carries crash and mechanical risk. Confirm brakes, tires, and mirrors before moving. Abort if the vehicle is unsafe. You are responsible for lawful, careful driving.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "drive_ok",
+          "label": "Drive notes saved",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "ppi"
+        },
+        {
+          "id": "unsafe_drive",
+          "label": "Felt unsafe — stop",
+          "style": "danger",
+          "action": "goto",
+          "next_step_id": "walk_away"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "drive_ok",
+          "goto": "ppi"
+        },
+        {
+          "when_button_id": "unsafe_drive",
+          "goto": "walk_away"
+        }
+      ]
+    },
+    {
+      "id": "walk_away",
+      "title": "Walking away is a win",
+      "coach_encourage": "You protected your money and your safety. Seriously — well done. Look at you — about 63% complete. Keep going.",
+      "personalize": "No purchase at {{mileage}} miles today. When you find the right car, first service ~{{next_service}} miles.",
+      "description": "Thank the seller, keep your notes, and don't negotiate against a fear of missing out. Another car will show up.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_used",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 8,
+        "fraction": 0.625,
+        "percent": 63,
+        "label": "Walk-away path · 63%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log walk-away notes",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "used_car"
+        },
+        {
+          "id": "chat",
+          "label": "Debrief with coach",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "I walked away from a used car. Findings:"
+        }
+      ]
+    },
+    {
+      "id": "ppi",
+      "title": "Independent PPI before you pay",
+      "coach_encourage": "A few hundred on inspection can save thousands. Smart. Look at you — about 75% complete. Keep going.",
+      "personalize": "PPI for a {{mileage}}-mile {{make}} {{model}}. If you buy, schedule first services by ~{{next_service}} miles.",
+      "description": "Choose an independent shop (not the seller's). Ask for compression/leakdown if needed, undercarriage rust, and EV battery reports when applicable. Seller refuses PPI on a pricey car? Walk.",
+      "visual_type": "gif",
+      "visual_asset_key": "ppi_shop",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 8,
+        "fraction": 0.75,
+        "percent": 75,
+        "label": "Step 6 of 8 · PPI · 75%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Skipping PPI increases purchase risk",
+        "body": "Buying without an independent pre-purchase inspection can hide unsafe structural, brake, or EV high-voltage issues. Continue only if you accept that risk or you will book a PPI.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "book_ppi",
+          "label": "Find a nearby shop",
+          "style": "primary",
+          "action": "book_shop"
+        },
+        {
+          "id": "decide",
+          "label": "I have PPI / decide",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "decide"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "decide",
+          "goto": "decide"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "powertrain": [
+              "bev",
+              "phev"
+            ]
+          },
+          "description": "EV PPI: require a shop that can read pack health / isolation faults. A cheap generic inspection is not enough."
+        }
+      ]
+    },
+    {
+      "id": "decide",
+      "title": "Decide with your notes",
+      "coach_encourage": "Data in, emotions out — you've got this. Final stretch — you're about 88% through.",
+      "personalize": "Decision time on a {{mileage}}-mile candidate. Ownership start → service by ~{{next_service}} miles.",
+      "description": "Stack price vs repairs found. Negotiate with PPI quotes. If it still feels wrong, walk. If you buy, photo the odometer and all documents.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_used",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 8,
+        "fraction": 0.875,
+        "percent": 88,
+        "label": "Step 7 of 8 · Decide · 88%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "buy_path",
+          "label": "I'm buying — finish",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_used"
+        },
+        {
+          "id": "walk2",
+          "label": "Walk away",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "walk_away"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "buy_path",
+          "goto": "log_used"
+        },
+        {
+          "when_button_id": "walk2",
+          "goto": "walk_away"
+        }
+      ]
+    },
+    {
+      "id": "log_used",
+      "title": "Log the inspection outcome",
+      "coach_encourage": "Checklist complete — whether buy or bye. Well done! You made it through the flow — time to celebrate.",
+      "personalize": "Logged for this {{make}} {{model}} around {{mileage}} miles. First services ~{{next_service}} miles if purchased.",
+      "description": "Save photos, codes, PPI PDF, and final decision. If you bought it, add the vehicle to your garage and schedule fluids/filters soon.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_used",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 8,
+        "total": 8,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 8 of 8 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log used-car inspection",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "used_car"
+        },
+        {
+          "id": "chat",
+          "label": "Negotiate / next steps",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Used-car next steps after inspection:"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Inspection complete — decide with data",
+    "coach_encourage": "You bought (or walked away) like a pro. Either outcome is a win — well done! You made it through the flow — time to celebrate.",
+    "description": "Keep photos, codes, and PPI notes. If you buy, log the starting mileage and first services immediately.",
+    "log_category": "used_car",
+    "next_check_miles_default": 1000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Help me decide",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Used-car decision help: findings, price, and PPI notes:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390×844 EN used-car coach.\n• Walkaway is a valid primary outcome\n• Test-drive risk modal\n• PPI push for expensive/high-mile/EV\n• Max 2 CTAs",
+    "react_native_pseudocode": "See CoachScenarioPlayer.phase2.tsx.example — load inspection_used_car_production.json"
+  }
+}

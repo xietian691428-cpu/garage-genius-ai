@@ -32,10 +32,32 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
 
+# local junk / archives (never deploy)
+/tmp/
+stripe.tar.gz
+训练数据/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local training caches (large)
+scripts/data/vcdb-cache.sqlite
+scripts/data/*.sqlite
+scripts/data/dtc-knowledge-seed.json
+scripts/data/car-repair-qa-knowledge-seed.json
+scripts/data/car-fault-knowledge-seed.json
+scripts/data/car-brands50-knowledge-seed.json
+scripts/data/autodata/CarRepairQA-dataset.jsonl
+
+# owner Q&A scraper
+scripts/scrape/car_qa/.venv/
+scripts/scrape/car_qa/config/proxies.txt
+scripts/scrape/car_qa/output/*.jsonl
+!scripts/scrape/car_qa/output/.gitkeep
+scripts/scrape/car_qa/.env

@@ -1,0 +1,421 @@
+{
+  "id": "coach_scenario_check_engine",
+  "slug": "diagnosis_check_engine",
+  "title": "Check Engine Light Diagnosis",
+  "subtitle": "We'll read the code, judge urgency, try safe DIY fixes when they fit, and know when to stop and see a pro — you've got a coach in the passenger seat.",
+  "category": "diagnosis",
+  "focus_part": "engine",
+  "estimated_total_minutes": {
+    "diy_min": 20,
+    "diy_max": 120,
+    "shop_min": 60,
+    "shop_max": 180
+  },
+  "cost_band_usd": {
+    "diy_min": 0,
+    "diy_max": 150,
+    "shop_min": 100,
+    "shop_max": 1200
+  },
+  "tone": "Calm diagnostic coach. Never scare, never dismiss. Flashing CEL = immediate action. Prefer OBD photo/video guidance over jargon walls.",
+  "prerequisites": [
+    "OBD-II scanner or Bluetooth adapter + phone app (1996+ US vehicles)",
+    "Note: flashing light + rough running = reduce load / stop safe ASAP",
+    "Recent fuel quality / fill-up notes help"
+  ],
+  "tools_checklist": [
+    "OBD-II reader",
+    "Phone for photos / code notes",
+    "Flashlight",
+    "Optional: gas cap, MAF cleaner, gloves"
+  ],
+  "parts_checklist": [
+    "Depends on code — common: gas cap, air filter, spark plugs/coils, O2 sensor, thermostat",
+    "Do not buy parts until codes + symptoms point clearly"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "flashing_cel",
+      "when": {},
+      "coach_note": "Flashing Check Engine while driving usually means active misfire — catalytic converter risk. Ease off, stop safe, don't ignore.",
+      "prefer_shop": true
+    },
+    {
+      "id": "evap_common",
+      "when": {},
+      "coach_note": "Many solid CELs after fueling are EVAP / loose gas cap. Easy DIY check first — but confirm with the actual code."
+    },
+    {
+      "id": "hybrid_codes",
+      "when": { "powertrain": ["hybrid", "phev"] },
+      "coach_note": "Hybrids can set ICE and hybrid-system codes. A basic $20 code reader may miss manufacturer-specific hybrid modules — shop-level scan if the light returns with ready/HV warnings.",
+      "prefer_shop": true
+    },
+    {
+      "id": "diesel_def",
+      "when": { "powertrain": ["diesel"] },
+      "coach_note": "Diesel CELs often involve emissions (DPF, DEF, EGR). Forcing 'just clear the code' can leave you in limp mode — diagnose properly.",
+      "prefer_shop": true
+    },
+    {
+      "id": "luxury_modules",
+      "when": {
+        "brand_includes": ["bmw", "mercedes", "audi", "porsche"]
+      },
+      "coach_note": "European cars store codes across many modules. Generic OBD may only show P0xxx — a shop scan is worth it if symptoms persist.",
+      "prefer_shop": true
+    },
+    {
+      "id": "high_miles_misfire",
+      "when": { "mileage_min": 100000 },
+      "coach_note": "Higher-mile engines with misfire codes often need plugs/coils/vacuum inspection — still verify the code before spraying parts at it."
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_cel",
+      "type": "image",
+      "src": "/coach/cel/hero_cel.webp",
+      "alt": "Dash Check Engine light illuminated",
+      "shot_description": "Night dash close-up, amber CEL soft glow, calm not apocalyptic."
+    },
+    {
+      "key": "obd_port_gif",
+      "type": "gif",
+      "src": "/coach/cel/obd_port.gif",
+      "alt": "Plugging scanner into OBD port under dash",
+      "shot_description": "Loop: find port left of steering → plug in → phone app shows code."
+    },
+    {
+      "key": "solid_vs_flash",
+      "type": "illustration",
+      "src": "/coach/cel/solid_vs_flash.svg",
+      "alt": "Solid vs flashing CEL urgency chart",
+      "shot_description": "Two panels: solid=schedule diagnosis; flashing=stop safe soon."
+    },
+    {
+      "key": "gas_cap_check",
+      "type": "video",
+      "src": "/coach/cel/gas_cap.mp4",
+      "poster": "/coach/cel/gas_cap_poster.webp",
+      "alt": "Checking and clicking gas cap",
+      "shot_description": "15s: remove cap inspect seal → reinstall until clicks → note may take drive cycles to clear."
+    },
+    {
+      "key": "maf_clean_gif",
+      "type": "gif",
+      "src": "/coach/cel/maf_clean.gif",
+      "alt": "MAF sensor careful cleaning",
+      "shot_description": "Short loop: unplug MAF → spray MAF cleaner only → air dry. Red X on carb cleaner."
+    },
+    {
+      "key": "diy_vs_shop_cel",
+      "type": "image",
+      "src": "/coach/cel/diy_vs_shop.webp",
+      "alt": "Home OBD scan vs shop bay diagnostics",
+      "shot_description": "Split: owner with Bluetooth OBD vs tech with smoke machine / scope."
+    },
+    {
+      "key": "code_card_illustration",
+      "type": "illustration",
+      "src": "/coach/cel/code_card.svg",
+      "alt": "Sample code card P0420 with plain-English meaning",
+      "shot_description": "UI card mock: code, plain English, common causes ranked, DIY vs shop tags."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Check Engine is on — we'll sort it calmly",
+      "description": "First question: is the light solid or flashing? Is the car driving normally, rough, or losing power? Answer that and we'll pick a safe path.",
+      "visual_type": "image",
+      "visual_asset_key": "hero_cel",
+      "focus_part": "engine",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "safety_warning": "Flashing CEL + shaking/rough running: reduce speed, avoid highway hills, stop somewhere safe. Continuing can destroy the catalytic converter.",
+      "action_buttons": [
+        {
+          "id": "solid",
+          "label": "Solid light — car drives OK",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "flashing",
+          "label": "Flashing / running rough",
+          "style": "danger",
+          "action": "skip_to",
+          "payload": "urgency_flashing"
+        },
+        {
+          "id": "photo_dash",
+          "label": "Photo the dash",
+          "style": "ghost",
+          "action": "take_photo"
+        }
+      ]
+    },
+    {
+      "id": "urgency_flashing",
+      "title": "Flashing light — protect the cat",
+      "description": "Treat this like an active misfire until proven otherwise. Stop hard acceleration. If safe, park and arrange a scan today. Towing beats a $1k+ converter.",
+      "visual_type": "illustration",
+      "visual_asset_key": "solid_vs_flash",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "safety_warning": "Do not clear codes and keep driving on a flashing light — that hides the warning without fixing the misfire.",
+      "action_buttons": [
+        {
+          "id": "scan_now",
+          "label": "I can scan now",
+          "style": "primary",
+          "action": "skip_to",
+          "payload": "scan_codes"
+        },
+        {
+          "id": "tow_shop",
+          "label": "Get help / tow",
+          "style": "danger",
+          "action": "book_shop"
+        },
+        {
+          "id": "coach_chat",
+          "label": "Describe symptoms in chat",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "CEL is flashing. Symptoms: (noise, rpm shake, power loss). What should I do right now?"
+        }
+      ]
+    },
+    {
+      "id": "scan_codes",
+      "title": "Plug in and read the code(s)",
+      "description": "OBD port is usually under the dash left of the steering column. Key on (engine may stay off). Record every code and freeze-frame if shown — photos help.",
+      "visual_type": "gif",
+      "visual_asset_key": "obd_port_gif",
+      "duration_minutes": 10,
+      "difficulty": "Easy",
+      "tools": ["OBD-II scanner"],
+      "safety_warning": "Park in park/neutral with brake on. Don't leave adapters dangling where feet kick them while driving.",
+      "action_buttons": [
+        {
+          "id": "have_codes",
+          "label": "I have the code(s)",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "no_scanner",
+          "label": "No scanner — options",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "I don't have an OBD scanner. What are cheap ways to read my Check Engine light?"
+        },
+        {
+          "id": "photo_codes",
+          "label": "Photo code screen",
+          "style": "ghost",
+          "action": "take_photo"
+        }
+      ]
+    },
+    {
+      "id": "interpret",
+      "title": "Plain-English meaning",
+      "description": "Share the code with me in chat (e.g. P0302, P0420, P0457). I'll translate causes by likelihood for your mileage and engine — we won't shotgun parts.",
+      "visual_type": "illustration",
+      "visual_asset_key": "code_card_illustration",
+      "duration_minutes": 5,
+      "difficulty": "Easy",
+      "safety_warning": null,
+      "action_buttons": [
+        {
+          "id": "send_code",
+          "label": "Send code to coach chat",
+          "style": "primary",
+          "action": "open_chat",
+          "payload": "Check Engine code(s): . Mileage and recent work: ."
+        },
+        {
+          "id": "common_evap",
+          "label": "Try gas-cap path",
+          "style": "secondary",
+          "action": "skip_to",
+          "payload": "diy_gas_cap"
+        },
+        {
+          "id": "shop_diag",
+          "label": "Book professional diagnosis",
+          "style": "ghost",
+          "action": "book_shop"
+        }
+      ],
+      "variants": [
+        {
+          "when": { "mileage_min": 100000 },
+          "description": "High-mile context: misfires and catalyst efficiency codes show up more — still confirm with the scanner before buying coils or a catalytic converter."
+        },
+        {
+          "when": { "powertrain": ["hybrid", "phev"] },
+          "description": "If you also see Ready / HV warnings, say so — those need a hybrid-capable scan, not only a generic P-code app."
+        }
+      ]
+    },
+    {
+      "id": "diy_gas_cap",
+      "title": "DIY: gas cap & easy EVAP checks",
+      "description": "Inspect the cap seal, tighten until it clicks, check for a cracked hose only if you're comfortable under the hood visually. Clear codes only after the fix — then drive a few cycles to confirm.",
+      "visual_type": "video",
+      "visual_asset_key": "gas_cap_check",
+      "duration_minutes": 15,
+      "difficulty": "Easy",
+      "safety_warning": "Don't clear codes to pass inspection without a fix — they often return, and you lose freeze-frame clues.",
+      "action_buttons": [
+        {
+          "id": "cap_done",
+          "label": "Cap sealed — monitor light",
+          "style": "primary",
+          "action": "skip_to",
+          "payload": "monitor_log"
+        },
+        {
+          "id": "not_evap",
+          "label": "Code isn't EVAP — other DIY",
+          "style": "secondary",
+          "action": "next_step"
+        }
+      ]
+    },
+    {
+      "id": "diy_or_shop",
+      "title": "Safe DIY vs shop diagnostics",
+      "description": "DIY-friendly: gas cap, air filter, careful MAF clean (right cleaner only), plug/coil swap when codes name a cylinder. Shop-level: catalyst, timing, wiring, fuel trim mysteries, diesel emissions, hybrid modules.",
+      "visual_type": "image",
+      "visual_asset_key": "diy_vs_shop_cel",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "safety_warning": "If performance is poor, temp climbs, or oil/coolant mixes — stop DIY and get help.",
+      "action_buttons": [
+        {
+          "id": "diy_maf",
+          "label": "Show MAF clean guidance",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "parts",
+          "label": "Browse likely parts",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "engine_sensors"
+        },
+        {
+          "id": "shop",
+          "label": "Schedule shop diagnosis",
+          "style": "ghost",
+          "action": "book_shop"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "brand_includes": ["bmw", "mercedes", "audi", "porsche"]
+          },
+          "description": "If a generic reader only shows one vague code, pay for a full-system scan before ordering OEM sensors."
+        }
+      ]
+    },
+    {
+      "id": "diy_maf",
+      "title": "Optional DIY: careful MAF clean",
+      "description": "Only if codes/symptoms fit (hesitation, fuel trims, MAF codes). Engine off. Disconnect sensor. Spray MAF cleaner only — never carb cleaner, never touch the wire. Air dry fully before install.",
+      "visual_type": "gif",
+      "visual_asset_key": "maf_clean_gif",
+      "duration_minutes": 25,
+      "difficulty": "Medium",
+      "tools": ["MAF cleaner", "Gloves", "Screwdriver/socket"],
+      "safety_warning": "Wrong cleaner destroys the sensor. If you're unsure it's the MAF, skip this and chat with the code first.",
+      "focus_part": "engine",
+      "action_buttons": [
+        {
+          "id": "maf_done",
+          "label": "Done — monitor",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "skip_maf",
+          "label": "Skip — not my issue",
+          "style": "secondary",
+          "action": "skip_to",
+          "payload": "monitor_log"
+        },
+        {
+          "id": "focus_engine",
+          "label": "Open Focus on engine",
+          "style": "ghost",
+          "action": "open_focus",
+          "payload": "engine"
+        }
+      ]
+    },
+    {
+      "id": "monitor_log",
+      "title": "Monitor drive cycles & log it",
+      "description": "Write down codes, what you tried, and mileage. Note if the light returns. Ready for inspection monitors may need several drive cycles after a clear.",
+      "visual_type": "illustration",
+      "visual_asset_key": "code_card_illustration",
+      "duration_minutes": 5,
+      "difficulty": "Easy",
+      "safety_warning": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log diagnostic session",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "diagnostics"
+        },
+        {
+          "id": "still_on",
+          "label": "Light came back",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "CEL returned after my DIY checks. Codes and what I already tried:"
+        },
+        {
+          "id": "finish",
+          "label": "Finish",
+          "style": "ghost",
+          "action": "mark_done"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "You faced the light — that's real ownership",
+    "description": "Keep the code list in your health file. If it returns with new symptoms, don't clear repeatedly — bring freeze-frame data to a tech.",
+    "log_category": "diagnostics",
+    "next_check_miles_default": 500,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Decode another code",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Help me interpret this OBD code for my vehicle:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "390×844 coach shell.\n• Welcome: two big urgency cards (Solid vs Flashing) under hero — Flashing uses danger border\n• OBD step: looping GIF + 'Photo codes' secondary\n• Interpret step: opens chat composer prefilled\n• Focus: engine region; optional MAF Live Repair handoff\n• Never show 'just clear codes' as primary CTA",
+    "react_native_pseudocode": "function CelCoachScreen({ vehicle, scenario }) {\n  const [i, setI] = useState(0);\n  const step = applyVariants(scenario.steps[i], vehicle);\n  useEffect(() => emitFocus({ part: step.focus_part || 'engine', action: step.id }), [step.id]);\n\n  return (\n    <CoachShell\n      media={resolveAsset(scenario, step)}\n      title={step.title}\n      body={step.description}\n      safety={step.safety_warning}\n      actions={step.action_buttons}\n      onAction={(btn) => {\n        if (btn.action === 'open_chat') openChat(btn.payload);\n        else handleCoachAction(btn, { setI, scenario });\n      }}\n    />\n  );\n}"
+  }
+}

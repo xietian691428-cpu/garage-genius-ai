@@ -1,0 +1,639 @@
+{
+  "id": "coach_scenario_cooling_water_pump_production",
+  "slug": "maintenance_cooling_water_pump",
+  "title": "Cooling System & Water Pump Check",
+  "subtitle": "Temp climb, sweet smells, and pump weep holes — inspect cold, never crack a hot system.",
+  "category": "maintenance",
+  "focus_part": "engine",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 25,
+    "diy_max": 90,
+    "shop_min": 90,
+    "shop_max": 360
+  },
+  "cost_band_usd": {
+    "diy_min": 20,
+    "diy_max": 60,
+    "shop_min": 300,
+    "shop_max": 1800
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel, step feedback Yes/No. Phase 3B cooling: hot cap ban; plastic impeller pumps shop-heavy.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Engine fully cold for reservoir/cap checks",
+    "Correct coolant chemistry from manual"
+  ],
+  "tools_checklist": [
+    "Flashlight",
+    "Gloves",
+    "Paper towels",
+    "Coolant tester optional"
+  ],
+  "parts_checklist": [
+    "Correct coolant only",
+    "Shop: pump, thermostat, hoses, burp tools"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "electric_pump",
+      "when": {
+        "brand_includes": [
+          "bmw",
+          "mini",
+          "mercedes"
+        ]
+      },
+      "coach_note": "Some BMWs use electric water pumps with fail-safe limp modes — diagnosis is scan + specialist territory.",
+      "prefer_shop": true
+    },
+    {
+      "id": "timing_pump",
+      "when": {
+        "brand_includes": [
+          "volkswagen",
+          "audi",
+          "toyota",
+          "honda"
+        ]
+      },
+      "coach_note": "On many engines the water pump is tied to timing belt service — replace as a set when due.",
+      "prefer_shop": true,
+      "interval_miles": 60000
+    },
+    {
+      "id": "high_miles_cool",
+      "when": {
+        "mileage_min": 90000
+      },
+      "coach_note": "High-mile cooling: plastic tanks, thermostat housings, and pump weep holes deserve a hard look.",
+      "prefer_shop": true,
+      "interval_miles": 15000
+    },
+    {
+      "id": "ev_thermal",
+      "when": {
+        "powertrain": [
+          "bev",
+          "phev"
+        ]
+      },
+      "coach_note": "EV/PHEV thermal loops are specialized — owner reservoir top-offs only if the manual shows them; pack loops are shop-only.",
+      "prefer_shop": true
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_cool",
+      "type": "gif",
+      "src": "/coach/cooling/hero.gif",
+      "alt": "Coolant reservoir and hose",
+      "shot_description": "Cold bay soft light."
+    },
+    {
+      "key": "temp_gauge",
+      "type": "gif",
+      "src": "/coach/cooling/temp.gif",
+      "alt": "Temp gauge climbing",
+      "shot_description": "Needle toward H."
+    },
+    {
+      "key": "cold_level",
+      "type": "video",
+      "src": "/coach/cooling/level.mp4",
+      "alt": "Cold reservoir MIN MAX",
+      "shot_description": "15s cold check.",
+      "poster": "/coach/cooling/level_poster.webp"
+    },
+    {
+      "key": "weep_hole",
+      "type": "gif",
+      "src": "/coach/cooling/weep.gif",
+      "alt": "Water pump weep hole drip",
+      "shot_description": "Streak below pump."
+    },
+    {
+      "key": "no_hot_cap",
+      "type": "gif",
+      "src": "/coach/cooling/no_hot_cap.gif",
+      "alt": "Never open hot radiator",
+      "shot_description": "Steam warning."
+    },
+    {
+      "key": "celebrate_cool",
+      "type": "gif",
+      "src": "/coach/cooling/celebrate.gif",
+      "alt": "Cooling check logged",
+      "shot_description": "Stable temp icon."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Cooling system — heat respects no one",
+      "coach_encourage": "Checking temp issues early saves head gaskets. Proud of you. You're just getting started — I'll stay with you.",
+      "personalize": "Cooling coach for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next look ~{{next_service}} miles.",
+      "description": "We'll do cold level checks, leak/weep visuals, and honest water-pump shop calls. Never open a hot system.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_cool",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Step 1 of 7 · Start · 14%"
+      },
+      "safety_warning": "Hot coolant causes severe burns. If the gauge is high, shut down safely and wait to cool.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start cooling coach",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "urgency"
+        },
+        {
+          "id": "overheat",
+          "label": "Overheating now",
+          "style": "danger",
+          "action": "goto",
+          "next_step_id": "overheat_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "urgency"
+        },
+        {
+          "when_button_id": "overheat",
+          "goto": "overheat_help"
+        }
+      ]
+    },
+    {
+      "id": "overheat_help",
+      "title": "Overheating — protect the engine",
+      "coach_encourage": "Pulling over is the win. You're doing it right. You're just getting started — I'll stay with you.",
+      "personalize": "Emergency cooling path for your {{make}} at {{mileage}} miles — do not push to {{next_service}} miles like this.",
+      "description": "Heater on full can buy a little time to an exit. Do not remove the cap. Let it cool fully, then arrange a tow/shop if it climbs again.",
+      "visual_type": "gif",
+      "visual_asset_key": "no_hot_cap",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Urgent path · 14%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Overheat & pressurized coolant hazard",
+        "body": "Opening a hot radiator or reservoir can erupt scalding coolant. Continuing to drive while overheating can destroy the engine. Find a nearby shop / tow.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "danger",
+          "action": "book_shop"
+        },
+        {
+          "id": "cooled",
+          "label": "Fully cool — continue checks",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "cold_level"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "cooled",
+          "goto": "cold_level"
+        }
+      ]
+    },
+    {
+      "id": "urgency",
+      "title": "Symptom check-in",
+      "coach_encourage": "Temp gauge stories are useful — keep going. Nice momentum — you're about 29% through.",
+      "personalize": "At {{mileage}} miles on your {{model}}, pick the closest cooling clue before {{next_service}} miles.",
+      "description": "Gauge creeping high, sweet coolant smell, puddle under the front, or heater blowing cold at idle — choose closest.",
+      "visual_type": "gif",
+      "visual_asset_key": "temp_gauge",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "fraction": 0.286,
+        "percent": 29,
+        "label": "Step 2 of 7 · Symptom · 29%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "level",
+          "label": "Check cold level",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "cold_level"
+        },
+        {
+          "id": "smell",
+          "label": "Smell / puddle",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "cold_level"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "level",
+          "goto": "cold_level"
+        },
+        {
+          "when_button_id": "smell",
+          "goto": "cold_level"
+        }
+      ]
+    },
+    {
+      "id": "cold_level",
+      "title": "Cold reservoir level & type",
+      "coach_encourage": "This step is important — only when fully cold. You're crushing it — roughly 43% done.",
+      "personalize": "Cold check for your {{make}} at {{mileage}} miles. Correct chemistry before {{next_service}} miles.",
+      "description": "Reservoir between MIN and MAX when cold. Match coolant type exactly — mixing chemistries can gel or corrode. Low level + no visible leak still deserves a pressure test at a shop.",
+      "visual_type": "video",
+      "visual_asset_key": "cold_level",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "fraction": 0.429,
+        "percent": 43,
+        "label": "Step 3 of 7 · Level · 43%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Cooling system pressure / chemistry risk",
+        "body": "Only open caps when cold. Use the exact coolant specified in the manual. If the engine was recently hot, wait. When unsure, find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "level_ok",
+          "label": "Level/type OK",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "weep_visual"
+        },
+        {
+          "id": "low",
+          "label": "Low / wrong / unsure",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "level_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "level_ok",
+          "goto": "weep_visual"
+        },
+        {
+          "when_button_id": "low",
+          "goto": "level_help"
+        }
+      ]
+    },
+    {
+      "id": "level_help",
+      "title": "Low coolant — smart next move",
+      "coach_encourage": "Not guessing the color is technician thinking. You're crushing it — roughly 43% done.",
+      "personalize": "Get the right coolant for your {{year}} {{make}} {{model}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Top off only if the manual allows and the engine is cold. Repeated loss means a leak test — not endless topping.",
+      "visual_type": "gif",
+      "visual_asset_key": "cold_level",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "fraction": 0.429,
+        "percent": 43,
+        "label": "Step 3 · Help · 43%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "primary",
+          "action": "book_shop"
+        },
+        {
+          "id": "continue",
+          "label": "Continue pump visual",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "weep_visual"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "continue",
+          "goto": "weep_visual"
+        }
+      ]
+    },
+    {
+      "id": "weep_visual",
+      "title": "Pump weep hole & hose visual",
+      "coach_encourage": "Dried coolant crust below the pump is a classic tell. Look at you — about 57% complete. Keep going.",
+      "personalize": "Visual for your {{model}} at {{mileage}} miles. Plan repair before {{next_service}} miles if leaking.",
+      "description": "With the engine cold, flashlight the water pump area for crusty coolant trails from the weep hole. Check radiator end tanks and soft hoses. Fans can start — keep fingers clear.",
+      "visual_type": "gif",
+      "visual_asset_key": "weep_hole",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "fraction": 0.571,
+        "percent": 57,
+        "label": "Step 4 of 7 · Visual · 57%"
+      },
+      "safety_warning": "Electric fans may activate unexpectedly.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Engine-bay inspection risk",
+        "body": "Fans and belts can injure. Inspect cold only. Do not remove belts or pumps DIY without training. Active leaks → find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "clean",
+          "label": "No obvious leak",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "shop_pump"
+        },
+        {
+          "id": "leak",
+          "label": "Weep / leak seen",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "shop_pump"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "clean",
+          "goto": "shop_pump"
+        },
+        {
+          "when_button_id": "leak",
+          "goto": "shop_pump"
+        }
+      ]
+    },
+    {
+      "id": "shop_pump",
+      "title": "Water pump & thermostat — shop lane",
+      "coach_encourage": "Timing-belt pumps and electric pumps are not pride DIY. Look at you — about 71% complete. Keep going.",
+      "personalize": "Repair path for your {{make}} at {{mileage}} miles before {{next_service}} miles of heat risk.",
+      "description": "Pump replacement often needs belt/timing awareness and a proper refill/burp. Thermostats and housing leaks are common companions. Book a shop that will pressure-test and use the correct coolant.",
+      "visual_type": "gif",
+      "visual_asset_key": "no_hot_cap",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "fraction": 0.714,
+        "percent": 71,
+        "label": "Step 5 of 7 · Shop · 71%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Cooling repair complexity",
+        "body": "Incorrect pump/timing work can destroy the engine. Air-locked refills can overheat immediately. Prefer a qualified shop when replacing pumps or thermostats.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "book",
+          "label": "Find a nearby shop",
+          "style": "primary",
+          "action": "book_shop"
+        },
+        {
+          "id": "log_only",
+          "label": "Inspection only — finish",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "log_cool"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "log_only",
+          "goto": "log_cool"
+        }
+      ]
+    },
+    {
+      "id": "monitor",
+      "title": "Watch the next few drives",
+      "coach_encourage": "A calm gauge after a top-off still needs monitoring. Final stretch — you're about 86% through.",
+      "personalize": "Monitor window for your {{make}} at {{mileage}} miles toward {{next_service}} miles.",
+      "description": "If temp climbs in traffic or the reservoir drops again, stop and shop — don't keep topping forever.",
+      "visual_type": "gif",
+      "visual_asset_key": "temp_gauge",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "fraction": 0.857,
+        "percent": 86,
+        "label": "Step 6 of 7 · Monitor · 86%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "ok",
+          "label": "Finish & log",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_cool"
+        },
+        {
+          "id": "hot",
+          "label": "Running hot again",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "ok",
+          "goto": "log_cool"
+        }
+      ]
+    },
+    {
+      "id": "log_cool",
+      "title": "Log cooling findings",
+      "coach_encourage": "Stable temperatures are earned. Well done! You made it through the flow — time to celebrate.",
+      "personalize": "Logged for {{make}} {{model}} at {{mileage}} miles. Next cooling peek ~{{next_service}} miles.",
+      "description": "Save level notes, weep observations, and any overheat events. Recheck after the next few drives.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_cool",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 7,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 7 of 7 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log cooling check",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "cooling"
+        },
+        {
+          "id": "parts",
+          "label": "Coolant / hoses",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "coolant"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Cooling check complete",
+    "coach_encourage": "You respected pressure and heat. That's how engines live long — well done! You made it through the flow — time to celebrate.",
+    "description": "Top off only with the correct chemistry when cold. Active leaks or overheating → stop driving and tow if needed.",
+    "log_category": "cooling",
+    "next_check_miles_default": 10000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to guides",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Still running hot",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Cooling symptom follow-up: temp behavior and leaks:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION EN cooling coach.\n• Hot cap risk modal\n• Weep hole visual\n• Feedback on",
+    "react_native_pseudocode": "CoachScenarioPlayer — maintenance_cooling_water_pump_production.json"
+  }
+}

@@ -1,0 +1,622 @@
+{
+  "id": "coach_scenario_transmission_cvt_production",
+  "slug": "maintenance_transmission_cvt",
+  "title": "Transmission / CVT Common Issues",
+  "subtitle": "Shudder, slip, delayed engagement — we'll triage safely and know when fluid DIY stops and a specialist starts.",
+  "category": "diagnosis",
+  "focus_part": "transmission",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 20,
+    "diy_max": 90,
+    "shop_min": 90,
+    "shop_max": 480
+  },
+  "cost_band_usd": {
+    "diy_min": 0,
+    "diy_max": 200,
+    "shop_min": 150,
+    "shop_max": 5000
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel. Phase 2 transmission: CVT-specific fluid rules; no 'miracle additives' as primary fix.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Know automatic vs CVT vs dual-clutch vs manual from the garage profile / manual",
+    "OBD reader helpful for transmission codes",
+    "Never ignore a vehicle that won't stay in gear on the road"
+  ],
+  "tools_checklist": [
+    "OBD-II scanner",
+    "Flashlight",
+    "Gloves",
+    "Owner's manual fluid spec page",
+    "Optional: transmission fluid (OEM-only if DIY is approved)"
+  ],
+  "parts_checklist": [
+    "OEM-specified ATF / CVT fluid only (never 'universal' guesses)",
+    "Filter/pan gasket only if manual allows DIY service",
+    "No friction-modifier miracle bottles as a first fix"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "cvt_brands",
+      "when": {
+        "brand_includes": [
+          "nissan",
+          "subaru",
+          "mitsubishi",
+          "honda",
+          "toyota"
+        ]
+      },
+      "coach_note": "Many models use belt/chain CVTs that need exact OEM fluid. Wrong fluid can destroy a CVT quickly.",
+      "prefer_shop": true,
+      "interval_miles": 30000
+    },
+    {
+      "id": "cvt_symptoms",
+      "when": {},
+      "coach_note": "CVT shudder on light acceleration is common in some models — diagnose with fluid history and codes before replacing the unit.",
+      "prefer_shop": true
+    },
+    {
+      "id": "dct_note",
+      "when": {
+        "model_includes": [
+          "gti",
+          "golf r",
+          "focus st",
+          "mustang"
+        ]
+      },
+      "coach_note": "Dual-clutch (DCT) behavior differs from torque-converter automatics — 'slipping' at low speed can be normal clutch management. Still verify codes.",
+      "prefer_shop": true
+    },
+    {
+      "id": "high_miles_trans",
+      "when": {
+        "mileage_min": 100000
+      },
+      "coach_note": "Past 100k, delayed engagement and burnt fluid smell deserve a specialist inspection before a long trip.",
+      "prefer_shop": true,
+      "interval_miles": 30000
+    },
+    {
+      "id": "bev_skip",
+      "when": {
+        "powertrain": [
+          "bev"
+        ]
+      },
+      "coach_note": "Most BEVs use a single-speed reduction gear — this playbook's AT/CVT fluid steps may not apply. Tell chat if you hear gear whine.",
+      "prefer_shop": true
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_trans",
+      "type": "gif",
+      "src": "/coach/trans/hero_trans.gif",
+      "alt": "Transmission silhouette coach hero",
+      "shot_description": "Calm gearbox icon + fluid drop. No wreck imagery."
+    },
+    {
+      "key": "symptom_triage",
+      "type": "gif",
+      "src": "/coach/trans/symptom_triage.gif",
+      "alt": "Slip shudder delay icons",
+      "shot_description": "Three symptom icons animate to paths."
+    },
+    {
+      "key": "fluid_check",
+      "type": "video",
+      "src": "/coach/trans/fluid_check.mp4",
+      "alt": "Checking transmission fluid if dipstick equipped",
+      "shot_description": "20s: warm procedure per manual; CVT sealed warning.",
+      "poster": "/coach/trans/fluid_check_poster.webp"
+    },
+    {
+      "key": "cvt_fluid_only",
+      "type": "gif",
+      "src": "/coach/trans/cvt_oem_fluid.gif",
+      "alt": "OEM CVT fluid only",
+      "shot_description": "OEM bottle highlighted; universal jug crossed out."
+    },
+    {
+      "key": "obd_trans",
+      "type": "gif",
+      "src": "/coach/trans/obd_trans.gif",
+      "alt": "Scanning transmission codes",
+      "shot_description": "OBD plug-in → P07xx / manufacturer codes card."
+    },
+    {
+      "key": "diy_vs_trans_shop",
+      "type": "gif",
+      "src": "/coach/trans/diy_vs_shop.gif",
+      "alt": "DIY check vs transmission shop",
+      "shot_description": "Split driveway check ↔ specialist bay."
+    },
+    {
+      "key": "celebrate_trans",
+      "type": "gif",
+      "src": "/coach/trans/celebrate.gif",
+      "alt": "Transmission check logged",
+      "shot_description": "Health file gearbox checkmark."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Transmission check-in",
+      "coach_encourage": "Gearbox worries are stressful — we'll sort them calmly. You're just getting started — I'll stay with you.",
+      "personalize": "Coaching your {{year}} {{make}} {{model}} at {{mileage}} miles. Next review ~{{next_service}} miles.",
+      "description": "Tell the symptoms later by choosing a path. If the car won't stay in gear or flares RPM wildly, don't highway-drive — tow.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_trans",
+      "focus_part": "transmission",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 8,
+        "fraction": 0.125,
+        "percent": 13,
+        "label": "Step 1 of 8 · Start · 13%"
+      },
+      "safety_warning": "A vehicle that slips out of gear or won't move is unsafe to drive. Arrange a tow.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start triage",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "urgency"
+        },
+        {
+          "id": "bev",
+          "label": "I'm in an EV",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "I opened transmission coach but drive a BEV. Help me with gear noise or drive-unit concerns."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "urgency"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "powertrain": [
+              "bev"
+            ]
+          },
+          "title": "EV note before we continue",
+          "description": "Most BEVs don't have multi-gear automatics/CVTs. If you still want driveline noise coaching, use chat — or continue only if you have a rare multi-speed EV."
+        }
+      ]
+    },
+    {
+      "id": "urgency",
+      "title": "Can you drive safely right now?",
+      "coach_encourage": "Safety first — no shame in choosing a tow. Nice momentum — you're about 25% through.",
+      "personalize": "At {{mileage}} miles on your {{make}}, urgent gearbox faults need a shop before {{next_service}} miles of risk.",
+      "description": "Choose carefully. Metal-on-metal grinding, no reverse/drive, or RPM flare without acceleration → stop and find help.",
+      "visual_type": "gif",
+      "visual_asset_key": "symptom_triage",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 8,
+        "fraction": 0.25,
+        "percent": 25,
+        "label": "Step 2 of 8 · Urgency · 25%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Unsafe drivability acknowledgment",
+        "body": "Continuing to drive with severe transmission slip, loss of gear, or grinding can cause a crash and catastrophic gearbox damage. If the vehicle is unsafe, do not continue DIY — tow to a qualified shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "drives_ok",
+          "label": "Drives, mild symptoms",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "symptom_pick"
+        },
+        {
+          "id": "unsafe",
+          "label": "Find a nearby shop",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "drives_ok",
+          "goto": "symptom_pick"
+        }
+      ]
+    },
+    {
+      "id": "symptom_pick",
+      "title": "Which symptom fits best?",
+      "coach_encourage": "Clear labels speed up diagnosis. Nice work. You're crushing it — roughly 38% done.",
+      "personalize": "Symptom path for your {{model}} at {{mileage}} miles. Recheck by ~{{next_service}} miles.",
+      "description": "Shudder/vibration on light throttle, delayed engagement into D/R, slipping (RPM up, speed flat), or harsh shifts — pick the closest match.",
+      "visual_type": "gif",
+      "visual_asset_key": "symptom_triage",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 8,
+        "fraction": 0.375,
+        "percent": 38,
+        "label": "Step 3 of 8 · Symptom · 38%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "shudder",
+          "label": "Shudder / slip / delay",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "scan_codes",
+          "set_flags": {
+            "symptom": "shudder_slip"
+          }
+        },
+        {
+          "id": "harsh",
+          "label": "Harsh shifts / other",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "scan_codes",
+          "set_flags": {
+            "symptom": "harsh"
+          }
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "shudder",
+          "goto": "scan_codes"
+        },
+        {
+          "when_button_id": "harsh",
+          "goto": "scan_codes"
+        }
+      ]
+    },
+    {
+      "id": "scan_codes",
+      "title": "Scan for transmission codes",
+      "coach_encourage": "Codes beat guessing — you're doing this like a pro. You're crushing it — roughly 50% done.",
+      "personalize": "Pull codes on your {{make}} at {{mileage}} miles before buying fluid at {{next_service}} miles.",
+      "description": "Read powertrain/transmission codes and note freeze-frame. Photo the screen. No codes doesn't mean healthy — continue the fluid history check.",
+      "visual_type": "gif",
+      "visual_asset_key": "obd_trans",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 8,
+        "fraction": 0.5,
+        "percent": 50,
+        "label": "Step 4 of 8 · Scan · 50%"
+      },
+      "tools": [
+        "OBD-II scanner"
+      ],
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "have_codes",
+          "label": "I have codes / none",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "fluid_path"
+        },
+        {
+          "id": "no_scanner",
+          "label": "No scanner — options",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "I need ways to read transmission codes without my own scanner."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "have_codes",
+          "goto": "fluid_path"
+        }
+      ]
+    },
+    {
+      "id": "fluid_path",
+      "title": "Fluid: inspect only if the manual allows",
+      "coach_encourage": "This step is important — sealed CVTs are often shop-only. Look at you — about 63% complete. Keep going.",
+      "personalize": "Fluid rules for your {{year}} {{make}} {{model}} at {{mileage}} miles. Service window ~{{next_service}} miles.",
+      "description": "If you have a dipstick and a warm-check procedure, note level/color/smell (burnt = urgent). Many CVTs are sealed — do not invent a fill method. OEM fluid only.",
+      "visual_type": "video",
+      "visual_asset_key": "fluid_check",
+      "duration_minutes": 3,
+      "difficulty": "Medium",
+      "progress": {
+        "index": 5,
+        "total": 8,
+        "fraction": 0.625,
+        "percent": 63,
+        "label": "Step 5 of 8 · Fluid · 63%"
+      },
+      "safety_warning": "Hot fluid burns. Wrong fluid chemistry can destroy a CVT. Never use a 'universal' guess.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Transmission fluid service risk",
+        "body": "Incorrect fluid type, overfilling, or servicing a sealed unit without the correct procedure can destroy the transmission. If your manual does not clearly allow owner checks, stop and find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "fluid_checked",
+          "label": "Checked / sealed — next",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "cvt_rule"
+        },
+        {
+          "id": "shop_fluid",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "fluid_checked",
+          "goto": "cvt_rule"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "brand_includes": [
+              "nissan",
+              "subaru",
+              "mitsubishi"
+            ]
+          },
+          "description": "CVT-heavy lineup: insist on OEM CVT fluid and a shop with the right tools/temperature procedure. Skip bargain 'universal CVT' jugs.",
+          "visual_asset_key": "cvt_fluid_only"
+        }
+      ]
+    },
+    {
+      "id": "cvt_rule",
+      "title": "CVT & additive reality check",
+      "coach_encourage": "Skipping miracle bottles protects your wallet. Respect. Look at you — about 75% complete. Keep going.",
+      "personalize": "At {{mileage}} miles, protect your {{model}} gearbox before {{next_service}} miles of damage risk.",
+      "description": "Friction-modifier 'fix shudder' bottles are not a diagnosis. For CVTs, correct fluid + software updates + leak repair come first. Hard parts need a specialist.",
+      "visual_type": "gif",
+      "visual_asset_key": "cvt_fluid_only",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 8,
+        "fraction": 0.75,
+        "percent": 75,
+        "label": "Step 6 of 8 · CVT rule · 75%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "road_note",
+          "label": "Continue to road notes",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "road_notes"
+        },
+        {
+          "id": "shop_now",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "road_note",
+          "goto": "road_notes"
+        }
+      ]
+    },
+    {
+      "id": "road_notes",
+      "title": "Safe observation notes (not a stunt test)",
+      "coach_encourage": "Data from normal driving beats risky experiments. Final stretch — you're about 88% through.",
+      "personalize": "Log behavior for your {{make}} at {{mileage}} miles. Bring notes to a shop before {{next_service}} miles.",
+      "description": "On quiet roads only: note cold vs hot behavior, speed/RPM when shudder hits, and whether it happens in D only. No wide-open launches. Stop if it worsens.",
+      "visual_type": "gif",
+      "visual_asset_key": "diy_vs_trans_shop",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 8,
+        "fraction": 0.875,
+        "percent": 88,
+        "label": "Step 7 of 8 · Notes · 88%"
+      },
+      "safety_warning": "Abort the drive if the vehicle becomes unsafe. Tow beats a stranded highway.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "On-road observation risk",
+        "body": "You must only observe during normal, legal, low-risk driving. Do not perform aggressive tests. If control feels compromised, pull over safely and arrange a tow.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "notes_done",
+          "label": "Notes saved — finish",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_trans"
+        },
+        {
+          "id": "worse",
+          "label": "Got worse — shop now",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "notes_done",
+          "goto": "log_trans"
+        }
+      ]
+    },
+    {
+      "id": "log_trans",
+      "title": "Log & hand off if needed",
+      "coach_encourage": "You built a specialist-ready file. Well done! You made it through the flow — time to celebrate.",
+      "personalize": "Logged for {{make}} {{model}} at {{mileage}} miles. Recheck ~{{next_service}} miles or sooner if symptoms grow.",
+      "description": "Save codes, fluid notes, and when symptoms happen. Book a transmission shop if engagement is delayed, fluid smells burnt, or shudder persists after correct fluid service.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_trans",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 8,
+        "total": 8,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 8 of 8 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log transmission session",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "transmission"
+        },
+        {
+          "id": "chat",
+          "label": "Send notes to coach",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Transmission notes: codes, fluid, when shudder/slip happens:"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Transmission triage complete",
+    "coach_encourage": "You faced gearbox symptoms calmly and stayed out of unsafe DIY. Well done! You made it through the flow — time to celebrate.",
+    "description": "Keep notes on when slip/shudder happens (cold/hot, gear, speed). If codes return or engagement worsens, book a transmission specialist — don't keep driving hard.",
+    "log_category": "transmission",
+    "next_check_miles_default": 5000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Ask a follow-up",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Transmission/CVT follow-up: symptoms, fluid history, and codes for my vehicle."
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390×844 EN transmission coach.\n• CVT OEM fluid callout\n• Risk on fluid service & road tests\n• Max 2 CTAs; progress %",
+    "react_native_pseudocode": "See CoachScenarioPlayer.phase2.tsx.example — load maintenance_transmission_cvt_production.json"
+  }
+}

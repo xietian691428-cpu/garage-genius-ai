@@ -1,0 +1,530 @@
+{
+  "id": "coach_scenario_oil_filter",
+  "slug": "maintenance_oil",
+  "title": "Oil & Filter Service",
+  "subtitle": "Fresh oil keeps your engine quiet, clean, and long-lived — I'll walk you through it step by step.",
+  "category": "maintenance",
+  "focus_part": "engine",
+  "estimated_total_minutes": {
+    "diy_min": 35,
+    "diy_max": 60,
+    "shop_min": 20,
+    "shop_max": 45
+  },
+  "cost_band_usd": {
+    "diy_min": 45,
+    "diy_max": 120,
+    "shop_min": 80,
+    "shop_max": 180
+  },
+  "tone": "Coach Mode: warm mentor, short sentences, celebrate progress, never shame. Prefer visuals over walls of text. Always offer DIY vs shop without judgment.",
+  "prerequisites": [
+    "Vehicle on level ground",
+    "Engine cool enough to touch the drain area safely (warm is OK; hot is not)",
+    "Correct oil viscosity for this vehicle (check door-jamb sticker or owner's manual)",
+    "New oil filter that fits your year/make/model/engine",
+    "Drain pan rated for at least your oil capacity + 1 qt spare"
+  ],
+  "tools_checklist": [
+    "Jack + jack stands or ramps (if needed for access)",
+    "Correct size drain-plug socket / wrench",
+    "Oil filter wrench (or cap-style wrench)",
+    "Funnel",
+    "Gloves + rags",
+    "Torque wrench (recommended for drain plug)",
+    "OBD / trip reset optional"
+  ],
+  "parts_checklist": [
+    "Engine oil (correct spec & quantity)",
+    "Oil filter (OEM or quality aftermarket)",
+    "Drain plug washer / crush washer (replace if required)",
+    "Optional: engine oil drain plug if threads are damaged"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "interval_normal_gas",
+      "when": {
+        "powertrain": ["gas"],
+        "mileage_min": 0,
+        "mileage_max": 150000
+      },
+      "coach_note": "For most gas engines on full synthetic, plan oil + filter around every 5,000–7,500 miles (or per your manual — manuals win).",
+      "interval_miles": 6000,
+      "oil_spec_hint": "Use the viscosity printed on the door jamb (often 0W-20 or 5W-30 in the US)."
+    },
+    {
+      "id": "interval_hybrid",
+      "when": {
+        "powertrain": ["hybrid", "phev"]
+      },
+      "coach_note": "Hybrids still need oil changes — short trips and Atkinson-cycle engines benefit from staying on schedule even if the ICE runs less often.",
+      "interval_miles": 6000,
+      "oil_spec_hint": "Many hybrids specify 0W-16 or 0W-20 — confirm on the oil-cap / door sticker before buying."
+    },
+    {
+      "id": "severe_high_miles",
+      "when": {
+        "mileage_min": 100000
+      },
+      "coach_note": "You're past 100k — great job maintaining it. Stick closer to the shorter end of the interval and inspect for leaks while you're under there.",
+      "interval_miles": 5000
+    },
+    {
+      "id": "early_breakin",
+      "when": {
+        "mileage_max": 10000
+      },
+      "coach_note": "Newer vehicle — follow the first oil-change window in the manual (often earlier than the long synthetic interval).",
+      "interval_miles": 5000
+    },
+    {
+      "id": "diesel",
+      "when": {
+        "powertrain": ["diesel"]
+      },
+      "coach_note": "Diesel oil specs are stricter (CJ-4 / CK-4 class, etc.). Don't substitute regular gas-engine oil.",
+      "prefer_shop": false,
+      "oil_spec_hint": "Match diesel API / ACEA rating exactly — wrong oil can hurt emissions systems."
+    },
+    {
+      "id": "luxury_shop_nudge",
+      "when": {
+        "brand_includes": ["bmw", "mercedes", "audi", "porsche", "lexus"]
+      },
+      "coach_note": "This brand often wants specific OEM-approved oil (LL-01, MB 229.x, etc.). If you're unsure of the approval code, a dealer or indie specialist oil change is a smart call.",
+      "prefer_shop": true
+    },
+    {
+      "id": "bev_skip",
+      "when": {
+        "powertrain": ["bev"]
+      },
+      "coach_note": "Battery EVs don't have engine oil services. If you meant cabin or gearbox fluid, tell me and we'll switch scenarios.",
+      "prefer_shop": false
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_oil_service",
+      "type": "image",
+      "src": "/coach/oil/hero_oil_service.webp",
+      "alt": "Clean garage setup with oil bottle, filter, and drain pan",
+      "shot_description": "Top-down product hero: synthetic oil jug, boxed filter, gloves, funnel on a clean mat. Warm workshop light. No text overlays."
+    },
+    {
+      "key": "mileage_check",
+      "type": "illustration",
+      "src": "/coach/oil/mileage_gauge.svg",
+      "alt": "Odometer and maintenance interval illustration",
+      "shot_description": "Simple UI illustration: odometer + calendar + oil can icons showing 'due soon'."
+    },
+    {
+      "key": "diy_vs_shop",
+      "type": "image",
+      "src": "/coach/oil/diy_vs_shop.webp",
+      "alt": "Split view DIY driveway vs quick-lube bay",
+      "shot_description": "Split frame: left driveway DIY (jack stands visible, safe), right clean quick-lube. Friendly, not judgmental."
+    },
+    {
+      "key": "parts_laydown",
+      "type": "image",
+      "src": "/coach/oil/parts_laydown.webp",
+      "alt": "Oil, filter, and washer laid out for install",
+      "shot_description": "Flat lay of correct oil quarts, filter, crush washer, funnel. Label callouts as separate Figma layers (not burned into photo)."
+    },
+    {
+      "key": "safety_jack_stands",
+      "type": "gif",
+      "src": "/coach/oil/safety_jack_stands.gif",
+      "alt": "Animation placing jack stands under pinch welds",
+      "shot_description": "3–5s loop: jack up → stand placement on pinch weld → tug test. Red X on bumper jacking."
+    },
+    {
+      "key": "drain_plug_video",
+      "type": "video",
+      "src": "/coach/oil/drain_plug.mp4",
+      "poster": "/coach/oil/drain_plug_poster.webp",
+      "alt": "Loosening drain plug into drain pan",
+      "shot_description": "15–25s vertical video: locate plug → crack loose → finish by hand → oil streams into pan. Caption: 'Hot oil burns — gloves on.'"
+    },
+    {
+      "key": "filter_swap_gif",
+      "type": "gif",
+      "src": "/coach/oil/filter_swap.gif",
+      "alt": "Removing old filter and spinning on new one",
+      "shot_description": "Loop: remove old filter (oil drip catch), lube new gasket with fresh oil, hand-tighten new filter."
+    },
+    {
+      "key": "refill_level",
+      "type": "video",
+      "src": "/coach/oil/refill_dipstick.mp4",
+      "poster": "/coach/oil/refill_poster.webp",
+      "alt": "Pouring oil and checking dipstick",
+      "shot_description": "Pour via funnel to capacity minus 0.5 qt, idle 30s, shut off, wait, wipe dipstick, show correct range."
+    },
+    {
+      "key": "celebrate_log",
+      "type": "illustration",
+      "src": "/coach/oil/celebrate_log.svg",
+      "alt": "Vehicle health file checkmark",
+      "shot_description": "Friendly illustration: health file clipboard with oil entry checked, next reminder at +5–7k miles."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Let's protect that engine",
+      "description": "You're doing the right thing by staying on oil service. I'll confirm your vehicle and mileage, then we'll choose DIY or a shop — either path is a win.",
+      "visual_type": "image",
+      "visual_asset_key": "hero_oil_service",
+      "visual_prompt": "Hero still of oil + filter kit",
+      "focus_part": "engine",
+      "duration_minutes": 1,
+      "difficulty": "Easy",
+      "safety_warning": null,
+      "action_buttons": [
+        {
+          "id": "confirm_vehicle",
+          "label": "Looks right — continue",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "fix_vehicle",
+          "label": "Update vehicle / mileage",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Please update my year, make, model, engine, and current mileage before oil service."
+        }
+      ],
+      "variants": [
+        {
+          "when": { "powertrain": ["bev"] },
+          "title": "Quick check — this may not apply",
+          "description": "Battery EVs don't take engine oil. If you meant another fluid, tell me in chat and I'll route you.",
+          "safety_warning": null
+        }
+      ]
+    },
+    {
+      "id": "assess_interval",
+      "title": "Are you due?",
+      "description": "We'll match your mileage and powertrain to a sensible interval. Your owner's manual always overrides generic advice.",
+      "visual_type": "illustration",
+      "visual_asset_key": "mileage_check",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "safety_warning": null,
+      "action_buttons": [
+        {
+          "id": "due_yes",
+          "label": "I'm due / overdue — let's service",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "due_soon",
+          "label": "Within 1,000 miles — prepare parts",
+          "style": "secondary",
+          "action": "skip_to",
+          "payload": "parts_check"
+        },
+        {
+          "id": "not_sure",
+          "label": "Not sure — coach me",
+          "style": "ghost",
+          "action": "open_chat",
+          "payload": "Help me decide if my oil change is due based on my mileage and last service date."
+        }
+      ],
+      "variants": [
+        {
+          "when": { "mileage_min": 100000 },
+          "description": "High-mile champion — lean toward ~5,000-mile synthetic intervals and peek for leaks while you're under the car."
+        },
+        {
+          "when": { "powertrain": ["hybrid", "phev"] },
+          "description": "Hybrid note: even if the gas engine naps a lot, keep oil fresh — moisture and fuel dilution still happen on short trips."
+        },
+        {
+          "when": { "mileage_max": 10000 },
+          "description": "Early ownership window — check the break-in / first service page in the manual before stretching to long synthetic intervals."
+        }
+      ]
+    },
+    {
+      "id": "diy_or_shop",
+      "title": "DIY or let a shop handle it?",
+      "description": "DIY usually lands around $45–$120 in parts and ~45 minutes if you have safe access. A shop is often $80–$180 and faster — perfect if you're short on tools, space, or OEM oil approvals.",
+      "visual_type": "image",
+      "visual_asset_key": "diy_vs_shop",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "safety_warning": "If you cannot use jack stands or ramps safely, choose a shop. Never work under a car supported only by a jack.",
+      "action_buttons": [
+        {
+          "id": "choose_diy",
+          "label": "I'll DIY — coach me",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "choose_shop",
+          "label": "Book / visit a shop",
+          "style": "secondary",
+          "action": "book_shop"
+        },
+        {
+          "id": "parts_only",
+          "label": "Just show me parts",
+          "style": "ghost",
+          "action": "open_parts",
+          "payload": "oil_filter"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "brand_includes": ["bmw", "mercedes", "audi", "porsche"]
+          },
+          "description": "Luxury tip: confirm the OEM oil approval code first. If the bottle doesn't list it, a specialist quick-lube or dealer oil service avoids expensive mistakes.",
+          "safety_warning": "Wrong oil approval on some European engines can affect warranty conversations — when unsure, shop it."
+        }
+      ]
+    },
+    {
+      "id": "parts_check",
+      "title": "Parts check (visual)",
+      "description": "Grab oil (correct viscosity + quantity), a matching filter, and a new crush washer if your plug needs one. Snap a photo of your oil cap / door sticker if you want me to double-check the spec.",
+      "visual_type": "image",
+      "visual_asset_key": "parts_laydown",
+      "duration_minutes": 5,
+      "difficulty": "Easy",
+      "tools": ["Phone camera optional"],
+      "safety_warning": null,
+      "action_buttons": [
+        {
+          "id": "parts_ready",
+          "label": "Parts ready",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "photo_spec",
+          "label": "Photo oil-cap / sticker",
+          "style": "secondary",
+          "action": "take_photo"
+        },
+        {
+          "id": "buy_parts",
+          "label": "Find parts to buy",
+          "style": "ghost",
+          "action": "open_parts",
+          "payload": "oil_filter"
+        }
+      ],
+      "variants": [
+        {
+          "when": { "powertrain": ["hybrid", "phev"] },
+          "description": "Confirm capacity for your hybrid engine — some take less volume than the non-hybrid twin. Cap sticker + manual beat memory."
+        },
+        {
+          "when": { "powertrain": ["diesel"] },
+          "description": "Diesel: verify API/ACEA rating on the jug, not just viscosity."
+        }
+      ]
+    },
+    {
+      "id": "safety_setup",
+      "title": "Safety setup before you crawl under",
+      "description": "Park level, engage park/brake, chock wheels. Lift only if needed — stands on pinch welds, then give the car a firm shake test. Gloves on.",
+      "visual_type": "gif",
+      "visual_asset_key": "safety_jack_stands",
+      "visual_prompt": "Jack stand placement loop",
+      "duration_minutes": 8,
+      "difficulty": "Medium",
+      "tools": ["Jack", "Jack stands or ramps", "Wheel chocks", "Gloves"],
+      "safety_warning": "Never rely on a jack alone. If the car feels unstable, stop and use a shop. Hot exhaust and catalytic converters burn skin — stay clear.",
+      "action_buttons": [
+        {
+          "id": "safe_ready",
+          "label": "Car is secure — next",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "abort_shop",
+          "label": "This feels unsafe — shop instead",
+          "style": "danger",
+          "action": "book_shop"
+        },
+        {
+          "id": "replay_gif",
+          "label": "Replay safety GIF",
+          "style": "ghost",
+          "action": "show_video",
+          "payload": "safety_jack_stands"
+        }
+      ]
+    },
+    {
+      "id": "drain_oil",
+      "title": "Drain the old oil",
+      "description": "Place the pan under the drain plug. Crack the plug loose with a wrench, finish by hand, and let it drain fully. Keep the plug and washer somewhere clean.",
+      "visual_type": "video",
+      "visual_asset_key": "drain_plug_video",
+      "duration_minutes": 12,
+      "difficulty": "Medium",
+      "tools": ["Drain pan", "Correct socket", "Gloves"],
+      "safety_warning": "Oil can be hot enough to burn. Loosen slowly — the last threads release a sudden flow. Don't let the plug drop into a full pan of hot oil.",
+      "focus_part": "engine",
+      "action_buttons": [
+        {
+          "id": "drained",
+          "label": "Done draining",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "stuck_plug",
+          "label": "Plug won't budge / stripped",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "My oil drain plug is stuck or feels like it might strip. What should I do next?"
+        },
+        {
+          "id": "watch_drain",
+          "label": "Watch drain video again",
+          "style": "ghost",
+          "action": "show_video",
+          "payload": "drain_plug_video"
+        }
+      ]
+    },
+    {
+      "id": "replace_filter",
+      "title": "Swap the oil filter",
+      "description": "Remove the old filter (expect a little spill). Wipe the mount clean. Film the new rubber gasket with fresh oil, then install hand-tight — usually 3/4 to 1 turn after contact (follow the filter box).",
+      "visual_type": "gif",
+      "visual_asset_key": "filter_swap_gif",
+      "duration_minutes": 8,
+      "difficulty": "Medium",
+      "tools": ["Oil filter wrench", "Rags", "Gloves"],
+      "safety_warning": "Cross-threading a filter can dump oil onto a hot exhaust. Start by hand only. Cartridge-style filters: replace O-rings and seat the housing to the torque in the manual.",
+      "action_buttons": [
+        {
+          "id": "filter_done",
+          "label": "New filter installed",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "filter_stuck",
+          "label": "Old filter won't come off",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "My oil filter is stuck. Coach me through safe removal options."
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "brand_includes": ["bmw", "mercedes"],
+            "model_includes": ["x5", "gle"]
+          },
+          "description": "Many of these use a top-side cartridge filter — replace all O-rings, oil them lightly, and torque the cap to spec (guessing hand-tight is how housings crack)."
+        }
+      ]
+    },
+    {
+      "id": "refill_check",
+      "title": "Refill & verify level",
+      "description": "Reinstall the drain plug with a new washer if needed (torque to spec when you can). Refill with a funnel to just under capacity, start the engine 30–60 seconds, shut off, wait a minute, then read the dipstick. Top off to the safe range — don't overfill.",
+      "visual_type": "video",
+      "visual_asset_key": "refill_level",
+      "duration_minutes": 10,
+      "difficulty": "Easy",
+      "tools": ["Funnel", "Dipstick", "Torque wrench"],
+      "safety_warning": "Check under the car for fresh drips before you lower it fully. Overfilling can damage seals and catalytic converters — add gradually.",
+      "action_buttons": [
+        {
+          "id": "level_good",
+          "label": "Level looks good — no leaks",
+          "style": "primary",
+          "action": "next_step"
+        },
+        {
+          "id": "over_under",
+          "label": "Level is high / low",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "My oil level is not in the correct dipstick range after a refill. Help me correct it safely."
+        },
+        {
+          "id": "see_leak",
+          "label": "I see a leak",
+          "style": "danger",
+          "action": "open_chat",
+          "payload": "I see oil leaking after my oil change. Where should I look first and is it safe to drive?"
+        }
+      ]
+    },
+    {
+      "id": "reset_and_log",
+      "title": "Reset reminder & log the win",
+      "description": "Reset the oil maintenance light if your model has one, then save this service to your vehicle health file with mileage and oil type. I'll remind you before the next interval.",
+      "visual_type": "illustration",
+      "visual_asset_key": "celebrate_log",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "safety_warning": null,
+      "action_buttons": [
+        {
+          "id": "log_service",
+          "label": "Log oil change",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "oil"
+        },
+        {
+          "id": "how_reset",
+          "label": "How do I reset the oil light?",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "How do I reset the oil maintenance reminder on my vehicle?"
+        },
+        {
+          "id": "finish",
+          "label": "Finish coaching",
+          "style": "ghost",
+          "action": "mark_done"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Oil service complete — nice work",
+    "description": "You just bought your engine quieter miles. Default next check: about 5,000–7,500 miles (we'll adapt to your powertrain and manual). Keep a photo of the receipt / oil jug in your health file.",
+    "log_category": "oil",
+    "next_check_miles_default": 6000,
+    "action_buttons": [
+      {
+        "id": "done_home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask_more",
+        "label": "Ask a follow-up",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "I just finished an oil and filter change. Any post-service checks I should do this week?"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "FRAME 390×844 (mobile coach)\n• Top: 8px progress segments (step index) + Close\n• Hero media 390×220, full-bleed, rounded bottom 16 — image/gif/video only (no text badges on media)\n• Brand mark 'Garage Genius' 14/600 above title\n• Title 22/700, subtitle 15/400, 2–3 lines max\n• Safety callout (if any): left amber bar, icon Shield, 13/500 copy — not a floating sticker on the video\n• Primary CTA full-width 48h; secondary text button; ghost tertiary\n• Bottom safe-area pad 24; optional mic chip 'Voice coach' for Live Repair\n• Dark-neutral workshop palette (graphite / amber accent) — avoid purple gradients and cream-serif clichés\nDesktop: same column max-width 420 centered over dimmed dashboard with engine Focus highlight.",
+    "react_native_pseudocode": "function OilCoachScreen({ vehicle, scenario }) {\n  const rules = matchAdaptiveRules(scenario.adaptive_rules, vehicle);\n  const [i, setI] = useState(0);\n  const step = applyVariants(scenario.steps[i], vehicle);\n  const asset = scenario.visual_assets.find(a => a.key === step.visual_asset_key);\n\n  return (\n    <SafeAreaView>\n      <Progress segments={scenario.steps.length} index={i} />\n      <CoachMedia type={step.visual_type} src={asset?.src} poster={asset?.poster} />\n      <Text style={title}>{step.title}</Text>\n      <Text style={body}>{injectCoachNotes(step.description, rules)}</Text>\n      {step.safety_warning && <SafetyBanner text={step.safety_warning} />}\n      <ButtonRow\n        buttons={step.action_buttons}\n        onPress={(btn) => handleCoachAction(btn, { setI, vehicle, scenario })}\n      />\n      <VoiceCoachChip onPress={startLiveRepairMode} />\n    </SafeAreaView>\n  );\n}\n\n// handleCoachAction: next_step → i++; skip_to → findIndex; open_chat → router.chat(payload);\n// log_maintenance → api.records.create({ category: 'oil', mileage: vehicle.mileage });\n// book_shop → deepLink shop finder; show_video → fullscreen player; take_photo → camera → chat vision."
+  }
+}

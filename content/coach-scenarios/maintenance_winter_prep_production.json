@@ -1,0 +1,764 @@
+{
+  "id": "coach_scenario_winter_prep_production",
+  "slug": "maintenance_winter_prep",
+  "title": "Winter Prep Coach",
+  "subtitle": "12V battery, coolant/antifreeze, and snow-ready tires — one calm checklist before the cold snap.",
+  "category": "maintenance",
+  "focus_part": "battery",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 45,
+    "diy_max": 150,
+    "shop_min": 60,
+    "shop_max": 180
+  },
+  "cost_band_usd": {
+    "diy_min": 20,
+    "diy_max": 200,
+    "shop_min": 100,
+    "shop_max": 900
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel. Phase 2 winter: cold-weather battery, coolant, snow tires; never open hot cooling systems.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Owner's manual coolant spec (HOAT/OAT/etc.)",
+    "Tire placard PSI (cold)",
+    "Plan for snow tires or quality winters if you see ice regularly"
+  ],
+  "tools_checklist": [
+    "Multimeter or battery tester",
+    "Tire gauge",
+    "Flashlight",
+    "Coolant tester (refractometer/strips) optional",
+    "Jack + stands + torque wrench (if swapping wheels)"
+  ],
+  "parts_checklist": [
+    "Correct coolant if topping/flushing via shop",
+    "Winter / snow tire set or all-weathers rated for snow",
+    "12V battery if weak",
+    "Ice scraper, washer fluid rated for freeze point"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "snow_belt",
+      "when": {
+        "markets": [
+          "US",
+          "CA",
+          "GB"
+        ]
+      },
+      "coach_note": "Snow-belt driving: dedicated winter tires beat worn all-seasons once temps stay near freezing.",
+      "interval_miles": 6000
+    },
+    {
+      "id": "ev_winter",
+      "when": {
+        "powertrain": [
+          "bev",
+          "phev"
+        ]
+      },
+      "coach_note": "EV winter: precondition while plugged in, expect range loss, and keep the 12V healthy — cold kills weak 12Vs.",
+      "prefer_shop": false,
+      "interval_miles": 8000
+    },
+    {
+      "id": "tesla_winter",
+      "when": {
+        "brand_includes": [
+          "tesla"
+        ]
+      },
+      "coach_note": "Tesla winter: Scheduled Departure + precondition; watch 12V warnings; use winters if you see regular ice.",
+      "prefer_shop": true
+    },
+    {
+      "id": "diesel_winter",
+      "when": {
+        "powertrain": [
+          "diesel"
+        ]
+      },
+      "coach_note": "Diesel: confirm fuel/anti-gel strategy per manual and glow-plug health — cold starts are unforgiving.",
+      "prefer_shop": true
+    },
+    {
+      "id": "high_miles_winter",
+      "when": {
+        "mileage_min": 100000
+      },
+      "coach_note": "Higher-mile winter prep: prioritize battery test and coolant condition — roadside fails spike in cold snaps.",
+      "interval_miles": 5000
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_winter",
+      "type": "gif",
+      "src": "/coach/winter/hero_winter.gif",
+      "alt": "Car ready for snow with tires and scraper",
+      "shot_description": "Calm driveway winter kit: scraper, fluid, gauge. No storm panic."
+    },
+    {
+      "key": "battery_cold_gif",
+      "type": "gif",
+      "src": "/coach/winter/battery_cold.gif",
+      "alt": "Battery test before cold weather",
+      "shot_description": "Meter on 12V + snowflake icon."
+    },
+    {
+      "key": "coolant_check",
+      "type": "video",
+      "src": "/coach/winter/coolant.mp4",
+      "poster": "/coach/winter/coolant_poster.webp",
+      "alt": "Coolant reservoir level check cold",
+      "shot_description": "Cold engine: reservoir MIN/MAX, cap stays on if hot."
+    },
+    {
+      "key": "snow_tire_gif",
+      "type": "gif",
+      "src": "/coach/winter/snow_tires.gif",
+      "alt": "Winter tire swap and torque",
+      "shot_description": "Mountain-snowflake mark → mount → star torque."
+    },
+    {
+      "key": "washer_scraper",
+      "type": "gif",
+      "src": "/coach/winter/washer_scraper.gif",
+      "alt": "Winter washer fluid and scraper",
+      "shot_description": "Fill winter fluid, show scraper/brush kit."
+    },
+    {
+      "key": "diy_vs_winter_shop",
+      "type": "gif",
+      "src": "/coach/winter/diy_vs_shop.gif",
+      "alt": "DIY checklist vs winter tire shop",
+      "shot_description": "Split checklist ↔ tire bay."
+    },
+    {
+      "key": "celebrate_winter",
+      "type": "gif",
+      "src": "/coach/winter/celebrate.gif",
+      "alt": "Winter prep logged",
+      "shot_description": "Checklist all green + snowflake."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Winter prep — we'll go pillar by pillar",
+      "coach_encourage": "Prepping early is how confident drivers are made. Nice. You're just getting started — I'll stay with you.",
+      "personalize": "Winter coaching for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next seasonal check ~{{next_service}} miles.",
+      "description": "Order: 12V battery → coolant/antifreeze → tires & pressures. Skip heroics on hot cooling systems and unsafe lifts.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_winter",
+      "focus_part": "battery",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 8,
+        "fraction": 0.125,
+        "percent": 13,
+        "label": "Step 1 of 8 · Start · 13%"
+      },
+      "safety_warning": "Never open a hot radiator or pressurized reservoir.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start winter prep",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "battery_cold"
+        },
+        {
+          "id": "tires_first",
+          "label": "Jump to tires",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "tires_winter"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "battery_cold"
+        },
+        {
+          "when_button_id": "tires_first",
+          "goto": "tires_winter"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "powertrain": [
+              "bev",
+              "phev"
+            ]
+          },
+          "description": "EV winter: we'll still check 12V and tires; precondition while plugged in to protect range. Traction pack HV stays hands-off.",
+          "personalize": "EV winter plan for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next check ~{{next_service}} miles."
+        }
+      ]
+    },
+    {
+      "id": "battery_cold",
+      "title": "Test the 12V before the freeze",
+      "coach_encourage": "Cold mornings expose weak batteries — smart to test now. Nice momentum — you're about 25% through.",
+      "personalize": "At {{mileage}} miles, your {{make}} 12V should be proven before {{next_service}} miles of winter.",
+      "description": "Slow cranks and random electronics glitches spike in cold. Measure resting voltage / load test when you can. EVs/hybrids: 12V only — orange HV off-limits.",
+      "visual_type": "gif",
+      "visual_asset_key": "battery_cold_gif",
+      "focus_part": "battery",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 8,
+        "fraction": 0.25,
+        "percent": 25,
+        "label": "Step 2 of 8 · Battery · 25%"
+      },
+      "tools": [
+        "Multimeter"
+      ],
+      "safety_warning": "Eye protection on. No sparks near a gassing battery.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Battery testing in cold weather",
+        "body": "Batteries can emit explosive gas. Wear eye protection. On hybrids/EVs only use designated 12V points — never orange HV. If access is unclear, find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "bat_ok",
+          "label": "Battery looks healthy",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "coolant_cold"
+        },
+        {
+          "id": "bat_weak",
+          "label": "Weak / won't start well",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "battery_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "bat_ok",
+          "goto": "coolant_cold"
+        },
+        {
+          "when_button_id": "bat_weak",
+          "goto": "battery_help"
+        }
+      ]
+    },
+    {
+      "id": "battery_help",
+      "title": "Weak battery — winter priority",
+      "coach_encourage": "Replacing before a cold snap beats a parking-lot jump. Good catch. Nice momentum — you're about 25% through.",
+      "personalize": "Your {{model}} at {{mileage}} miles may need a 12V before {{next_service}} miles.",
+      "description": "Charge/test confirm, then replace with the correct type (AGM if required). Euro cars may need registration. EVs: prefer qualified install.",
+      "visual_type": "gif",
+      "visual_asset_key": "battery_cold_gif",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 8,
+        "fraction": 0.25,
+        "percent": 25,
+        "label": "Step 2 · Help · 25%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "primary",
+          "action": "book_shop"
+        },
+        {
+          "id": "continue",
+          "label": "Continue winter checklist",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "coolant_cold"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "continue",
+          "goto": "coolant_cold"
+        }
+      ]
+    },
+    {
+      "id": "coolant_cold",
+      "title": "Coolant / antifreeze — cold engine only",
+      "coach_encourage": "This step is important — only check when the engine is cold. You're crushing it — roughly 38% done.",
+      "personalize": "Coolant check for your {{make}} at {{mileage}} miles. Recheck freeze protection before {{next_service}} miles.",
+      "description": "On a cold engine, reservoir should sit between MIN and MAX. Confirm the coolant type in the manual — mixing chemistries can damage the system. Freeze-point testing is ideal before deep cold.",
+      "visual_type": "video",
+      "visual_asset_key": "coolant_check",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 8,
+        "fraction": 0.375,
+        "percent": 38,
+        "label": "Step 3 of 8 · Coolant · 38%"
+      },
+      "safety_warning": "Never remove a hot radiator cap. Pressurized coolant causes severe burns.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Cooling system burn hazard",
+        "body": "Opening a hot or pressurized cooling system can cause severe burns. Only inspect when fully cool. Coolant disposal and full flushes should follow local rules — when unsure, find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "cool_ok",
+          "label": "Level/type look OK",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "washer_kit"
+        },
+        {
+          "id": "cool_issue",
+          "label": "Low / wrong / unsure",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "coolant_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "cool_ok",
+          "goto": "washer_kit"
+        },
+        {
+          "when_button_id": "cool_issue",
+          "goto": "coolant_help"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "powertrain": [
+              "bev"
+            ]
+          },
+          "description": "Some BEVs use dedicated thermal loops — still only service when cool and per manual. Pack coolant work is shop-only.",
+          "safety_warning": "Do not open EV thermal loops unless the manual shows an owner reservoir."
+        }
+      ]
+    },
+    {
+      "id": "coolant_help",
+      "title": "Coolant needs attention",
+      "coach_encourage": "Stopping on uncertain coolant chemistry is technician thinking. You're crushing it — roughly 38% done.",
+      "personalize": "Get the right coolant for your {{year}} {{make}} {{model}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Top off only with the exact spec if the manual allows owner top-ups. Pink/green/blue are not interchangeable. Repeated loss = leak diagnosis at a shop.",
+      "visual_type": "video",
+      "visual_asset_key": "coolant_check",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 8,
+        "fraction": 0.375,
+        "percent": 38,
+        "label": "Step 3 · Help · 38%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "primary",
+          "action": "book_shop"
+        },
+        {
+          "id": "continue",
+          "label": "Continue to tires",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "washer_kit"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "continue",
+          "goto": "washer_kit"
+        }
+      ]
+    },
+    {
+      "id": "washer_kit",
+      "title": "Washer fluid & winter kit",
+      "coach_encourage": "Visibility kit = underrated winter flex. Keep going! You're crushing it — roughly 50% done.",
+      "personalize": "Quick kit check for your {{make}} at {{mileage}} miles. Refresh before {{next_service}} miles.",
+      "description": "Fill winter-rated washer fluid (freeze point below your climate). Stash scraper, brush, and a phone charger. Bonus: confirm headlights aim and wiper wipe quality.",
+      "visual_type": "gif",
+      "visual_asset_key": "washer_scraper",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 8,
+        "fraction": 0.5,
+        "percent": 50,
+        "label": "Step 4 of 8 · Kit · 50%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "kit_ok",
+          "label": "Kit ready — tires next",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "tires_winter"
+        },
+        {
+          "id": "shop_fluid",
+          "label": "Need winter fluid / wipers",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "wipers_washer"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "kit_ok",
+          "goto": "tires_winter"
+        }
+      ]
+    },
+    {
+      "id": "tires_winter",
+      "title": "Tires & cold pressures",
+      "coach_encourage": "Grip is everything in winter — you're prioritizing the right thing. Look at you — about 63% complete. Keep going.",
+      "personalize": "Tire plan for your {{model}} at {{mileage}} miles. Rotate/recheck near {{next_service}} miles.",
+      "description": "Set cold PSI from the door placard (pressures drop with temperature). Tread near wear bars? Don't winter on slicks. Regular ice/snow → winter tires with the mountain-snowflake mark.",
+      "visual_type": "gif",
+      "visual_asset_key": "snow_tire_gif",
+      "focus_part": "tires",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 8,
+        "fraction": 0.625,
+        "percent": 63,
+        "label": "Step 5 of 8 · Tires · 63%"
+      },
+      "safety_warning": "Bulges, cords, or severe cracks — do not drive; replace/tow.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "tires_ok",
+          "label": "Pressures set / tread OK",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "swap_or_shop"
+        },
+        {
+          "id": "need_winters",
+          "label": "Need winters / damage",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "tires_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "tires_ok",
+          "goto": "swap_or_shop"
+        },
+        {
+          "when_button_id": "need_winters",
+          "goto": "tires_help"
+        }
+      ]
+    },
+    {
+      "id": "tires_help",
+      "title": "Winter tire decision",
+      "coach_encourage": "Buying grip before the storm is peak adulthood. Look at you — about 63% complete. Keep going.",
+      "personalize": "Tire upgrade path for your {{make}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Shop mount/balance for new winters. Photo tread if you want a coach call. Don't mix mismatched winter/summer sizes against the placard.",
+      "visual_type": "gif",
+      "visual_asset_key": "diy_vs_winter_shop",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 8,
+        "fraction": 0.625,
+        "percent": 63,
+        "label": "Step 5 · Help · 63%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "parts",
+          "label": "Shop winter tires",
+          "style": "primary",
+          "action": "open_parts",
+          "payload": "tires"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ]
+    },
+    {
+      "id": "swap_or_shop",
+      "title": "Seasonal swap or shop mount?",
+      "coach_encourage": "Either path is a win — pick safe for your tools today. Look at you — about 75% complete. Keep going.",
+      "personalize": "At {{mileage}} miles, choose DIY wheel swap vs shop for your {{model}}. Next swap ~{{next_service}} miles.",
+      "description": "If you already own winter wheels: DIY swap with stands + torque wrench is fine for many owners. New tires on rims → shop balancer. Staggered fitments: confirm rotation rules.",
+      "visual_type": "gif",
+      "visual_asset_key": "diy_vs_winter_shop",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 8,
+        "fraction": 0.75,
+        "percent": 75,
+        "label": "Step 6 of 8 · Path · 75%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "diy_swap",
+          "label": "DIY wheel swap",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "swap_wheels"
+        },
+        {
+          "id": "shop_mount",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "diy_swap",
+          "goto": "swap_wheels"
+        }
+      ]
+    },
+    {
+      "id": "swap_wheels",
+      "title": "Swap wheels & torque",
+      "coach_encourage": "This step is important — stands and star-pattern torque. Slow is safe. Final stretch — you're about 88% through.",
+      "personalize": "Wheel swap on your {{make}} {{model}} at {{mileage}} miles. Re-torque after 25–50 miles; next seasonal check ~{{next_service}} miles.",
+      "description": "Mark positions, jack at correct points, stands on, swap, lower, torque to placard spec in a star pattern. Re-torque after 25–50 miles.",
+      "visual_type": "gif",
+      "visual_asset_key": "snow_tire_gif",
+      "focus_part": "tires",
+      "duration_minutes": 3,
+      "difficulty": "Medium",
+      "progress": {
+        "index": 7,
+        "total": 8,
+        "fraction": 0.875,
+        "percent": 88,
+        "label": "Step 7 of 8 · Swap · 88%"
+      },
+      "tools": [
+        "Jack",
+        "Jack stands",
+        "Torque wrench"
+      ],
+      "safety_warning": "Never work under a vehicle on a jack alone.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Wheel swap & jacking risk",
+        "body": "Incorrect jacking or lug torque can cause injury or wheel loss. Use rated jack stands on manufacturer points and torque to the door-sticker specification. If anything feels unstable, stop and find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "swapped",
+          "label": "Torqued — finish",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_winter"
+        },
+        {
+          "id": "stuck",
+          "label": "Stuck lug / unsafe",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "swapped",
+          "goto": "log_winter"
+        }
+      ]
+    },
+    {
+      "id": "log_winter",
+      "title": "Log winter readiness",
+      "coach_encourage": "You just bought calmer winter mornings. Well done! You made it through the flow — time to celebrate.",
+      "personalize": "Winter prep logged for {{make}} {{model}} at {{mileage}} miles. Next nudge ~{{next_service}} miles.",
+      "description": "Save battery result, coolant notes, tire set, and pressures. Recheck PSI after the first hard freeze.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_winter",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 8,
+        "total": 8,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 8 of 8 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log winter prep",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "seasonal"
+        },
+        {
+          "id": "parts",
+          "label": "Winter parts & fluids",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "winter_prep"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Winter prep complete",
+    "coach_encourage": "You beat the cold snap to the punch. That's real ownership — well done! You made it through the flow — time to celebrate.",
+    "description": "Recheck tire pressures after big temperature drops. Keep washer fluid topped and retest the 12V if mornings get slower.",
+    "log_category": "seasonal",
+    "next_check_miles_default": 6000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Ask a winter follow-up",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Winter prep follow-up: battery, coolant, or snow tires for my vehicle."
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390×844 EN winter coach.\n• Three pillars: battery → coolant → tires\n• Hot coolant risk modal\n• Wheel swap risk modal\n• Max 2 CTAs; progress %",
+    "react_native_pseudocode": "See CoachScenarioPlayer.phase2.tsx.example — load maintenance_winter_prep_production.json"
+  }
+}

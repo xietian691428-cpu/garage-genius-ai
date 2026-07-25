@@ -1,0 +1,507 @@
+{
+  "id": "coach_scenario_summer_rain_prep_production",
+  "slug": "maintenance_summer_rain_prep",
+  "title": "Summer / Rainy Season Prep",
+  "subtitle": "Heat, storms, and wet roads — cooling, A/C comfort, wipers, tires, and cabin water checks.",
+  "category": "maintenance",
+  "focus_part": "tires",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 35,
+    "diy_max": 120,
+    "shop_min": 45,
+    "shop_max": 180
+  },
+  "cost_band_usd": {
+    "diy_min": 20,
+    "diy_max": 120,
+    "shop_min": 80,
+    "shop_max": 500
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel, step feedback Yes/No. Phase 3B summer/rain: heat + hydroplaning focus.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Tire placard PSI",
+    "Wiper size known",
+    "Coolant type known"
+  ],
+  "tools_checklist": [
+    "Tire gauge",
+    "Flashlight",
+    "Cabin filter tools",
+    "Umbrella optional"
+  ],
+  "parts_checklist": [
+    "Summer/all-season tread depth OK",
+    "Wiper blades",
+    "Cabin filter",
+    "Bug wash"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "hot_us",
+      "when": {
+        "markets": [
+          "US"
+        ]
+      },
+      "coach_note": "Hot US summers: tire pressures rise with heat — set cold PSI in the morning, never bleed hot tires to placard.",
+      "interval_miles": 4000
+    },
+    {
+      "id": "rain_uk",
+      "when": {
+        "markets": [
+          "GB",
+          "EU"
+        ]
+      },
+      "coach_note": "Wet climates: prioritize tread depth and wipers — hydroplaning risk rises fast under 4/32\".",
+      "interval_miles": 4000
+    },
+    {
+      "id": "ev_summer",
+      "when": {
+        "powertrain": [
+          "bev",
+          "phev"
+        ]
+      },
+      "coach_note": "EV summer: precondition while plugged in when possible; cabin thermal load affects range in heat."
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_summer",
+      "type": "gif",
+      "src": "/coach/summer/hero.gif",
+      "alt": "Car in summer rain prep kit",
+      "shot_description": "Wipers gauge coolant."
+    },
+    {
+      "key": "tires_rain",
+      "type": "gif",
+      "src": "/coach/summer/tires_rain.gif",
+      "alt": "Tread depth rain risk",
+      "shot_description": "4/32 warning."
+    },
+    {
+      "key": "wipers_ac",
+      "type": "video",
+      "src": "/coach/summer/wipers_ac.mp4",
+      "alt": "Wipers and A/C quick check",
+      "shot_description": "20s.",
+      "poster": "/coach/summer/wipers_ac_poster.webp"
+    },
+    {
+      "key": "coolant_summer",
+      "type": "gif",
+      "src": "/coach/summer/coolant.gif",
+      "alt": "Cold coolant check summer",
+      "shot_description": "MIN MAX."
+    },
+    {
+      "key": "cabin_water",
+      "type": "gif",
+      "src": "/coach/summer/cabin_water.gif",
+      "alt": "Sunroof drain / wet carpet caution",
+      "shot_description": "Damp floor icon."
+    },
+    {
+      "key": "celebrate_summer",
+      "type": "gif",
+      "src": "/coach/summer/celebrate.gif",
+      "alt": "Summer prep logged",
+      "shot_description": "Sun/rain checkmark."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Beat the heat and the downpours",
+      "coach_encourage": "Seasonal prep is how calm drivers are made. Let's go. You're just getting started — I'll stay with you.",
+      "personalize": "Summer/rain coach for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next seasonal check ~{{next_service}} miles.",
+      "description": "Tires for wet grip, cooling for heat, wipers/A/C for storms, and a quick cabin water check.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_summer",
+      "focus_part": "tires",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Step 1 of 7 · Start · 14%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start summer/rain prep",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "tires_wet"
+        },
+        {
+          "id": "ac_first",
+          "label": "A/C weak in heat",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "A/C weak in summer heat — should I open the A/C coach?"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "tires_wet"
+        }
+      ]
+    },
+    {
+      "id": "tires_wet",
+      "title": "Tires for rain & heat",
+      "coach_encourage": "This step is important — tread is your rainy-day ABS. Nice momentum — you're about 29% through.",
+      "personalize": "At {{mileage}} miles, confirm wet grip on your {{model}} before {{next_service}} miles of storms.",
+      "description": "Set cold PSI to placard in the morning. Under ~4/32\" tread hydroplanes easier. Don't bleed hot tires down to cold numbers.",
+      "visual_type": "gif",
+      "visual_asset_key": "tires_rain",
+      "focus_part": "tires",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "fraction": 0.286,
+        "percent": 29,
+        "label": "Step 2 of 7 · Tires · 29%"
+      },
+      "tools": [
+        "Tire gauge"
+      ],
+      "safety_warning": "Bald or corded tires in rain are unsafe — replace/tow.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "tires_ok",
+          "label": "Pressures & tread OK",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "cooling_heat"
+        },
+        {
+          "id": "bad_tread",
+          "label": "Tread low / damage",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "tires_ok",
+          "goto": "cooling_heat"
+        }
+      ]
+    },
+    {
+      "id": "cooling_heat",
+      "title": "Cooling ready for heat waves",
+      "coach_encourage": "Summer traffic cooks weak cooling systems. You're crushing it — roughly 43% done.",
+      "personalize": "Cold coolant glance for your {{make}} at {{mileage}} miles before {{next_service}} miles of heat.",
+      "description": "Only check when cold. Level between marks, correct chemistry. If you overheat in summer traffic, stop — don't keep driving.",
+      "visual_type": "gif",
+      "visual_asset_key": "coolant_summer",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "fraction": 0.429,
+        "percent": 43,
+        "label": "Step 3 of 7 · Cooling · 43%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Hot cooling system hazard",
+        "body": "Never open a hot cap. Overheating can destroy the engine. If the gauge climbs, pull over safely and find a nearby shop / tow.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "cool_ok",
+          "label": "Coolant looks OK",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "wipers_ac"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "cool_ok",
+          "goto": "wipers_ac"
+        }
+      ]
+    },
+    {
+      "id": "wipers_ac",
+      "title": "Wipers, washer & A/C comfort",
+      "coach_encourage": "Seeing the road in a storm is non-negotiable. Look at you — about 57% complete. Keep going.",
+      "personalize": "Visibility kit for your {{model}} at {{mileage}} miles. Refresh before {{next_service}} miles.",
+      "description": "Replace streaking wipers. Fill washer fluid. Blast A/C — weak cooling may need the A/C guide (filter first, refrigerant to pros).",
+      "visual_type": "video",
+      "visual_asset_key": "wipers_ac",
+      "focus_part": "hvac",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "fraction": 0.571,
+        "percent": 57,
+        "label": "Step 4 of 7 · Visibility · 57%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "vis_ok",
+          "label": "Visibility ready",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "cabin_water"
+        },
+        {
+          "id": "parts",
+          "label": "Wipers / filter",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "wipers_washer"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "vis_ok",
+          "goto": "cabin_water"
+        }
+      ]
+    },
+    {
+      "id": "cabin_water",
+      "title": "Wet carpet / sunroof drains",
+      "coach_encourage": "Musty carpets after rain are a clue — good catch checking. Look at you — about 71% complete. Keep going.",
+      "personalize": "Water intrusion check for your {{make}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Feel front carpets after rain. Damp + musty may be cabin filter drain or sunroof tubes. Electrical + wet floors → shop sooner.",
+      "visual_type": "gif",
+      "visual_asset_key": "cabin_water",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "fraction": 0.714,
+        "percent": 71,
+        "label": "Step 5 of 7 · Water · 71%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Water intrusion / electrical risk",
+        "body": "Standing water under carpets can corrode modules and create short hazards. If soaking wet or smelling strongly of mold with electronics glitches, find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "dry",
+          "label": "Carpets dry",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "kit"
+        },
+        {
+          "id": "wet",
+          "label": "Damp — need help",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "dry",
+          "goto": "kit"
+        }
+      ]
+    },
+    {
+      "id": "kit",
+      "title": "Storm / heat kit",
+      "coach_encourage": "A small kit turns roadside weather into a shrug. Final stretch — you're about 86% through.",
+      "personalize": "Kit check for your {{make}} at {{mileage}} miles. Refresh before {{next_service}} miles of travel.",
+      "description": "Water, phone charge cable, compact umbrella, and a flashlight. EV drivers: plan heat-related range buffer on long trips.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_summer",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "fraction": 0.857,
+        "percent": 86,
+        "label": "Step 6 of 7 · Kit · 86%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "kit_ok",
+          "label": "Kit ready — finish",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_summer"
+        },
+        {
+          "id": "shop_insp",
+          "label": "Want a shop once-over",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "kit_ok",
+          "goto": "log_summer"
+        }
+      ]
+    },
+    {
+      "id": "log_summer",
+      "title": "Log summer / rain prep",
+      "coach_encourage": "You're ready for heat and storms. Well done! You made it through the flow — time to celebrate.",
+      "personalize": "Logged for {{make}} {{model}} at {{mileage}} miles. Next seasonal nudge ~{{next_service}} miles.",
+      "description": "Save tire pressures, wiper date, and coolant notes. Recheck after the first big heat wave.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_summer",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 7,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 7 of 7 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log summer / rain prep",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "seasonal_summer"
+        },
+        {
+          "id": "chat",
+          "label": "Ask a seasonal Q",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Summer/rain prep question:"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Summer / rain ready",
+    "coach_encourage": "Heat and storms don't scare a prepared garage. Well done! You made it through the flow — time to celebrate.",
+    "description": "Recheck tire pressures on cool mornings after heat waves. Replace wipers at the first streak.",
+    "log_category": "seasonal_summer",
+    "next_check_miles_default": 4000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to guides",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Storm / heat question",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Summer or rainy-season follow-up for my vehicle:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION EN summer/rain coach.\n• Hydroplane tread focus\n• Hot coolant modal\n• Feedback on",
+    "react_native_pseudocode": "CoachScenarioPlayer — maintenance_summer_rain_prep_production.json"
+  }
+}

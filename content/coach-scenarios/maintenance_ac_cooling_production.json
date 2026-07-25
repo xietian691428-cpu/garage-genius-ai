@@ -1,0 +1,606 @@
+{
+  "id": "coach_scenario_ac_cooling_production",
+  "slug": "maintenance_ac_cooling",
+  "title": "A/C System Check & Cooling Coach",
+  "subtitle": "Cabin filter, visual checks, and knowing when refrigerant is a pro job — cool air without risky shortcuts.",
+  "category": "maintenance",
+  "focus_part": "hvac",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 25,
+    "diy_max": 90,
+    "shop_min": 60,
+    "shop_max": 240
+  },
+  "cost_band_usd": {
+    "diy_min": 15,
+    "diy_max": 80,
+    "shop_min": 150,
+    "shop_max": 1400
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel. Phase 2 HVAC: no DIY refrigerant cans as primary path; EPA/region rules matter.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Park level; engine bay cool enough to inspect safely",
+    "Correct cabin filter part for year/make/model",
+    "Do not vent refrigerant to atmosphere"
+  ],
+  "tools_checklist": [
+    "Screwdrivers / trim tools for cabin filter",
+    "Flashlight",
+    "Gloves",
+    "Phone thermometer optional (vent temp)"
+  ],
+  "parts_checklist": [
+    "Cabin air filter",
+    "Do NOT rely on DIY recharge cans as a fix",
+    "Shop: dye, vacuum, reclaim equipment"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "hot_climate",
+      "when": {
+        "markets": [
+          "US"
+        ]
+      },
+      "coach_note": "Hot climates work the A/C hard — clogged cabin filters and low refrigerant show up as weak center vents by mid-afternoon.",
+      "interval_miles": 15000
+    },
+    {
+      "id": "ev_heat_pump",
+      "when": {
+        "powertrain": [
+          "bev",
+          "phev"
+        ]
+      },
+      "coach_note": "Many EVs use heat pumps. Weird climate behavior may be software/thermal strategy — still start with filter and cabin settings before parts.",
+      "prefer_shop": true
+    },
+    {
+      "id": "tesla_hvac",
+      "when": {
+        "brand_includes": [
+          "tesla"
+        ]
+      },
+      "coach_note": "Tesla: check cabin filter service intervals in the manual; refrigerant and heat-pump diagnostics are service-center work.",
+      "prefer_shop": true
+    },
+    {
+      "id": "euro_filter",
+      "when": {
+        "brand_includes": [
+          "bmw",
+          "mercedes",
+          "audi",
+          "vw"
+        ]
+      },
+      "coach_note": "European cars often hide cabin filters under glovebox panels — follow torque/clips carefully."
+    },
+    {
+      "id": "high_miles_ac",
+      "when": {
+        "mileage_min": 100000
+      },
+      "coach_note": "Past 100k, weak A/C often means leak + recharge by a shop with leak test — not repeated DIY cans.",
+      "prefer_shop": true
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_ac",
+      "type": "gif",
+      "src": "/coach/ac/hero_ac.gif",
+      "alt": "Cool air from center vents",
+      "shot_description": "Soft vapor / cool vent loop. Calm summer light."
+    },
+    {
+      "key": "cabin_filter_gif",
+      "type": "gif",
+      "src": "/coach/ac/cabin_filter.gif",
+      "alt": "Cabin filter remove and replace",
+      "shot_description": "Glovebox drop → old filter dirty → new filter airflow arrow."
+    },
+    {
+      "key": "vent_temp_gif",
+      "type": "gif",
+      "src": "/coach/ac/vent_temp.gif",
+      "alt": "Checking vent temperature",
+      "shot_description": "Max A/C, recirculate, thermometer at center vent."
+    },
+    {
+      "key": "condenser_visual",
+      "type": "video",
+      "src": "/coach/ac/condenser.mp4",
+      "poster": "/coach/ac/condenser_poster.webp",
+      "alt": "Front condenser debris check",
+      "shot_description": "20s: grille view, leaves/bugs, no fin combing aggression."
+    },
+    {
+      "key": "no_diy_refrigerant",
+      "type": "gif",
+      "src": "/coach/ac/no_diy_cans.gif",
+      "alt": "DIY refrigerant cans discouraged",
+      "shot_description": "Can with caution icon → shop reclaim machine preferred."
+    },
+    {
+      "key": "diy_vs_ac_shop",
+      "type": "gif",
+      "src": "/coach/ac/diy_vs_shop.gif",
+      "alt": "Filter DIY vs A/C machine shop",
+      "shot_description": "Split filter swap vs gauge set / reclaim."
+    },
+    {
+      "key": "celebrate_ac",
+      "type": "gif",
+      "src": "/coach/ac/celebrate.gif",
+      "alt": "A/C check logged",
+      "shot_description": "Snowflake checkmark on health file."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Let's get you cold air — safely",
+      "coach_encourage": "You're troubleshooting comfort the smart way. Proud of you. You're just getting started — I'll stay with you.",
+      "personalize": "A/C coaching for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next check ~{{next_service}} miles.",
+      "description": "We'll start with settings and the cabin filter — the highest-odds DIY win. Refrigerant recovery and leak repair stay with a certified tech.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_ac",
+      "focus_part": "hvac",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Step 1 of 7 · Start · 14%"
+      },
+      "safety_warning": "Never intentionally vent refrigerant. DIY 'recharge cans' can overcharge and hide leaks.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start A/C check",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "symptom_split"
+        },
+        {
+          "id": "emergency",
+          "label": "Burning smell / smoke",
+          "style": "danger",
+          "action": "goto",
+          "next_step_id": "emergency_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "symptom_split"
+        },
+        {
+          "when_button_id": "emergency",
+          "goto": "emergency_help"
+        }
+      ]
+    },
+    {
+      "id": "emergency_help",
+      "title": "Stop — protect the cabin",
+      "coach_encourage": "Shutting it down early is the right call. You're just getting started — I'll stay with you.",
+      "personalize": "Your {{make}} at {{mileage}} miles needs a safe inspection before {{next_service}} miles.",
+      "description": "Turn A/C and blower off if you smell burning plastic or see smoke. Park safe and find a nearby shop. Do not keep running the system.",
+      "visual_type": "gif",
+      "visual_asset_key": "diy_vs_ac_shop",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Urgent path · 14%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "HVAC electrical / odor hazard",
+        "body": "Burning smells can indicate blower motor, resistor, or wiring faults — fire risk. Do not continue DIY diagnostics while odor/smoke is present.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "danger",
+          "action": "book_shop"
+        },
+        {
+          "id": "chat",
+          "label": "Describe the smell",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "A/C burning smell or smoke. When it happens and what I already tried:"
+        }
+      ]
+    },
+    {
+      "id": "symptom_split",
+      "title": "What are you feeling?",
+      "coach_encourage": "Clear symptoms = faster fixes. Nice. Nice momentum — you're about 29% through.",
+      "personalize": "At {{mileage}} miles on your {{model}}, weak cooling vs no cooling changes the path. Next service ~{{next_service}} miles.",
+      "description": "Weak airflow often points to cabin filter or blower. Cool then warm may be low refrigerant/leak or clutch/heat-pump strategy. Musty smell → filter + drain.",
+      "visual_type": "gif",
+      "visual_asset_key": "vent_temp_gif",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "fraction": 0.286,
+        "percent": 29,
+        "label": "Step 2 of 7 · Symptoms · 29%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "weak_air",
+          "label": "Weak airflow / musty",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "settings_check",
+          "set_flags": {
+            "symptom": "airflow"
+          }
+        },
+        {
+          "id": "not_cold",
+          "label": "Airflow OK, not cold",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "settings_check",
+          "set_flags": {
+            "symptom": "temp"
+          }
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "weak_air",
+          "goto": "settings_check"
+        },
+        {
+          "when_button_id": "not_cold",
+          "goto": "settings_check"
+        }
+      ]
+    },
+    {
+      "id": "settings_check",
+      "title": "Prove the basics",
+      "coach_encourage": "Pros check settings before parts — you're doing that. You're crushing it — roughly 43% done.",
+      "personalize": "Quick settings pass for your {{make}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Engine on, A/C ON, temp to LO, recirculate ON, fan medium-high, all center vents open. Give it 3–5 minutes. Note if compressor/heat-pump engages (manual cues vary).",
+      "visual_type": "gif",
+      "visual_asset_key": "vent_temp_gif",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "fraction": 0.429,
+        "percent": 43,
+        "label": "Step 3 of 7 · Settings · 43%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "settings_ok",
+          "label": "Settings set — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "cabin_filter"
+        },
+        {
+          "id": "help",
+          "label": "No cold after settings",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "cabin_filter"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "settings_ok",
+          "goto": "cabin_filter"
+        }
+      ]
+    },
+    {
+      "id": "cabin_filter",
+      "title": "Replace the cabin filter",
+      "coach_encourage": "This step is important — biggest DIY cooling win for most owners. Look at you — about 57% complete. Keep going.",
+      "personalize": "Cabin filter for your {{year}} {{make}} {{model}} at {{mileage}} miles. Recheck by ~{{next_service}} miles.",
+      "description": "Follow the manual for glovebox/cowl access. Note airflow arrows. A packed filter can feel like 'A/C is dead' when the system is fine.",
+      "visual_type": "gif",
+      "visual_asset_key": "cabin_filter_gif",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "fraction": 0.571,
+        "percent": 57,
+        "label": "Step 4 of 7 · Filter · 57%"
+      },
+      "tools": [
+        "Trim tools",
+        "Gloves"
+      ],
+      "safety_warning": "Support the glovebox per manual so cables/dampers don't tear.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "filter_done",
+          "label": "Filter replaced",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "condenser_look"
+        },
+        {
+          "id": "need_part",
+          "label": "Find the right filter",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "cabin_filter"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "filter_done",
+          "goto": "condenser_look"
+        }
+      ]
+    },
+    {
+      "id": "condenser_look",
+      "title": "Front condenser — visual only",
+      "coach_encourage": "Eyes only — no aggressive fin combing. Steady. Look at you — about 71% complete. Keep going.",
+      "personalize": "Visual bay check on your {{model}} at {{mileage}} miles. Next full A/C review ~{{next_service}} miles.",
+      "description": "With the engine cool, look through the grille for leaves, plastic bags, or bent fins blocking the condenser. Gently remove debris by hand if reachable — don't puncture tubes.",
+      "visual_type": "video",
+      "visual_asset_key": "condenser_visual",
+      "duration_minutes": 3,
+      "difficulty": "Medium",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "fraction": 0.714,
+        "percent": 71,
+        "label": "Step 5 of 7 · Condenser · 71%"
+      },
+      "safety_warning": "Fans can start unexpectedly — keep fingers clear. Engine cool.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Engine-bay inspection risk",
+        "body": "Cooling fans may activate without warning. Hot condensers and sharp fins can cut skin. Do not puncture A/C lines. If debris is unreachable, stop and find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "clear",
+          "label": "Clear / looks fine",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "refrigerant_rule"
+        },
+        {
+          "id": "stuck",
+          "label": "Can't reach safely",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "clear",
+          "goto": "refrigerant_rule"
+        }
+      ]
+    },
+    {
+      "id": "refrigerant_rule",
+      "title": "Refrigerant = pro equipment",
+      "coach_encourage": "Skipping DIY cans protects the system — that's elite ownership. Final stretch — you're about 86% through.",
+      "personalize": "For your {{make}} at {{mileage}} miles, leak-aware service beats guess-charging before {{next_service}} miles.",
+      "description": "If air still isn't cold, you likely need leak diagnosis, reclaim, vacuum, and correct charge — not a driveway can. Overcharge and stop-leak additives create expensive failures.",
+      "visual_type": "gif",
+      "visual_asset_key": "no_diy_refrigerant",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "fraction": 0.857,
+        "percent": 86,
+        "label": "Step 6 of 7 · Refrigerant · 86%"
+      },
+      "safety_warning": "Venting refrigerant is illegal in many regions. Certified recovery equipment required for service.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Refrigerant handling is regulated",
+        "body": "Automotive A/C refrigerant must be recovered with proper equipment. DIY cans can overcharge, mask leaks, and violate local law. Continue only if you agree to use a qualified technician for recharge work.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "shop_ac",
+          "label": "Find a nearby shop",
+          "style": "primary",
+          "action": "book_shop"
+        },
+        {
+          "id": "cold_now",
+          "label": "It's cold enough — finish",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "log_ac"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "cold_now",
+          "goto": "log_ac"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "powertrain": [
+              "bev",
+              "phev"
+            ]
+          },
+          "description": "EV heat-pump systems are specialized — prefer an EV-capable climate shop if cooling/heating modes act strangely after software updates."
+        }
+      ]
+    },
+    {
+      "id": "log_ac",
+      "title": "Log the A/C win",
+      "coach_encourage": "Comfort restored the safe way. Well done! You made it through the flow — time to celebrate.",
+      "personalize": "Logged for {{make}} {{model}} at {{mileage}} miles. Next filter-minded check ~{{next_service}} miles.",
+      "description": "Save filter date, vent behavior, and any shop plans. Revisit before summer road trips.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_ac",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 7,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 7 of 7 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log A/C service",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "hvac"
+        },
+        {
+          "id": "parts",
+          "label": "Cabin filter parts",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "cabin_filter"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "A/C check complete",
+    "coach_encourage": "You chased comfort the safe way — filter first, refrigerant to the pros. Well done! You made it through the flow — time to celebrate.",
+    "description": "Recheck cooling performance next heat wave. If vents stay warm after a fresh filter, book a leak-aware A/C shop.",
+    "log_category": "hvac",
+    "next_check_miles_default": 15000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Still not cold enough",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "A/C still weak after cabin filter check. Symptoms and ambient temp:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390×844 EN HVAC coach.\n• Strong 'no DIY cans' visual on refrigerant step\n• Risk modal on condenser bay + any pressure talk\n• Max 2 CTAs",
+    "react_native_pseudocode": "See CoachScenarioPlayer.phase2.tsx.example — load maintenance_ac_cooling_production.json"
+  }
+}

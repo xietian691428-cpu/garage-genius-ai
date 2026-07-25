@@ -1,0 +1,12 @@
+# One proxy per line. Prefer US residential IPs (Bright Data / Oxylabs / Smartproxy).
+# Supported forms:
+#   http://user:pass@host:port
+#   http://host:port
+#   socks5://user:pass@host:port
+#
+# Bright Data example (session params vary by product):
+#   http://brd-customer-XXXX-zone-residential-country-us:PASSWORD@brd.superproxy.io:22225
+#
+# Leave empty to use --from-fixture / API-only. Playwright HTML harvest requires proxies.
+#
+# http://user:pass@1.2.3.4:8000

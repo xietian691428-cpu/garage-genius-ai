@@ -1,0 +1,22 @@
+[
+  {"brand": "Acura", "model": "MDX", "year_range": "2023-2025", "slug": "acura-mdx", "batch": 4},
+  {"brand": "Acura", "model": "RDX", "year_range": "2023-2025", "slug": "acura-rdx", "batch": 4},
+  {"brand": "Audi", "model": "Q5", "year_range": "2023-2025", "slug": "audi-q5", "batch": 4},
+  {"brand": "Audi", "model": "Q7", "year_range": "2023-2025", "slug": "audi-q7", "batch": 4},
+  {"brand": "Buick", "model": "Enclave", "year_range": "2023-2025", "slug": "buick-enclave", "batch": 4},
+  {"brand": "Cadillac", "model": "Escalade", "year_range": "2023-2025", "slug": "cadillac-escalade", "batch": 4},
+  {"brand": "Cadillac", "model": "XT5", "year_range": "2023-2025", "slug": "cadillac-xt5", "batch": 4},
+  {"brand": "Chrysler", "model": "Pacifica", "year_range": "2023-2025", "slug": "chrysler-pacifica", "batch": 4},
+  {"brand": "Dodge", "model": "Durango", "year_range": "2023-2025", "slug": "dodge-durango", "batch": 4},
+  {"brand": "Infiniti", "model": "QX60", "year_range": "2023-2025", "slug": "infiniti-qx60", "batch": 4},
+  {"brand": "Lincoln", "model": "Navigator", "year_range": "2023-2025", "slug": "lincoln-navigator", "batch": 4},
+  {"brand": "Lincoln", "model": "Aviator", "year_range": "2023-2025", "slug": "lincoln-aviator", "batch": 4},
+  {"brand": "Mitsubishi", "model": "Outlander", "year_range": "2023-2025", "slug": "mitsubishi-outlander", "batch": 4},
+  {"brand": "Mini", "model": "Countryman", "year_range": "2023-2025", "slug": "mini-countryman", "batch": 4},
+  {"brand": "Volvo", "model": "XC60", "year_range": "2023-2025", "slug": "volvo-xc60", "batch": 4},
+  {"brand": "BMW", "model": "3 Series", "year_range": "2023-2025", "slug": "bmw-3-series", "batch": 4},
+  {"brand": "Mercedes-Benz", "model": "C-Class", "year_range": "2023-2025", "slug": "mercedes-benz-c-class", "batch": 4},
+  {"brand": "Mercedes-Benz", "model": "GLC", "year_range": "2023-2025", "slug": "mercedes-benz-glc", "batch": 4},
+  {"brand": "Hyundai", "model": "Palisade", "year_range": "2023-2025", "slug": "hyundai-palisade", "batch": 4},
+  {"brand": "Kia", "model": "Sorento", "year_range": "2023-2025", "slug": "kia-sorento", "batch": 4}
+]

@@ -1,0 +1,47 @@
+[
+  {
+    "source": "Reddit",
+    "source_url": "https://www.reddit.com/r/rav4/comments/demo1",
+    "brand": "Toyota",
+    "model": "RAV4 Hybrid",
+    "year_range": "2023-2025",
+    "title": "2024 RAV4 Hybrid real highway MPG after 8k miles",
+    "body": "Highway mostly 70mph, getting about 38-40 mpg in mild weather. City is closer to 36. Winter dropped ~15%. No major issues yet besides occasional brake squeal when cold.",
+    "comments": [
+      "Same here on 2023 Limited — winter killed my MPG.",
+      "Brake squeal is common; dealer said normal for hybrid regen."
+    ],
+    "score": 42,
+    "scraped_at": "2026-07-21T00:00:00+00:00",
+    "raw_id": "demo_rav4_mpg_001"
+  },
+  {
+    "source": "Edmunds",
+    "source_url": "https://www.edmunds.com/toyota/rav4/consumer-reviews/",
+    "brand": "Toyota",
+    "model": "RAV4 Hybrid",
+    "year_range": "2023-2025",
+    "title": "Long-term reliability after 45k miles",
+    "body": "Still rock solid. Only dealer visits were oil and tire rotations. Infotainment lagged once and needed a reboot. Rear seat room is excellent for kids.",
+    "comments": [],
+    "score": 18,
+    "scraped_at": "2026-07-21T00:00:00+00:00",
+    "raw_id": "demo_rav4_reliability_001"
+  },
+  {
+    "source": "Reddit",
+    "source_url": "https://www.reddit.com/r/f150/comments/demo2",
+    "brand": "Ford",
+    "model": "F-150",
+    "year_range": "2023-2025",
+    "title": "3.5 EcoBoost towing 7k lbs — transmission hesitation?",
+    "body": "When towing my boat the 10-speed sometimes hunts between gears on mild grades. Power is great otherwise. 2024 software update supposedly helps.",
+    "comments": [
+      "Update the PCM/TCM calibration — fixed my 2023.",
+      "2.7 is fine for daily, 3.5 for towing."
+    ],
+    "score": 55,
+    "scraped_at": "2026-07-21T00:00:00+00:00",
+    "raw_id": "demo_f150_tow_001"
+  }
+]

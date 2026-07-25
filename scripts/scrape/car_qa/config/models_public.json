@@ -1,0 +1,112 @@
+[
+  {
+    "brand": "Toyota",
+    "model": "RAV4",
+    "year_range": "2018-2025",
+    "carcomplaints": "Toyota/RAV4",
+    "yourmechanic": "toyota/rav4",
+    "repairpal": "toyota/rav4",
+    "cr_path": "toyota/rav4",
+    "iihs": "toyota/rav4-4-door-suv"
+  },
+  {
+    "brand": "Ford",
+    "model": "F-150",
+    "year_range": "2018-2025",
+    "carcomplaints": "Ford/F-150",
+    "yourmechanic": "ford/f-150",
+    "repairpal": "ford/f-150",
+    "cr_path": "ford/f-150",
+    "iihs": "ford/f-150-crew-cab-pickup"
+  },
+  {
+    "brand": "Honda",
+    "model": "CR-V",
+    "year_range": "2018-2025",
+    "carcomplaints": "Honda/CR-V",
+    "yourmechanic": "honda/cr-v",
+    "repairpal": "honda/cr-v",
+    "cr_path": "honda/cr-v",
+    "iihs": "honda/cr-v-4-door-suv"
+  },
+  {
+    "brand": "Chevrolet",
+    "model": "Silverado",
+    "year_range": "2018-2025",
+    "carcomplaints": "Chevrolet/Silverado_1500",
+    "yourmechanic": "chevrolet/silverado-1500",
+    "repairpal": "chevrolet/silverado-1500",
+    "cr_path": "chevrolet/silverado-1500",
+    "iihs": "chevrolet/silverado-1500-crew-cab-pickup"
+  },
+  {
+    "brand": "Kia",
+    "model": "Telluride",
+    "year_range": "2019-2025",
+    "carcomplaints": "Kia/Telluride",
+    "yourmechanic": "kia/telluride",
+    "repairpal": "kia/telluride",
+    "cr_path": "kia/telluride",
+    "iihs": "kia/telluride-4-door-suv"
+  },
+  {
+    "brand": "Ram",
+    "model": "1500",
+    "year_range": "2018-2025",
+    "carcomplaints": "Ram/1500",
+    "yourmechanic": "ram/1500",
+    "repairpal": "ram/1500",
+    "cr_path": "ram/1500",
+    "iihs": "ram/1500-crew-cab-pickup"
+  },
+  {
+    "brand": "Subaru",
+    "model": "Forester",
+    "year_range": "2018-2025",
+    "carcomplaints": "Subaru/Forester",
+    "yourmechanic": "subaru/forester",
+    "repairpal": "subaru/forester",
+    "cr_path": "subaru/forester",
+    "iihs": "subaru/forester-4-door-suv"
+  },
+  {
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "year_range": "2018-2025",
+    "carcomplaints": "Jeep/Wrangler",
+    "yourmechanic": "jeep/wrangler",
+    "repairpal": "jeep/wrangler",
+    "cr_path": "jeep/wrangler",
+    "iihs": "jeep/wrangler-4-door-suv"
+  },
+  {
+    "brand": "Tesla",
+    "model": "Model Y",
+    "year_range": "2020-2025",
+    "carcomplaints": "Tesla/Model_Y",
+    "yourmechanic": null,
+    "repairpal": "tesla/model-y",
+    "cr_path": "tesla/model-y",
+    "iihs": "tesla/model-y-4-door-suv"
+  },
+  {
+    "brand": "BMW",
+    "model": "X5",
+    "year_range": "2018-2025",
+    "carcomplaints": "BMW/X5",
+    "yourmechanic": "bmw/x5",
+    "repairpal": "bmw/x5",
+    "cr_path": "bmw/x5",
+    "iihs": "bmw/x5-4-door-suv"
+  },
+  {
+    "brand": "Mercedes-Benz",
+    "model": "GLE",
+    "year_range": "2018-2025",
+    "carcomplaints": ["Mercedes-Benz/GLE350", "Mercedes-Benz/GLE450"],
+    "yourmechanic": "mercedes-benz/gle",
+    "repairpal": "mercedes-benz/gle-class",
+    "cr_path": "mercedes-benz/gle-class",
+    "iihs": "mercedes-benz/gle-class-4-door-suv"
+  }
+]

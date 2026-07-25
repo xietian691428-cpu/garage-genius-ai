@@ -1,0 +1,90 @@
+[
+  {
+    "brand": "Toyota",
+    "model": "RAV4",
+    "year_range": "2018-2025",
+    "slug": "toyota/rav4",
+    "edmunds_make": "toyota",
+    "edmunds_model": "rav4"
+  },
+  {
+    "brand": "Ford",
+    "model": "F-150",
+    "year_range": "2018-2025",
+    "slug": "ford/f-150",
+    "edmunds_make": "ford",
+    "edmunds_model": "f-150"
+  },
+  {
+    "brand": "Honda",
+    "model": "CR-V",
+    "year_range": "2018-2025",
+    "slug": "honda/cr-v",
+    "edmunds_make": "honda",
+    "edmunds_model": "cr-v"
+  },
+  {
+    "brand": "Chevrolet",
+    "model": "Silverado",
+    "year_range": "2018-2025",
+    "slug": "chevrolet/silverado-1500",
+    "edmunds_make": "chevrolet",
+    "edmunds_model": "silverado-1500"
+  },
+  {
+    "brand": "Kia",
+    "model": "Telluride",
+    "year_range": "2019-2025",
+    "slug": "kia/telluride",
+    "edmunds_make": "kia",
+    "edmunds_model": "telluride"
+  },
+  {
+    "brand": "Ram",
+    "model": "1500",
+    "year_range": "2018-2025",
+    "slug": "ram/1500",
+    "edmunds_make": "ram",
+    "edmunds_model": "1500"
+  },
+  {
+    "brand": "Subaru",
+    "model": "Forester",
+    "year_range": "2018-2025",
+    "slug": "subaru/forester",
+    "edmunds_make": "subaru",
+    "edmunds_model": "forester"
+  },
+  {
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "year_range": "2018-2025",
+    "slug": "jeep/wrangler",
+    "edmunds_make": "jeep",
+    "edmunds_model": "wrangler"
+  },
+  {
+    "brand": "Tesla",
+    "model": "Model Y",
+    "year_range": "2020-2025",
+    "slug": "tesla/model-y",
+    "edmunds_make": "tesla",
+    "edmunds_model": "model-y"
+  },
+  {
+    "brand": "BMW",
+    "model": "X5",
+    "year_range": "2018-2025",
+    "slug": "bmw/x5",
+    "edmunds_make": "bmw",
+    "edmunds_model": "x5"
+  },
+  {
+    "brand": "Mercedes-Benz",
+    "model": "GLE",
+    "year_range": "2018-2025",
+    "slug": "mercedes-benz/gle-class",
+    "edmunds_make": "mercedes-benz",
+    "edmunds_model": "gle-class"
+  }
+]

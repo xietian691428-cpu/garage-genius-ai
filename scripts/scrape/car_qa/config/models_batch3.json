@@ -1,0 +1,22 @@
+[
+  {"brand": "Honda", "model": "Pilot", "year_range": "2023-2025", "slug": "honda-pilot", "subreddit": "HondaPilot", "batch": 3},
+  {"brand": "Honda", "model": "Accord", "year_range": "2023-2025", "slug": "honda-accord", "subreddit": "Honda", "batch": 3},
+  {"brand": "Honda", "model": "Civic", "year_range": "2023-2025", "slug": "honda-civic", "subreddit": "civic", "batch": 3},
+  {"brand": "Toyota", "model": "Tacoma", "year_range": "2023-2025", "slug": "toyota-tacoma", "subreddit": "ToyotaTacoma", "batch": 3},
+  {"brand": "Toyota", "model": "Highlander", "year_range": "2023-2025", "slug": "toyota-highlander", "subreddit": "ToyotaHighlander", "batch": 3},
+  {"brand": "Toyota", "model": "Corolla", "year_range": "2023-2025", "slug": "toyota-corolla", "subreddit": "Corolla", "batch": 3},
+  {"brand": "Chevrolet", "model": "Silverado", "year_range": "2023-2025", "slug": "chevrolet-silverado", "subreddit": "Silverado", "batch": 3},
+  {"brand": "Chevrolet", "model": "Equinox", "year_range": "2023-2025", "slug": "chevrolet-equinox", "subreddit": "Equinox", "batch": 3},
+  {"brand": "Ford", "model": "Explorer", "year_range": "2023-2025", "slug": "ford-explorer", "subreddit": "FordExplorer", "batch": 3},
+  {"brand": "Ford", "model": "Escape", "year_range": "2023-2025", "slug": "ford-escape", "subreddit": "FordEscape", "batch": 3},
+  {"brand": "Hyundai", "model": "Santa Fe", "year_range": "2023-2025", "slug": "hyundai-santa-fe", "subreddit": "Hyundai", "batch": 3},
+  {"brand": "Kia", "model": "Sportage", "year_range": "2023-2025", "slug": "kia-sportage", "subreddit": "kia", "batch": 3},
+  {"brand": "Subaru", "model": "Outback", "year_range": "2023-2025", "slug": "subaru-outback", "subreddit": "subaru", "batch": 3},
+  {"brand": "Mazda", "model": "CX-50", "year_range": "2023-2025", "slug": "mazda-cx-50", "subreddit": "mazda", "batch": 3},
+  {"brand": "Jeep", "model": "Grand Cherokee", "year_range": "2023-2025", "slug": "jeep-grand-cherokee", "subreddit": "GrandCherokee", "batch": 3},
+  {"brand": "GMC", "model": "Sierra", "year_range": "2023-2025", "slug": "gmc-sierra", "subreddit": "gmc", "batch": 3},
+  {"brand": "Nissan", "model": "Pathfinder", "year_range": "2023-2025", "slug": "nissan-pathfinder", "subreddit": "Nissan", "batch": 3},
+  {"brand": "Volkswagen", "model": "Tiguan", "year_range": "2023-2025", "slug": "volkswagen-tiguan", "subreddit": "Volkswagen", "batch": 3},
+  {"brand": "BMW", "model": "X3", "year_range": "2023-2025", "slug": "bmw-x3", "subreddit": "BMW", "batch": 3},
+  {"brand": "Lexus", "model": "NX", "year_range": "2023-2025", "slug": "lexus-nx", "subreddit": "Lexus", "batch": 3}
+]

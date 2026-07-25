@@ -1,0 +1,500 @@
+{
+  "id": "coach_scenario_body_paint_care_production",
+  "slug": "maintenance_body_paint",
+  "title": "Body & Paint Care",
+  "subtitle": "Wash technique, contamination, chips, and rust — protect the finish without harsh shortcuts.",
+  "category": "maintenance",
+  "focus_part": "lights",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 45,
+    "diy_max": 180,
+    "shop_min": 60,
+    "shop_max": 480
+  },
+  "cost_band_usd": {
+    "diy_min": 20,
+    "diy_max": 150,
+    "shop_min": 150,
+    "shop_max": 3000
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel, step feedback Yes/No. Phase 3B body: two-bucket wash; no dry wiping clearcoat.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "pH-balanced soap",
+    "Two buckets + grit guards ideal",
+    "Shade preferred"
+  ],
+  "tools_checklist": [
+    "Microfiber towels",
+    "Wash mitt",
+    "Clay optional",
+    "Touch-up pen matching code"
+  ],
+  "parts_checklist": [
+    "Paint code touch-up",
+    "Wax/sealant",
+    "Rust converter only for known surface rust protocols"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "winter_salt",
+      "when": {
+        "markets": [
+          "US",
+          "CA",
+          "GB"
+        ]
+      },
+      "coach_note": "Salt climates: rinse rockers and underbody more often — paint care includes rust prevention.",
+      "interval_miles": 3000
+    },
+    {
+      "id": "black_paint",
+      "when": {},
+      "coach_note": "Dark paints show swirls easily — gentle wash medium and drying technique matter more than polish frequency."
+    },
+    {
+      "id": "high_miles_body",
+      "when": {
+        "mileage_min": 100000
+      },
+      "coach_note": "Higher-mile cars: chip edges and wheel-arch rust beat cosmetic polishing priority.",
+      "prefer_shop": true
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_paint",
+      "type": "gif",
+      "src": "/coach/body/hero.gif",
+      "alt": "Two-bucket wash setup",
+      "shot_description": "Shade wash."
+    },
+    {
+      "key": "wash_method",
+      "type": "video",
+      "src": "/coach/body/wash.mp4",
+      "alt": "Two-bucket wash technique",
+      "shot_description": "25s mitt method.",
+      "poster": "/coach/body/wash_poster.webp"
+    },
+    {
+      "key": "chip_touch",
+      "type": "gif",
+      "src": "/coach/body/chip.gif",
+      "alt": "Paint chip touch-up",
+      "shot_description": "Clean dry dab."
+    },
+    {
+      "key": "contamination",
+      "type": "gif",
+      "src": "/coach/body/clay.gif",
+      "alt": "Clay bar contamination",
+      "shot_description": "Bag before clay."
+    },
+    {
+      "key": "rust_spot",
+      "type": "gif",
+      "src": "/coach/body/rust.gif",
+      "alt": "Early rust at chip",
+      "shot_description": "Bubble edge."
+    },
+    {
+      "key": "celebrate_body",
+      "type": "gif",
+      "src": "/coach/body/celebrate.gif",
+      "alt": "Paint care logged",
+      "shot_description": "Gloss checkmark."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Protect the skin of the car",
+      "coach_encourage": "Paint care is maintenance too — glad you're here. You're just getting started — I'll stay with you.",
+      "personalize": "Body/paint coach for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next detail ~{{next_service}} miles.",
+      "description": "Wash technique, fallout, chips, and early rust. We'll avoid dry-towel swirl factories.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_paint",
+      "focus_part": "lights",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Step 1 of 7 · Start · 14%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "wash",
+          "label": "Wash & protect",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "wash"
+        },
+        {
+          "id": "chip",
+          "label": "Chips / rust first",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "chips"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "wash",
+          "goto": "wash"
+        },
+        {
+          "when_button_id": "chip",
+          "goto": "chips"
+        }
+      ]
+    },
+    {
+      "id": "wash",
+      "title": "Two-bucket wash (gentle)",
+      "coach_encourage": "This step is important — grit in the mitt is what scratches. Nice momentum — you're about 29% through.",
+      "personalize": "Wash method for your {{make}} at {{mileage}} miles. Repeat often before {{next_service}} miles in dirty seasons.",
+      "description": "Cool panels, shade if possible. Soap bucket + rinse bucket. Top to bottom. Pat dry with clean microfiber — don't grind grit.",
+      "visual_type": "video",
+      "visual_asset_key": "wash_method",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "fraction": 0.286,
+        "percent": 29,
+        "label": "Step 2 of 7 · Wash · 29%"
+      },
+      "tools": [
+        "Two buckets",
+        "Mitt",
+        "Microfiber"
+      ],
+      "safety_warning": "Never wash a hot hood with cold water (panel shock / spotting).",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "washed",
+          "label": "Wash done",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "contam"
+        },
+        {
+          "id": "products",
+          "label": "Find wash supplies",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "car_care"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "washed",
+          "goto": "contam"
+        }
+      ]
+    },
+    {
+      "id": "contam",
+      "title": "Contamination check",
+      "coach_encourage": "Smooth paint means less polishing later. You're crushing it — roughly 43% done.",
+      "personalize": "Feel test on your {{model}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "After wash, plastic-bag fingertip test. Rough = bonded contaminants. Clay only on lubricated clean paint; follow product directions.",
+      "visual_type": "gif",
+      "visual_asset_key": "contamination",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "fraction": 0.429,
+        "percent": 43,
+        "label": "Step 3 of 7 · Contam · 43%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "smooth",
+          "label": "Paint feels smooth",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "protect"
+        },
+        {
+          "id": "clay",
+          "label": "Needs clay / help",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Help me decide if clay/polish is safe for my paint condition."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "smooth",
+          "goto": "protect"
+        }
+      ]
+    },
+    {
+      "id": "protect",
+      "title": "Seal / wax protection",
+      "coach_encourage": "A layer of protection is cheap insurance. Look at you — about 57% complete. Keep going.",
+      "personalize": "Protection for your {{make}} at {{mileage}} miles. Reapply before {{next_service}} miles or per product life.",
+      "description": "Apply sealant or wax to clean, cool paint. Thin even coats. Ceramic coatings are longer jobs — follow label or use a detailer.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_paint",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "fraction": 0.571,
+        "percent": 57,
+        "label": "Step 4 of 7 · Protect · 57%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "protected",
+          "label": "Protected",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "chips"
+        },
+        {
+          "id": "skip",
+          "label": "Skip to chips/rust",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "chips"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "protected",
+          "goto": "chips"
+        },
+        {
+          "when_button_id": "skip",
+          "goto": "chips"
+        }
+      ]
+    },
+    {
+      "id": "chips",
+      "title": "Stone chips — touch up early",
+      "coach_encourage": "A $15 pen beats a $1500 panel later. Look at you — about 71% complete. Keep going.",
+      "personalize": "Chip care on your {{year}} {{model}} at {{mileage}} miles before {{next_service}} miles of rust risk.",
+      "description": "Clean, dry, warm panel. Dab paint code touch-up in thin layers. Don't glob. Deep primer-through chips matter most.",
+      "visual_type": "gif",
+      "visual_asset_key": "chip_touch",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "fraction": 0.714,
+        "percent": 71,
+        "label": "Step 5 of 7 · Chips · 71%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "touched",
+          "label": "Touched up / none",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "rust"
+        },
+        {
+          "id": "parts",
+          "label": "Find touch-up paint",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "touch_up_paint"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "touched",
+          "goto": "rust"
+        }
+      ]
+    },
+    {
+      "id": "rust",
+      "title": "Early rust vs body-shop rust",
+      "coach_encourage": "Catching bubbles early is peak ownership. Final stretch — you're about 86% through.",
+      "personalize": "Rust triage for your {{make}} at {{mileage}} miles. Act before {{next_service}} miles if spreading.",
+      "description": "Surface freckles at chips can be stabilized carefully. Blistering, soft metal, or rocker perforation → body shop. Don't grind blindly into structural metal.",
+      "visual_type": "gif",
+      "visual_asset_key": "rust_spot",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "fraction": 0.857,
+        "percent": 86,
+        "label": "Step 6 of 7 · Rust · 86%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Rust repair / chemical hazard",
+        "body": "Grinders, rust converters, and solvents can injure eyes/lungs and weaken metal if misused. Structural or spreading rust needs a body professional. When unsure, find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "surface_ok",
+          "label": "Only minor / none",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_body"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "surface_ok",
+          "goto": "log_body"
+        }
+      ]
+    },
+    {
+      "id": "log_body",
+      "title": "Log paint care",
+      "coach_encourage": "Finish protected — nice work! You made it through the flow — time to celebrate.",
+      "personalize": "Logged for {{make}} {{model}} at {{mileage}} miles. Next wash cadence before {{next_service}} miles.",
+      "description": "Note products used and chip areas. Rinse salt/brine sooner in winter climates.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_body",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 7,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 7 of 7 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log body / paint care",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "body"
+        },
+        {
+          "id": "chat",
+          "label": "Ask about swirls",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Paint swirl / correction question for my vehicle:"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Paint care plan locked",
+    "coach_encourage": "You protected clearcoat the right way. Shine on — well done! You made it through the flow — time to celebrate.",
+    "description": "Wash gently, touch chips early, and escalate rust blisters to a body shop before they spread.",
+    "log_category": "body",
+    "next_check_miles_default": 3000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to guides",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Chip / rust question",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Body/paint question with photos in mind:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION EN body/paint coach.\n• Two-bucket visual\n• Rust escalate\n• Feedback on",
+    "react_native_pseudocode": "CoachScenarioPlayer — maintenance_body_paint_production.json"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-07-13T03:28:07.706Z",
+  "count": 100,
+  "append": true,
+  "sqlite": "/Users/xietian/garage-genius-ai/scripts/data/vcdb-cache.sqlite",
+  "type_counts": {
+    "repair_guidance": 27,
+    "fault_diagnosis": 30,
+    "parts_fitment": 25,
+    "config_query_full": 10,
+    "vehicle_identity": 4,
+    "config_query_engines": 4
+  },
+  "system_prompt_file": "scripts/train/deepseek-finetune-system-prompt.mjs",
+  "format": "deepseek_chat_messages",
+  "note": "VCdb-grounded DIY coach samples; OEM numbers intentionally not hallucinated"
+}

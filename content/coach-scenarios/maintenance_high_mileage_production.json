@@ -1,0 +1,618 @@
+{
+  "id": "coach_scenario_high_mileage_production",
+  "slug": "maintenance_high_mileage",
+  "title": "High-Mileage Care (100k+ Miles)",
+  "subtitle": "Celebrate the miles — then protect them with fluids, leaks, belts/hoses, and honest shop calls.",
+  "category": "maintenance",
+  "focus_part": "engine",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 40,
+    "diy_max": 120,
+    "shop_min": 90,
+    "shop_max": 300
+  },
+  "cost_band_usd": {
+    "diy_min": 50,
+    "diy_max": 300,
+    "shop_min": 200,
+    "shop_max": 2500
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel. Phase 2 high-mileage: encourage longevity; timing belts are shop-critical.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Current mileage in garage profile",
+    "Service history if available",
+    "Owner's manual severe-service schedule"
+  ],
+  "tools_checklist": [
+    "Flashlight",
+    "Gloves",
+    "OBD scanner",
+    "Tire gauge",
+    "Notebook / phone for leak photos"
+  ],
+  "parts_checklist": [
+    "Quality oil + filter on shorter intervals if severe use",
+    "Cabin/engine air filters",
+    "Coolant / brake fluid only to spec via proper service"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "over_100k",
+      "when": {
+        "mileage_min": 100000
+      },
+      "coach_note": "Past 100k: shorten oil intervals if trips are short/dusty, and inspect for leaks every service.",
+      "interval_miles": 5000
+    },
+    {
+      "id": "over_150k",
+      "when": {
+        "mileage_min": 150000
+      },
+      "coach_note": "Past 150k: budget for mounts, suspension bushings, and cooling-system age. Listen for new noises early.",
+      "prefer_shop": true,
+      "interval_miles": 5000
+    },
+    {
+      "id": "timing_belt_cars",
+      "when": {
+        "brand_includes": [
+          "honda",
+          "toyota",
+          "subaru",
+          "volkswagen",
+          "audi"
+        ]
+      },
+      "coach_note": "Many engines use timing belts with hard mileage/time limits — verify your engine. Belt jobs are shop work.",
+      "prefer_shop": true
+    },
+    {
+      "id": "ev_high_miles",
+      "when": {
+        "powertrain": [
+          "bev",
+          "phev"
+        ],
+        "mileage_min": 100000
+      },
+      "coach_note": "High-mile EV: 12V, brakes (low regeneration wear patterns), coolant loops, and suspension still matter — HV pack diagnostics are shop-only.",
+      "prefer_shop": true
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_high_miles",
+      "type": "gif",
+      "src": "/coach/highmiles/hero.gif",
+      "alt": "High-odometer celebration",
+      "shot_description": "Odometer rolling past 100k with calm confetti."
+    },
+    {
+      "key": "leak_walk",
+      "type": "video",
+      "src": "/coach/highmiles/leak_walk.mp4",
+      "alt": "Under-hood leak walkaround",
+      "shot_description": "25s: cold engine bay, flashlight on hoses.",
+      "poster": "/coach/highmiles/leak_walk_poster.webp"
+    },
+    {
+      "key": "belt_hose",
+      "type": "gif",
+      "src": "/coach/highmiles/belts_hoses.gif",
+      "alt": "Belt and hose crack check",
+      "shot_description": "Serpentine cracks / soft hose squeeze caution."
+    },
+    {
+      "key": "fluid_intervals",
+      "type": "gif",
+      "src": "/coach/highmiles/intervals.gif",
+      "alt": "Severe service interval reminder",
+      "shot_description": "Oil/filter calendar shorter interval."
+    },
+    {
+      "key": "timing_shop",
+      "type": "gif",
+      "src": "/coach/highmiles/timing_shop.gif",
+      "alt": "Timing belt shop only",
+      "shot_description": "Belt diagram → shop bay."
+    },
+    {
+      "key": "diy_vs_hm_shop",
+      "type": "gif",
+      "src": "/coach/highmiles/diy_vs_shop.gif",
+      "alt": "DIY inspection vs indie shop",
+      "shot_description": "Split flashlight DIY ↔ lift bay."
+    },
+    {
+      "key": "celebrate_hm",
+      "type": "gif",
+      "src": "/coach/highmiles/celebrate.gif",
+      "alt": "High-mile plan logged",
+      "shot_description": "Clipboard longevity plan."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "100k+ — you're doing something right",
+      "coach_encourage": "High miles are a trophy when maintained. Proud of you. You're just getting started — I'll stay with you.",
+      "personalize": "High-mileage coaching for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next checkpoint ~{{next_service}} miles.",
+      "description": "We'll prioritize oil discipline, leak/hose visuals, and shop-critical items like timing belts. No shaming — just a longevity plan.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_high_miles",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 8,
+        "fraction": 0.125,
+        "percent": 13,
+        "label": "Step 1 of 8 · Start · 13%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Build my plan",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "oil_discipline"
+        },
+        {
+          "id": "under_100k",
+          "label": "I'm under 100k",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "I opened high-mileage coach but I'm under 100k. Help me prep early."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "oil_discipline"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "mileage_min": 150000
+          },
+          "coach_encourage": "150k+ club — elite territory when you stay proactive.",
+          "description": "At this mileage, cooling system age and mounts matter as much as oil. We'll keep DIY inspections and escalate timing/major seals to a shop."
+        }
+      ]
+    },
+    {
+      "id": "oil_discipline",
+      "title": "Oil & filter discipline",
+      "coach_encourage": "Fresh oil is still the cheapest engine insurance. Nice momentum — you're about 25% through.",
+      "personalize": "At {{mileage}} miles, lean toward the shorter interval for your {{make}}. Next oil window ~{{next_service}} miles.",
+      "description": "If trips are short, dusty, or towing, use the severe schedule. Quality filter + correct viscosity beat bargain extremes.",
+      "visual_type": "gif",
+      "visual_asset_key": "fluid_intervals",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 8,
+        "fraction": 0.25,
+        "percent": 25,
+        "label": "Step 2 of 8 · Oil · 25%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "oil_ok",
+          "label": "Interval set — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "leak_walk"
+        },
+        {
+          "id": "oil_coach",
+          "label": "Open oil coach",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Help me pick an oil interval and viscosity for my high-mileage vehicle."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "oil_ok",
+          "goto": "leak_walk"
+        }
+      ]
+    },
+    {
+      "id": "leak_walk",
+      "title": "Cold leak & hose walkaround",
+      "coach_encourage": "This step is important — eyes on seals before they strand you. You're crushing it — roughly 38% done.",
+      "personalize": "Leak walk for your {{model}} at {{mileage}} miles. Recheck by ~{{next_service}} miles.",
+      "description": "Cold engine: flashlight on valve cover, oil filter area, power steering (if any), coolant hoses, and the ground under the car overnight.",
+      "visual_type": "video",
+      "visual_asset_key": "leak_walk",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 8,
+        "fraction": 0.375,
+        "percent": 38,
+        "label": "Step 3 of 8 · Leaks · 38%"
+      },
+      "safety_warning": "Keep clear of electric fans. Engine must be cold for hose squeeze checks.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Engine-bay inspection risk",
+        "body": "Fans may start unexpectedly. Hot engines cause burns — inspect cold only. Do not loosen fuel lines. Active fuel/coolant leaks → find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "clean",
+          "label": "Looks clean",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "belts_hoses"
+        },
+        {
+          "id": "leaks",
+          "label": "I see leaks",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "leak_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "clean",
+          "goto": "belts_hoses"
+        },
+        {
+          "when_button_id": "leaks",
+          "goto": "leak_help"
+        }
+      ]
+    },
+    {
+      "id": "leak_help",
+      "title": "Leak triage",
+      "coach_encourage": "Photos beat panic. You're handling this well. You're crushing it — roughly 38% done.",
+      "personalize": "Leak notes for your {{make}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Photo the wet area. Light seepage can be monitored; active drips (especially fuel/coolant) need a shop soon.",
+      "visual_type": "gif",
+      "visual_asset_key": "diy_vs_hm_shop",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 8,
+        "fraction": 0.375,
+        "percent": 38,
+        "label": "Step 3 · Help · 38%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "photo",
+          "label": "Photo for coach",
+          "style": "primary",
+          "action": "take_photo"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ]
+    },
+    {
+      "id": "belts_hoses",
+      "title": "Belts & hoses visual",
+      "coach_encourage": "Cracks and soft spots are early warnings — good catch territory. You're crushing it — roughly 50% done.",
+      "personalize": "Rubber goods check on your {{year}} {{model}} at {{mileage}} miles. Next look ~{{next_service}} miles.",
+      "description": "Look for serpentine cracks, fray, and glazed undersides. Hoses should not feel mushy or rock-hard. Replace on symptoms — don't wait for a roadside split.",
+      "visual_type": "gif",
+      "visual_asset_key": "belt_hose",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 8,
+        "fraction": 0.5,
+        "percent": 50,
+        "label": "Step 4 of 8 · Rubber · 50%"
+      },
+      "safety_warning": "Do not remove a spinning belt guard with the engine running.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "rubber_ok",
+          "label": "Rubber looks OK",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "timing_gate"
+        },
+        {
+          "id": "rubber_bad",
+          "label": "Cracks / soft hoses",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "rubber_ok",
+          "goto": "timing_gate"
+        }
+      ]
+    },
+    {
+      "id": "timing_gate",
+      "title": "Timing belt / chain reality",
+      "coach_encourage": "Asking this question separates survivors from statistics. Look at you — about 63% complete. Keep going.",
+      "personalize": "At {{mileage}} miles, verify timing service history for your {{make}} {{model}} before {{next_service}} miles.",
+      "description": "If your engine uses a timing belt, mileage/time limits are hard. Interference engines can bend valves when belts fail. Chains still need oil discipline and noise attention. DIY timing jobs are not beginner work.",
+      "visual_type": "gif",
+      "visual_asset_key": "timing_shop",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 8,
+        "fraction": 0.625,
+        "percent": 63,
+        "label": "Step 5 of 8 · Timing · 63%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Timing system service is safety-critical for the engine",
+        "body": "Incorrect timing belt/chain work can destroy the engine and leave you stranded. Do not attempt a DIY timing job unless you are trained and have the correct tools/procedures. When unsure, find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "history_ok",
+          "label": "History known / chain — next",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "chassis_quick"
+        },
+        {
+          "id": "need_timing",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "history_ok",
+          "goto": "chassis_quick"
+        }
+      ]
+    },
+    {
+      "id": "chassis_quick",
+      "title": "Brakes, tires & suspension peek",
+      "coach_encourage": "High-mile comfort and safety live in the chassis. Keep going! Look at you — about 75% complete. Keep going.",
+      "personalize": "Chassis peek for your {{model}} at {{mileage}} miles. Revisit near {{next_service}} miles.",
+      "description": "Listen for clunks over bumps, check tire inner shoulders, and note brake shimmy. Deep repairs can wait for a shop — you're gathering clues.",
+      "visual_type": "gif",
+      "visual_asset_key": "diy_vs_hm_shop",
+      "focus_part": "suspension",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 8,
+        "fraction": 0.75,
+        "percent": 75,
+        "label": "Step 6 of 8 · Chassis · 75%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "chassis_ok",
+          "label": "No new noises",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "prioritize"
+        },
+        {
+          "id": "noise",
+          "label": "I hear clunks / shimmy",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "High-mileage chassis noise or shimmy. When it happens:"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "chassis_ok",
+          "goto": "prioritize"
+        }
+      ]
+    },
+    {
+      "id": "prioritize",
+      "title": "Prioritize spend wisely",
+      "coach_encourage": "Order matters — safety fluids and leaks before cosmetics. Final stretch — you're about 88% through.",
+      "personalize": "Spend plan for your {{make}} at {{mileage}} miles through ~{{next_service}} miles.",
+      "description": "Order: safety (brakes/tires/cooling leaks) → reliability (timing/oil leaks) → comfort (bushings/mounts). Avoid shotgun parts without codes/symptoms.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_hm",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 8,
+        "fraction": 0.875,
+        "percent": 88,
+        "label": "Step 7 of 8 · Prioritize · 88%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "plan_ok",
+          "label": "Plan makes sense",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_hm"
+        },
+        {
+          "id": "shop_plan",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "plan_ok",
+          "goto": "log_hm"
+        }
+      ]
+    },
+    {
+      "id": "log_hm",
+      "title": "Log the longevity plan",
+      "coach_encourage": "You just bought more trustworthy miles. Well done! You made it through the flow — time to celebrate.",
+      "personalize": "Plan logged for {{make}} {{model}} at {{mileage}} miles. Next checkpoint ~{{next_service}} miles.",
+      "description": "Save oil interval, leak photos, and timing notes in the health file. Celebrate the odometer — then keep the habits.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_hm",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 8,
+        "total": 8,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 8 of 8 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log high-mileage plan",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "high_mileage"
+        },
+        {
+          "id": "parts",
+          "label": "Filters & fluids",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "maintenance"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "High-mile plan locked",
+    "coach_encourage": "Longevity is a habit — you just invested in more good miles. Well done! You made it through the flow — time to celebrate.",
+    "description": "Keep oil on the shorter interval if your use is severe. Revisit leaks and suspension noises at each service.",
+    "log_category": "high_mileage",
+    "next_check_miles_default": 5000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Ask a longevity question",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "High-mileage plan for my vehicle: what should I prioritize next?"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390×844 EN high-mileage coach.\n• Celebrate 100k tone\n• Timing belt risk → shop\n• Max 2 CTAs",
+    "react_native_pseudocode": "See CoachScenarioPlayer.phase2.tsx.example — load maintenance_high_mileage_production.json"
+  }
+}

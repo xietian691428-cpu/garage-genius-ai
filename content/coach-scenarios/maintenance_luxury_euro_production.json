@@ -1,0 +1,598 @@
+{
+  "id": "coach_scenario_luxury_euro_production",
+  "slug": "maintenance_luxury_euro",
+  "title": "Porsche / BMW Luxury Care & Cost Control",
+  "subtitle": "OEM fluid approvals, electronics gremlins, and indie-specialist strategies — keep the badge happy without burning the budget.",
+  "category": "maintenance",
+  "focus_part": "engine",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 30,
+    "diy_max": 120,
+    "shop_min": 60,
+    "shop_max": 300
+  },
+  "cost_band_usd": {
+    "diy_min": 80,
+    "diy_max": 400,
+    "shop_min": 250,
+    "shop_max": 2500
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel, step feedback Yes/No. Phase 3 luxury Euro: approval codes, battery registration, indie vs dealer.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Owner's manual oil/fluid approval codes (LL-01, MB, Porsche A40, etc.)",
+    "OBD tool capable of reading manufacturer modules when possible",
+    "Budget for specialist labor on electronics and brakes"
+  ],
+  "tools_checklist": [
+    "OBD / brand-capable scan tool preferred",
+    "Flashlight",
+    "Gloves",
+    "Phone for approval-code photos"
+  ],
+  "parts_checklist": [
+    "OEM-approved oil only",
+    "Correct European filter",
+    "AGM battery if equipped (registration may be required)"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "bmw",
+      "when": {
+        "brand_includes": [
+          "bmw"
+        ]
+      },
+      "coach_note": "BMW: match Longlife oil approvals, watch for oil filter housing gasket seepage, and plan battery registration after 12V swaps.",
+      "prefer_shop": true,
+      "interval_miles": 7500,
+      "oil_spec_hint": "BMW Longlife approval on the jug — viscosity alone is not enough."
+    },
+    {
+      "id": "porsche",
+      "when": {
+        "brand_includes": [
+          "porsche"
+        ]
+      },
+      "coach_note": "Porsche: A40 / C40 (and model-specific) approvals matter. PDK/coolant services and IMS-era concerns belong with a Porsche indie or dealer.",
+      "prefer_shop": true,
+      "interval_miles": 5000,
+      "oil_spec_hint": "Confirm Porsche oil approval for your exact engine/year."
+    },
+    {
+      "id": "mercedes_audi_cross",
+      "when": {
+        "brand_includes": [
+          "mercedes",
+          "audi",
+          "porsche",
+          "bmw"
+        ]
+      },
+      "coach_note": "Euro electronics often store faults across modules — a generic code reader can miss the real story.",
+      "prefer_shop": true
+    },
+    {
+      "id": "high_miles_lux",
+      "when": {
+        "mileage_min": 80000,
+        "brand_includes": [
+          "bmw",
+          "porsche"
+        ]
+      },
+      "coach_note": "Past 80k on these brands: budget cooling components, mounts, and carbon cleaning conversations with a specialist.",
+      "prefer_shop": true,
+      "interval_miles": 5000
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_lux",
+      "type": "gif",
+      "src": "/coach/luxury/hero_lux.gif",
+      "alt": "European luxury bay calm hero",
+      "shot_description": "Clean workshop with euro sedan silhouette."
+    },
+    {
+      "key": "oil_approval",
+      "type": "gif",
+      "src": "/coach/luxury/oil_approval.gif",
+      "alt": "OEM oil approval code on bottle",
+      "shot_description": "Finger points to LL-01 / A40 text."
+    },
+    {
+      "key": "indie_vs_dealer",
+      "type": "gif",
+      "src": "/coach/luxury/indie_vs_dealer.gif",
+      "alt": "Indie specialist vs dealer",
+      "shot_description": "Split indie lift ↔ dealer lounge."
+    },
+    {
+      "key": "electronics_scan",
+      "type": "gif",
+      "src": "/coach/luxury/electronics_scan.gif",
+      "alt": "Module scan on euro car",
+      "shot_description": "Tablet scan tool → multiple modules."
+    },
+    {
+      "key": "battery_reg",
+      "type": "video",
+      "src": "/coach/luxury/battery_reg.mp4",
+      "alt": "Battery registration note",
+      "shot_description": "20s: AGM swap → coding reminder.",
+      "poster": "/coach/luxury/battery_reg_poster.webp"
+    },
+    {
+      "key": "cost_control",
+      "type": "gif",
+      "src": "/coach/luxury/cost_control.gif",
+      "alt": "Cost control checklist",
+      "shot_description": "Prioritize fluids/brakes over cosmetic."
+    },
+    {
+      "key": "celebrate_lux",
+      "type": "gif",
+      "src": "/coach/luxury/celebrate.gif",
+      "alt": "Luxury care plan logged",
+      "shot_description": "Clipboard check + crest-neutral badge."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Luxury care without the panic invoice",
+      "coach_encourage": "Complex cars reward calm owners. You're in the right place. You're just getting started — I'll stay with you.",
+      "personalize": "Coaching your {{year}} {{make}} {{model}} at {{mileage}} miles. Next checkpoint ~{{next_service}} miles.",
+      "description": "We'll cover OEM fluid approvals, electronics triage, and when an indie specialist beats a dealer menu — without shame either way.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_lux",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 8,
+        "fraction": 0.125,
+        "percent": 13,
+        "label": "Step 1 of 8 · Start · 13%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start luxury coach",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "approvals"
+        },
+        {
+          "id": "not_euro",
+          "label": "Different brand — help",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "I opened Porsche/BMW coach but drive a different brand. Route me correctly."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "approvals"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "brand_includes": [
+              "porsche"
+            ]
+          },
+          "title": "Porsche plan — approvals first",
+          "description": "We'll lock oil approvals and talk PDK/electronics with a specialist mindset. DIY stays limited to owner-safe checks."
+        },
+        {
+          "when": {
+            "brand_includes": [
+              "bmw"
+            ]
+          },
+          "title": "BMW plan — Longlife + modules",
+          "description": "BMW ownership is half fluids, half modules. We'll keep DIY in the safe lane and flag coding jobs early."
+        }
+      ]
+    },
+    {
+      "id": "approvals",
+      "title": "Oil & fluid approval codes",
+      "coach_encourage": "This step is important — viscosity alone can wreck a Euro engine plan. Nice momentum — you're about 25% through.",
+      "personalize": "At {{mileage}} miles, confirm approvals for your {{make}} {{model}} before {{next_service}} miles.",
+      "description": "Photo the oil cap/door sticker and match the jug's OEM approval (BMW Longlife, Porsche A40/C40, etc.). Wrong approval is an expensive 'saving.'",
+      "visual_type": "gif",
+      "visual_asset_key": "oil_approval",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 8,
+        "fraction": 0.25,
+        "percent": 25,
+        "label": "Step 2 of 8 · Approvals · 25%"
+      },
+      "tools": [
+        "Phone camera"
+      ],
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "got_code",
+          "label": "I have the approval code",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "cost_control"
+        },
+        {
+          "id": "photo_code",
+          "label": "Photo sticker / jug",
+          "style": "secondary",
+          "action": "take_photo"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "got_code",
+          "goto": "cost_control"
+        }
+      ]
+    },
+    {
+      "id": "cost_control",
+      "title": "Spend where it matters",
+      "coach_encourage": "Prioritizing safety fluids over cosmetics is pro ownership. You're crushing it — roughly 38% done.",
+      "personalize": "Budget order for your {{make}} at {{mileage}} miles through ~{{next_service}} miles.",
+      "description": "Order: brakes/tires/cooling leaks → OEM fluids/filters → electronics diagnosis → cosmetic. Dealer menus are optional; indie Euro specialists often win on value.",
+      "visual_type": "gif",
+      "visual_asset_key": "cost_control",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 8,
+        "fraction": 0.375,
+        "percent": 38,
+        "label": "Step 3 of 8 · Budget · 38%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "plan_ok",
+          "label": "Plan makes sense",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "electronics"
+        },
+        {
+          "id": "shop_quote",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "plan_ok",
+          "goto": "electronics"
+        }
+      ]
+    },
+    {
+      "id": "electronics",
+      "title": "Electronics & warning lights",
+      "coach_encourage": "Module scans beat parts guessing on these cars. You're crushing it — roughly 50% done.",
+      "personalize": "Electronics path for your {{year}} {{model}} at {{mileage}} miles. Recheck by ~{{next_service}} miles.",
+      "description": "Note every dash warning. A basic OBD may only show P-codes — BMW/Porsche often need brand tools for SBS, airbag, or drivetrain modules.",
+      "visual_type": "gif",
+      "visual_asset_key": "electronics_scan",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 8,
+        "fraction": 0.5,
+        "percent": 50,
+        "label": "Step 4 of 8 · Electronics · 50%"
+      },
+      "tools": [
+        "Scan tool"
+      ],
+      "safety_warning": "Airbag or brake warnings → do not ignore; get a capable scan soon.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Advanced electronics diagnosis risk",
+        "body": "Clearing codes without fixing root causes can hide safety faults (ABS, airbag, stability). Do not clear airbag/ABS lights to 'make them go away.' When module access is unclear, find a nearby specialist shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "scanned",
+          "label": "Notes / codes saved",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "battery_ibs"
+        },
+        {
+          "id": "need_scan",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "scanned",
+          "goto": "battery_ibs"
+        }
+      ]
+    },
+    {
+      "id": "battery_ibs",
+      "title": "12V battery & registration",
+      "coach_encourage": "Euro cars are picky about batteries — good catch checking early. Look at you — about 63% complete. Keep going.",
+      "personalize": "12V plan for your {{make}} at {{mileage}} miles. Next battery-minded check ~{{next_service}} miles.",
+      "description": "AGM/IBS systems often need registration after replacement. Wrong battery type causes charging faults. DIY clamp work only if you're comfortable — otherwise shop install+code.",
+      "visual_type": "video",
+      "visual_asset_key": "battery_reg",
+      "focus_part": "battery",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 8,
+        "fraction": 0.625,
+        "percent": 63,
+        "label": "Step 5 of 8 · Battery · 63%"
+      },
+      "safety_warning": "Eye protection on. Neg first off / last on if you disconnect.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Luxury 12V / IBS service risk",
+        "body": "Incorrect battery type or skipped registration can damage the charging system. High-voltage hybrids (if equipped) have orange cables that must not be touched. When unsure, find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "bat_ok",
+          "label": "Battery plan set",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "indie_dealer"
+        },
+        {
+          "id": "shop_bat",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "bat_ok",
+          "goto": "indie_dealer"
+        }
+      ]
+    },
+    {
+      "id": "indie_dealer",
+      "title": "Indie specialist vs dealer",
+      "coach_encourage": "Choosing the right bay is half the maintenance win. Look at you — about 75% complete. Keep going.",
+      "personalize": "Shop strategy for your {{make}} {{model}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Use the dealer for warranty/campaigns. For out-of-warranty oil, brakes, and diagnostics, a Porsche/BMW indie with brand tools often costs less with equal care. Ask for OEM fluid proof on the invoice.",
+      "visual_type": "gif",
+      "visual_asset_key": "indie_vs_dealer",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 8,
+        "fraction": 0.75,
+        "percent": 75,
+        "label": "Step 6 of 8 · Shop · 75%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "continue",
+          "label": "Continue checklist",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "diy_limits"
+        },
+        {
+          "id": "find_indie",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "continue",
+          "goto": "diy_limits"
+        }
+      ]
+    },
+    {
+      "id": "diy_limits",
+      "title": "What stays DIY vs shop",
+      "coach_encourage": "Knowing your lane protects the car and your weekend. Final stretch — you're about 88% through.",
+      "personalize": "DIY limits for your {{year}} {{make}} at {{mileage}} miles. Revisit by ~{{next_service}} miles.",
+      "description": "Owner-friendly: cabin filter, wipers, visual leaks, tire pressures. Shop-leaning: coding, injectors, timing chains, PDK, air suspension, carbon cleaning.",
+      "visual_type": "gif",
+      "visual_asset_key": "cost_control",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 8,
+        "fraction": 0.875,
+        "percent": 88,
+        "label": "Step 7 of 8 · Limits · 88%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "limits_ok",
+          "label": "Got it — finish",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_lux"
+        },
+        {
+          "id": "oil_coach",
+          "label": "Open oil details in chat",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Confirm OEM oil approval and interval for my Porsche/BMW."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "limits_ok",
+          "goto": "log_lux"
+        }
+      ]
+    },
+    {
+      "id": "log_lux",
+      "title": "Log the luxury care plan",
+      "coach_encourage": "Badge pride + budget discipline — that's the combo. Well done! You made it through the flow — time to celebrate.",
+      "personalize": "Plan logged for {{make}} {{model}} at {{mileage}} miles. Next nudge ~{{next_service}} miles.",
+      "description": "Save approval codes, scan notes, and shop preference in the health file. Ask anytime a new module light appears.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_lux",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 8,
+        "total": 8,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 8 of 8 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log luxury care plan",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "luxury"
+        },
+        {
+          "id": "parts",
+          "label": "OEM fluids / filters",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "oil_filter"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Luxury care plan locked in",
+    "coach_encourage": "You protected a complex car with a calm budget plan. Well done! You made it through the flow — time to celebrate.",
+    "description": "Keep approval codes and scan notes in the health file. Indie specialists often beat dealer menus for maintenance — save the dealer for warranty/campaign work.",
+    "log_category": "luxury",
+    "next_check_miles_default": 5000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to guides",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Ask a luxury follow-up",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Porsche/BMW follow-up: oil approval, warning light, or cost estimate for my vehicle."
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390×844 EN luxury Euro coach.\n• Approval-code visual hero\n• Risk on electronics/battery coding\n• Max 2 CTAs + step feedback",
+    "react_native_pseudocode": "CoachScenarioPlayer — load maintenance_luxury_euro_production.json"
+  }
+}

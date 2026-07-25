@@ -1,0 +1,46 @@
+{
+  "averageRating": "4.2",
+  "reviewsCount": 2,
+  "reviews": [
+    {
+      "id": "edm_fixture_001",
+      "title": "Solid daily driver — watch the 60k maintenance bill",
+      "text": "Bought our RAV4 Hybrid new. Real world mpg is about 38 combined on mixed commuting. At 42,000 miles the dealer quoted $900 for hybrid coolant + brake fluid + cabin filter. Comfortable seats for long trips but road noise on interstate. Reliability has been excellent so far — no problems beyond scheduled maintenance cost.",
+      "favoriteFeatures": "Hybrid mpg, AWD confidence, residual value",
+      "averageRating": "4.5",
+      "created": 1700000000000,
+      "author": { "authorName": "owner_fixture" },
+      "thumbsUpDownCounter": { "thumbsUp": 12, "thumbsDown": 1 },
+      "ratings": [
+        { "type": "RELIABILITY", "value": 5 },
+        { "type": "COMFORT", "value": 4 },
+        { "type": "FUEL_ECONOMY", "value": 5 },
+        { "type": "PERFORMANCE", "value": 4 },
+        { "type": "FUN_TO_DRIVE", "value": 3 },
+        { "type": "INTERIOR_DESIGN", "value": 4 },
+        { "type": "EXTERIOR_DESIGN", "value": 4 },
+        { "type": "BUILD_QUALITY", "value": 5 }
+      ]
+    },
+    {
+      "id": "edm_fixture_002",
+      "title": "Long term ownership after 80k miles",
+      "text": "Owner review after five years. Long term reliability is still good. Real world mpg dropped a bit in cold winters. Biggest issues: battery hybrid system warning at 78k miles (dealer reset under warranty) and dealer service wait times. Maintenance cost stayed reasonable compared with peers.",
+      "favoriteFeatures": "Cargo space, Toyota Safety Sense",
+      "averageRating": "4.0",
+      "created": 1710000000000,
+      "author": { "authorName": "longterm_owner" },
+      "thumbsUpDownCounter": { "thumbsUp": 8, "thumbsDown": 0 },
+      "ratings": [
+        { "type": "RELIABILITY", "value": 4 },
+        { "type": "COMFORT", "value": 4 },
+        { "type": "FUEL_ECONOMY", "value": 4 },
+        { "type": "PERFORMANCE", "value": 3 },
+        { "type": "FUN_TO_DRIVE", "value": 3 },
+        { "type": "INTERIOR_DESIGN", "value": 3 },
+        { "type": "EXTERIOR_DESIGN", "value": 4 },
+        { "type": "BUILD_QUALITY", "value": 4 }
+      ]
+    }
+  ]
+}

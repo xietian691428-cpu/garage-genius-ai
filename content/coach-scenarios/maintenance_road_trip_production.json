@@ -1,0 +1,618 @@
+{
+  "id": "coach_scenario_road_trip_production",
+  "slug": "maintenance_road_trip",
+  "title": "Pre–Road Trip Check",
+  "subtitle": "Tires, fluids, lights, kit, and documents — a calm pre-flight so the trip stays about the destination.",
+  "category": "maintenance",
+  "focus_part": "tires",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 30,
+    "diy_max": 90,
+    "shop_min": 45,
+    "shop_max": 180
+  },
+  "cost_band_usd": {
+    "diy_min": 0,
+    "diy_max": 150,
+    "shop_min": 50,
+    "shop_max": 400
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel. Phase 2 road trip: visual checklist; jack/spare only with risk confirm.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Trip distance and climate known",
+    "Door tire placard accessible",
+    "Insurance / registration documents available"
+  ],
+  "tools_checklist": [
+    "Tire pressure gauge",
+    "Flashlight",
+    "Phone mount / charger",
+    "Jack & spare tools if equipped"
+  ],
+  "parts_checklist": [
+    "Correct washer fluid / coolant top-off if needed",
+    "Spare / inflator kit charged",
+    "Emergency kit: water, triangles, cables/jump pack"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "long_hwy",
+      "when": {},
+      "coach_note": "Highway trips amplify tire heat and underinflation risk — set cold PSI to the placard before you leave.",
+      "interval_miles": 5000
+    },
+    {
+      "id": "ev_trip",
+      "when": {
+        "powertrain": [
+          "bev",
+          "phev"
+        ]
+      },
+      "coach_note": "EV trips: plan chargers with weather buffer, precondition on approach, and confirm the 12V isn't weak before departure.",
+      "prefer_shop": false
+    },
+    {
+      "id": "tesla_trip",
+      "when": {
+        "brand_includes": [
+          "tesla"
+        ]
+      },
+      "coach_note": "Tesla: enter destination for routing/preconditioning; pack the OEM cable if you'll use destination charging."
+    },
+    {
+      "id": "high_miles_trip",
+      "when": {
+        "mileage_min": 100000
+      },
+      "coach_note": "Higher-mile trip prep: prioritize cooling system leaks, belts/hoses visual, and a battery test.",
+      "prefer_shop": true
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_trip",
+      "type": "gif",
+      "src": "/coach/trip/hero_trip.gif",
+      "alt": "Packed car ready for highway",
+      "shot_description": "Sunrise driveway, map pin, calm packing."
+    },
+    {
+      "key": "tires_trip",
+      "type": "gif",
+      "src": "/coach/trip/tires_pressure.gif",
+      "alt": "Setting cold tire pressure",
+      "shot_description": "Gauge on valve → placard PSI."
+    },
+    {
+      "key": "fluids_lights",
+      "type": "video",
+      "src": "/coach/trip/fluids_lights.mp4",
+      "alt": "Fluids and lights walkaround",
+      "shot_description": "25s: oil, coolant cold, washer, lights, signals.",
+      "poster": "/coach/trip/fluids_lights_poster.webp"
+    },
+    {
+      "key": "spare_kit",
+      "type": "gif",
+      "src": "/coach/trip/spare_kit.gif",
+      "alt": "Spare tire and emergency kit",
+      "shot_description": "Spare air check + triangle + jump pack."
+    },
+    {
+      "key": "ev_route",
+      "type": "gif",
+      "src": "/coach/trip/ev_route.gif",
+      "alt": "EV charge route planning",
+      "shot_description": "Map with chargers + weather buffer."
+    },
+    {
+      "key": "diy_vs_trip_shop",
+      "type": "gif",
+      "src": "/coach/trip/diy_vs_shop.gif",
+      "alt": "DIY checklist vs quick inspection shop",
+      "shot_description": "Split checklist ↔ shop bay."
+    },
+    {
+      "key": "celebrate_trip",
+      "type": "gif",
+      "src": "/coach/trip/celebrate.gif",
+      "alt": "Trip checklist complete",
+      "shot_description": "Checklist all green + highway icon."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Pre-flight for your trip",
+      "coach_encourage": "Trip prep is love for future-you. Let's go. You're just getting started — I'll stay with you.",
+      "personalize": "Road-trip coach for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next service mindset ~{{next_service}} miles.",
+      "description": "We'll cover tires, fluids/lights, emergency kit, and documents. If something feels unsafe, we'll route you to a nearby shop before you leave.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_trip",
+      "focus_part": "tires",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Step 1 of 7 · Start · 14%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start checklist",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "tires"
+        },
+        {
+          "id": "ev",
+          "label": "EV trip planning first",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "ev_plan"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "tires"
+        },
+        {
+          "when_button_id": "ev",
+          "goto": "ev_plan"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "powertrain": [
+              "bev",
+              "phev"
+            ]
+          },
+          "description": "EV trip: we'll still do tires/fluids/lights, plus a quick charge-plan step. Precondition when you can."
+        }
+      ]
+    },
+    {
+      "id": "ev_plan",
+      "title": "EV charge plan",
+      "coach_encourage": "Routing with buffer is how calm EV trips happen. You're just getting started — I'll stay with you.",
+      "personalize": "Charge plan for your {{make}} at {{mileage}} miles. Recheck strategy by ~{{next_service}} miles of road trips.",
+      "description": "Enter the destination in-car/app, add weather/headwind buffer, confirm cable/adapters, and avoid arriving at DC chargers ice-cold if you can precondition.",
+      "visual_type": "gif",
+      "visual_asset_key": "ev_route",
+      "focus_part": "battery",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "EV plan · 14%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "plan_ok",
+          "label": "Plan set — tires next",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "tires"
+        },
+        {
+          "id": "help",
+          "label": "Help me plan chargers",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Help plan EV chargers for my road trip: start, destination, season."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "plan_ok",
+          "goto": "tires"
+        }
+      ]
+    },
+    {
+      "id": "tires",
+      "title": "Tires & pressures",
+      "coach_encourage": "This step is important — highway heat hates soft tires. Nice momentum — you're about 29% through.",
+      "personalize": "At {{mileage}} miles, set cold PSI on your {{model}} before the trip. Recheck near {{next_service}} miles.",
+      "description": "Cold placard PSI on all four (+ spare if you have one). Look for nails, bulges, and tread near wear bars. Don't depart on damaged rubber.",
+      "visual_type": "gif",
+      "visual_asset_key": "tires_trip",
+      "focus_part": "tires",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "fraction": 0.286,
+        "percent": 29,
+        "label": "Step 2 of 7 · Tires · 29%"
+      },
+      "tools": [
+        "Tire pressure gauge"
+      ],
+      "safety_warning": "Bulge, cord, or rapid leak — do not drive; replace/tow.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "tires_ok",
+          "label": "Tires ready",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "fluids_lights"
+        },
+        {
+          "id": "tires_bad",
+          "label": "Damage / low tread",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "tires_help"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "tires_ok",
+          "goto": "fluids_lights"
+        },
+        {
+          "when_button_id": "tires_bad",
+          "goto": "tires_help"
+        }
+      ]
+    },
+    {
+      "id": "tires_help",
+      "title": "Fix tires before you leave",
+      "coach_encourage": "Delaying a trip for tires is courage. Good call. Nice momentum — you're about 29% through.",
+      "personalize": "Your {{make}} at {{mileage}} miles needs safe rubber before {{next_service}} miles of highway.",
+      "description": "Shop mount/balance or repair as needed. Photo damage for coach review if unsure.",
+      "visual_type": "gif",
+      "visual_asset_key": "diy_vs_trip_shop",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "fraction": 0.286,
+        "percent": 29,
+        "label": "Step 2 · Help · 29%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "primary",
+          "action": "book_shop"
+        },
+        {
+          "id": "photo",
+          "label": "Photo for coach",
+          "style": "secondary",
+          "action": "take_photo"
+        }
+      ]
+    },
+    {
+      "id": "fluids_lights",
+      "title": "Fluids & lights walkaround",
+      "coach_encourage": "Five minutes now beats a dark shoulder later. You're crushing it — roughly 43% done.",
+      "personalize": "Walkaround for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next full service ~{{next_service}} miles.",
+      "description": "Cold engine: oil on dipstick (if equipped), coolant between marks, washer fluid topped. Check headlights, brake lights, signals, and wipers.",
+      "visual_type": "video",
+      "visual_asset_key": "fluids_lights",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "fraction": 0.429,
+        "percent": 43,
+        "label": "Step 3 of 7 · Fluids · 43%"
+      },
+      "safety_warning": "Never open a hot cooling system.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Fluid check burn / spill risk",
+        "body": "Only check coolant when the engine is cold. Hot pressurized coolant causes severe burns. Wipe spills and dispose of fluids properly. If levels keep dropping, find a nearby shop before a long trip.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "fluids_ok",
+          "label": "Fluids & lights OK",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "spare_kit"
+        },
+        {
+          "id": "leak",
+          "label": "Leak / warning light",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "fluids_ok",
+          "goto": "spare_kit"
+        }
+      ]
+    },
+    {
+      "id": "spare_kit",
+      "title": "Spare, inflator & emergency kit",
+      "coach_encourage": "This step is important — know the jack points before you need them. Look at you — about 57% complete. Keep going.",
+      "personalize": "Kit check for your {{model}} at {{mileage}} miles. Refresh before {{next_service}} miles of travel.",
+      "description": "Confirm spare pressure or inflator charge, lug tool presence, triangles/vest if required in your region, jump pack, water, and phone cables.",
+      "visual_type": "gif",
+      "visual_asset_key": "spare_kit",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "fraction": 0.571,
+        "percent": 57,
+        "label": "Step 4 of 7 · Kit · 57%"
+      },
+      "safety_warning": "Practice jack points at home on level ground — never on a soft shoulder for the first time.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Spare tire / jack practice risk",
+        "body": "Jacking a vehicle can cause crush injuries. Use level ground, wheel chocks, and manufacturer jack points. If you are unsure, have a shop verify the spare/inflator instead of practicing alone.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "kit_ok",
+          "label": "Kit ready",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "docs"
+        },
+        {
+          "id": "need_kit",
+          "label": "Shop kit / spare help",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "emergency_kit"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "kit_ok",
+          "goto": "docs"
+        }
+      ]
+    },
+    {
+      "id": "docs",
+      "title": "Documents & phone setup",
+      "coach_encourage": "Boring admin now, hero move later. Keep going! Look at you — about 71% complete. Keep going.",
+      "personalize": "Docs for your {{make}} trip at {{mileage}} miles. Reminder to re-check insurance by ~{{next_service}} miles.",
+      "description": "Registration, insurance card, roadside membership, and a photo backup. Mount phone, pack charger, download offline maps if signal is thin.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_trip",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "fraction": 0.714,
+        "percent": 71,
+        "label": "Step 5 of 7 · Docs · 71%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "docs_ok",
+          "label": "Docs ready — finish",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_trip"
+        },
+        {
+          "id": "shop_insp",
+          "label": "Want a shop inspection",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "docs_ok",
+          "goto": "log_trip"
+        }
+      ]
+    },
+    {
+      "id": "final_gate",
+      "title": "Any unresolved warning lights?",
+      "coach_encourage": "Honest last gate — trips hate surprises. Final stretch — you're about 86% through.",
+      "personalize": "Final gate for your {{make}} at {{mileage}} miles before you roll. Service target ~{{next_service}} miles.",
+      "description": "If ABS, airbag, CEL, TPMS, or temp warnings are on, resolve or get a shop opinion before miles of highway.",
+      "visual_type": "gif",
+      "visual_asset_key": "diy_vs_trip_shop",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "fraction": 0.857,
+        "percent": 86,
+        "label": "Step 6 of 7 · Gate · 86%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "clear",
+          "label": "No warnings — finish",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_trip"
+        },
+        {
+          "id": "warnings",
+          "label": "I have warnings",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "clear",
+          "goto": "log_trip"
+        }
+      ]
+    },
+    {
+      "id": "log_trip",
+      "title": "Log pre-trip readiness",
+      "coach_encourage": "You're cleared for takeoff. Enjoy the drive — well done! You made it through the flow — time to celebrate.",
+      "personalize": "Trip prep logged for {{make}} {{model}} at {{mileage}} miles. Next maintenance mindset ~{{next_service}} miles.",
+      "description": "Save pressures, fluid notes, and kit status. Recheck tires after big temperature swings on the road.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_trip",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 7,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 7 of 7 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log road-trip check",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "road_trip"
+        },
+        {
+          "id": "chat",
+          "label": "Ask a last question",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Last pre-trip question for my vehicle:"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "You're trip-ready",
+    "coach_encourage": "You did the boring prep that makes trips great. Safe miles — well done! You made it through the flow — time to celebrate.",
+    "description": "Recheck tire pressures after the first long cold morning of the trip. Keep a photo of documents in your phone wallet.",
+    "log_category": "road_trip",
+    "next_check_miles_default": 5000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Ask a trip question",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Road-trip follow-up for my vehicle: route, weather, or a symptom I noticed:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390×844 EN road-trip coach.\n• Checklist progress\n• Spare/jack risk modal\n• EV route variant\n• Max 2 CTAs",
+    "react_native_pseudocode": "See CoachScenarioPlayer.phase2.tsx.example — load maintenance_road_trip_production.json"
+  }
+}

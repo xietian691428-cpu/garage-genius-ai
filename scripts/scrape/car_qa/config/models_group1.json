@@ -1,0 +1,22 @@
+[
+  {"brand": "Toyota", "model": "RAV4", "year_range": "2018-2025", "slug": "toyota-rav4", "group": 1, "nhtsa_models": ["RAV4"]},
+  {"brand": "Toyota", "model": "Camry", "year_range": "2018-2025", "slug": "toyota-camry", "group": 1, "nhtsa_models": ["CAMRY"]},
+  {"brand": "Toyota", "model": "Corolla", "year_range": "2018-2025", "slug": "toyota-corolla", "group": 1, "nhtsa_models": ["COROLLA"]},
+  {"brand": "Toyota", "model": "Tacoma", "year_range": "2018-2025", "slug": "toyota-tacoma", "group": 1, "nhtsa_models": ["TACOMA"]},
+  {"brand": "Ford", "model": "F-150", "year_range": "2018-2025", "slug": "ford-f-150", "group": 1, "nhtsa_models": [
+    "F-150 SUPER CREW", "F-150 SUPER CAB", "F-150 REGULAR CAB",
+    "F-150 SUPER CREW DIESEL", "F-150 SUPER CAB DIESEL",
+    "F-150 (SUPER CREW) GAS", "F-150 (SUPER CAB) GAS", "F-150 (REGULAR CAB) GAS",
+    "F-150 (SUPER CREW) HEV", "F-150 (SUPER CREW) LIGHTNING BEV",
+    "F-150"
+  ]},
+  {"brand": "Ford", "model": "Explorer", "year_range": "2018-2025", "slug": "ford-explorer", "group": 1, "nhtsa_models": ["EXPLORER"]},
+  {"brand": "Ford", "model": "Escape", "year_range": "2018-2025", "slug": "ford-escape", "group": 1, "nhtsa_models": ["ESCAPE"]},
+  {"brand": "Honda", "model": "CR-V", "year_range": "2018-2025", "slug": "honda-cr-v", "group": 1, "nhtsa_models": ["CR-V"]},
+  {"brand": "Honda", "model": "Civic", "year_range": "2018-2025", "slug": "honda-civic", "group": 1, "nhtsa_models": ["CIVIC"]},
+  {"brand": "Honda", "model": "Accord", "year_range": "2018-2025", "slug": "honda-accord", "group": 1, "nhtsa_models": ["ACCORD"]},
+  {"brand": "Honda", "model": "Pilot", "year_range": "2018-2025", "slug": "honda-pilot", "group": 1, "nhtsa_models": ["PILOT"]},
+  {"brand": "Chevrolet", "model": "Silverado", "year_range": "2018-2025", "slug": "chevrolet-silverado", "group": 1, "nhtsa_models": ["SILVERADO 1500", "SILVERADO"]},
+  {"brand": "Chevrolet", "model": "Equinox", "year_range": "2018-2025", "slug": "chevrolet-equinox", "group": 1, "nhtsa_models": ["EQUINOX"]},
+  {"brand": "Chevrolet", "model": "Tahoe", "year_range": "2018-2025", "slug": "chevrolet-tahoe", "group": 1, "nhtsa_models": ["TAHOE"]}
+]

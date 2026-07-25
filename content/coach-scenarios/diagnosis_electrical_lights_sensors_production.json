@@ -1,0 +1,519 @@
+{
+  "id": "coach_scenario_electrical_lights_sensors_production",
+  "slug": "diagnosis_electrical_lights_sensors",
+  "title": "Electrical Faults — Lights & Sensors",
+  "subtitle": "Bulbs, fuses, connectors, and sensor codes — safe 12V checks first; airbag circuits stay untouched.",
+  "category": "diagnosis",
+  "focus_part": "lights",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 20,
+    "diy_max": 90,
+    "shop_min": 45,
+    "shop_max": 180
+  },
+  "cost_band_usd": {
+    "diy_min": 5,
+    "diy_max": 60,
+    "shop_min": 80,
+    "shop_max": 600
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel, step feedback Yes/No. Phase 3B electrical: fuse DIY OK; airbag/SRS off-limits.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Owner's fuse diagram",
+    "Correct bulb type",
+    "OBD for sensor codes"
+  ],
+  "tools_checklist": [
+    "Multimeter optional",
+    "Fuse puller",
+    "Gloves",
+    "Dielectric grease"
+  ],
+  "parts_checklist": [
+    "Correct amperage fuses only",
+    "OEM-equivalent bulbs/LEDs as allowed",
+    "No copper-penny fuse tricks"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "can_bus",
+      "when": {
+        "brand_includes": [
+          "bmw",
+          "mercedes",
+          "audi",
+          "volkswagen",
+          "tesla"
+        ]
+      },
+      "coach_note": "Modern CAN-bus lighting may need coding after LED swaps — random bulbs can throw errors.",
+      "prefer_shop": true
+    },
+    {
+      "id": "sensor_codes",
+      "when": {},
+      "coach_note": "Sensor codes need confirmation — don't replace ABS/wheel-speed sensors on a code alone without checking harness/tone rings.",
+      "prefer_shop": true
+    },
+    {
+      "id": "bev_12v_elec",
+      "when": {
+        "powertrain": [
+          "bev",
+          "phev",
+          "hybrid"
+        ]
+      },
+      "coach_note": "Hybrids/EVs: stay on 12V lighting/sensors. Orange HV remains off-limits.",
+      "prefer_shop": true
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_elec",
+      "type": "gif",
+      "src": "/coach/electrical/hero.gif",
+      "alt": "Fuse box and bulb",
+      "shot_description": "Clean fuse tray."
+    },
+    {
+      "key": "bulb_swap",
+      "type": "video",
+      "src": "/coach/electrical/bulb.mp4",
+      "alt": "Tail lamp bulb access",
+      "shot_description": "20s glove access.",
+      "poster": "/coach/electrical/bulb_poster.webp"
+    },
+    {
+      "key": "fuse_check",
+      "type": "gif",
+      "src": "/coach/electrical/fuse.gif",
+      "alt": "Inspect blown fuse",
+      "shot_description": "Clear vs blown element."
+    },
+    {
+      "key": "connector",
+      "type": "gif",
+      "src": "/coach/electrical/connector.gif",
+      "alt": "Dielectric grease on connector",
+      "shot_description": "Unplug reseat."
+    },
+    {
+      "key": "srs_ban",
+      "type": "gif",
+      "src": "/coach/electrical/srs.gif",
+      "alt": "Airbag yellow connectors ban",
+      "shot_description": "Yellow = stop."
+    },
+    {
+      "key": "celebrate_elec",
+      "type": "gif",
+      "src": "/coach/electrical/celebrate.gif",
+      "alt": "Electrical fix logged",
+      "shot_description": "Lights on icon."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Lights & sensors — 12V smart path",
+      "coach_encourage": "Electrical gremlins hate methodical owners. Let's be one. You're just getting started — I'll stay with you.",
+      "personalize": "Electrical coach for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next check ~{{next_service}} miles.",
+      "description": "We'll do bulbs, fuses, and connector reseats. Yellow airbag connectors and steering-wheel clocks springs are shop-only.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_elec",
+      "focus_part": "lights",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Step 1 of 7 · Start · 14%"
+      },
+      "safety_warning": "Disconnect battery only if the manual requires — note radio/window relearns.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "lights",
+          "label": "Lighting problem",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "fuse",
+          "set_flags": {
+            "path": "lights"
+          }
+        },
+        {
+          "id": "sensors",
+          "label": "Sensor / warning light",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "srs_gate",
+          "set_flags": {
+            "path": "sensors"
+          }
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "lights",
+          "goto": "fuse"
+        },
+        {
+          "when_button_id": "sensors",
+          "goto": "srs_gate"
+        }
+      ]
+    },
+    {
+      "id": "srs_gate",
+      "title": "Airbag / SRS rule",
+      "coach_encourage": "This step is important — yellow means stop. Nice momentum — you're about 29% through.",
+      "personalize": "SRS boundary for your {{make}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Airbag light on, seatbelt pretensioner faults, or yellow connectors under seats/steering → do not probe. Find a shop with SRS tools.",
+      "visual_type": "gif",
+      "visual_asset_key": "srs_ban",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "fraction": 0.286,
+        "percent": 29,
+        "label": "Step 2 of 7 · SRS · 29%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Airbag / SRS circuit hazard",
+        "body": "Probing or unplugging SRS connectors can deploy airbags or disable crash protection. Do not DIY airbag work. Find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "not_srs",
+          "label": "Not an SRS issue — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "scan_sensors"
+        },
+        {
+          "id": "shop_srs",
+          "label": "Find a nearby shop",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "not_srs",
+          "goto": "scan_sensors"
+        }
+      ]
+    },
+    {
+      "id": "fuse",
+      "title": "Check the right fuse",
+      "coach_encourage": "Exact amperage only — never upsize a fuse. You're crushing it — roughly 43% done.",
+      "personalize": "Fuse check for your {{model}} at {{mileage}} miles. Recheck circuits by ~{{next_service}} miles if it blows again.",
+      "description": "Use the diagram for the failed circuit. A blown fuse means fix the short, not a bigger fuse. Repeating blows → shop.",
+      "visual_type": "gif",
+      "visual_asset_key": "fuse_check",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "fraction": 0.429,
+        "percent": 43,
+        "label": "Step 3 of 7 · Fuse · 43%"
+      },
+      "tools": [
+        "Fuse puller"
+      ],
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Electrical short / fire risk",
+        "body": "Installing a higher-amp fuse than specified can cause wiring fires. Replace only with the same amperage. If fuses keep blowing, find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "fuse_ok",
+          "label": "Fuse OK / replaced",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "bulb"
+        },
+        {
+          "id": "keeps_blowing",
+          "label": "Keeps blowing",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "fuse_ok",
+          "goto": "bulb"
+        }
+      ]
+    },
+    {
+      "id": "bulb",
+      "title": "Bulb / lamp access",
+      "coach_encourage": "Gloves help keep halogen glass clean — nice touch. Look at you — about 57% complete. Keep going.",
+      "personalize": "Lamp service for your {{make}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Replace with the correct type. On CAN-bus cars, some LED swaps need resistors/coding — if errors appear, revert or shop-code.",
+      "visual_type": "video",
+      "visual_asset_key": "bulb_swap",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "fraction": 0.571,
+        "percent": 57,
+        "label": "Step 4 of 7 · Bulb · 57%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "bulb_done",
+          "label": "Lamp done / N/A",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "connector"
+        },
+        {
+          "id": "parts",
+          "label": "Find bulbs / fuses",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "lighting"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "bulb_done",
+          "goto": "connector"
+        }
+      ]
+    },
+    {
+      "id": "connector",
+      "title": "Reseat connectors (non-SRS)",
+      "coach_encourage": "Corrosion fixes more 'dead sensors' than you'd think. Look at you — about 71% complete. Keep going.",
+      "personalize": "Connector care on your {{model}} at {{mileage}} miles. Next electrical peek ~{{next_service}} miles.",
+      "description": "For accessible non-yellow connectors: unplug, inspect pins, light dielectric grease, reseat firmly. Skip anything labeled airbag/SRS.",
+      "visual_type": "gif",
+      "visual_asset_key": "connector",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "fraction": 0.714,
+        "percent": 71,
+        "label": "Step 5 of 7 · Connectors · 71%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "reseated",
+          "label": "Reseated / skip",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "scan_sensors"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "reseated",
+          "goto": "scan_sensors"
+        }
+      ]
+    },
+    {
+      "id": "scan_sensors",
+      "title": "Sensor codes — confirm before parts",
+      "coach_encourage": "Scan data beats shotgun sensors. Final stretch — you're about 86% through.",
+      "personalize": "Code path for your {{make}} at {{mileage}} miles before buying parts near {{next_service}} miles.",
+      "description": "Read codes and note freeze-frame. Wheel-speed, O2, and MAF codes often need wiring/visual checks. Photo the screen for chat.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_elec",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "fraction": 0.857,
+        "percent": 86,
+        "label": "Step 6 of 7 · Scan · 86%"
+      },
+      "tools": [
+        "OBD scanner"
+      ],
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "finish",
+          "label": "Finish & log",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_elec"
+        },
+        {
+          "id": "chat",
+          "label": "Send codes to coach",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Electrical/sensor codes:"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "finish",
+          "goto": "log_elec"
+        }
+      ]
+    },
+    {
+      "id": "log_elec",
+      "title": "Log electrical work",
+      "coach_encourage": "Lights on, drama off. Well done! You made it through the flow — time to celebrate.",
+      "personalize": "Logged for {{make}} {{model}} at {{mileage}} miles. Next electrical check ~{{next_service}} miles.",
+      "description": "Save fuse/bulb changes and codes. If a circuit fails again immediately, stop DIY and shop the short.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_elec",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 7,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 7 of 7 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log electrical session",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "electrical"
+        },
+        {
+          "id": "parts",
+          "label": "Bulbs & fuses",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "lighting"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Electrical triage complete",
+    "coach_encourage": "You fixed what was safe and left SRS alone. Well done! You made it through the flow — time to celebrate.",
+    "description": "Replace fuses with exact amperage only. Persistent module faults need a capable scan — not endless bulb roulette.",
+    "log_category": "electrical",
+    "next_check_miles_default": 5000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to guides",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Sensor code help",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Electrical / sensor code help for my vehicle:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION EN electrical coach.\n• SRS ban modal\n• Fuse/bulb DIY\n• Feedback on",
+    "react_native_pseudocode": "CoachScenarioPlayer — diagnosis_electrical_lights_sensors_production.json"
+  }
+}

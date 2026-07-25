@@ -1,0 +1,539 @@
+{
+  "id": "coach_scenario_fuel_injectors_production",
+  "slug": "maintenance_fuel_injectors",
+  "title": "Fuel System Clean & Injector Care",
+  "subtitle": "Hesitation, rough idle, and deposit myths — safe filters and additives first; rails and pumps stay shop-level.",
+  "category": "maintenance",
+  "focus_part": "engine",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 20,
+    "diy_max": 75,
+    "shop_min": 60,
+    "shop_max": 240
+  },
+  "cost_band_usd": {
+    "diy_min": 15,
+    "diy_max": 80,
+    "shop_min": 150,
+    "shop_max": 1200
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel, step feedback Yes/No. Phase 3B fuel: no DIY fuel-rail cracking; GDI caution.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Engine cool for filter access when required",
+    "Correct fuel-filter part if equipped externally",
+    "Quality Top Tier fuel habit preferred"
+  ],
+  "tools_checklist": [
+    "Gloves",
+    "Flashlight",
+    "OBD scanner",
+    "Catch pan for filter swaps"
+  ],
+  "parts_checklist": [
+    "Fuel filter if serviceable",
+    "OEM-quality injector cleaner (optional)",
+    "Never DIY high-pressure GDI rail kits casually"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "gdi",
+      "when": {
+        "engine_includes": [
+          "gdi",
+          "tfsi",
+          "skyactiv-g",
+          "ecoboost",
+          "direct"
+        ]
+      },
+      "coach_note": "Direct injection often needs intake-valve cleaning strategies that bottle additives won't fully solve — shop walnut blast may be discussed after diagnosis.",
+      "prefer_shop": true,
+      "interval_miles": 30000
+    },
+    {
+      "id": "diesel_fuel",
+      "when": {
+        "powertrain": [
+          "diesel"
+        ]
+      },
+      "coach_note": "Diesel fuel systems run extreme pressure — filter service procedures are model-specific and often shop-preferred.",
+      "prefer_shop": true
+    },
+    {
+      "id": "high_miles_fuel",
+      "when": {
+        "mileage_min": 100000
+      },
+      "coach_note": "High-mile hesitation: confirm plugs/coils/air filter before condemning injectors.",
+      "interval_miles": 15000
+    },
+    {
+      "id": "bev_skip",
+      "when": {
+        "powertrain": [
+          "bev"
+        ]
+      },
+      "coach_note": "BEVs have no fuel injectors — switch to EV charging or another guide."
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_fuel",
+      "type": "gif",
+      "src": "/coach/fuel/hero.gif",
+      "alt": "Fuel filter and cleaner bottles",
+      "shot_description": "Calm parts laydown."
+    },
+    {
+      "key": "symptom_fuel",
+      "type": "gif",
+      "src": "/coach/fuel/symptoms.gif",
+      "alt": "Hesitation idle misfire icons",
+      "shot_description": "Three symptom icons."
+    },
+    {
+      "key": "filter_swap",
+      "type": "video",
+      "src": "/coach/fuel/filter.mp4",
+      "alt": "In-line fuel filter swap if equipped",
+      "shot_description": "20s cool engine filter.",
+      "poster": "/coach/fuel/filter_poster.webp"
+    },
+    {
+      "key": "additive",
+      "type": "gif",
+      "src": "/coach/fuel/additive.gif",
+      "alt": "Fuel tank additive pour",
+      "shot_description": "Cap open pour measured dose."
+    },
+    {
+      "key": "no_rail_diy",
+      "type": "gif",
+      "src": "/coach/fuel/no_rail.gif",
+      "alt": "High pressure rail shop only",
+      "shot_description": "Red X on cracking GDI rail."
+    },
+    {
+      "key": "celebrate_fuel",
+      "type": "gif",
+      "src": "/coach/fuel/celebrate.gif",
+      "alt": "Fuel care logged",
+      "shot_description": "Smooth idle icon."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Fuel system — calm, pressurized caution",
+      "coach_encourage": "Good call investigating hesitation early. I'll keep you out of high-pressure danger. You're just getting started — I'll stay with you.",
+      "personalize": "Fuel coaching for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next check ~{{next_service}} miles.",
+      "description": "We'll cover symptoms, serviceable filters, careful additives, and when injectors/rails need a shop. Gas under pressure is not a DIY toy.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_fuel",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Step 1 of 7 · Start · 14%"
+      },
+      "safety_warning": "No smoking/sparks. Relieve pressure only per manual — many systems stay pressurized.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start fuel coach",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "symptoms"
+        },
+        {
+          "id": "bev",
+          "label": "I drive an EV",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "I opened fuel injector coach but drive a BEV. Route me correctly."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "symptoms"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "powertrain": [
+              "bev"
+            ]
+          },
+          "title": "EV note",
+          "description": "Battery EVs don't have fuel injectors. Switch to the EV charging guide or chat for the right path."
+        }
+      ]
+    },
+    {
+      "id": "symptoms",
+      "title": "What are you feeling?",
+      "coach_encourage": "Clear symptoms beat random bottles. Nice. Nice momentum — you're about 29% through.",
+      "personalize": "Symptom path for your {{make}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Rough idle, tip-in hesitation, long crank, or injector-related codes — pick the closest match. Also note fuel quality and last filter service.",
+      "visual_type": "gif",
+      "visual_asset_key": "symptom_fuel",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "fraction": 0.286,
+        "percent": 29,
+        "label": "Step 2 of 7 · Symptoms · 29%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "hesitation",
+          "label": "Hesitation / rough idle",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "basics",
+          "set_flags": {
+            "symptom": "hesitation"
+          }
+        },
+        {
+          "id": "codes",
+          "label": "I have fuel codes",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "basics",
+          "set_flags": {
+            "symptom": "codes"
+          }
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "hesitation",
+          "goto": "basics"
+        },
+        {
+          "when_button_id": "codes",
+          "goto": "basics"
+        }
+      ]
+    },
+    {
+      "id": "basics",
+      "title": "Basics before injectors",
+      "coach_encourage": "Pros check plugs, air, and vacuum first — you're doing that. You're crushing it — roughly 43% done.",
+      "personalize": "At {{mileage}} miles on your {{model}}, rule out easy causes before {{next_service}} miles of guessing.",
+      "description": "Confirm air filter, obvious vacuum leaks, and spark plugs/coils if due. Injector work is rarely step one.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_fuel",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "fraction": 0.429,
+        "percent": 43,
+        "label": "Step 3 of 7 · Basics · 43%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "basics_ok",
+          "label": "Basics look OK",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "filter_path"
+        },
+        {
+          "id": "chat",
+          "label": "Help prioritize",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Help prioritize fuel vs spark vs air for my hesitation symptoms."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "basics_ok",
+          "goto": "filter_path"
+        }
+      ]
+    },
+    {
+      "id": "filter_path",
+      "title": "Fuel filter (if serviceable)",
+      "coach_encourage": "This step is important — only if your manual shows an owner filter. Look at you — about 57% complete. Keep going.",
+      "personalize": "Filter check for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next fuel service ~{{next_service}} miles.",
+      "description": "Some cars have lifetime in-tank filters. If you have an in-line filter, replace cool with rags and a catch pan. Expect residual pressure spit — eye protection on.",
+      "visual_type": "video",
+      "visual_asset_key": "filter_swap",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "fraction": 0.571,
+        "percent": 57,
+        "label": "Step 4 of 7 · Filter · 57%"
+      },
+      "tools": [
+        "Gloves",
+        "Eye protection",
+        "Catch pan"
+      ],
+      "safety_warning": "Fuel is flammable. Work outside/ventilated. Have a fire extinguisher nearby.",
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Fuel spill & fire hazard",
+        "body": "Gasoline is highly flammable. Depressurize only as the manual allows. If the filter is in-tank or access requires dropping a tank, stop and find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "filter_done",
+          "label": "Filter done / N/A",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "additive"
+        },
+        {
+          "id": "shop_filter",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "filter_done",
+          "goto": "additive"
+        }
+      ]
+    },
+    {
+      "id": "additive",
+      "title": "Tank additive — measured, not magic",
+      "coach_encourage": "A quality cleaner can help deposits — it won't fix a dead injector. Look at you — about 71% complete. Keep going.",
+      "personalize": "Additive pass for your {{make}} at {{mileage}} miles. Reassess drivability by ~{{next_service}} miles.",
+      "description": "If the manual allows, use a reputable PEA-based cleaner at the listed dose on a low tank, then fill with quality fuel. Skip miracle 'restore 50 HP' claims.",
+      "visual_type": "gif",
+      "visual_asset_key": "additive",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "fraction": 0.714,
+        "percent": 71,
+        "label": "Step 5 of 7 · Additive · 71%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "added",
+          "label": "Treated / skipping",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "rail_limit"
+        },
+        {
+          "id": "parts",
+          "label": "Find cleaner / filter",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "fuel_system"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "added",
+          "goto": "rail_limit"
+        }
+      ]
+    },
+    {
+      "id": "rail_limit",
+      "title": "No DIY high-pressure rails",
+      "coach_encourage": "Backing off GDI rails is wisdom, not fear. Final stretch — you're about 86% through.",
+      "personalize": "Shop boundary for your {{model}} at {{mileage}} miles before {{next_service}} miles of risk.",
+      "description": "Gasoline direct injection rails and pumps run extreme pressure. Injector removal, coding, and rail service belong in a shop with depressurization procedure and fire safety.",
+      "visual_type": "gif",
+      "visual_asset_key": "no_rail_diy",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "fraction": 0.857,
+        "percent": 86,
+        "label": "Step 6 of 7 · Limits · 86%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "High-pressure fuel system hazard",
+        "body": "Cracking a pressurized fuel rail can spray atomized gasoline and cause fire or severe injury. Do not DIY GDI injector/rail service. Find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "primary",
+          "action": "book_shop"
+        },
+        {
+          "id": "finish",
+          "label": "Log DIY steps only",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "log_fuel"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "finish",
+          "goto": "log_fuel"
+        }
+      ]
+    },
+    {
+      "id": "log_fuel",
+      "title": "Log fuel-system care",
+      "coach_encourage": "You stayed safe around fuel. Well done! You made it through the flow — time to celebrate.",
+      "personalize": "Logged for {{make}} {{model}} at {{mileage}} miles. Next fuel-minded check ~{{next_service}} miles.",
+      "description": "Note filter/additive dates and remaining symptoms. Return with codes if hesitation persists.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_fuel",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 7,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 7 of 7 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log fuel service",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "fuel"
+        },
+        {
+          "id": "chat",
+          "label": "Still hesitating",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Fuel symptoms remain after filter/additive. Codes and details:"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Fuel-system care plan set",
+    "coach_encourage": "You chased drivability without cracking a fuel rail. Well done! You made it through the flow — time to celebrate.",
+    "description": "Keep Top Tier fuel habits. If misfires or trims stay ugly after filter/additive steps, book injector diagnosis — don't keep clearing codes.",
+    "log_category": "fuel",
+    "next_check_miles_default": 15000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to guides",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Ask a follow-up",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Fuel system / injector follow-up for my vehicle:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION EN fuel coach.\n• No DIY GDI rail CTA\n• Filter/additive paths\n• Feedback on",
+    "react_native_pseudocode": "CoachScenarioPlayer — maintenance_fuel_injectors_production.json"
+  }
+}

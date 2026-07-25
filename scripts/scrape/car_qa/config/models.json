@@ -1,0 +1,460 @@
+[
+  {
+    "brand": "Toyota",
+    "model": "RAV4 Hybrid",
+    "year_range": "2023-2025",
+    "slug": "toyota-rav4",
+    "subreddit": "rav4"
+  },
+  {
+    "brand": "Toyota",
+    "model": "Camry",
+    "year_range": "2018-2025",
+    "slug": "toyota-camry",
+    "subreddit": "camry"
+  },
+  {
+    "brand": "Ford",
+    "model": "F-150",
+    "year_range": "2018-2025",
+    "slug": "ford-f-150",
+    "subreddit": "f150"
+  },
+  {
+    "brand": "Honda",
+    "model": "CR-V",
+    "year_range": "2018-2025",
+    "slug": "honda-cr-v",
+    "subreddit": "crv"
+  },
+  {
+    "brand": "Chevrolet",
+    "model": "Colorado",
+    "year_range": "2023-2025",
+    "slug": "chevrolet-colorado",
+    "subreddit": "ColoradoTruck"
+  },
+  {
+    "brand": "Subaru",
+    "model": "Forester",
+    "year_range": "2018-2025",
+    "slug": "subaru-forester",
+    "subreddit": "subaru",
+    "group": 2
+  },
+  {
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "year_range": "2018-2025",
+    "slug": "jeep-wrangler",
+    "subreddit": "Wrangler",
+    "group": 2
+  },
+  {
+    "brand": "Ram",
+    "model": "1500",
+    "year_range": "2018-2025",
+    "slug": "ram-1500",
+    "subreddit": "RamTrucks",
+    "group": 2
+  },
+  {
+    "brand": "Mazda",
+    "model": "CX-5",
+    "year_range": "2018-2025",
+    "slug": "mazda-cx-5",
+    "subreddit": "mazda",
+    "group": 2
+  },
+  {
+    "brand": "BMW",
+    "model": "X5",
+    "year_range": "2018-2025",
+    "slug": "bmw-x5",
+    "subreddit": "BMW",
+    "group": 3
+  },
+  {
+    "brand": "Lexus",
+    "model": "RX",
+    "year_range": "2018-2025",
+    "slug": "lexus-rx",
+    "subreddit": "Lexus",
+    "group": 3
+  },
+  {
+    "brand": "Volkswagen",
+    "model": "Atlas",
+    "year_range": "2023-2025",
+    "slug": "volkswagen-atlas",
+    "subreddit": "Volkswagen"
+  },
+  {
+    "brand": "Mercedes-Benz",
+    "model": "GLE",
+    "year_range": "2018-2025",
+    "slug": "mercedes-benz-gle",
+    "subreddit": "mercedes_benz",
+    "group": 3
+  },
+  {
+    "brand": "Kia",
+    "model": "Telluride",
+    "year_range": "2018-2025",
+    "slug": "kia-telluride",
+    "subreddit": "kia",
+    "group": 2
+  },
+  {
+    "brand": "Nissan",
+    "model": "Rogue",
+    "year_range": "2023-2025",
+    "slug": "nissan-rogue",
+    "subreddit": "Nissan"
+  },
+  {
+    "brand": "Hyundai",
+    "model": "Tucson",
+    "year_range": "2018-2025",
+    "slug": "hyundai-tucson",
+    "subreddit": "hyundai",
+    "group": 3
+  },
+  {
+    "brand": "Tesla",
+    "model": "Model Y",
+    "year_range": "2020-2025",
+    "slug": "tesla-model-y",
+    "subreddit": "TeslaModelY",
+    "group": 2
+  },
+  {
+    "brand": "Porsche",
+    "model": "Macan",
+    "year_range": "2023-2025",
+    "slug": "porsche-macan",
+    "subreddit": "Porsche"
+  },
+  {
+    "brand": "Genesis",
+    "model": "GV80",
+    "year_range": "2021-2025",
+    "slug": "genesis-gv80",
+    "subreddit": "GenesisMotor",
+    "group": 3
+  },
+  {
+    "brand": "Volvo",
+    "model": "XC90",
+    "year_range": "2018-2025",
+    "slug": "volvo-xc90",
+    "subreddit": "Volvo",
+    "group": 3
+  },
+  {
+    "brand": "Honda",
+    "model": "Pilot",
+    "year_range": "2018-2025",
+    "slug": "honda-pilot",
+    "subreddit": "HondaPilot"
+  },
+  {
+    "brand": "Honda",
+    "model": "Accord",
+    "year_range": "2018-2025",
+    "slug": "honda-accord",
+    "subreddit": "Honda"
+  },
+  {
+    "brand": "Honda",
+    "model": "Civic",
+    "year_range": "2018-2025",
+    "slug": "honda-civic",
+    "subreddit": "civic"
+  },
+  {
+    "brand": "Toyota",
+    "model": "Tacoma",
+    "year_range": "2018-2025",
+    "slug": "toyota-tacoma",
+    "subreddit": "ToyotaTacoma"
+  },
+  {
+    "brand": "Toyota",
+    "model": "Highlander",
+    "year_range": "2023-2025",
+    "slug": "toyota-highlander",
+    "subreddit": "ToyotaHighlander"
+  },
+  {
+    "brand": "Toyota",
+    "model": "Corolla",
+    "year_range": "2018-2025",
+    "slug": "toyota-corolla",
+    "subreddit": "Corolla"
+  },
+  {
+    "brand": "Chevrolet",
+    "model": "Silverado",
+    "year_range": "2018-2025",
+    "slug": "chevrolet-silverado",
+    "subreddit": "Silverado"
+  },
+  {
+    "brand": "Chevrolet",
+    "model": "Equinox",
+    "year_range": "2018-2025",
+    "slug": "chevrolet-equinox",
+    "subreddit": "Equinox"
+  },
+  {
+    "brand": "Ford",
+    "model": "Explorer",
+    "year_range": "2018-2025",
+    "slug": "ford-explorer",
+    "subreddit": "FordExplorer"
+  },
+  {
+    "brand": "Ford",
+    "model": "Escape",
+    "year_range": "2018-2025",
+    "slug": "ford-escape",
+    "subreddit": "FordEscape"
+  },
+  {
+    "brand": "Hyundai",
+    "model": "Santa Fe",
+    "year_range": "2018-2025",
+    "slug": "hyundai-santa-fe",
+    "subreddit": "Hyundai",
+    "group": 3
+  },
+  {
+    "brand": "Kia",
+    "model": "Sportage",
+    "year_range": "2023-2025",
+    "slug": "kia-sportage",
+    "subreddit": "kia"
+  },
+  {
+    "brand": "Subaru",
+    "model": "Outback",
+    "year_range": "2018-2025",
+    "slug": "subaru-outback",
+    "subreddit": "subaru",
+    "group": 2
+  },
+  {
+    "brand": "Mazda",
+    "model": "CX-50",
+    "year_range": "2023-2025",
+    "slug": "mazda-cx-50",
+    "subreddit": "mazda"
+  },
+  {
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "year_range": "2018-2025",
+    "slug": "jeep-grand-cherokee",
+    "subreddit": "GrandCherokee",
+    "group": 2
+  },
+  {
+    "brand": "GMC",
+    "model": "Sierra",
+    "year_range": "2023-2025",
+    "slug": "gmc-sierra",
+    "subreddit": "gmc"
+  },
+  {
+    "brand": "Nissan",
+    "model": "Pathfinder",
+    "year_range": "2023-2025",
+    "slug": "nissan-pathfinder",
+    "subreddit": "Nissan"
+  },
+  {
+    "brand": "Volkswagen",
+    "model": "Tiguan",
+    "year_range": "2023-2025",
+    "slug": "volkswagen-tiguan",
+    "subreddit": "Volkswagen"
+  },
+  {
+    "brand": "BMW",
+    "model": "X3",
+    "year_range": "2023-2025",
+    "slug": "bmw-x3",
+    "subreddit": "BMW"
+  },
+  {
+    "brand": "Lexus",
+    "model": "NX",
+    "year_range": "2023-2025",
+    "slug": "lexus-nx",
+    "subreddit": "Lexus"
+  },
+  {
+    "brand": "Acura",
+    "model": "MDX",
+    "year_range": "2018-2025",
+    "slug": "acura-mdx",
+    "subreddit": null,
+    "group": 3
+  },
+  {
+    "brand": "Acura",
+    "model": "RDX",
+    "year_range": "2023-2025",
+    "slug": "acura-rdx",
+    "subreddit": null
+  },
+  {
+    "brand": "Audi",
+    "model": "Q5",
+    "year_range": "2018-2025",
+    "slug": "audi-q5",
+    "subreddit": null,
+    "group": 3
+  },
+  {
+    "brand": "Audi",
+    "model": "Q7",
+    "year_range": "2023-2025",
+    "slug": "audi-q7",
+    "subreddit": null
+  },
+  {
+    "brand": "Buick",
+    "model": "Enclave",
+    "year_range": "2023-2025",
+    "slug": "buick-enclave",
+    "subreddit": null
+  },
+  {
+    "brand": "Cadillac",
+    "model": "Escalade",
+    "year_range": "2023-2025",
+    "slug": "cadillac-escalade",
+    "subreddit": null
+  },
+  {
+    "brand": "Cadillac",
+    "model": "XT5",
+    "year_range": "2023-2025",
+    "slug": "cadillac-xt5",
+    "subreddit": null
+  },
+  {
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "year_range": "2023-2025",
+    "slug": "chrysler-pacifica",
+    "subreddit": null
+  },
+  {
+    "brand": "Dodge",
+    "model": "Durango",
+    "year_range": "2023-2025",
+    "slug": "dodge-durango",
+    "subreddit": null
+  },
+  {
+    "brand": "Infiniti",
+    "model": "QX60",
+    "year_range": "2023-2025",
+    "slug": "infiniti-qx60",
+    "subreddit": null
+  },
+  {
+    "brand": "Lincoln",
+    "model": "Navigator",
+    "year_range": "2023-2025",
+    "slug": "lincoln-navigator",
+    "subreddit": null
+  },
+  {
+    "brand": "Lincoln",
+    "model": "Aviator",
+    "year_range": "2023-2025",
+    "slug": "lincoln-aviator",
+    "subreddit": null
+  },
+  {
+    "brand": "Mitsubishi",
+    "model": "Outlander",
+    "year_range": "2023-2025",
+    "slug": "mitsubishi-outlander",
+    "subreddit": null
+  },
+  {
+    "brand": "Mini",
+    "model": "Countryman",
+    "year_range": "2023-2025",
+    "slug": "mini-countryman",
+    "subreddit": null
+  },
+  {
+    "brand": "Volvo",
+    "model": "XC60",
+    "year_range": "2023-2025",
+    "slug": "volvo-xc60",
+    "subreddit": null
+  },
+  {
+    "brand": "BMW",
+    "model": "3 Series",
+    "year_range": "2023-2025",
+    "slug": "bmw-3-series",
+    "subreddit": null
+  },
+  {
+    "brand": "Mercedes-Benz",
+    "model": "C-Class",
+    "year_range": "2023-2025",
+    "slug": "mercedes-benz-c-class",
+    "subreddit": null
+  },
+  {
+    "brand": "Mercedes-Benz",
+    "model": "GLC",
+    "year_range": "2023-2025",
+    "slug": "mercedes-benz-glc",
+    "subreddit": null
+  },
+  {
+    "brand": "Hyundai",
+    "model": "Palisade",
+    "year_range": "2023-2025",
+    "slug": "hyundai-palisade",
+    "subreddit": null
+  },
+  {
+    "brand": "Kia",
+    "model": "Sorento",
+    "year_range": "2023-2025",
+    "slug": "kia-sorento",
+    "subreddit": null
+  },
+  {
+    "brand": "Toyota",
+    "model": "RAV4",
+    "year_range": "2018-2025",
+    "slug": "toyota-rav4",
+    "group": 1
+  },
+  {
+    "brand": "Chevrolet",
+    "model": "Tahoe",
+    "year_range": "2018-2025",
+    "slug": "chevrolet-tahoe",
+    "group": 1
+  },
+  {
+    "brand": "Porsche",
+    "model": "Cayenne",
+    "year_range": "2018-2025",
+    "slug": "porsche-cayenne",
+    "group": 3
+  }
+]

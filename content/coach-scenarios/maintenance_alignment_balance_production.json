@@ -1,0 +1,506 @@
+{
+  "id": "coach_scenario_alignment_balance_production",
+  "slug": "maintenance_alignment_balance",
+  "title": "Tire Balance & Four-Wheel Alignment",
+  "subtitle": "Shake, pull, and feathered wear — know driveway checks vs shop machine work.",
+  "category": "maintenance",
+  "focus_part": "tires",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 20,
+    "diy_max": 60,
+    "shop_min": 45,
+    "shop_max": 120
+  },
+  "cost_band_usd": {
+    "diy_min": 0,
+    "diy_max": 40,
+    "shop_min": 80,
+    "shop_max": 250
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel, step feedback Yes/No. Phase 3 alignment: DIY inspect only; balance/align are shop machines.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Cold tire pressures set to placard",
+    "Note speeds where vibration happens"
+  ],
+  "tools_checklist": [
+    "Tire gauge",
+    "Flashlight",
+    "Chalk optional"
+  ],
+  "parts_checklist": [
+    "None for DIY — shop: weights, alignment printout"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "staggered",
+      "when": {
+        "brand_includes": [
+          "bmw",
+          "mercedes",
+          "audi",
+          "porsche"
+        ]
+      },
+      "coach_note": "Staggered setups limit cross-rotation — alignment and balance still matter a lot.",
+      "prefer_shop": true
+    },
+    {
+      "id": "truck",
+      "when": {
+        "model_includes": [
+          "f-150",
+          "silverado",
+          "1500",
+          "ram",
+          "tacoma"
+        ]
+      },
+      "coach_note": "Trucks that tow or run dirt roads eat alignments — inspect inner shoulders often.",
+      "prefer_shop": true
+    },
+    {
+      "id": "ev_weight",
+      "when": {
+        "powertrain": [
+          "bev",
+          "phev"
+        ]
+      },
+      "coach_note": "EV weight amplifies inner edge wear — keep PSI exact and align sooner if pull appears."
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_align",
+      "type": "gif",
+      "src": "/coach/align/hero.gif",
+      "alt": "Alignment rack and balance machine",
+      "shot_description": "Shop rack calm, not scary."
+    },
+    {
+      "key": "shake_triage",
+      "type": "gif",
+      "src": "/coach/align/shake.gif",
+      "alt": "Speed vs shake chart",
+      "shot_description": "40/60/80 mph icons."
+    },
+    {
+      "key": "wear_edges",
+      "type": "gif",
+      "src": "/coach/align/wear.gif",
+      "alt": "Inner edge wear illustration",
+      "shot_description": "Feathering diagram."
+    },
+    {
+      "key": "pressure_first",
+      "type": "video",
+      "src": "/coach/align/pressure.mp4",
+      "alt": "Set cold pressures first",
+      "shot_description": "15s placard PSI.",
+      "poster": "/coach/align/pressure_poster.webp"
+    },
+    {
+      "key": "shop_printout",
+      "type": "gif",
+      "src": "/coach/align/printout.gif",
+      "alt": "Alignment printout before after",
+      "shot_description": "Green specs."
+    },
+    {
+      "key": "celebrate_align",
+      "type": "gif",
+      "src": "/coach/align/celebrate.gif",
+      "alt": "Alignment logged",
+      "shot_description": "Smooth highway icon."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Smooth out the shake",
+      "coach_encourage": "Good call chasing vibration early — tires thank you. You're just getting started — I'll stay with you.",
+      "personalize": "Alignment coach for your {{year}} {{make}} {{model}} at {{mileage}} miles. Recheck ~{{next_service}} miles.",
+      "description": "We'll separate pressure issues, balance (shimmy with speed), and alignment (pull / uneven wear). Machines do the final work.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_align",
+      "focus_part": "tires",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Step 1 of 7 · Start · 14%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start triage",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "pressure"
+        },
+        {
+          "id": "unsafe",
+          "label": "Steering feels unsafe",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "pressure"
+        }
+      ]
+    },
+    {
+      "id": "pressure",
+      "title": "Pressures first (always)",
+      "coach_encourage": "This step is important — soft tires fake a dozen symptoms. Nice momentum — you're about 29% through.",
+      "personalize": "At {{mileage}} miles, set cold PSI on your {{model}} before blaming alignment. Next check ~{{next_service}} miles.",
+      "description": "Cold placard PSI all around. Then note if pull or shake remains. TPMS light may need a short drive to clear.",
+      "visual_type": "video",
+      "visual_asset_key": "pressure_first",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "fraction": 0.286,
+        "percent": 29,
+        "label": "Step 2 of 7 · Pressure · 29%"
+      },
+      "tools": [
+        "Tire gauge"
+      ],
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "set",
+          "label": "Pressures set",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "symptom"
+        },
+        {
+          "id": "help",
+          "label": "Can't find placard",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Help me find correct cold tire pressure for my vehicle."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "set",
+          "goto": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "symptom",
+      "title": "Shake vs pull",
+      "coach_encourage": "Naming the symptom correctly saves a wasted shop visit. You're crushing it — roughly 43% done.",
+      "personalize": "Symptom path for your {{make}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Steering shimmy that grows with speed → often balance/road force. Steady pull to one side → alignment/brake drag. Wander → worn parts + align.",
+      "visual_type": "gif",
+      "visual_asset_key": "shake_triage",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "fraction": 0.429,
+        "percent": 43,
+        "label": "Step 3 of 7 · Symptom · 43%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "shake",
+          "label": "Shimmy with speed",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "wear",
+          "set_flags": {
+            "symptom": "balance"
+          }
+        },
+        {
+          "id": "pull",
+          "label": "Pull / uneven wear",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "wear",
+          "set_flags": {
+            "symptom": "align"
+          }
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "shake",
+          "goto": "wear"
+        },
+        {
+          "when_button_id": "pull",
+          "goto": "wear"
+        }
+      ]
+    },
+    {
+      "id": "wear",
+      "title": "Read the tread edges",
+      "coach_encourage": "Tires write the diagnosis in wear patterns. Look at you — about 57% complete. Keep going.",
+      "personalize": "Wear read on your {{model}} at {{mileage}} miles. Plan shop work before {{next_service}} miles if needed.",
+      "description": "Inner/outer edge wear or feathering suggests alignment or suspension play. Cupping can be balance or worn shocks. Photo helps.",
+      "visual_type": "gif",
+      "visual_asset_key": "wear_edges",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "fraction": 0.571,
+        "percent": 57,
+        "label": "Step 4 of 7 · Wear · 57%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "noted",
+          "label": "Wear noted — shop path",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "shop_machine"
+        },
+        {
+          "id": "photo",
+          "label": "Photo tread",
+          "style": "secondary",
+          "action": "take_photo"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "noted",
+          "goto": "shop_machine"
+        }
+      ]
+    },
+    {
+      "id": "shop_machine",
+      "title": "Balance & alignment are machine jobs",
+      "coach_encourage": "Paying for a printout beats guessing camber in the driveway. Look at you — about 71% complete. Keep going.",
+      "personalize": "Shop path for your {{make}} at {{mileage}} miles. Recheck ride quality by ~{{next_service}} miles.",
+      "description": "Wheel balance needs a balancer. Four-wheel alignment needs a rack and specs for your VIN/options. Ask for before/after printout.",
+      "visual_type": "gif",
+      "visual_asset_key": "shop_printout",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "fraction": 0.714,
+        "percent": 71,
+        "label": "Step 5 of 7 · Shop · 71%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Shop service still requires a safe vehicle",
+        "body": "Do not drive to a shop on severely cupped or corded tires. If vibration is violent at highway speeds, reduce speed and find a nearby shop sooner — continuing can lose control.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "book",
+          "label": "Find a nearby shop",
+          "style": "primary",
+          "action": "book_shop"
+        },
+        {
+          "id": "after",
+          "label": "I already got it done",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "aftercare"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "after",
+          "goto": "aftercare"
+        }
+      ]
+    },
+    {
+      "id": "aftercare",
+      "title": "After the rack",
+      "coach_encourage": "Save the printout — future you will need those numbers. Final stretch — you're about 86% through.",
+      "personalize": "Aftercare for your {{model}} at {{mileage}} miles. Next tire rotation ~{{next_service}} miles.",
+      "description": "Re-torque lugs if wheels were removed. Recheck pressures cold. If pull remains, ask about suspension wear before another align.",
+      "visual_type": "gif",
+      "visual_asset_key": "shop_printout",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "fraction": 0.857,
+        "percent": 86,
+        "label": "Step 6 of 7 · After · 86%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "finish",
+          "label": "Finish & log",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_align"
+        },
+        {
+          "id": "still",
+          "label": "Still pulls — chat",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Alignment done but pull/shake remains. Printout notes:"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "finish",
+          "goto": "log_align"
+        }
+      ]
+    },
+    {
+      "id": "log_align",
+      "title": "Log balance / alignment",
+      "coach_encourage": "Smooth miles ahead — nice work! You made it through the flow — time to celebrate.",
+      "personalize": "Logged for {{make}} {{model}} at {{mileage}} miles. Next check ~{{next_service}} miles.",
+      "description": "Store the shop printout photo and speeds where issues happened.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_align",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 7,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 7 of 7 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log alignment / balance",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "alignment"
+        },
+        {
+          "id": "tires",
+          "label": "Tire parts",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "tires"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Balance / alignment plan set",
+    "coach_encourage": "You diagnosed the shake without throwing parts. Well done! You made it through the flow — time to celebrate.",
+    "description": "Keep the alignment printout photo. Recheck pressures monthly — underinflation mimics pull.",
+    "log_category": "alignment",
+    "next_check_miles_default": 6000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to guides",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Still shaking",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Vibration or pull persists after pressure check. Speeds and when:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390×844 EN alignment coach.\n• DIY inspect only\n• Shop machine for balance/align\n• Feedback on",
+    "react_native_pseudocode": "CoachScenarioPlayer — load maintenance_alignment_balance_production.json"
+  }
+}

@@ -1,0 +1,499 @@
+{
+  "id": "coach_scenario_brakes_v2",
+  "slug": "maintenance_brakes",
+  "title": "Brake Check & Pad/Rotor Service",
+  "subtitle": "Inspect first, decide second — I'll keep you safe and never rush torque.",
+  "category": "safety",
+  "focus_part": "brakes",
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 90,
+    "diy_max": 180,
+    "shop_min": 60,
+    "shop_max": 150
+  },
+  "cost_band_usd": {
+    "diy_min": 80,
+    "diy_max": 350,
+    "shop_min": 250,
+    "shop_max": 800
+  },
+  "tone": "Safety-first live coach. Celebrate inspection DIY. Honest when replacement exceeds comfort. Max 2 buttons. Trust every ~3 steps.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": ["gif", "video"],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure at any point, stop and go to a shop — that's the smart call, not quitting.",
+    "show_progress_bar": true
+  },
+  "prerequisites": [
+    "Level ground; know EPB procedure if equipped",
+    "Correct jack points + stands",
+    "Lug torque from door sticker",
+    "Flashlight for pad thickness"
+  ],
+  "tools_checklist": [
+    "Jack + jack stands",
+    "Torque wrench",
+    "Caliper piston tool",
+    "Brake cleaner, gloves, eye protection"
+  ],
+  "parts_checklist": [
+    "Brake pads (axle set)",
+    "Rotors if needed (pairs on an axle)",
+    "Hardware kit / slide grease",
+    "DOT fluid matching the cap (only if bleeding)"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "highway_commuter",
+      "when": { "mileage_min": 30000, "mileage_max": 70000 },
+      "coach_note": "Many pads first come due in the 30–70k window — inspect before metal-on-metal."
+    },
+    {
+      "id": "high_miles_trucks",
+      "when": { "mileage_min": 60000, "model_includes": ["f-150", "silverado", "1500", "ram"] },
+      "coach_note": "Trucks that tow eat pads faster — check rears too."
+    },
+    {
+      "id": "epb_warning",
+      "when": { "model_includes": ["model y", "rav4", "cr-v", "x5", "gle", "telluride"] },
+      "coach_note": "Electronic parking brake rears often need a scan tool. Don't force the piston.",
+      "prefer_shop": true
+    },
+    {
+      "id": "performance_luxury",
+      "when": { "brand_includes": ["bmw", "mercedes", "audi", "porsche"] },
+      "coach_note": "Wear sensors + bedding matter — indie brake specialist is a strong option.",
+      "prefer_shop": true
+    },
+    {
+      "id": "soft_pedal_stop",
+      "when": {},
+      "coach_note": "Soft pedal, pull, ABS light, or fluid loss = stop DIY and get help before driving.",
+      "prefer_shop": true
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_brakes",
+      "type": "gif",
+      "src": "/coach/brakes/hero_brakes.gif",
+      "alt": "Pad and rotor soft loop",
+      "shot_description": "Gentle rotate of pad + rotor. Safety-orange accent. No crash imagery."
+    },
+    {
+      "key": "wheel_off_inspect",
+      "type": "gif",
+      "src": "/coach/brakes/wheel_off_inspect.gif",
+      "alt": "Wheel off pad thickness check",
+      "shot_description": "Flashlight on outer pad, ~3mm reference."
+    },
+    {
+      "key": "pad_thickness_chart",
+      "type": "gif",
+      "src": "/coach/brakes/pad_thickness.gif",
+      "alt": "Pad thickness zones animation",
+      "shot_description": ">4mm OK → 2–4mm plan → <2mm replace."
+    },
+    {
+      "key": "diy_vs_shop_brakes",
+      "type": "gif",
+      "src": "/coach/brakes/diy_vs_shop.gif",
+      "alt": "DIY vs shop brake bay",
+      "shot_description": "Crossfade DIY torque ↔ shop lathe."
+    },
+    {
+      "key": "caliper_piston_gif",
+      "type": "gif",
+      "src": "/coach/brakes/caliper_compress.gif",
+      "alt": "Compressing caliper piston",
+      "shot_description": "Slow compress; never pry on piston face."
+    },
+    {
+      "key": "torque_lugs_video",
+      "type": "video",
+      "src": "/coach/brakes/torque_lugs.mp4",
+      "poster": "/coach/brakes/torque_lugs_poster.webp",
+      "alt": "Star-pattern lug torque",
+      "shot_description": "Lower → star torque → pump pedal reminder."
+    },
+    {
+      "key": "bed_in_illustration",
+      "type": "gif",
+      "src": "/coach/brakes/bed_in.gif",
+      "alt": "Bed-in stop cycles",
+      "shot_description": "Animated moderate stops — no panic stops."
+    },
+    {
+      "key": "symptom_help_gif",
+      "type": "gif",
+      "src": "/coach/brakes/symptom_triage.gif",
+      "alt": "Symptom triage animation",
+      "shot_description": "Icons: squeal / grind / soft pedal → paths."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Brake health check-in",
+      "coach_encourage": "Checking brakes early is peak ownership — proud of you.",
+      "personalize": "Looking at brakes on your {{year}} {{make}} {{model}} ({{mileage}} mi).",
+      "description": "Inspection first. Soft pedal, ABS light, or fluid leak? That's a shop/tow path — no heroics.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_brakes",
+      "focus_part": "brakes",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": { "index": 1, "total": 7, "label": "Step 1 of 7 · Start", "fraction": 0.14 },
+      "safety_warning": "Pedal sinks, ABS/brake lights on, or fluid leaking — do not drive.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "inspect_only",
+          "label": "Inspect pads/rotors",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "safe_lift",
+          "set_flags": { "mode": "inspect" }
+        },
+        {
+          "id": "emergency",
+          "label": "Soft pedal / leak — help",
+          "style": "danger",
+          "action": "goto",
+          "next_step_id": "emergency_help",
+          "set_flags": { "mode": "emergency" }
+        }
+      ],
+      "branches": [
+        { "when_button_id": "inspect_only", "goto": "safe_lift" },
+        { "when_button_id": "emergency", "goto": "emergency_help" }
+      ]
+    },
+    {
+      "id": "emergency_help",
+      "title": "Stop — protect yourself",
+      "coach_encourage": "Calling this early can save a crash. You did the right thing.",
+      "description": "Don't drive. Arrange a tow or mobile brake tech. Describe symptoms in chat if you want triage while you wait.",
+      "visual_type": "gif",
+      "visual_asset_key": "symptom_help_gif",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": { "index": 1, "total": 7, "label": "Urgent path", "fraction": 0.14 },
+      "safety_warning": "Soft pedal or fluid loss = unsafe to drive.",
+      "trust_nudge": "If you're unsure, stop and go to a shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "tow",
+          "label": "Find shop / tow",
+          "style": "danger",
+          "action": "book_shop"
+        },
+        {
+          "id": "chat",
+          "label": "Describe symptoms",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Brake emergency: soft pedal / leak / ABS light. What I see:"
+        }
+      ]
+    },
+    {
+      "id": "safe_lift",
+      "title": "Lift one corner safely",
+      "coach_encourage": "Slow and steady — jack stands earn their keep.",
+      "description": "Crack lugs on the ground, jack at the correct point, stand the car, remove the wheel. Magnetic tray for lugs.",
+      "visual_type": "gif",
+      "visual_asset_key": "wheel_off_inspect",
+      "duration_minutes": 15,
+      "difficulty": "Medium",
+      "tools": ["Jack", "Jack stands", "Lug wrench"],
+      "progress": { "index": 2, "total": 7, "label": "Step 2 of 7 · Lift", "fraction": 0.28 },
+      "safety_warning": "Never work beside a tire with the car on a jack alone.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "wheel_off",
+          "label": "Wheel off — inspect",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "inspect_pads"
+        },
+        {
+          "id": "unsafe",
+          "label": "Can't lift safely",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        { "when_button_id": "wheel_off", "goto": "inspect_pads" }
+      ]
+    },
+    {
+      "id": "inspect_pads",
+      "title": "Read the pad & rotor",
+      "coach_encourage": "You're gathering real data — that's how pros decide.",
+      "description": "Outer and inner thickness (inners often wear faster). Uneven wear, deep grooves, blue spots? Compare to the chart.",
+      "visual_type": "gif",
+      "visual_asset_key": "pad_thickness_chart",
+      "duration_minutes": 10,
+      "difficulty": "Easy",
+      "progress": { "index": 3, "total": 7, "label": "Step 3 of 7 · Inspect", "fraction": 0.43 },
+      "safety_warning": "Metal-on-metal grinding — replace ASAP; rotors likely damaged.",
+      "trust_nudge": "If you're unsure what you're seeing, stop and go to a shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "pads_ok",
+          "label": "Pads healthy (>4mm)",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "reinstall_torque",
+          "set_flags": { "pads": "ok" }
+        },
+        {
+          "id": "pads_due",
+          "label": "Need replace / unsure",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "inspect_help",
+          "set_flags": { "pads": "due_or_unsure" }
+        }
+      ],
+      "branches": [
+        { "when_button_id": "pads_ok", "goto": "reinstall_torque", "note": "Healthy → reinstall" },
+        { "when_button_id": "pads_due", "goto": "inspect_help", "note": "Problem → detail" }
+      ],
+      "variants": [
+        {
+          "when": { "mileage_min": 80000 },
+          "description": "Also peek at hose cracks and fluid color in the reservoir (don't open unless bleeding)."
+        }
+      ]
+    },
+    {
+      "id": "inspect_help",
+      "title": "What did you find?",
+      "coach_encourage": "A photo beats guessing — I'll help you call it.",
+      "description": "2–4mm: plan soon. Under 2mm or metal: replace now. Photo the pads for coach review, or continue to DIY vs shop.",
+      "visual_type": "gif",
+      "visual_asset_key": "pad_thickness_chart",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": { "index": 3, "total": 7, "label": "Step 3 · Detail", "fraction": 0.43 },
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "replace_path",
+          "label": "Replace path — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "diy_or_shop"
+        },
+        {
+          "id": "photo_pads",
+          "label": "Photo for coach",
+          "style": "secondary",
+          "action": "take_photo"
+        }
+      ],
+      "branches": [
+        { "when_button_id": "replace_path", "goto": "diy_or_shop" }
+      ]
+    },
+    {
+      "id": "diy_or_shop",
+      "title": "DIY or brake specialist?",
+      "coach_encourage": "Choosing a shop for safety work is strength, not failure.",
+      "description": "Simple floating fronts: solid DIY (~1.5–3h/axle). EPB, seized slides, or bleeding needed → shop is smart.",
+      "visual_type": "gif",
+      "visual_asset_key": "diy_vs_shop_brakes",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": { "index": 4, "total": 7, "label": "Step 4 of 7 · Path", "fraction": 0.57 },
+      "safety_warning": "Brakes are safety-critical. Unsure of torque/EPB/bleed → book a pro.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "diy_replace",
+          "label": "DIY — guide me",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "replace_pads",
+          "set_flags": { "path": "diy" }
+        },
+        {
+          "id": "shop",
+          "label": "Find a brake shop",
+          "style": "secondary",
+          "action": "book_shop",
+          "set_flags": { "path": "shop" }
+        }
+      ],
+      "branches": [
+        { "when_button_id": "diy_replace", "goto": "replace_pads" }
+      ],
+      "variants": [
+        {
+          "when": { "model_includes": ["model y", "x5", "gle"] },
+          "description": "EPB rears may need a scan tool. No tool? Fronts DIY or shop the EPB axle.",
+          "coach_encourage": "Skipping a forced EPB retract is the pro move."
+        }
+      ]
+    },
+    {
+      "id": "replace_pads",
+      "title": "Replace pads (rotors if needed)",
+      "coach_encourage": "One caliper at a time — you've got this.",
+      "description": "Hang the caliper — don't stress the hose. Compress slowly, install hardware/pads/rotor, torque caliper bolts to spec.",
+      "visual_type": "gif",
+      "visual_asset_key": "caliper_piston_gif",
+      "duration_minutes": 45,
+      "difficulty": "Hard",
+      "tools": ["Caliper tool", "Torque wrench", "Brake cleaner"],
+      "focus_part": "brakes",
+      "progress": { "index": 5, "total": 7, "label": "Step 5 of 7 · Replace", "fraction": 0.71 },
+      "safety_warning": "Never twist the brake hose. DOT fluid strips paint — keep it off panels.",
+      "trust_nudge": "If the piston won't move or you're unsure, stop and go to a shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "pads_on",
+          "label": "Installed — next",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "reinstall_torque"
+        },
+        {
+          "id": "stuck",
+          "label": "Stuck / abort to shop",
+          "style": "danger",
+          "action": "goto",
+          "next_step_id": "replace_help"
+        }
+      ],
+      "branches": [
+        { "when_button_id": "pads_on", "goto": "reinstall_torque" },
+        { "when_button_id": "stuck", "goto": "replace_help" }
+      ]
+    },
+    {
+      "id": "replace_help",
+      "title": "Stuck piston or slides",
+      "coach_encourage": "Backing out now protects the hose and your wallet.",
+      "description": "Don't hammer the piston. Check EPB service mode. Seized slides often mean a shop caliper. Safer to book help than crack a casting.",
+      "visual_type": "gif",
+      "visual_asset_key": "caliper_piston_gif",
+      "duration_minutes": 5,
+      "difficulty": "Hard",
+      "progress": { "index": 5, "total": 7, "label": "Step 5 · Help", "fraction": 0.71 },
+      "safety_warning": "Forcing an EPB motor can destroy it.",
+      "action_buttons": [
+        {
+          "id": "retry",
+          "label": "Resolved — continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "reinstall_torque"
+        },
+        {
+          "id": "book",
+          "label": "Book a shop now",
+          "style": "danger",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        { "when_button_id": "retry", "goto": "reinstall_torque" }
+      ]
+    },
+    {
+      "id": "reinstall_torque",
+      "title": "Wheel on — torque matters",
+      "coach_encourage": "Almost done — pedal feel is the final exam.",
+      "description": "Snug on the stand, lower, star-torque to door-sticker spec. Pump the pedal until firm before you move.",
+      "visual_type": "video",
+      "visual_asset_key": "torque_lugs_video",
+      "duration_minutes": 15,
+      "difficulty": "Medium",
+      "progress": { "index": 6, "total": 7, "label": "Step 6 of 7 · Torque", "fraction": 0.86 },
+      "safety_warning": "Soft pedal after pumping — do not drive.",
+      "trust_nudge": "If the pedal stays soft and you're unsure, stop and go to a shop — that's the smart call, not quitting.",
+      "action_buttons": [
+        {
+          "id": "pedal_firm",
+          "label": "Pedal is firm",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "bed_in_log"
+        },
+        {
+          "id": "pedal_soft",
+          "label": "Pedal still soft",
+          "style": "danger",
+          "action": "open_chat",
+          "payload": "After brake work my pedal is soft. Walk me through safe checks before driving."
+        }
+      ],
+      "branches": [
+        { "when_button_id": "pedal_firm", "goto": "bed_in_log" }
+      ]
+    },
+    {
+      "id": "bed_in_log",
+      "title": "Bed-in & log",
+      "coach_encourage": "You treated a safety system with respect. Nice work.",
+      "personalize": "I'll nudge you to re-torque lugs on your {{make}} in 25–50 miles.",
+      "description": "Gentle bed-in stops from ~35–45 mph — no panic stops. Log pads/rotors + mileage.",
+      "visual_type": "gif",
+      "visual_asset_key": "bed_in_illustration",
+      "duration_minutes": 20,
+      "difficulty": "Easy",
+      "progress": { "index": 7, "total": 7, "label": "Step 7 of 7 · Finish", "fraction": 1 },
+      "safety_warning": "Extra following distance on the first drive. Pull over if smell or pedal feel changes.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "log_brakes",
+          "label": "Log brake service",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "brakes"
+        },
+        {
+          "id": "bed_in_help",
+          "label": "Show bed-in details",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Give me a clear bed-in procedure for new brake pads on my vehicle."
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Brake service wrapped",
+    "coach_encourage": "Drive gently at first — you earned that confidence.",
+    "description": "Re-torque lugs after 25–50 miles. Next inspection often with tire rotation (~5–8k).",
+    "log_category": "brakes",
+    "next_check_miles_default": 6000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "followup",
+        "label": "Still have a noise",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "I still hear a brake noise after service. Help me narrow it down."
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "Same coach shell as oil_optimized.\n• Urgency path: danger border on soft-pedal branch\n• Progress bar uses step.progress.fraction\n• Max 2 CTAs; primary = continue/checked, secondary = problem/shop\n• Focus: brakes region while active",
+    "react_native_pseudocode": "// Reuse CoachScenarioPlayer from maintenance_oil_optimized.json\n// emitFocus({ part: 'brakes', action: step.id }) on step change\n// preferShop = rules.some(r => r.prefer_shop) → banner on diy_or_shop\nfunction BrakesCoachScreen(props) {\n  return <CoachScenarioPlayer {...props} scenario={brakesOptimized} />;\n}"
+  }
+}

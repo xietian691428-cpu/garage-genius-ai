@@ -1,0 +1,528 @@
+{
+  "id": "coach_scenario_value_luxury_production",
+  "slug": "maintenance_value_luxury",
+  "title": "Genesis / Acura Value-Luxury Maintenance",
+  "subtitle": "Near-luxury comfort without dealer-only habits — intervals, electronics, and smart indie options.",
+  "category": "maintenance",
+  "focus_part": "engine",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 25,
+    "diy_max": 90,
+    "shop_min": 45,
+    "shop_max": 180
+  },
+  "cost_band_usd": {
+    "diy_min": 40,
+    "diy_max": 250,
+    "shop_min": 120,
+    "shop_max": 900
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel, step feedback Yes/No. Phase 3 value luxury: Genesis/Acura reliability + feature electronics.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Owner's manual service schedule",
+    "Know warranty status",
+    "OBD reader helpful for ADAS/camera warnings"
+  ],
+  "tools_checklist": [
+    "OBD scanner",
+    "Flashlight",
+    "Tire gauge",
+    "Gloves"
+  ],
+  "parts_checklist": [
+    "Cabin/engine filters",
+    "Correct oil viscosity",
+    "OEM or quality pads/rotors"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "genesis",
+      "when": {
+        "brand_includes": [
+          "genesis"
+        ]
+      },
+      "coach_note": "Genesis: follow severe schedule if short trips; keep software updates current for ADAS quirks.",
+      "interval_miles": 6000
+    },
+    {
+      "id": "acura",
+      "when": {
+        "brand_includes": [
+          "acura"
+        ]
+      },
+      "coach_note": "Acura/Honda roots love timely oil and VTM-4/SH-AWD fluid services when equipped — don't stretch forever on 'lifetime' myths.",
+      "interval_miles": 5000
+    },
+    {
+      "id": "adas",
+      "when": {},
+      "coach_note": "Camera/radar windshield work may need calibration — budget that after glass replacement.",
+      "prefer_shop": true
+    },
+    {
+      "id": "high_miles_vl",
+      "when": {
+        "mileage_min": 90000
+      },
+      "coach_note": "Near 100k: transmission service history and cooling system age deserve a look.",
+      "prefer_shop": true,
+      "interval_miles": 5000
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_vl",
+      "type": "gif",
+      "src": "/coach/valuelux/hero.gif",
+      "alt": "Genesis/Acura driveway maintenance",
+      "shot_description": "Clean crossover + filter kit."
+    },
+    {
+      "key": "interval",
+      "type": "gif",
+      "src": "/coach/valuelux/interval.gif",
+      "alt": "Service interval reminder",
+      "shot_description": "Calendar + oil can."
+    },
+    {
+      "key": "adas_note",
+      "type": "gif",
+      "src": "/coach/valuelux/adas.gif",
+      "alt": "ADAS camera caution",
+      "shot_description": "Windshield camera icon + calibrate."
+    },
+    {
+      "key": "filters",
+      "type": "video",
+      "src": "/coach/valuelux/filters.mp4",
+      "alt": "Cabin and engine filter DIY",
+      "shot_description": "20s glovebox cabin filter.",
+      "poster": "/coach/valuelux/filters_poster.webp"
+    },
+    {
+      "key": "indie_vl",
+      "type": "gif",
+      "src": "/coach/valuelux/indie.gif",
+      "alt": "Indie vs dealer value",
+      "shot_description": "Split cost tags."
+    },
+    {
+      "key": "celebrate_vl",
+      "type": "gif",
+      "src": "/coach/valuelux/celebrate.gif",
+      "alt": "Value-lux plan logged",
+      "shot_description": "Checklist green."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Premium feel, practical plan",
+      "coach_encourage": "Value-luxury ownership is a skill — you've got this. You're just getting started — I'll stay with you.",
+      "personalize": "Coaching your {{year}} {{make}} {{model}} at {{mileage}} miles. Next service ~{{next_service}} miles.",
+      "description": "We'll align intervals, easy DIY filters, ADAS cautions, and when dealer vs indie makes sense.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_vl",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Step 1 of 7 · Start · 14%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start guide",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "intervals"
+        },
+        {
+          "id": "other",
+          "label": "Different brand",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Route me to the right maintenance coach for my brand."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "intervals"
+        }
+      ],
+      "variants": [
+        {
+          "when": {
+            "brand_includes": [
+              "genesis"
+            ]
+          },
+          "description": "Genesis tip: keep warranty services documented; after warranty, indie Hyundai/Genesis-capable shops can save real money."
+        },
+        {
+          "when": {
+            "brand_includes": [
+              "acura"
+            ]
+          },
+          "description": "Acura tip: Maintenance Minder is helpful — still verify severe-service if your commute is short trips."
+        }
+      ]
+    },
+    {
+      "id": "intervals",
+      "title": "Intervals that protect resale",
+      "coach_encourage": "Boring consistency beats heroic catch-up repairs. Nice momentum — you're about 29% through.",
+      "personalize": "At {{mileage}} miles, lock an interval for your {{make}}. Next window ~{{next_service}} miles.",
+      "description": "Follow the severe schedule if city/short-trip heavy. Oil + cabin filter cadence keeps the cabin smelling like a new car longer.",
+      "visual_type": "gif",
+      "visual_asset_key": "interval",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "fraction": 0.286,
+        "percent": 29,
+        "label": "Step 2 of 7 · Intervals · 29%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "set",
+          "label": "Interval set",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "filters"
+        },
+        {
+          "id": "help",
+          "label": "Help me choose interval",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Help choose oil/filter intervals for my Genesis/Acura use case."
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "set",
+          "goto": "filters"
+        }
+      ]
+    },
+    {
+      "id": "filters",
+      "title": "Cabin & engine filters (DIY win)",
+      "coach_encourage": "This step is important — biggest comfort-per-dollar DIY. You're crushing it — roughly 43% done.",
+      "personalize": "Filter swap for your {{model}} at {{mileage}} miles. Recheck by ~{{next_service}} miles.",
+      "description": "Cabin filter is often glovebox-accessible. Engine air filter is usually a clip box. Note airflow arrows and don't force brittle clips.",
+      "visual_type": "video",
+      "visual_asset_key": "filters",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "fraction": 0.429,
+        "percent": 43,
+        "label": "Step 3 of 7 · Filters · 43%"
+      },
+      "tools": [
+        "Gloves",
+        "Trim tools"
+      ],
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "done",
+          "label": "Filters done / noted",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "adas"
+        },
+        {
+          "id": "parts",
+          "label": "Find filters",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "cabin_filter"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "done",
+          "goto": "adas"
+        }
+      ]
+    },
+    {
+      "id": "adas",
+      "title": "Cameras, radar & windshield work",
+      "coach_encourage": "ADAS calibration is not optional after glass work. Look at you — about 57% complete. Keep going.",
+      "personalize": "Driver-assist note for your {{make}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "If lane-keep/ACC acts weird after windshield replacement or a bumper hit, you need calibration — not a DIY camera wipe as the fix.",
+      "visual_type": "gif",
+      "visual_asset_key": "adas_note",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "fraction": 0.571,
+        "percent": 57,
+        "label": "Step 4 of 7 · ADAS · 57%"
+      },
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "ADAS / camera calibration risk",
+        "body": "Misaligned cameras or radar can cause unexpected braking or lane interventions. Do not attempt DIY aiming. After glass or collision work, find a nearby shop with proper calibration targets.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "adas_ok",
+          "label": "No ADAS issues — next",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "fluids"
+        },
+        {
+          "id": "calibrate",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "adas_ok",
+          "goto": "fluids"
+        }
+      ]
+    },
+    {
+      "id": "fluids",
+      "title": "Fluids beyond oil",
+      "coach_encourage": "Quietly checking coolant and brake fluid prevents drama. Look at you — about 71% complete. Keep going.",
+      "personalize": "Fluid glance for your {{year}} {{model}} at {{mileage}} miles. Next full look ~{{next_service}} miles.",
+      "description": "Cold coolant level, brake fluid color (don't open if unsure), and washer fluid. Transmission services follow the manual — 'lifetime' often isn't lifetime in severe use.",
+      "visual_type": "gif",
+      "visual_asset_key": "interval",
+      "focus_part": "engine",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "fraction": 0.714,
+        "percent": 71,
+        "label": "Step 5 of 7 · Fluids · 71%"
+      },
+      "safety_warning": "Never open a hot cooling system.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Cooling / brake fluid inspection risk",
+        "body": "Hot coolant causes severe burns. Brake fluid contaminates paint and absorbs moisture — when condition is unclear, find a nearby shop rather than guessing a flush.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "action_buttons": [
+        {
+          "id": "fluids_ok",
+          "label": "Fluids look OK",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "shop_path"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "fluids_ok",
+          "goto": "shop_path"
+        }
+      ]
+    },
+    {
+      "id": "shop_path",
+      "title": "Dealer vs capable indie",
+      "coach_encourage": "Warranty stays at dealer; skill can live at an indie. Final stretch — you're about 86% through.",
+      "personalize": "Shop strategy for your {{make}} at {{mileage}} miles through ~{{next_service}} miles.",
+      "description": "In warranty: dealer for covered items. Out of warranty: Honda/Acura or Hyundai/Genesis-capable indies for oil, brakes, and diagnostics often win on price.",
+      "visual_type": "gif",
+      "visual_asset_key": "indie_vl",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "fraction": 0.857,
+        "percent": 86,
+        "label": "Step 6 of 7 · Shop · 86%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "finish",
+          "label": "Finish & log",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_vl"
+        },
+        {
+          "id": "find",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "finish",
+          "goto": "log_vl"
+        }
+      ]
+    },
+    {
+      "id": "log_vl",
+      "title": "Log the plan",
+      "coach_encourage": "Consistent care is how these cars stay 'quiet luxury.' Well done! You made it through the flow — time to celebrate.",
+      "personalize": "Logged for {{make}} {{model}} at {{mileage}} miles. Next nudge ~{{next_service}} miles.",
+      "description": "Save interval choice, filter dates, and any ADAS notes in the health file.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_vl",
+      "duration_minutes": 3,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 7,
+        "total": 7,
+        "fraction": 1,
+        "percent": 100,
+        "label": "Step 7 of 7 · Finish · 100%"
+      },
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log value-luxury plan",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "luxury"
+        },
+        {
+          "id": "parts",
+          "label": "Browse filters",
+          "style": "secondary",
+          "action": "open_parts",
+          "payload": "cabin_filter"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Value-luxury plan ready",
+    "coach_encourage": "You kept premium feel without premium waste. Well done! You made it through the flow — time to celebrate.",
+    "description": "Stay on oil/filter cadence, respect ADAS calibrations, and use indie shops for out-of-warranty maintenance when they know the platform.",
+    "log_category": "luxury",
+    "next_check_miles_default": 6000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to guides",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Ask a follow-up",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Genesis/Acura maintenance follow-up for my mileage and features:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390×844 EN value-luxury coach.\n• ADAS calibration risk\n• Filter DIY visual\n• Step feedback on",
+    "react_native_pseudocode": "CoachScenarioPlayer — load maintenance_value_luxury_production.json"
+  }
+}

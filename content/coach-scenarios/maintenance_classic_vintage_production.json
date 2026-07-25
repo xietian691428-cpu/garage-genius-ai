@@ -1,0 +1,509 @@
+{
+  "id": "coach_scenario_classic_vintage_production",
+  "slug": "maintenance_classic_vintage",
+  "title": "Classic & Vintage Car Care",
+  "subtitle": "Battery storage, ethanol-aware fuel, aged brakes/rubber, and honest rust calls — keep the heirloom safe to drive.",
+  "category": "maintenance",
+  "focus_part": "engine",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 40,
+    "diy_max": 150,
+    "shop_min": 120,
+    "shop_max": 800
+  },
+  "cost_band_usd": {
+    "diy_min": 20,
+    "diy_max": 300,
+    "shop_min": 200,
+    "shop_max": 5000
+  },
+  "tone": "Production EN coach (US/EU): warm mentor, visual-first, max 2 CTAs, progress %, mileage personalization, legal disclaimer every step, high-risk modal with Find a nearby shop cancel, step feedback Yes/No. Phase 3 classic: brakes/rust critical; asbestos caution.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "gif",
+      "video",
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Know storage vs daily use",
+    "Tire date-code readable",
+    "Safe level parking"
+  ],
+  "tools_checklist": [
+    "Battery maintainer",
+    "Flashlight",
+    "Tire gauge",
+    "Notebook for provenance"
+  ],
+  "parts_checklist": [
+    "Fuel stabilizer if storing",
+    "Correct brake fluid type",
+    "Shop: lines, hoses, structural rust"
+  ],
+  "adaptive_rules": [
+    {
+      "id": "carb",
+      "when": {},
+      "coach_note": "Carbureted classics hate long sits on ethanol fuel — stabilize or drain per your mechanic's advice.",
+      "prefer_shop": false
+    },
+    {
+      "id": "eu_classic",
+      "when": {
+        "markets": [
+          "EU",
+          "GB"
+        ]
+      },
+      "coach_note": "Classic MOT/roadworthiness rules vary — brakes and corrosion standards may be stricter than casual driveway checks.",
+      "prefer_shop": true
+    },
+    {
+      "id": "high_miles_classic",
+      "when": {
+        "mileage_min": 80000
+      },
+      "coach_note": "Higher-mile classics: prioritize cooling system hoses and brake hydraulics before long tours.",
+      "prefer_shop": true
+    }
+  ],
+  "visual_assets": [
+    {
+      "key": "hero_classic",
+      "type": "gif",
+      "src": "/coach/classic/hero.gif",
+      "alt": "Classic car in garage",
+      "shot_description": "Warm garage hero."
+    },
+    {
+      "key": "battery_classic",
+      "type": "gif",
+      "src": "/coach/classic/battery.gif",
+      "alt": "Battery maintainer hooked up",
+      "shot_description": "Maintainer clip-on."
+    },
+    {
+      "key": "fluids_classic",
+      "type": "gif",
+      "src": "/coach/classic/fluids.gif",
+      "alt": "Oil and fuel care",
+      "shot_description": "Dipstick + fuel can."
+    },
+    {
+      "key": "brakes_classic",
+      "type": "video",
+      "src": "/coach/classic/brakes.mp4",
+      "poster": "/coach/classic/brakes_poster.webp",
+      "alt": "Brake hose and pedal check",
+      "shot_description": "25s hose crack demo."
+    },
+    {
+      "key": "tires_classic",
+      "type": "gif",
+      "src": "/coach/classic/tires.gif",
+      "alt": "DOT date code check",
+      "shot_description": "Sidewall date code."
+    },
+    {
+      "key": "rust_classic",
+      "type": "annotated",
+      "src": "/coach/classic/rust.webp",
+      "alt": "Structural rust callouts",
+      "shot_description": "Rocker/frame highlights."
+    },
+    {
+      "key": "celebrate_classic",
+      "type": "gif",
+      "src": "/coach/classic/celebrate.gif",
+      "alt": "Classic care logged",
+      "shot_description": "Garage checkmark."
+    }
+  ],
+  "steps": [
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "welcome",
+      "title": "Classic & vintage care",
+      "coach_encourage": "Old cars reward patience and punish rushed DIY. You're just getting started — I'll stay with you.",
+      "personalize": "Classic coach for your {{year}} {{make}} {{model}} at {{mileage}} miles. Next care pass ~{{next_service}} miles.",
+      "description": "Storage battery, ethanol-aware fuel, aged rubber brakes, and rust — with shop lines for safety systems.",
+      "visual_type": "gif",
+      "visual_asset_key": "hero_classic",
+      "focus_part": "engine",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "fraction": 0.143,
+        "percent": 14,
+        "label": "Step 1 of 7 · Start · 14%"
+      },
+      "action_buttons": [
+        {
+          "id": "start",
+          "label": "Start classic care",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "storage_battery"
+        },
+        {
+          "id": "daily",
+          "label": "I daily-drive it",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "I daily-drive a classic — what intervals should I use?"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "start",
+          "goto": "storage_battery"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "storage_battery",
+      "title": "Battery & storage habits",
+      "coach_encourage": "A dead battery strands classics more than exotic failures. Nice momentum — you're about 29% through.",
+      "personalize": "Electrical health for your {{year}} {{make}} at {{mileage}} miles.",
+      "description": "Use a maintainer if it sits. Clean terminals. Modern AGM vs flooded — match the charger. Parasitic drains on modified radios are common.",
+      "visual_type": "gif",
+      "visual_asset_key": "battery_classic",
+      "focus_part": "battery",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "fraction": 0.286,
+        "percent": 29,
+        "label": "Step 2 of 7 · Battery · 29%"
+      },
+      "tools": [
+        "Maintainer",
+        "Terminal brush"
+      ],
+      "action_buttons": [
+        {
+          "id": "batt_ok",
+          "label": "Battery plan set",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "fluids_fuel"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "batt_ok",
+          "goto": "fluids_fuel"
+        }
+      ]
+    },
+    {
+      "safety_warning": "Fuel leaks on hot manifolds are a fire risk — stop and get help.",
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "fluids_fuel",
+      "title": "Fluids & ethanol-aware fuel",
+      "coach_encourage": "Stale fuel and wrong oil end weekend plans. You're crushing it — roughly 43% done.",
+      "personalize": "Fluid/fuel care for {{model}} at {{mileage}} miles before {{next_service}} miles.",
+      "description": "Fresh oil to the viscosity your builder/manual supports. Stabilize fuel if stored. Ethanol can attack old rubber — watch for leaks after fill-ups.",
+      "visual_type": "gif",
+      "visual_asset_key": "fluids_classic",
+      "focus_part": "engine",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "fraction": 0.429,
+        "percent": 43,
+        "label": "Step 3 of 7 · Fluids · 43%"
+      },
+      "action_buttons": [
+        {
+          "id": "fluids_ok",
+          "label": "Fluids & fuel OK",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "brakes_classic"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "fluids_ok",
+          "goto": "brakes_classic"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": "If you're unsure about anything, stop and find a nearby shop — that's the smart call, not quitting.",
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Brake failure / contamination risk",
+        "body": "Aged hoses, seized calipers, or incorrect fluid can cause brake loss. Some older friction materials may contain asbestos — do not blow dust; use proper shop methods. When unsure, find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "difficulty": "Medium",
+      "duration_minutes": 3,
+      "id": "brakes_classic",
+      "title": "Aged brakes — inspect, don't gamble",
+      "coach_encourage": "Rubber fails quietly until it doesn't. Look at you — about 57% complete.",
+      "personalize": "Brake safety for your {{year}} {{make}} at {{mileage}} miles.",
+      "description": "Check pedal firmness, fluid condition (dark = service), hoses for cracks, and parking brake. Many classics need a full hydraulic refresh — that's shop territory if you're unsure.",
+      "visual_type": "video",
+      "visual_asset_key": "brakes_classic",
+      "focus_part": "brakes",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "fraction": 0.571,
+        "percent": 57,
+        "label": "Step 4 of 7 · Brakes · 57%"
+      },
+      "action_buttons": [
+        {
+          "id": "brakes_ok",
+          "label": "Brakes feel safe",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "tires_rubber"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "brakes_ok",
+          "goto": "tires_rubber"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "tires_rubber",
+      "title": "Tires & aged rubber",
+      "coach_encourage": "Date codes matter more than tread sometimes. You're more than halfway — keep that steady pace.",
+      "personalize": "Rubber age check on {{model}} at {{mileage}} miles.",
+      "description": "Read DOT date codes — replace old tires even with tread left. Inspect belts, radiator hoses, and fuel lines for cracks.",
+      "visual_type": "gif",
+      "visual_asset_key": "tires_classic",
+      "focus_part": "tires",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "fraction": 0.714,
+        "percent": 71,
+        "label": "Step 5 of 7 · Rubber · 71%"
+      },
+      "action_buttons": [
+        {
+          "id": "rubber_ok",
+          "label": "Rubber looks OK",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "rust_classic"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "rubber_ok",
+          "goto": "rust_classic"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true,
+      "risk_confirm": {
+        "required": true,
+        "title": "Structural rust hazard",
+        "body": "Driving a vehicle with compromised floors or frame can fail in a crash or collapse on a lift. Structural repairs belong to qualified shops. When unsure, find a nearby shop.",
+        "checkbox_label": "I have read and understand the risks",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "critical",
+        "disclaimer": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work."
+      },
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "rust_classic",
+      "title": "Rust, frame & floors",
+      "coach_encourage": "Surface rust vs structural rust — know the difference. Almost there — about 86% through.",
+      "personalize": "Corrosion walk-around for {{year}} {{make}} {{model}}.",
+      "description": "Check rockers, floors, frame rails, and mount points. Soft floors or perforated rails need a body/frame pro — not bondo over holes.",
+      "visual_type": "annotated",
+      "visual_asset_key": "rust_classic",
+      "focus_part": "suspension",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "fraction": 0.857,
+        "percent": 86,
+        "label": "Step 6 of 7 · Rust · 86%"
+      },
+      "action_buttons": [
+        {
+          "id": "surface_only",
+          "label": "Only surface / none",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "log_classic"
+        },
+        {
+          "id": "shop",
+          "label": "Find a nearby shop",
+          "style": "secondary",
+          "action": "book_shop"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "surface_only",
+          "goto": "log_classic"
+        }
+      ]
+    },
+    {
+      "safety_warning": null,
+      "trust_nudge": null,
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false,
+      "risk_confirm": null,
+      "difficulty": "Easy",
+      "duration_minutes": 3,
+      "id": "log_classic",
+      "title": "Log classic care",
+      "coach_encourage": "Heritage protected with a plan — nice work! You made it through the flow — time to celebrate.",
+      "personalize": "Logged for {{make}} {{model}} at {{mileage}} miles. Next classic care before {{next_service}} miles.",
+      "description": "Note storage months, fuel stabilizer, and any brake/fuel line work. Keep receipts for provenance.",
+      "visual_type": "gif",
+      "visual_asset_key": "celebrate_classic",
+      "progress": {
+        "index": 7,
+        "total": 7,
+        "fraction": 1.0,
+        "percent": 100,
+        "label": "Step 7 of 7 · Finish · 100%"
+      },
+      "action_buttons": [
+        {
+          "id": "log",
+          "label": "Log classic care",
+          "style": "primary",
+          "action": "log_maintenance",
+          "payload": "classic"
+        },
+        {
+          "id": "chat",
+          "label": "Ask about my classic",
+          "style": "secondary",
+          "action": "open_chat",
+          "payload": "Classic / vintage maintenance question:"
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Classic care plan set",
+    "coach_encourage": "You treated an heirloom like an heirloom. Shine on — well done! You made it through the flow — time to celebrate.",
+    "description": "Maintain the battery in storage, refresh aged rubber, and never ignore soft floors or a spongy pedal.",
+    "log_category": "classic",
+    "next_check_miles_default": 2500,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to guides",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Classic question",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Classic / vintage car question:"
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION EN classic coach.\n• Date-code tires\n• Brake/rust critical\n• Feedback on",
+    "react_native_pseudocode": "CoachScenarioPlayer — maintenance_classic_vintage_production.json"
+  }
+}
