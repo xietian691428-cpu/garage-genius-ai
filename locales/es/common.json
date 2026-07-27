@@ -48,5 +48,16 @@
   "settings": {
     "languageTitle": "Idioma",
     "languageHint": "Idioma de la interfaz para Coach Guides y cuenta. Los pasos de las guías permanecen en su idioma de autoría por ahora."
+  },
+  "dtc": {
+    "enterCode": "Introducir código de fallo",
+    "obdScreenshot": "Captura OBD",
+    "readingObd": "Leyendo códigos…",
+    "enterTitle": "Introducir código OBD",
+    "enterHint": "Escribe el código del escáner (p. ej. P0420, C0035, U0100).",
+    "placeholder": "P0420",
+    "formatHelp": "Formato: P/C/B/U + 4 dígitos (hex válido).",
+    "invalidCode": "Usa un código válido como P0420 o U0100.",
+    "submit": "Diagnosticar código"
   }
 }

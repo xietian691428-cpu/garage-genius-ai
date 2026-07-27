@@ -23,6 +23,13 @@ import {
 } from "@/lib/coach-scenarios/catalog";
 import { toCoachVehicleContext } from "@/lib/coach-scenarios/vehicle-context";
 import CoachScenarioPlayer from "@/components/coach/CoachScenarioPlayer";
+import DtcEntryBar from "@/components/chat/DtcEntryBar";
+import {
+  buildDtcDiagnosisPrompt,
+  extractDtcCodes,
+  lookupDtc,
+} from "@/lib/dtc";
+import type { ObdVisionAnalysis } from "@/lib/types/dtc";
 import { useSubscription } from "@/hooks/useSubscription";
 import UpgradeButton from "@/components/ui/UpgradeButton";
 import UpgradeModal, {
@@ -40,7 +47,10 @@ import type { PlaybookQuota } from "@/lib/playbook-limits";
 
 type Props = {
   currentVehicle: VehicleInfo | null;
-  onAskAI: (prompt: string, options?: { playbookSlug?: string }) => void;
+  onAskAI: (
+    prompt: string,
+    options?: { playbookSlug?: string; images?: string[] },
+  ) => void;
   onGoToParts?: () => void;
 };
 
@@ -180,35 +190,133 @@ export default function CoachLibrary({
     }
   };
 
-  if (scenario && activeSlug) {
-    return (
-      <CoachScenarioPlayer
-        scenario={scenario}
-        vehicle={vehicleCtx}
-        onClose={() => setActiveSlug(null)}
-        onOpenChat={(prompt) =>
-          onAskAI(prompt, { playbookSlug: activeSlug || undefined })
-        }
-        onOpenParts={() => onGoToParts?.()}
-        onOpenShop={() =>
-          onAskAI(
-            "Help me find a nearby trusted shop for this job on my vehicle. What should I ask them to check?",
-            { playbookSlug: activeSlug || undefined },
-          )
-        }
-        onLogMaintenance={(category) =>
-          onAskAI(
-            `Please help me log a ${category} service entry for my vehicle health file at ${currentVehicle?.mileage ?? "current"} miles.`,
-            { playbookSlug: activeSlug || undefined },
-          )
-        }
-      />
-    );
-  }
-
   const vehicleLabel = currentVehicle
     ? `${currentVehicle.year} ${currentVehicle.make} ${currentVehicle.model}`
     : null;
+
+  const runDtcToChat = (code: string) => {
+    const parsed = lookupDtc(code);
+    onAskAI(
+      buildDtcDiagnosisPrompt({
+        codes: [parsed],
+        source: "manual",
+        vehicleLabel: vehicleLabel || undefined,
+      }),
+      { playbookSlug: activeSlug || "diagnosis_check_engine" },
+    );
+  };
+
+  const runObdScreenshotToChat = async (imageDataUrl: string) => {
+    if (!currentVehicle) {
+      alert("Select a vehicle first to analyze an OBD screenshot.");
+      return;
+    }
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      alert("Sign in to analyze an OBD screenshot.");
+      return;
+    }
+    try {
+      const res = await fetch("/api/vision/analyze-obd", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          image: imageDataUrl,
+          vehicle: {
+            year: currentVehicle.year,
+            make: currentVehicle.make,
+            model: currentVehicle.model,
+            market: currentVehicle.market,
+            engine: currentVehicle.engine,
+          },
+        }),
+      });
+      const json = (await res.json()) as {
+        data?: ObdVisionAnalysis;
+        codes?: ObdVisionAnalysis["codes"];
+        error?: string;
+      };
+      if (!res.ok) {
+        alert(json.error || "Could not read the OBD screenshot.");
+        return;
+      }
+      const codesRaw = json.data?.codes ?? json.codes ?? [];
+      const byCode = new Map<string, ReturnType<typeof lookupDtc>>();
+      for (const c of codesRaw) byCode.set(c.code, lookupDtc(c.code));
+      for (const c of extractDtcCodes(
+        [json.data?.notes, json.data?.raw_text_glimpse].filter(Boolean).join(" "),
+      )) {
+        byCode.set(c, lookupDtc(c));
+      }
+      const merged = [...byCode.values()];
+      if (merged.length) {
+        onAskAI(
+          buildDtcDiagnosisPrompt({
+            codes: merged,
+            source: "obd_screenshot",
+            vehicleLabel: vehicleLabel || undefined,
+          }),
+          {
+            playbookSlug: "diagnosis_check_engine",
+            images: [imageDataUrl],
+          },
+        );
+      } else {
+        onAskAI(
+          "I uploaded an OBD / warning-light photo from the Check Engine guide but no code was readable. Help me capture the code screen or diagnose from what you can see.",
+          {
+            playbookSlug: "diagnosis_check_engine",
+            images: [imageDataUrl],
+          },
+        );
+      }
+    } catch {
+      alert("Could not analyze the OBD screenshot. Try again.");
+    }
+  };
+
+  if (scenario && activeSlug) {
+    const showDtcEntry = activeSlug === "diagnosis_check_engine";
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        {showDtcEntry ? (
+          <DtcEntryBar
+            variant="coach"
+            onCodeSubmit={runDtcToChat}
+            onObdImage={(img) => void runObdScreenshotToChat(img)}
+          />
+        ) : null}
+        <div className="min-h-0 flex-1">
+          <CoachScenarioPlayer
+            scenario={scenario}
+            vehicle={vehicleCtx}
+            onClose={() => setActiveSlug(null)}
+            onOpenChat={(prompt) =>
+              onAskAI(prompt, { playbookSlug: activeSlug || undefined })
+            }
+            onOpenParts={() => onGoToParts?.()}
+            onOpenShop={() =>
+              onAskAI(
+                "Help me find a nearby trusted shop for this job on my vehicle. What should I ask them to check?",
+                { playbookSlug: activeSlug || undefined },
+              )
+            }
+            onLogMaintenance={(category) =>
+              onAskAI(
+                `Please help me log a ${category} service entry for my vehicle health file at ${currentVehicle?.mileage ?? "current"} miles.`,
+                { playbookSlug: activeSlug || undefined },
+              )
+            }
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-[#0a0f1c]">

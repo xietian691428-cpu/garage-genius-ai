@@ -18,6 +18,8 @@
  * ✅ Use `getObdConnector()` singleton from Dashboard (not `new OBDConnector()`).
  */
 
+import { lookupDtc } from "@/lib/dtc";
+
 export type ObdDtc = {
   code: string;
   desc: string;
@@ -156,16 +158,6 @@ const SERVICE_CANDIDATES: Array<{ service: string; write: string; notify?: strin
   },
 ];
 
-const DTC_HINTS: Record<string, { desc: string; severity: ObdDtc["severity"] }> =
-  {
-    P0171: { desc: "System Too Lean (Bank 1)", severity: "Moderate" },
-    P0174: { desc: "System Too Lean (Bank 2)", severity: "Moderate" },
-    P0300: { desc: "Random/Multiple Cylinder Misfire", severity: "High" },
-    P0420: { desc: "Catalyst System Efficiency Below Threshold", severity: "Moderate" },
-    P0455: { desc: "EVAP System Large Leak", severity: "Low" },
-    C0121: { desc: "ABS Module Communication / Speed Sensor", severity: "Info" },
-  };
-
 function getBluetooth(): { requestDevice: BluetoothRequestDeviceFn } | null {
   if (typeof navigator === "undefined") return null;
   const nav = navigator as Navigator & {
@@ -210,11 +202,11 @@ export function parseDtcResponse(raw: string): ObdDtc[] {
   }
 
   return [...found].map((code) => {
-    const hint = DTC_HINTS[code];
+    const hit = lookupDtc(code);
     return {
-      code,
-      desc: hint?.desc ?? "Stored diagnostic trouble code",
-      severity: hint?.severity ?? "Moderate",
+      code: hit.code,
+      desc: hit.desc,
+      severity: hit.severity,
     };
   });
 }

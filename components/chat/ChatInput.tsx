@@ -24,11 +24,16 @@ import UpgradeModal, {
 } from "@/components/ui/UpgradeModal";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
 import CameraCapture from "@/components/chat/CameraCapture";
+import DtcEntryBar from "@/components/chat/DtcEntryBar";
 import { compressImageDataUrl } from "@/lib/image";
 import { MAX_PHOTO_DIAGNOSE_IMAGES } from "@/lib/types/subscription";
 
 interface Props {
   onSend: (content: string, images?: string[]) => void;
+  /** Manual P/C/B/U fault code entry */
+  onFaultCode?: (code: string) => void;
+  /** OBD scanner screenshot → vision extract → diagnosis */
+  onObdScreenshot?: (imageDataUrl: string) => void | Promise<void>;
   /** Composer disabled (no vehicle / not ready) */
   isLoading: boolean;
   /** True only while a reply is generating (shows Stop) */
@@ -79,6 +84,8 @@ function getSpeechRecognitionCtor():
 
 export default function ChatInput({
   onSend,
+  onFaultCode,
+  onObdScreenshot,
   isLoading,
   isGenerating = false,
   autoSpeak,
@@ -390,6 +397,18 @@ export default function ChatInput({
         className="hidden"
         onChange={handleImageUpload}
       />
+
+      {onFaultCode && onObdScreenshot ? (
+        <DtcEntryBar
+          variant="chat"
+          disabled={busy}
+          onCodeSubmit={onFaultCode}
+          onObdImage={async (img) => {
+            if (!ensurePhotoQuota()) return;
+            await onObdScreenshot(img);
+          }}
+        />
+      ) : null}
 
       {/* Garage primary CTA — large camera */}
       <button

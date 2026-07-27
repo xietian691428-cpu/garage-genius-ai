@@ -48,5 +48,16 @@
   "settings": {
     "languageTitle": "Language",
     "languageHint": "UI language for Coach Guides chrome and account screens. Playbook steps stay in their authored locale for now."
+  },
+  "dtc": {
+    "enterCode": "Enter fault code",
+    "obdScreenshot": "OBD screenshot",
+    "readingObd": "Reading codes…",
+    "enterTitle": "Enter OBD fault code",
+    "enterHint": "Type a code from your scanner (e.g. P0420, C0035, U0100).",
+    "placeholder": "P0420",
+    "formatHelp": "Format: P/C/B/U + 4 digits (hex OK).",
+    "invalidCode": "Use a valid code like P0420 or U0100.",
+    "submit": "Diagnose code"
   }
 }

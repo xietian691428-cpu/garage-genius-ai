@@ -203,6 +203,7 @@ function GarageAppInner() {
                   onAskAI={(prompt, opts) =>
                     handleAskAI(prompt, {
                       playbookSlug: opts?.playbookSlug,
+                      images: opts?.images,
                     })
                   }
                   onGoToParts={() => setAppTab("parts")}

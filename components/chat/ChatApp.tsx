@@ -32,6 +32,13 @@ import {
   formatMaintenanceHistoryForPrompt,
   trimMessagesForApi,
 } from "@/lib/chat-repair-loop";
+import {
+  buildDtcDiagnosisPrompt,
+  extractDtcCodes,
+  lookupDtc,
+  lookupDtcsFromText,
+} from "@/lib/dtc";
+import type { ObdVisionAnalysis } from "@/lib/types/dtc";
 
 interface Props {
   seedPrompt?: string;
@@ -430,6 +437,27 @@ export default function ChatApp({
     }
   };
 
+  const vehicleLabel = currentVehicle
+    ? `${currentVehicle.year} ${currentVehicle.make} ${currentVehicle.model}`
+    : undefined;
+
+  /** Expand a short message that is mostly just DTC codes into a diagnosis prompt. */
+  const expandDtcIfNeeded = (content: string): string => {
+    if (content.includes("Please diagnose with this structure")) return content;
+    const hit = lookupDtcsFromText(content);
+    if (!hit.codes.length) return content;
+    const stripped = content
+      .replace(/\b([PCBU])([0-9A-Fa-f]{4})\b/g, "")
+      .replace(/[,;\s]+/g, " ")
+      .trim();
+    if (stripped.length > 48) return content;
+    return buildDtcDiagnosisPrompt({
+      codes: hit.codes,
+      source: "chat_text",
+      vehicleLabel,
+    });
+  };
+
   const handleSend = async (content: string, images?: string[]) => {
     if (!currentVehicle) {
       alert("Add a vehicle to your garage before chatting.");
@@ -437,10 +465,11 @@ export default function ChatApp({
     }
 
     const photoList = (images ?? []).filter(Boolean).slice(0, 4);
+    const finalContent = expandDtcIfNeeded(content.trim());
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
-      content,
+      content: finalContent,
       image: photoList[0],
       images: photoList.length ? photoList : undefined,
       timestamp: new Date(),
@@ -449,6 +478,90 @@ export default function ChatApp({
     const nextMessages = [...messagesRef.current, userMessage];
     setMessages(nextMessages);
     await runChatRequest(nextMessages, photoList);
+  };
+
+  const handleFaultCode = (code: string) => {
+    const parsed = lookupDtc(code);
+    void handleSend(
+      buildDtcDiagnosisPrompt({
+        codes: [parsed],
+        source: "manual",
+        vehicleLabel,
+      }),
+    );
+  };
+
+  const handleObdScreenshot = async (imageDataUrl: string) => {
+    if (!currentVehicle) {
+      alert("Add a vehicle to your garage before chatting.");
+      return;
+    }
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      alert("Sign in to analyze an OBD screenshot.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/vision/analyze-obd", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          image: imageDataUrl,
+          vehicle: {
+            year: currentVehicle.year,
+            make: currentVehicle.make,
+            model: currentVehicle.model,
+            market: currentVehicle.market,
+            engine: currentVehicle.engine,
+          },
+        }),
+      });
+      const json = (await res.json()) as {
+        success?: boolean;
+        data?: ObdVisionAnalysis;
+        codes?: ObdVisionAnalysis["codes"];
+        error?: string;
+      };
+      if (!res.ok) {
+        alert(json.error || "Could not read the OBD screenshot.");
+        return;
+      }
+      const codesRaw = json.data?.codes ?? json.codes ?? [];
+      const codes = codesRaw.map((c) => lookupDtc(c.code));
+      // Also scrape model notes for codes
+      const extra = extractDtcCodes(
+        [json.data?.notes, json.data?.raw_text_glimpse].filter(Boolean).join(" "),
+      ).map(lookupDtc);
+      const byCode = new Map<string, ReturnType<typeof lookupDtc>>();
+      for (const c of [...codes, ...extra]) byCode.set(c.code, c);
+      const merged = [...byCode.values()];
+
+      if (merged.length) {
+        await handleSend(
+          buildDtcDiagnosisPrompt({
+            codes: merged,
+            source: "obd_screenshot",
+            vehicleLabel,
+          }),
+          [imageDataUrl],
+        );
+      } else {
+        await handleSend(
+          "I uploaded an OBD scanner / warning-light photo but no fault code was readable. Please analyze the image, ask one clarifying question if needed, and suggest safe DIY next steps (or how to re-capture the code screen).",
+          [imageDataUrl],
+        );
+      }
+    } catch (err) {
+      console.error("[ChatApp] OBD screenshot", err);
+      alert("Could not analyze the OBD screenshot. Try again.");
+    }
   };
 
   const handleRegenerate = async () => {
@@ -539,6 +652,8 @@ export default function ChatApp({
         />
         <ChatInput
           onSend={(c, imgs) => void handleSend(c, imgs)}
+          onFaultCode={handleFaultCode}
+          onObdScreenshot={(img) => void handleObdScreenshot(img)}
           isLoading={vehiclesLoading || !ready || !currentVehicle}
           isGenerating={isLoading}
           autoSpeak={autoSpeak}

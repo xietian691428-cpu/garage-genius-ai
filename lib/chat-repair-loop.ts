@@ -6,6 +6,7 @@
 import type { ChatMessage, VehicleInfo } from "@/lib/types/chat";
 import type { MaintenanceRecord } from "@/lib/types/maintenance";
 import { listRecommendedCoachPlaybooks } from "@/lib/coach-scenarios/catalog";
+import { getDtcFollowUpChips, textHasDtcSignal } from "@/lib/dtc";
 
 /** Max messages sent to the model (keeps recent turns; welcome stripped). */
 export const CHAT_API_MESSAGE_WINDOW = 24;
@@ -47,6 +48,12 @@ export const CHAT_STARTER_CHIPS: StarterChip[] = [
     label: "Photo first",
     prompt:
       "I'll attach a photo of the problem area. Please analyze it, suggest Focus Mode if clear, list top 3 hypotheses, and tell me what to check next.",
+  },
+  {
+    id: "fault-code",
+    label: "Enter fault code",
+    prompt:
+      "I have an OBD fault code (P/C/B/U). Ask me for the exact code in one question, then confirm it, give top 3 likely causes for THIS vehicle with DIY checks, and suggest the Check Engine coach guide if relevant.",
   },
 ];
 
@@ -185,6 +192,13 @@ export function getFollowUpChips(options?: {
 }): StarterChip[] {
   const focus = (options?.focusPart || "").toLowerCase();
   const text = (options?.assistantText || "").toLowerCase();
+  const rawText = options?.assistantText || "";
+
+  // DTC-focused replies → explain / checks / parts chips
+  if (textHasDtcSignal(rawText)) {
+    return getDtcFollowUpChips().slice(0, 3);
+  }
+
   const out: StarterChip[] = [];
 
   const focusChip =
