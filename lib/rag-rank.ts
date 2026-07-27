@@ -106,6 +106,8 @@ export function ragContextBoost(
 
   // Flywheel-promoted & high-value corpora
   if (src.includes("flywheel_golden") || corpus === "flywheel") boost += 5;
+  // User-adopted Coach steps (feedback loop → KB)
+  if (src.includes("coach_adopt") || corpus === "coach_adopt") boost += 2;
   if (corpus === "car_repair_qa" || corpus === "car_fault") boost += 1.5;
   // Owner reviews: always give a small corpus bump; upvotes already weighted above
   if (corpus === "owner_reviews" || src === "user_feedback") {

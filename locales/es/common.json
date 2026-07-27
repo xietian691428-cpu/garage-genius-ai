@@ -29,7 +29,13 @@
     "feedbackWhyNot": "¿Qué se podría aclarar? (opcional)",
     "feedbackNotePlaceholder": "Demasiado largo, falta un tip visual, línea de seguridad poco clara…",
     "feedbackSubmit": "Enviar comentario",
-    "feedbackSkipNote": "Omitir nota"
+    "feedbackSkipNote": "Omitir nota",
+    "adoptButton": "Adoptar en la base de conocimiento",
+    "adoptSaving": "Guardando…",
+    "adoptSuccess": "Guardado en la base de conocimiento — el chat puede priorizarlo.",
+    "adoptFailed": "No se pudo guardar. Inténtalo de nuevo.",
+    "adoptSignInPrompt": "Inicia sesión para adoptar este paso en la base de conocimiento.",
+    "adoptSignInLink": "Iniciar sesión"
   },
   "onboarding": {
     "welcomeEyebrow": "Bienvenido a Garage Genius",

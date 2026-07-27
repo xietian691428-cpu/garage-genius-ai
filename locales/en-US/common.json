@@ -29,7 +29,13 @@
     "feedbackWhyNot": "What could be clearer? (optional)",
     "feedbackNotePlaceholder": "Too long, missing a photo tip, unclear safety line…",
     "feedbackSubmit": "Send feedback",
-    "feedbackSkipNote": "Skip note"
+    "feedbackSkipNote": "Skip note",
+    "adoptButton": "Adopt as Knowledge Base",
+    "adoptSaving": "Saving…",
+    "adoptSuccess": "Saved to knowledge base — chat can rank this next.",
+    "adoptFailed": "Couldn’t save. Try again.",
+    "adoptSignInPrompt": "Sign in to adopt this step into the knowledge base.",
+    "adoptSignInLink": "Sign in"
   },
   "onboarding": {
     "welcomeEyebrow": "Welcome to Garage Genius",

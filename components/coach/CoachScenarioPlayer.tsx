@@ -19,6 +19,8 @@ import {
 import CoachStepFeedback, {
   postCoachStepFeedback,
 } from "@/components/coach/CoachStepFeedback";
+import CoachAdoptKnowledgeButton from "@/components/coach/CoachAdoptKnowledgeButton";
+import type { CoachStepFeedbackVote } from "@/lib/types/coach-scenario";
 
 type Props = {
   scenario: CoachScenario;
@@ -59,6 +61,8 @@ export default function CoachScenarioPlayer({
   const [pendingBtn, setPendingBtn] = useState<CoachActionButton | null>(null);
   const [completed, setCompleted] = useState(false);
   const [feedbackKey, setFeedbackKey] = useState(0);
+  /** Last yes/no on this step — seeds quality_score when adopting to KB */
+  const [lastVote, setLastVote] = useState<CoachStepFeedbackVote | null>(null);
 
   const rawStep = useMemo(
     () => scenario.steps.find((s) => s.id === stepId) ?? scenario.steps[0],
@@ -81,6 +85,7 @@ export default function CoachScenarioPlayer({
 
   useEffect(() => {
     setFeedbackKey((k) => k + 1);
+    setLastVote(null);
     setRiskOpen(false);
     setPendingBtn(null);
     setRiskChecked(false);
@@ -148,6 +153,15 @@ export default function CoachScenarioPlayer({
   }
 
   if (completed) {
+    const completionDesc = injectTokens(scenario.completion.description, ctx);
+    const lastStepBlurb = [
+      step.title,
+      injectTokens(step.description, ctx),
+      step.safety_warning,
+      step.trust_nudge,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
     return (
       <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-[#0a0f1c] px-4 py-6">
         <div className="mx-auto w-full max-w-lg space-y-4">
@@ -160,8 +174,23 @@ export default function CoachScenarioPlayer({
             </p>
           )}
           <p className="text-sm leading-relaxed text-slate-300">
-            {injectTokens(scenario.completion.description, ctx)}
+            {completionDesc}
           </p>
+          <CoachAdoptKnowledgeButton
+            variant="completion"
+            payload={{
+              scenario_slug: scenario.slug,
+              scenario_id: scenario.id,
+              step_id: step.id,
+              title: scenario.completion.title,
+              description: `${completionDesc}\n\n---\nLast step checks / solution:\n${lastStepBlurb}`,
+              coach_encourage: scenario.completion.coach_encourage ?? null,
+              kind: "completion",
+              last_vote: lastVote,
+              vehicle_make: vehicle.make ?? null,
+              vehicle_model: vehicle.model ?? null,
+            }}
+          />
           <div className="flex flex-col gap-2 pt-2">
             {(scenario.completion.action_buttons || []).slice(0, 2).map((btn) => (
               <button
@@ -294,6 +323,7 @@ export default function CoachScenarioPlayer({
                 <CoachStepFeedback
                   prompt={feedbackPrompt}
                   onVote={async (vote, note) => {
+                    setLastVote(vote);
                     return postCoachStepFeedback({
                       scenario_slug: scenario.slug,
                       scenario_id: scenario.id,
@@ -309,6 +339,27 @@ export default function CoachScenarioPlayer({
                 />
               </div>
             )}
+
+            <CoachAdoptKnowledgeButton
+              variant="step"
+              payload={{
+                scenario_slug: scenario.slug,
+                scenario_id: scenario.id,
+                step_id: step.id,
+                title: step.title,
+                description: injectTokens(step.description, ctx),
+                coach_encourage: step.coach_encourage ?? null,
+                safety_warning: step.safety_warning ?? null,
+                trust_nudge: step.trust_nudge ?? null,
+                personalize: step.personalize
+                  ? injectTokens(step.personalize, ctx)
+                  : null,
+                kind: "step",
+                last_vote: lastVote,
+                vehicle_make: vehicle.make ?? null,
+                vehicle_model: vehicle.model ?? null,
+              }}
+            />
 
             <p className="pb-6 pt-2 text-[11px] leading-relaxed text-slate-500">
               {step.safety_disclaimer ||

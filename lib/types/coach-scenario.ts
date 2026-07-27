@@ -177,6 +177,36 @@ export type CoachStepFeedbackPayload = {
   client_session_id?: string;
 };
 
+/** Adopt Coach step / completion into knowledge_base (RAG write path). */
+export type CoachAdoptKnowledgeRequest = {
+  scenario_slug: string;
+  scenario_id: string;
+  step_id: string;
+  title: string;
+  description: string;
+  coach_encourage?: string | null;
+  safety_warning?: string | null;
+  trust_nudge?: string | null;
+  personalize?: string | null;
+  kind?: "step" | "completion";
+  /** 1–5; if omitted, derived from last_vote */
+  quality_score?: number;
+  last_vote?: CoachStepFeedbackVote | null;
+  vehicle_make?: string | null;
+  vehicle_model?: string | null;
+  vehicle_years?: string | null;
+};
+
+export type CoachAdoptKnowledgeResponse = {
+  ok: boolean;
+  knowledgeId: string;
+  ingestKey: string;
+  embedded: boolean;
+  qualityScore: number;
+  error?: string;
+  code?: string;
+};
+
 export type CoachScenario = {
   id: string;
   slug: string;
