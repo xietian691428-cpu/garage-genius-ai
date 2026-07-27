@@ -184,7 +184,10 @@ export async function POST(request: NextRequest) {
       category,
       limit: 4,
     });
-    const affiliateCatalog = formatAffiliateCatalogForPrompt(affiliateMatches);
+    const affiliateCatalog = formatAffiliateCatalogForPrompt(
+      affiliateMatches,
+      currentVehicle,
+    );
 
     let maintenanceBlock: string | null = null;
     try {

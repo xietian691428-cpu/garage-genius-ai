@@ -293,7 +293,10 @@ export async function POST(request: NextRequest) {
           ? affiliateMatches.filter((m) => m.matchScore >= 5)
           : affiliateMatches.slice(0, 4);
 
-    const affiliateCatalog = formatAffiliateCatalogForPrompt(prioritized);
+    const affiliateCatalog = formatAffiliateCatalogForPrompt(
+      prioritized,
+      currentVehicle,
+    );
 
     const maintenanceCap =
       typeof maintenanceSummary === "string"
@@ -358,7 +361,7 @@ export async function POST(request: NextRequest) {
     }
 
     const finalContent = ensureDisclaimer(
-      applyAffiliatePartsToReply(reply, prioritized),
+      applyAffiliatePartsToReply(reply, prioritized, currentVehicle),
     );
     const suggestedFocus = resolveFocusCommand(finalContent, ragHits);
 

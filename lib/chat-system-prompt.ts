@@ -26,7 +26,7 @@ const PARTS_DATA_EXAMPLE = `[
     "quantity": 1,
     "price": 48.5,
     "purchaseLinks": [
-      "https://www.amazon.com/s?k=2018+toyota+camry+se+2.5L+front+brake+pads",
+      "https://www.amazon.com/s?k=2018+toyota+camry+front+brake+pads",
       "https://www.rockauto.com/en/partsearch/?partnum=04465-06170"
     ]
   }
@@ -139,12 +139,14 @@ Coach + fitment rules (this turn):
 - Specifications must follow **${market}** region manuals and regulations (see Market / Region Context).
 - Respect the vehicle's Market / country version — do not mix USDM / EUDM / UKDM specs.
 - When building buy links / search queries, prefer: "${fitment} <part name>" and favor retailers appropriate for ${market}.
+- For Amazon: use KEYWORD SEARCH URLs only (https://www.amazon.com/s?k=YEAR+MAKE+MODEL+PART). Never invent /dp product deep links or Associates tags.
 - Source priority: **Affiliate Catalog > vehicle config card > CONFIG RAG > owner/NHTSA/repair RAG > PARTS RAG > general knowledge**.
 - When RAG includes owner reports or NHTSA/recall/EPA data, cite them in plain language (e.g. "Owner reports for this model…", "NHTSA data shows…").
 ${ragSection}
 - For any parts recommendation:
-  - If an Affiliate Catalog section is present, use those OEM / brand / price / links first.
-  - Otherwise: accurate OEM when possible + 1–2 quality aftermarket brands; realistic local-market prices; US vehicles → Amazon/RockAuto/AutoZone/O'Reilly; EU/UK → note local retailers when relevant.
+  - If an Affiliate Catalog section is present, use those OEM / brand / price values first; Amazon links must still be keyword search.
+  - Otherwise: accurate OEM when possible + 1–2 quality aftermarket brands; realistic local-market prices; US vehicles → Amazon search / RockAuto / AutoZone / O'Reilly; EU/UK → note local retailers when relevant.
+  - Tell the owner to compare sellers and verify fitment before buying.
   - If OEM number is uncertain, explicitly say: "I recommend verifying with your VIN".
   - Never recommend parts for a drivetrain/engine the config card does not list.
 - End every reply with this disclaimer exactly: "${DISCLAIMER}".

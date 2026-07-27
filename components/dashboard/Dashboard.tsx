@@ -1459,11 +1459,10 @@ export default function Dashboard({
             {vehicle && vitals && vitals.codes.length > 0 && (
               <div className="mt-6 border-t border-slate-800 pt-5">
                 <h4 className="mb-3 text-sm font-medium text-slate-200">
-                  Recommended Parts
+                  {t("parts.recommendedTitle")}
                 </h4>
                 <p className="mb-3 text-xs text-slate-500">
-                  Market-aware shop links for {vehicle.market || "US"} • Verify
-                  fitment before buying
+                  {t("parts.compareHint")}
                 </p>
 
                 {vitals.codes.slice(0, 2).map((c: DiagnosticCode) => {
@@ -1478,14 +1477,17 @@ export default function Dashboard({
                       key={`${c.code}-${c.recordedAt || "link"}`}
                       href={aff.primaryUrl}
                       target="_blank"
-                      rel="noopener noreferrer sponsored"
+                      rel="noopener noreferrer"
                       className="mb-3 block rounded-2xl bg-slate-900 p-4 transition hover:bg-slate-800"
                     >
                       <div className="font-mono text-sm font-semibold text-white">
-                        Fix for {c.code}
+                        {t("parts.fixForCode", { code: c.code })}
                       </div>
                       <div className="mt-1 text-xs text-slate-400">
-                        {aff.partLabel} — {aff.shop}
+                        {aff.searchQuery}
+                      </div>
+                      <div className="mt-2 text-xs font-medium text-cyan-300">
+                        {t("parts.searchOnAmazon")} →
                       </div>
                     </a>
                   );

@@ -9,6 +9,12 @@ import type { PartsDataItem } from "@/lib/utils/parts";
 import type { PartRecommendation, PurchaseChannel } from "@/lib/types/parts";
 import type { RegionPurchasePart } from "@/lib/types/dashboard";
 import { DISCLAIMER } from "@/lib/constants";
+import {
+  buildAmazonPartSearchQuery,
+  buildAmazonSearchUrl,
+  getAffiliateLinks,
+} from "@/lib/affiliate-links";
+import { buildPurchaseChannels } from "@/lib/purchase-links";
 
 export type MatchedAffiliate = AffiliatePart & {
   matchScore: number;
@@ -135,22 +141,54 @@ export function affiliatePriceNumber(part: AffiliatePart): number {
   return 0;
 }
 
-export function affiliateToChannels(part: AffiliatePart): PurchaseChannel[] {
-  const channels: PurchaseChannel[] = [];
+export function affiliateToChannels(
+  part: AffiliatePart,
+  vehicle?: VehicleInfo | null,
+): PurchaseChannel[] {
+  // Amazon: always keyword search (never catalog /dp deep links in this phase)
+  const amazonQuery = vehicle
+    ? buildAmazonPartSearchQuery(vehicle, part.name, part.oem_number)
+    : [part.name, part.oem_number].filter(Boolean).join(" ").trim();
+  const channels: PurchaseChannel[] = [
+    {
+      store: "Amazon",
+      searchQuery: amazonQuery,
+      searchUrl: buildAmazonSearchUrl(amazonQuery, vehicle?.market),
+    },
+  ];
+
   const push = (store: string, url: string | null | undefined) => {
     if (!url?.trim()) return;
     channels.push({
       store,
-      searchQuery: part.oem_number || part.name,
+      searchQuery: amazonQuery,
       searchUrl: url.trim(),
     });
   };
-  push("Amazon", part.amazon_url);
   push("RockAuto", part.rockauto_url);
   push("AutoZone", part.autozone_url);
   push("O'Reilly", part.oreilly_url);
+
+  // If no RockAuto etc. and we have a vehicle, fill US market shop searches
+  if (vehicle && channels.length === 1) {
+    const extras = getAffiliateLinks({
+      part: part.name,
+      vehicle,
+      oemPartNumber: part.oem_number,
+    }).channels.filter((c) => c.store !== "Amazon");
+    for (const c of extras) {
+      channels.push({
+        store: c.store,
+        searchQuery: c.searchQuery || amazonQuery,
+        searchUrl: c.url,
+      });
+    }
+  }
+
   for (const u of part.other_urls || []) {
     if (!u?.trim()) continue;
+    // Skip Amazon deep links in other_urls — already have search
+    if (/amazon\./i.test(u)) continue;
     let store = "Store";
     try {
       store = new URL(u).hostname.replace(/^www\./, "");
@@ -159,14 +197,28 @@ export function affiliateToChannels(part: AffiliatePart): PurchaseChannel[] {
     }
     channels.push({
       store,
-      searchQuery: part.oem_number || part.name,
+      searchQuery: amazonQuery,
       searchUrl: u.trim(),
     });
   }
   return channels;
 }
 
-export function affiliateToPartsDataItem(part: AffiliatePart): PartsDataItem {
+export function affiliateToPartsDataItem(
+  part: AffiliatePart,
+  vehicle?: VehicleInfo | null,
+): PartsDataItem {
+  const channels = vehicle
+    ? buildPurchaseChannels(part.name, vehicle, part.oem_number)
+    : affiliateToChannels(part, vehicle);
+  // Prefer Amazon search URL first
+  const amazon = channels.find((c) => c.store === "Amazon");
+  const links = [
+    ...(amazon ? [amazon.searchUrl] : []),
+    ...channels
+      .filter((c) => c.store !== "Amazon")
+      .map((c) => c.searchUrl),
+  ];
   return {
     oemNumber: part.oem_number,
     brand: part.brand || "OEM",
@@ -174,7 +226,7 @@ export function affiliateToPartsDataItem(part: AffiliatePart): PartsDataItem {
     category: part.category,
     quantity: 1,
     price: affiliatePriceNumber(part) || formatAffiliatePrice(part),
-    purchaseLinks: affiliateToChannels(part).map((c) => c.searchUrl),
+    purchaseLinks: links,
     source: "affiliate",
   };
 }
@@ -196,7 +248,11 @@ export function affiliateToRecommendation(
     quantityNeeded: 1,
     unit: "each",
     estimatedPrice: formatAffiliatePrice(part),
-    purchaseChannels: affiliateToChannels(part),
+    purchaseChannels: buildPurchaseChannels(
+      part.name,
+      vehicle,
+      part.oem_number,
+    ),
     notes: part.notes || "From Garage Genius affiliate catalog",
   };
 }
@@ -222,15 +278,22 @@ export function affiliateToRegionPurchasePart(
   };
 }
 
-export function formatAffiliateMarkdownTable(parts: AffiliatePart[]): string {
+export function formatAffiliateMarkdownTable(
+  parts: AffiliatePart[],
+  vehicle?: VehicleInfo | null,
+): string {
   if (parts.length === 0) return "";
   const lines = [
-    "| Part | OEM # | Brand | Price | Links |",
+    "| Part | OEM # | Brand | Price | Search |",
     "| --- | --- | --- | --- | --- |",
   ];
   for (const p of parts) {
-    const links = affiliateToChannels(p)
-      .map((c) => `[${c.store}](${c.searchUrl})`)
+    const links = affiliateToChannels(p, vehicle)
+      .map((c) =>
+        c.store === "Amazon"
+          ? `[Search on Amazon](${c.searchUrl})`
+          : `[${c.store}](${c.searchUrl})`,
+      )
       .join(" · ");
     lines.push(
       `| ${p.name} | ${p.oem_number || "—"} | ${p.brand || "—"} | ${formatAffiliatePrice(p)} | ${links || "—"} |`,
@@ -241,21 +304,24 @@ export function formatAffiliateMarkdownTable(parts: AffiliatePart[]): string {
 
 export function formatAffiliateCatalogForPrompt(
   matches: MatchedAffiliate[],
+  vehicle?: VehicleInfo | null,
 ): string | null {
   if (matches.length === 0) return null;
   const rows = matches.slice(0, 8).map((p, i) => {
-    const links = affiliateToChannels(p)
-      .map((c) => `${c.store}: ${c.searchUrl}`)
-      .join(" | ");
-    return `${i + 1}. ${p.name} | OEM ${p.oem_number} | Brand ${p.brand} | ${formatAffiliatePrice(p)} | category=${p.category} | ${links || "no links"}`;
+    const amazonQ = vehicle
+      ? buildAmazonPartSearchQuery(vehicle, p.name, p.oem_number)
+      : `${p.name} ${p.oem_number}`.trim();
+    const amazonUrl = buildAmazonSearchUrl(amazonQ, vehicle?.market);
+    return `${i + 1}. ${p.name} | OEM ${p.oem_number} | Brand ${p.brand} | ${formatAffiliatePrice(p)} | category=${p.category} | Amazon search keywords: "${amazonQ}" | ${amazonUrl}`;
   });
 
   return `## Authoritative Affiliate Catalog (PRIORITY)
 These parts are from the Garage Genius admin catalog for this vehicle. When recommending parts:
-- Prefer these OEM numbers, brands, prices, and buy links EXACTLY.
-- Put them in your markdown table AND in <parts-data> (same values).
-- Do not invent alternate OEM numbers for the same part name.
+- Prefer these OEM numbers, brands, and prices EXACTLY.
+- For Amazon, use KEYWORD SEARCH only (year + make + model + part name). Do NOT invent product /dp deep links or Associates tags.
+- Put them in your markdown table AND in <parts-data> with purchaseLinks pointing to Amazon /s?k= search URLs.
 - You may add 0–2 extra AI suggestions only if the catalog is incomplete for the user's issue.
+- Remind the owner to compare sellers and verify fitment before buying.
 
 ${rows.join("\n")}`;
 }
@@ -315,12 +381,13 @@ export function categoryForFocusRegion(regionId: string): string | null {
 export function applyAffiliatePartsToReply(
   content: string,
   matches: MatchedAffiliate[],
+  vehicle?: VehicleInfo | null,
 ): string {
   if (matches.length === 0) return content;
 
   const catalog = matches.slice(0, 6);
-  const items = catalog.map(affiliateToPartsDataItem);
-  const table = formatAffiliateMarkdownTable(catalog);
+  const items = catalog.map((p) => affiliateToPartsDataItem(p, vehicle));
+  const table = formatAffiliateMarkdownTable(catalog, vehicle);
   const block = `<parts-data>\n${JSON.stringify(items, null, 2)}\n</parts-data>`;
 
   const existingMatch = content.match(
@@ -345,8 +412,25 @@ export function applyAffiliatePartsToReply(
             });
           if (hit) {
             return {
-              ...affiliateToPartsDataItem(hit),
+              ...affiliateToPartsDataItem(hit, vehicle),
               quantity: item.quantity ?? 1,
+            };
+          }
+          // Rewrite any Amazon deep links on AI rows to keyword search
+          if (vehicle) {
+            const q = buildAmazonPartSearchQuery(
+              vehicle,
+              item.name,
+              item.oemNumber,
+            );
+            const amazon = buildAmazonSearchUrl(q, vehicle.market);
+            const other = (item.purchaseLinks || []).filter(
+              (u) => !/amazon\./i.test(u),
+            );
+            return {
+              ...item,
+              purchaseLinks: [amazon, ...other],
+              source: item.source ?? ("ai" as const),
             };
           }
           return { ...item, source: item.source ?? ("ai" as const) };
@@ -360,7 +444,7 @@ export function applyAffiliatePartsToReply(
             ) &&
             a.matchScore >= 6
           ) {
-            merged.push(affiliateToPartsDataItem(a));
+            merged.push(affiliateToPartsDataItem(a, vehicle));
           }
         }
 
