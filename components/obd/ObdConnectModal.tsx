@@ -18,6 +18,7 @@ import {
 import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
 import { OBD_COMPATIBLE_DEVICES } from "@/lib/types/obd-session";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
+import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 
 type Props = {
   open: boolean;
@@ -264,6 +265,7 @@ export default function ObdConnectModal({
                   <p className="text-xs text-slate-400">{t("obd.noCodes")}</p>
                 )}
               </div>
+              <LiabilityDisclaimer variant="panel" />
               <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2">
                 <p className="mb-1 text-[11px] font-semibold uppercase text-slate-500">
                   {t("obd.sensorsTitle")}

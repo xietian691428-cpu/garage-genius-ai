@@ -29,13 +29,14 @@ export default function TermsPage() {
           2. Not professional advice
         </h2>
         <p className="mt-2">
-          Garage Genius AI provides <strong className="text-slate-200">DIY
+          Garage Genius AI provides <strong className="text-slate-200">general DIY
           educational guidance only</strong>. It is not a licensed mechanic,
-          dealership, or certified repair shop. Always follow vehicle
-          manufacturer instructions, use proper safety equipment, and seek a
-          qualified technician for work you are unsure about — especially
-          brakes, airbags, fuel, high-voltage hybrids/EVs, and structural
-          repairs.
+          dealership, or certified repair shop. This is general guidance only.
+          Always refer to your vehicle’s official owner’s manual or consult a
+          qualified technician. Garage Genius AI is not responsible for any
+          damage, injury, or costs resulting from DIY actions or reliance on
+          this information — especially brakes, airbags, fuel systems,
+          jacking/lifting, high-voltage hybrids/EVs, and structural repairs.
         </p>
       </section>
 

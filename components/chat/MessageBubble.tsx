@@ -4,7 +4,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useState } from "react";
 import { ChatMessage, VehicleInfo, messageImages } from "@/lib/types/chat";
-import { DISCLAIMER } from "@/lib/constants";
+import { stripTrailingLegalDisclaimer } from "@/lib/legal-disclaimer";
+import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 import { stripPartsDataFromContent } from "@/lib/parse-ai-parts";
 import { stripFocusFromContent } from "@/lib/parse-ai-focus";
 import {
@@ -47,7 +48,9 @@ export default function MessageBubble({
   const isUser = message.role === "user";
   const displayContent = isUser
     ? message.content
-    : stripFocusFromContent(stripPartsDataFromContent(message.content));
+    : stripTrailingLegalDisclaimer(
+        stripFocusFromContent(stripPartsDataFromContent(message.content)),
+      );
   const partsData = !isUser ? extractPartsData(message.content) : null;
   const parts = messageImages(message);
   const focusCmd = !isUser ? extractFocusCommand(message.content) : null;
@@ -189,11 +192,7 @@ export default function MessageBubble({
           </div>
         )}
 
-        {!isUser && (
-          <div className="mt-3 border-t border-slate-700 pt-3 text-xs text-amber-400">
-            {DISCLAIMER}
-          </div>
-        )}
+        {!isUser && <LiabilityDisclaimer variant="footer" />}
 
         <div
           className="mt-2 text-right text-[10px] text-slate-500"

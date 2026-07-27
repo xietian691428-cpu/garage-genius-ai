@@ -22,6 +22,7 @@ import {
   stopSpeaking,
 } from "@/lib/browser-voice";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
+import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 
 type FocusPanelProps = {
   region: DashboardRegion;
@@ -336,6 +337,7 @@ export default function FocusPanel({
                 <li key={note}>{note}</li>
               ))}
             </ul>
+            <LiabilityDisclaimer variant="inline" className="mt-3 text-amber-100/70" />
           </div>
         </div>
 

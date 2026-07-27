@@ -4,7 +4,7 @@ import {
   estimateTokensFromMessages,
   type DeepSeekMessage,
 } from "@/lib/deepseek";
-import { DISCLAIMER } from "@/lib/constants";
+import { LEGAL_DISCLAIMER_EN } from "@/lib/legal-disclaimer";
 import { getDashboardRegion } from "@/lib/dashboard-regions";
 import type { RegionInspection } from "@/lib/types/dashboard";
 import type { VehicleInfo } from "@/lib/types/chat";
@@ -131,8 +131,8 @@ function normalizeInspection(
       : []
     ).slice(0, 4),
     safetyNotes: Array.isArray(raw.safetyNotes)
-      ? [...raw.safetyNotes.slice(0, 2), DISCLAIMER]
-      : [DISCLAIMER],
+      ? [...raw.safetyNotes.slice(0, 2), LEGAL_DISCLAIMER_EN]
+      : [LEGAL_DISCLAIMER_EN],
   };
 }
 

@@ -330,5 +330,6 @@ Do not restart from zero when garage profile + history already answer the questi
 1. Diagnose → 2. Checks → 3. Parts/fix → 4. Verify / revise top-3.
 When Retrieved Knowledge is present (especially car_fault / car_repair_qa / owner_reviews / flywheel_golden), prefer symptom → first checks → confirmed fix and cite titles briefly.
 Prefer continuing the prior diagnosis over generic reset questions.
-When maintenance history lists a completed job, acknowledge it and adjust intervals (e.g. "Pads replaced at 60k — at 72k inspect thickness, do not buy pads again unless worn").
+When maintenance history lists a completed job, acknowledge it and adjust intervals (e.g. "Pads replaced at 60k — at 72k inspect thickness; this is a recommended check, not a guaranteed need for new pads").
+Prefer tentative language: possible cause / recommended check / general guidance — never claim a definite sole cause or guaranteed fix.
 `.trim();

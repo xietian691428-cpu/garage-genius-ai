@@ -11,6 +11,7 @@ import LocaleSwitcher from "@/components/i18n/LocaleSwitcher";
 import { useTranslation } from "react-i18next";
 import SubscriptionAIAssistant from "@/components/subscription/SubscriptionAIAssistant";
 import DiySkillSettings from "@/components/settings/DiySkillSettings";
+import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 
 export default function SettingsPanel() {
   const { t } = useTranslation();
@@ -168,6 +169,8 @@ export default function SettingsPanel() {
         >
           Sign out
         </button>
+
+        <LiabilityDisclaimer variant="panel" className="mt-2" />
 
         <p className="pb-2 text-center text-xs text-slate-500">
           <Link href="/privacy" className="hover:text-cyan-400 hover:underline">

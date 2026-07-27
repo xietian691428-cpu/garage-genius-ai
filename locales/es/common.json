@@ -50,6 +50,15 @@
     "languageTitle": "Idioma",
     "languageHint": "Idioma de la interfaz para Coach Guides y cuenta. Los pasos de las guías permanecen en su idioma de autoría por ahora."
   },
+  "legal": {
+    "disclaimerTitle": "Aviso de seguridad importante",
+    "disclaimer": "Esta es solo una orientación general. Consulte siempre el manual oficial del propietario de su vehículo o a un técnico cualificado. Garage Genius AI no se responsabiliza de ningún daño, lesión o costo derivado de acciones DIY o de confiar en esta información.",
+    "riskCheckbox": "He leído y comprendo los riesgos",
+    "findShop": "Buscar un taller cercano",
+    "highRiskTitle": "Paso de alto riesgo — confirma antes de continuar",
+    "highRiskBody": "Este paso puede involucrar frenos, baterías, elevar el vehículo, combustible u otros peligros que pueden causar lesiones o daños si se hacen incorrectamente. Prefiere un técnico cualificado si no estás seguro.",
+    "continueAnyway": "Entiendo — continuar"
+  },
   "ai": {
     "thinking": "La IA está pensando…",
     "analyzingPhoto": "La IA está analizando tu foto…",

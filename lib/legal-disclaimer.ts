@@ -1,0 +1,165 @@
+/**
+ * Unified vehicle liability disclaimer + soft-language / high-risk helpers.
+ * Keep product copy here so Chat, Coach, OBD, and Settings stay aligned.
+ */
+
+import type {
+  CoachRiskConfirm,
+  CoachScenarioStep,
+} from "@/lib/types/coach-scenario";
+
+/** Canonical EN disclaimer (also mirrored in i18n `legal.disclaimer`). */
+export const LEGAL_DISCLAIMER_EN =
+  "This is general guidance only. Always refer to your vehicle’s official owner’s manual or consult a qualified technician. Garage Genius AI is not responsible for any damage, injury, or costs resulting from DIY actions or reliance on this information.";
+
+/** Canonical ES disclaimer (mirrored in i18n). */
+export const LEGAL_DISCLAIMER_ES =
+  "Esta es solo una orientación general. Consulte siempre el manual oficial del propietario de su vehículo o a un técnico cualificado. Garage Genius AI no se responsabiliza de ningún daño, lesión o costo derivado de acciones DIY o de confiar en esta información.";
+
+/** Substring used by ensureDisclaimer / strip helpers (stable across revisions). */
+export const LEGAL_DISCLAIMER_MARKER =
+  "Garage Genius AI is not responsible for any damage, injury, or costs";
+
+export const LEGAL_RISK_CHECKBOX_EN =
+  "I have read and understand the risks";
+
+export const LEGAL_FIND_SHOP_EN = "Find a nearby shop";
+
+/** Soft-language rules injected into AI system prompts. */
+export const LEGAL_SOFT_LANGUAGE_PROMPT = `
+## Legal / safety language (required)
+- Never claim a guaranteed fix or a single definite root cause.
+- Prefer: "possible cause", "recommended check", "general guidance", "may indicate".
+- Forbidden phrasing: "guaranteed to fix", "this will definitely fix", "this is definitely the cause", "100% certain", "must be X".
+- Always leave room for OEM manual verification and a qualified technician.
+- Remind the owner that DIY carries risk of damage, injury, or extra cost.
+`.trim();
+
+const HIGH_RISK_PATTERN =
+  /\b(brake|brakes|rotor|caliper|jack|jacking|lift|hoist|stands?|battery|airbag|srs|high[\s-]?voltage|hv\b|ev battery|under\s+the\s+(car|vehicle)|fuel\s+rail|fuel\s+line|strut\s+spring|coil\s+spring|compression|hot\s+coolant|radiator\s+cap|exhaust\s+manifold|timing\s+belt|clutch)\b/i;
+
+/**
+ * Detect high-risk coach steps so we can force a risk_confirm gate
+ * even when playbook JSON left risk_confirm null.
+ */
+export function isHighRiskCoachStep(
+  step: Pick<
+    CoachScenarioStep,
+    "title" | "description" | "safety_warning" | "focus_part" | "is_operational"
+  >,
+): boolean {
+  if (step.focus_part === "brakes" || step.focus_part === "battery") {
+    return true;
+  }
+  const blob = [
+    step.title,
+    step.description,
+    step.safety_warning || "",
+  ].join("\n");
+  return HIGH_RISK_PATTERN.test(blob);
+}
+
+export function buildDefaultHighRiskConfirm(labels: {
+  title: string;
+  body: string;
+  checkbox: string;
+  confirm: string;
+  cancel: string;
+  disclaimer: string;
+}): CoachRiskConfirm {
+  return {
+    required: true,
+    title: labels.title,
+    body: labels.body,
+    checkbox_label: labels.checkbox,
+    confirm_label: labels.confirm,
+    cancel_label: labels.cancel,
+    cancel_action: "book_shop",
+    risk_level: "high",
+    disclaimer: labels.disclaimer,
+  };
+}
+
+/** Normalize playbook risk_confirm with unified disclaimer / shop cancel labels. */
+export function resolveCoachRiskConfirm(
+  step: CoachScenarioStep,
+  enforceModal: boolean,
+  labels: {
+    disclaimer: string;
+    checkbox: string;
+    cancel: string;
+    highRiskTitle: string;
+    highRiskBody: string;
+    continueLabel: string;
+  },
+): CoachRiskConfirm | null {
+  if (step.risk_confirm?.required) {
+    return {
+      ...step.risk_confirm,
+      checkbox_label:
+        step.risk_confirm.checkbox_label?.trim() || labels.checkbox,
+      cancel_label: step.risk_confirm.cancel_label?.trim() || labels.cancel,
+      cancel_action: "book_shop",
+      disclaimer:
+        step.risk_confirm.disclaimer?.trim() || labels.disclaimer,
+    };
+  }
+
+  if (enforceModal && isHighRiskCoachStep(step)) {
+    return buildDefaultHighRiskConfirm({
+      title: labels.highRiskTitle,
+      body: labels.highRiskBody,
+      checkbox: labels.checkbox,
+      confirm: labels.continueLabel,
+      cancel: labels.cancel,
+      disclaimer: labels.disclaimer,
+    });
+  }
+
+  return null;
+}
+
+const KNOWN_DISCLAIMER_FRAGMENTS = [
+  LEGAL_DISCLAIMER_MARKER,
+  "Not professional mechanic advice",
+  "This is AI-generated information for reference only",
+  "This is general guidance only",
+  "This app isn't liable for DIY damage",
+  "This app is not responsible for damage from DIY work",
+  "Garage Genius AI no se responsabiliza",
+];
+
+/** True if content already ends with (or contains) a liability disclaimer. */
+export function contentHasLegalDisclaimer(content: string): boolean {
+  return KNOWN_DISCLAIMER_FRAGMENTS.some((f) => content.includes(f));
+}
+
+/** Append canonical EN disclaimer when missing. */
+export function ensureLegalDisclaimer(content: string): string {
+  if (contentHasLegalDisclaimer(content)) return content;
+  return `${content.trim()}\n\n${LEGAL_DISCLAIMER_EN}`;
+}
+
+/** Remove trailing disclaimer block so UI can show a single footer. */
+export function stripTrailingLegalDisclaimer(content: string): string {
+  let out = content.trimEnd();
+  for (const frag of KNOWN_DISCLAIMER_FRAGMENTS) {
+    const idx = out.lastIndexOf(frag);
+    if (idx < 0) continue;
+    // Only strip if the fragment is in the last ~500 chars (footer territory)
+    if (out.length - idx > 500) continue;
+    // Walk back to previous paragraph break
+    let start = idx;
+    while (start > 0 && out[start - 1] === "\n") start -= 1;
+    // Include leading warning emoji / dashes on same paragraph
+    const lineStart = out.lastIndexOf("\n", idx);
+    const paragraphStart = lineStart >= 0 ? lineStart + 1 : 0;
+    // Prefer cutting from a blank-line boundary before the disclaimer
+    const blank = out.lastIndexOf("\n\n", idx);
+    const cut =
+      blank >= 0 && blank >= out.length - 600 ? blank : paragraphStart;
+    out = out.slice(0, cut).trimEnd();
+    break;
+  }
+  return out;
+}

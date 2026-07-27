@@ -366,12 +366,14 @@ export function buildFocusTools(command: FocusCommand): string[] {
 }
 
 export function buildFocusSafety(command: FocusCommand): string[] {
-  if (command.safetyNotes && command.safetyNotes.length > 0) {
-    return command.safetyNotes;
-  }
-  return [
-    "Park on level ground, set the parking brake, and chock wheels if needed.",
-    "Never work under a vehicle supported only by a jack.",
-    "If unsure or unsafe, stop and consult a licensed mechanic.",
-  ];
+  const base =
+    command.safetyNotes && command.safetyNotes.length > 0
+      ? command.safetyNotes
+      : [
+          "Park on level ground, set the parking brake, and chock wheels if needed.",
+          "Never work under a vehicle supported only by a jack.",
+          "If unsure or unsafe, stop and consult a licensed mechanic.",
+          "This is general guidance only — verify with your owner’s manual before DIY work.",
+        ];
+  return base;
 }

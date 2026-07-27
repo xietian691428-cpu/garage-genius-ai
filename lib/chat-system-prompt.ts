@@ -1,3 +1,4 @@
+import { LEGAL_SOFT_LANGUAGE_PROMPT } from "@/lib/legal-disclaimer";
 import { DISCLAIMER } from "@/lib/constants";
 import type { DeepSeekMessage } from "@/lib/deepseek";
 import type { VehicleInfo } from "@/lib/types/chat";
@@ -128,6 +129,8 @@ ${focusHints}
 ${affiliateSection}
 
 ${REPAIR_LOOP_PROMPT}
+
+${LEGAL_SOFT_LANGUAGE_PROMPT}
 
 Coach + fitment rules (this turn):
 - Open full replies by confirming the Vehicle Health Profile (year/make/model/mileage) in a natural coach voice.

@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { isValidDtcInput, normalizeDtcCode } from "@/lib/dtc";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
+import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 
 type Props = {
   open: boolean;
@@ -94,6 +95,8 @@ export default function DtcCodeModal({ open, onClose, onSubmit }: Props) {
         ) : (
           <p className="mb-2 text-[11px] text-slate-500">{t("dtc.formatHelp")}</p>
         )}
+
+        <LiabilityDisclaimer variant="inline" className="mb-3" />
 
         <div className="flex gap-2 pt-1">
           <button

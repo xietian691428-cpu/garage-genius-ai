@@ -7,11 +7,10 @@ export type CoachVisualType = "image" | "gif" | "video" | "illustration" | "anno
 
 /** Short EN disclaimer — every step in production playbooks */
 export const COACH_SAFETY_DISCLAIMER_EN =
-  "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.";
+  "This is general guidance only. Always refer to your vehicle’s official owner’s manual or consult a qualified technician. Garage Genius AI is not responsible for any damage, injury, or costs resulting from DIY actions or reliance on this information.";
 
-/** Longer EN disclaimer inside risk_confirm modals */
-export const COACH_SAFETY_DISCLAIMER_EN_FULL =
-  "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.";
+/** Longer EN disclaimer inside risk_confirm modals (same canonical text). */
+export const COACH_SAFETY_DISCLAIMER_EN_FULL = COACH_SAFETY_DISCLAIMER_EN;
 
 export const COACH_RISK_CHECKBOX_EN = "I have read and understand the risks";
 export const COACH_FIND_SHOP_LABEL_EN = "Find a nearby shop";

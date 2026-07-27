@@ -50,6 +50,15 @@
     "languageTitle": "Language",
     "languageHint": "UI language for Coach Guides chrome and account screens. Playbook steps stay in their authored locale for now."
   },
+  "legal": {
+    "disclaimerTitle": "Important safety notice",
+    "disclaimer": "This is general guidance only. Always refer to your vehicle’s official owner’s manual or consult a qualified technician. Garage Genius AI is not responsible for any damage, injury, or costs resulting from DIY actions or reliance on this information.",
+    "riskCheckbox": "I have read and understand the risks",
+    "findShop": "Find a nearby shop",
+    "highRiskTitle": "High-risk step — confirm before continuing",
+    "highRiskBody": "This step may involve brakes, batteries, lifting the vehicle, fuel, or other hazards that can cause injury or damage if done incorrectly. Prefer a qualified technician if you are unsure.",
+    "continueAnyway": "I understand — continue"
+  },
   "ai": {
     "thinking": "AI is thinking…",
     "analyzingPhoto": "AI is analyzing your photo…",

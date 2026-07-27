@@ -23,6 +23,7 @@ import type { DashboardRegion, RegionInspection } from "@/lib/types/dashboard";
 import type { VehicleInfo } from "@/lib/types/chat";
 import { getInspectionRecommendations, recommendationsToPartsData } from "@/lib/dashboard-parts";
 import PartsRecommendationTable from "../parts/PartsRecommendationTable";
+import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 
 const REGION_ICONS: Record<
   string,
@@ -548,6 +549,7 @@ export default function RegionDetailPanel({
                       </li>
                     ))}
                   </ul>
+                  <LiabilityDisclaimer variant="inline" className="mt-4 text-amber-200/80" />
                 </section>
               )}
 

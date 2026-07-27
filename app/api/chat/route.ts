@@ -7,6 +7,7 @@ import {
   type DeepSeekMessage,
 } from "@/lib/deepseek";
 import { DISCLAIMER } from "@/lib/constants";
+import { ensureLegalDisclaimer } from "@/lib/legal-disclaimer";
 import type { VehicleInfo } from "@/lib/types/chat";
 import { buildChatSystemPrompt } from "@/lib/chat-system-prompt";
 import { createSupabaseUserClient, createSupabaseAdmin } from "@/lib/supabase-admin";
@@ -44,16 +45,9 @@ import { normalizeDiySkill } from "@/lib/diy-skill";
 
 export const runtime = "nodejs";
 
-/** 确保 AI 回复包含免责声明（项目硬性要求） */
+/** Ensure AI reply includes the liability disclaimer (hard product requirement). */
 function ensureDisclaimer(content: string): string {
-  const disclaimerSnippet = "Not professional mechanic advice";
-  if (
-    content.includes(disclaimerSnippet) ||
-    content.includes(DISCLAIMER)
-  ) {
-    return content;
-  }
-  return `${content.trim()}\n\n${DISCLAIMER}`;
+  return ensureLegalDisclaimer(content);
 }
 
 function getAccessToken(req: NextRequest): string | null {

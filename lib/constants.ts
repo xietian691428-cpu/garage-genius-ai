@@ -1,7 +1,8 @@
 import type { ChatMessage, VehicleInfo } from "@/lib/types/chat";
+import { LEGAL_DISCLAIMER_EN } from "@/lib/legal-disclaimer";
 
-export const DISCLAIMER =
-  "⚠️ This is AI-generated information for reference only. Not professional mechanic advice. Always consult a certified technician and follow your vehicle's official manual.";
+/** @deprecated Prefer LEGAL_DISCLAIMER_EN / i18n `legal.disclaimer` — kept as alias. */
+export const DISCLAIMER = LEGAL_DISCLAIMER_EN;
 
 const WELCOME_CONTENT =
   "Hello! I'm Garage Genius AI — your DIY repair coach.\n\n**How we'll work:** diagnose → suggest checks (photo/OBD) → recommend parts to buy → verify the fix.\n\nSnap a photo, type a symptom, or use voice (Pro). Your vehicle profile and maintenance history stay in context across turns.";

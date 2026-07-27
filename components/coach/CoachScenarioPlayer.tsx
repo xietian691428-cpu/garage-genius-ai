@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
   ChevronLeft,
@@ -16,6 +17,8 @@ import {
   matchAdaptiveRules,
   type CoachVehicleContext,
 } from "@/lib/coach-scenarios/runtime";
+import { resolveCoachRiskConfirm } from "@/lib/legal-disclaimer";
+import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 import CoachStepFeedback, {
   postCoachStepFeedback,
 } from "@/components/coach/CoachStepFeedback";
@@ -52,6 +55,7 @@ export default function CoachScenarioPlayer({
   onOpenShop,
   onLogMaintenance,
 }: Props) {
+  const { t } = useTranslation();
   const [stepId, setStepId] = useState(
     scenario.entry_step_id || scenario.steps[0]?.id,
   );
@@ -71,6 +75,22 @@ export default function CoachScenarioPlayer({
   const step = useMemo(
     () => applyStepVariants(rawStep, vehicle),
     [rawStep, vehicle],
+  );
+  const effectiveRisk = useMemo(
+    () =>
+      resolveCoachRiskConfirm(
+        step,
+        Boolean(scenario.ux_rules?.enforce_risk_confirm_modal),
+        {
+          disclaimer: t("legal.disclaimer"),
+          checkbox: t("legal.riskCheckbox"),
+          cancel: t("legal.findShop"),
+          highRiskTitle: t("legal.highRiskTitle"),
+          highRiskBody: t("legal.highRiskBody"),
+          continueLabel: t("legal.continueAnyway"),
+        },
+      ),
+    [step, scenario.ux_rules?.enforce_risk_confirm_modal, t],
   );
   const asset = scenario.visual_assets.find((a) => a.key === step.visual_asset_key);
   const rules = matchAdaptiveRules(scenario.adaptive_rules, vehicle);
@@ -129,8 +149,7 @@ export default function CoachScenarioPlayer({
 
   function onPress(btn: CoachActionButton) {
     const needsRisk =
-      scenario.ux_rules?.enforce_risk_confirm_modal &&
-      step.risk_confirm?.required &&
+      effectiveRisk?.required &&
       (btn.style === "primary" || btn.action === "goto") &&
       !flags[`risk_ack_${step.id}`];
 
@@ -361,25 +380,20 @@ export default function CoachScenarioPlayer({
               }}
             />
 
-            <p className="pb-6 pt-2 text-[11px] leading-relaxed text-slate-500">
-              {step.safety_disclaimer ||
-                scenario.ux_rules?.safety_disclaimer_default}
-            </p>
+            <LiabilityDisclaimer variant="inline" className="pb-6 pt-2" />
           </div>
         </div>
       </div>
 
-      {riskOpen && step.risk_confirm && (
+      {riskOpen && effectiveRisk && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center">
           <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-[#0f1524] p-5 shadow-xl">
             <h3 className="text-lg font-bold text-white">
-              {step.risk_confirm.title}
+              {effectiveRisk.title}
             </h3>
-            <p className="mt-2 text-sm text-slate-300">{step.risk_confirm.body}</p>
+            <p className="mt-2 text-sm text-slate-300">{effectiveRisk.body}</p>
             <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
-              {step.risk_confirm.disclaimer ||
-                scenario.ux_rules?.safety_disclaimer_modal ||
-                step.safety_disclaimer}
+              {effectiveRisk.disclaimer || t("legal.disclaimer")}
             </p>
             <label className="mt-4 flex cursor-pointer items-start gap-2 rounded-xl border border-slate-700 bg-slate-900/50 px-3 py-3">
               <input
@@ -389,7 +403,7 @@ export default function CoachScenarioPlayer({
                 className="mt-0.5 h-4 w-4 rounded border-slate-600"
               />
               <span className="text-sm text-slate-200">
-                {step.risk_confirm.checkbox_label}
+                {effectiveRisk.checkbox_label}
               </span>
             </label>
             <div className="mt-4 flex flex-col gap-2">
@@ -399,7 +413,7 @@ export default function CoachScenarioPlayer({
                 onClick={confirmRisk}
                 className="rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-black disabled:opacity-40"
               >
-                {step.risk_confirm.confirm_label}
+                {effectiveRisk.confirm_label}
               </button>
               <button
                 type="button"
@@ -411,7 +425,7 @@ export default function CoachScenarioPlayer({
                 className="flex items-center justify-center gap-2 rounded-2xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-200"
               >
                 <Store className="h-4 w-4" />
-                {step.risk_confirm.cancel_label}
+                {effectiveRisk.cancel_label || t("legal.findShop")}
                 <ExternalLink className="h-3.5 w-3.5 opacity-60" />
               </button>
             </div>
