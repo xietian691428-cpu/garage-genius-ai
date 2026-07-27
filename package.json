@@ -48,7 +48,9 @@
     "seed:autodata:text": "npm run seed:dtc:text && npm run seed:car-repair-qa:text && npm run seed:car-fault:text && npm run seed:car-brands:text",
     "ingest:manual": "node --env-file=.env.local --import tsx scripts/ingest-owner-manuals.ts",
     "ingest:manual:text": "node --env-file=.env.local --import tsx scripts/ingest-owner-manuals.ts -- --skip-embeddings",
-    "ingest:manual:dir": "node --env-file=.env.local --import tsx scripts/ingest-owner-manuals.ts -- --dir=manuals --market=US"
+    "ingest:manual:dir": "node --env-file=.env.local --import tsx scripts/ingest-owner-manuals.ts -- --dir=manuals --market=US",
+    "train:golden": "node --env-file=.env.local scripts/train/golden-to-deepseek-jsonl.mjs",
+    "train:golden:mark": "node --env-file=.env.local scripts/train/golden-to-deepseek-jsonl.mjs --mark-used"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.1",

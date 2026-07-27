@@ -32,16 +32,24 @@ npm run seed:knowledge:file`}
         </section>
 
         <section className="rounded-3xl border border-slate-800 bg-[#111827] p-5">
-          <h2 className="text-sm font-medium text-slate-200">手动添加</h2>
+          <h2 className="text-sm font-medium text-slate-200">手动添加 / 飞轮自愈</h2>
           <p className="mt-2 text-sm text-slate-400">
-            使用现有知识条目管理器新增单条 / 编辑 / 删除。
+            单条 CRUD，或从 Coach 差评审核后「采纳为知识库」（即时进 RAG）。
           </p>
-          <Link
-            href="/admin/knowledge"
-            className="mt-4 inline-block rounded-xl bg-cyan-500 px-4 py-2 text-sm font-medium text-black"
-          >
-            打开知识条目
-          </Link>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href="/admin/knowledge"
+              className="inline-block rounded-xl bg-cyan-500 px-4 py-2 text-sm font-medium text-black"
+            >
+              打开知识条目
+            </Link>
+            <Link
+              href="/admin/knowledge/flywheel"
+              className="inline-block rounded-xl border border-cyan-500/40 px-4 py-2 text-sm text-cyan-300"
+            >
+              飞轮审核队列
+            </Link>
+          </div>
         </section>
       </div>
     </div>

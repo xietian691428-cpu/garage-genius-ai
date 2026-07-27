@@ -12,6 +12,10 @@ import {
   normalizeVehicleMarket,
 } from "@/lib/types/vehicle-market";
 import { REPAIR_LOOP_PROMPT } from "@/lib/chat-repair-loop";
+import {
+  formatDiySkillPromptBlock,
+  type DiySkillLevel,
+} from "@/lib/diy-skill";
 
 const PARTS_DATA_EXAMPLE = `[
   {
@@ -69,8 +73,11 @@ export function buildChatSystemPrompt(
   affiliateCatalog?: string | null,
   /** Recent maintenance_records summary for multi-turn continuity */
   maintenanceHistory?: string | null,
+  /** DIY skill band for tone / depth */
+  diySkill?: DiySkillLevel | string | null,
 ): DeepSeekMessage {
   const fitment = fitmentSearchString(vehicle);
+  const skillBlock = formatDiySkillPromptBlock(diySkill);
   const visionNote = hasImage
     ? `
 ## Photo diagnosis (garage DIY)
@@ -107,6 +114,8 @@ export function buildChatSystemPrompt(
   return {
     role: "system",
     content: `${GARAGE_GENIUS_SYSTEM_PROMPT}
+
+${skillBlock}
 
 ${marketBlock}
 

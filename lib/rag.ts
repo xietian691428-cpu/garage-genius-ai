@@ -250,13 +250,33 @@ async function searchVectorOnly(
 }
 
 /** Try embedding providers; return null instead of throwing when unavailable */
-async function tryGenerateEmbedding(text: string): Promise<number[] | null> {
+export async function tryGenerateEmbedding(
+  text: string,
+): Promise<number[] | null> {
   try {
     return await ragService.generateEmbedding(text);
   } catch (err) {
     console.warn("[rag] embedding skipped:", err);
     return null;
   }
+}
+
+/**
+ * Embeddings for knowledge_base.embedding (vector 1536).
+ * Skip if provider returns a different dimension (FTS still works).
+ */
+export async function tryGenerateKnowledgeEmbedding(
+  text: string,
+): Promise<number[] | null> {
+  const emb = await tryGenerateEmbedding(text);
+  if (!emb) return null;
+  if (emb.length !== 1536) {
+    console.warn(
+      `[rag] skip knowledge embed: got dim ${emb.length}, need 1536`,
+    );
+    return null;
+  }
+  return emb;
 }
 
 export const ragService = {
@@ -317,6 +337,7 @@ export const ragService = {
     query: string,
     vehicle: VehicleFilter,
     limit = 5,
+    options?: { diySkill?: string | null },
   ): Promise<RagKnowledgeHit[]> {
     const safeLimit = Math.max(1, Math.min(limit, 12));
     const trimmed = query.trim();
@@ -326,7 +347,10 @@ export const ragService = {
     const enrichedQuery = `${vehicle.year} ${vehicle.make} ${vehicle.model} ${market} ${trimmed}`;
 
     const finalize = (hits: RagKnowledgeHit[]) =>
-      prioritizeRagHits(softFilterHitsByMarket(hits, market));
+      prioritizeRagHits(
+        softFilterHitsByMarket(hits, market),
+        options?.diySkill,
+      );
 
     try {
       // Optional embedding — absence is fine for Phase A (FTS)
@@ -374,10 +398,11 @@ export const ragService = {
    */
   formatKnowledgeForPrompt(
     hits: RagKnowledgeHit[],
-    options?: { market?: string; maxChars?: number },
+    options?: { market?: string; maxChars?: number; diySkill?: string | null },
   ) {
     return formatKnowledgeForPrompt(hits, options?.maxChars ?? 6500, {
       market: options?.market,
+      diySkill: options?.diySkill,
     });
   },
 };

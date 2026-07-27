@@ -228,14 +228,37 @@ public schema
 │   ├── inventory_items
 │   └── vehicle_vitals
 │
-└── 运营 / Coach / 风控
+└── 运营 / Coach / 风控 / 飞轮
     ├── push_subscriptions
     ├── reminder_deliveries
-    ├── ai_request_log
-    ├── coach_step_feedback
-    └── coach_playbook_usage     # Free 5次/30日窗
+    ├── ai_request_log           # 仅限流计数（非 prompt 日志）
+    ├── coach_step_feedback      # Coach 步骤 yes/no
+    ├── coach_playbook_usage     # Free 配额计数（非行为画像）
+    ├── flywheel_review_queue    # 差评 → 人工审核
+    ├── golden_qa                # 已审 Q&A → RAG / 微调导出
+    └── rag_retrieval_events     # Chat RAG 命中 id/title 快照
 ```
 
+### 3.2b 数据飞轮（执行层）
+
+```text
+生产信号
+  coach_step_feedback(vote=no) ──即时/日 cron──► flywheel_review_queue
+  chat RAG hits ──────────────────────────────► rag_retrieval_events
+                                                      │
+Admin /admin/knowledge/flywheel                       │
+  填写正确 Q/A →「采纳为知识库」 ─────────────────────┤
+                                                      ▼
+                                              golden_qa
+                                                      │
+                         ┌────────────────────────────┼────────────────────────┐
+                         ▼                            ▼                        ▼
+                  knowledge_base              JSONL export              DeepSeek FT
+                  (+ embedding 可选)          npm run train:golden       finetune.py（月度人工）
+                  → 下次 RAG 即时生效
+```
+
+**注意：** `ai_request_log` / `token_usage_events` **不**存完整 prompt/completion；飞轮原料主要是 Coach 踩 + 人工修正 +（可选）Chat 召回快照。
 ### 3.3 知识语料树（seed → knowledge_base）
 
 ```text
@@ -290,7 +313,15 @@ erDiagram
 │   ├── 优先 hybrid（FTS ⊕ vector RRF）
 │   ├── 无 embedding → FTS-only
 │   ├── market / region 软过滤
+│   ├── diy_skill 软排序（不硬过滤语料）
 │   └── 提示词分层：config > owner/safety > repair > parts
+│
+├── DIY 段位（diy_skill）
+│   ├── profiles.diy_skill: beginner | enthusiast | professional
+│   ├── Onboarding 一键自报 + Settings 可改
+│   ├── Chat system prompt 注入段位前缀（主杠杆）
+│   ├── Coach「踩」软调 confidence；周 cron 推断升降级 + 站内通知
+│   └── 勿用 coach_playbook_usage 做行为（仅配额）
 │
 ├── Coach
 │   ├── 仅 *_production.json 入 catalog（27）

@@ -135,9 +135,13 @@ Pro entitlements include: unlimited playbooks, `annualHealthReport`, `customProf
 | Token | `/admin/ops/tokens` | `GET /api/admin/token-stats` |
 | 收入 | `/admin/ops/revenue` | `GET /api/admin/revenue-stats` |
 | Staff / 审计 | `/admin/staff` | `GET /api/admin/staff` + migration `025` |
+| **飞轮审核** | `/admin/knowledge/flywheel` | `GET\|PATCH /api/admin/flywheel` + migration `026` |
+| 飞轮入队 cron | `/api/cron/flywheel-enqueue` | Bearer `CRON_SECRET`；日扫 Coach「踩」 |
 
 Auth: `requireAdmin()` / cookie `gg_admin_session` — `ADMIN_EMAIL` + `ADMIN_PASSWORD_B64`.  
 Charts: Recharts. Types: `lib/types/admin-ops.ts`.
+
+**飞轮闭环（最小自动挡）：** Coach `vote=no` → `flywheel_review_queue` → 人工填正确问答 →「采纳为知识库」写入 `golden_qa` + `knowledge_base`（可选 embedding）→ 下次 RAG 生效；月度 `npm run train:golden` → `finetune.py`。Chat 侧写 `rag_retrieval_events`（命中 id/title，非全文）。
 
 ---
 
@@ -186,9 +190,24 @@ Apply in order through at least:
 - `022_token_usage_events.sql` (if present)
 - `023_stripe_subscriptions_revenue.sql` (`coach_playbook_usage`, Stripe mirror tables)
 - `025_admin_ops_console.sql` (`admin_staff`, `admin_audit_logs`, `customer_crm`)
+- `026_data_flywheel.sql` (`flywheel_review_queue`, `golden_qa`, `rag_retrieval_events`)
 
 Without `020`/`023`, feedback/quota/revenue **degrade** (fail-open or empty dashboards).  
-Without `025`, CRM tags/notes/archive and staff/audit tables are empty or error until applied.
+Without `025`, CRM tags/notes/archive and staff/audit tables are empty or error until applied.  
+Without `026`, flywheel enqueue/promote no-ops until migration is applied.
+- `027_diy_skill.sql` (`profiles.diy_skill*`, `skill_assessment_config`, reminder uniqueness by reason)
+
+### DIY skill band
+
+| Piece | Path |
+|-------|------|
+| Types / prompt prefixes | `lib/diy-skill.ts` |
+| Inference | `lib/skill-inference.ts` |
+| API | `GET\|PATCH /api/diy-skill` |
+| Weekly cron | `POST /api/cron/adjust-skill` |
+| UI | Onboarding step + Settings → DIY coaching level |
+
+**v1 lever = system prompt tone + soft RAG re-rank.** Do not hard-filter knowledge by skill (corpus has no skill taxonomy).
 
 ---
 

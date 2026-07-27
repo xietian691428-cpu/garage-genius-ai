@@ -80,6 +80,11 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         module: "knowledge",
       },
       {
+        href: "/admin/knowledge/flywheel",
+        label: "飞轮审核队列",
+        module: "knowledge",
+      },
+      {
         href: "/admin/knowledge/compare",
         label: "对比测试",
         module: "knowledge",

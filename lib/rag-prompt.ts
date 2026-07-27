@@ -1,4 +1,9 @@
 import type { RagKnowledgeHit } from "@/lib/types/rag";
+import {
+  normalizeDiySkill,
+  ragSkillBoost,
+  type DiySkillLevel,
+} from "@/lib/diy-skill";
 
 /**
  * Prompt priority for retrieved knowledge (higher = show first / emphasize):
@@ -96,12 +101,18 @@ export function classifyRagTier(hit: RagKnowledgeHit): RagPriorityTier {
   return "repair";
 }
 
-/** Re-rank FTS/hybrid hits: config > repair > parts, then similarity */
-export function prioritizeRagHits(hits: RagKnowledgeHit[]): RagKnowledgeHit[] {
+/** Re-rank FTS/hybrid hits: config > repair > parts, then skill soft-boost, then similarity */
+export function prioritizeRagHits(
+  hits: RagKnowledgeHit[],
+  diySkill?: DiySkillLevel | string | null,
+): RagKnowledgeHit[] {
+  const skill = normalizeDiySkill(diySkill || "enthusiast");
   return [...hits].sort((a, b) => {
     const tierDiff =
       TIER_RANK[classifyRagTier(b)] - TIER_RANK[classifyRagTier(a)];
     if (tierDiff !== 0) return tierDiff;
+    const skillDiff = ragSkillBoost(b, skill) - ragSkillBoost(a, skill);
+    if (skillDiff !== 0) return skillDiff;
     return (b.similarity ?? 0) - (a.similarity ?? 0);
   });
 }
@@ -113,11 +124,11 @@ export function prioritizeRagHits(hits: RagKnowledgeHit[]): RagKnowledgeHit[] {
 export function formatKnowledgeForPrompt(
   hits: RagKnowledgeHit[],
   maxChars = 6500,
-  options?: { market?: string },
+  options?: { market?: string; diySkill?: DiySkillLevel | string | null },
 ): string {
   if (!hits.length) return "";
 
-  const ranked = prioritizeRagHits(hits);
+  const ranked = prioritizeRagHits(hits, options?.diySkill);
   const byTier: Record<RagPriorityTier, RagKnowledgeHit[]> = {
     config: [],
     evidence: [],

@@ -8,7 +8,7 @@ import {
 import { DISCLAIMER } from "@/lib/constants";
 import type { VehicleInfo } from "@/lib/types/chat";
 import { buildChatSystemPrompt } from "@/lib/chat-system-prompt";
-import { createSupabaseUserClient } from "@/lib/supabase-admin";
+import { createSupabaseUserClient, createSupabaseAdmin } from "@/lib/supabase-admin";
 import { tokenService } from "@/lib/token-service";
 import {
   AI_ROUTE_TOKEN_FLOOR,
@@ -38,6 +38,7 @@ import {
 } from "@/lib/affiliate-match";
 import { fitmentSearchString } from "@/lib/vcdb/format";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
+import { normalizeDiySkill } from "@/lib/diy-skill";
 
 export const runtime = "nodejs";
 
@@ -215,6 +216,20 @@ export async function POST(request: NextRequest) {
         : content.trim() ||
           `${fitmentSearchString(currentVehicle)} diagnosis`;
 
+    // DIY skill band (profiles.diy_skill) — tone + soft RAG ranking
+    let diySkill = "beginner";
+    try {
+      const admin = createSupabaseAdmin();
+      const { data: prof } = await admin
+        .from("profiles")
+        .select("diy_skill")
+        .eq("id", user.id)
+        .maybeSingle();
+      diySkill = normalizeDiySkill(prof?.diy_skill);
+    } catch {
+      /* keep beginner */
+    }
+
     const ragHits = await ragService.retrieveRelevantKnowledge(
       ragQuery,
       {
@@ -224,10 +239,28 @@ export async function POST(request: NextRequest) {
         market: currentVehicle.market,
       },
       ragLimit,
+      { diySkill },
+    );
+
+    void import("@/lib/flywheel").then(({ logRagRetrievalEvent }) =>
+      logRagRetrievalEvent({
+        userId: user.id,
+        route: "chat",
+        queryPreview: ragQuery,
+        hitIds: ragHits
+          .map((h) => h.id)
+          .filter((id): id is string => Boolean(id)),
+        hitTitles: ragHits
+          .map((h) => h.title || "")
+          .filter((t) => Boolean(t)),
+        vehicleMake: currentVehicle.make,
+        vehicleModel: currentVehicle.model,
+      }),
     );
 
     const ragContext = ragService.formatKnowledgeForPrompt(ragHits, {
       market: currentVehicle.market,
+      diySkill,
     });
     const ragFocusHint = extractFocusFromRagHits(ragHits);
 
@@ -255,6 +288,7 @@ export async function POST(request: NextRequest) {
         conflictContext,
         affiliateCatalog,
         typeof maintenanceSummary === "string" ? maintenanceSummary : null,
+        diySkill,
       ),
       ...userMessages,
     ];

@@ -47,22 +47,54 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, stored: false });
   }
 
-  const { error } = await supabase.from("coach_step_feedback").insert({
-    user_id: user.id,
-    scenario_slug: body.scenario_slug,
-    scenario_id: body.scenario_id,
-    step_id: body.step_id,
-    vote: body.vote,
-    vehicle_mileage: body.vehicle_mileage ?? null,
-    vehicle_make: body.vehicle_make ?? null,
-    vehicle_model: body.vehicle_model ?? null,
-    note: body.note?.slice(0, 500) ?? null,
-    client_session_id: body.client_session_id ?? null,
-  });
+  const { data, error } = await supabase
+    .from("coach_step_feedback")
+    .insert({
+      user_id: user.id,
+      scenario_slug: body.scenario_slug,
+      scenario_id: body.scenario_id,
+      step_id: body.step_id,
+      vote: body.vote,
+      vehicle_mileage: body.vehicle_mileage ?? null,
+      vehicle_make: body.vehicle_make ?? null,
+      vehicle_model: body.vehicle_model ?? null,
+      note: body.note?.slice(0, 500) ?? null,
+      client_session_id: body.client_session_id ?? null,
+    })
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     console.warn("[coach/feedback] insert failed", error.message);
     return NextResponse.json({ ok: true, stored: false, warning: error.message });
+  }
+
+  // Flywheel: “no” votes enter admin review queue (fail-open)
+  if (body.vote === "no" && data?.id) {
+    try {
+      const { enqueueCoachFeedback } = await import("@/lib/flywheel");
+      await enqueueCoachFeedback({
+        id: data.id as string,
+        user_id: user.id,
+        scenario_slug: body.scenario_slug,
+        scenario_id: body.scenario_id,
+        step_id: body.step_id,
+        vote: body.vote,
+        vehicle_make: body.vehicle_make ?? null,
+        vehicle_model: body.vehicle_model ?? null,
+        note: body.note?.slice(0, 500) ?? null,
+      });
+    } catch (err) {
+      console.warn("[coach/feedback] flywheel enqueue skipped", err);
+    }
+  }
+
+  // Soft DIY skill signal (confidence nudge / rare demotion)
+  try {
+    const { onCoachFeedbackSkillSignal } = await import("@/lib/skill-inference");
+    await onCoachFeedbackSkillSignal(user.id, body.vote);
+  } catch (err) {
+    console.warn("[coach/feedback] skill signal skipped", err);
   }
 
   return NextResponse.json({ ok: true, stored: true });

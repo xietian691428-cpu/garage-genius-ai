@@ -10,6 +10,7 @@ import { TrialStatusBanner } from "@/components/subscription/TrialBanners";
 import LocaleSwitcher from "@/components/i18n/LocaleSwitcher";
 import { useTranslation } from "react-i18next";
 import SubscriptionAIAssistant from "@/components/subscription/SubscriptionAIAssistant";
+import DiySkillSettings from "@/components/settings/DiySkillSettings";
 
 export default function SettingsPanel() {
   const { t } = useTranslation();
@@ -97,6 +98,8 @@ export default function SettingsPanel() {
             <LocaleSwitcher />
           </div>
         </section>
+
+        <DiySkillSettings />
 
         <section className="rounded-3xl border border-slate-800 bg-[#111827] p-5">
           <h2 className="text-xs font-medium uppercase tracking-wide text-slate-500">

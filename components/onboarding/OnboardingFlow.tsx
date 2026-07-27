@@ -28,8 +28,13 @@ import VehicleProfileTags from "@/components/vehicles/VehicleProfileTags";
 import UpgradeModal from "@/components/ui/UpgradeModal";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DIY_SKILL_OPTIONS,
+  type DiySkillLevel,
+} from "@/lib/diy-skill";
 
-type Step = "welcome" | "market" | "vehicle";
+type Step = "welcome" | "market" | "skill" | "vehicle";
 
 type Props = {
   onComplete: (vehicle: VehicleInfo) => Promise<VehicleInfo>;
@@ -79,11 +84,13 @@ const FEATURES = [
 export default function OnboardingFlow({ onComplete }: Props) {
   const { t } = useTranslation();
   const { features } = useSubscription();
+  const { session } = useAuth();
   const [step, setStep] = useState<Step>("welcome");
   const [market, setMarket] = useState<VehicleMarketCode>(() => {
     if (typeof window === "undefined") return DEFAULT_VEHICLE_MARKET;
     return loadPreferredMarket();
   });
+  const [diySkill, setDiySkill] = useState<DiySkillLevel>("beginner");
   const [name, setName] = useState("Daily Driver");
   const [mileage, setMileage] = useState("");
   const [profileTags, setProfileTags] = useState<string[]>([]);
@@ -139,6 +146,22 @@ export default function OnboardingFlow({ onComplete }: Props) {
 
       savePreferredMarket(market);
 
+      // Persist DIY skill band (fail-open if migration not applied yet)
+      if (session?.access_token) {
+        try {
+          await fetch("/api/diy-skill", {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ diySkill }),
+          });
+        } catch {
+          /* non-blocking */
+        }
+      }
+
       const parsedMileage = Math.max(
         0,
         Math.floor(Number(String(mileage).replace(/,/g, "")) || 0),
@@ -191,8 +214,13 @@ export default function OnboardingFlow({ onComplete }: Props) {
     <div className="fixed inset-0 z-[80] overflow-y-auto bg-[#0a0f1c]">
       <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6">
         <div className="mb-6 flex items-center gap-2">
-          {(["welcome", "market", "vehicle"] as const).map((s) => {
-            const order = { welcome: 0, market: 1, vehicle: 2 } as const;
+          {(["welcome", "market", "skill", "vehicle"] as const).map((s) => {
+            const order = {
+              welcome: 0,
+              market: 1,
+              skill: 2,
+              vehicle: 3,
+            } as const;
             const active = order[step] >= order[s];
             const current = step === s;
             return (
@@ -267,7 +295,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
             </button>
             <div className="mb-2 flex items-center gap-2 text-cyan-300">
               <Globe2 className="h-4 w-4" />
-              <span className="text-sm font-medium">Step 2 of 3</span>
+              <span className="text-sm font-medium">Step 2 of 4</span>
             </div>
             <h1 className="mb-2 text-2xl font-bold text-white sm:text-3xl">
               Where was this car sold?
@@ -303,14 +331,14 @@ export default function OnboardingFlow({ onComplete }: Props) {
               type="button"
               onClick={() => {
                 savePreferredMarket(market);
-                setStep("vehicle");
+                setStep("skill");
               }}
               className="mt-auto flex min-h-[56px] w-full items-center justify-center rounded-2xl bg-cyan-500 text-base font-semibold text-black hover:bg-cyan-400"
             >
-              Continue to vehicle
+              Continue
             </button>
           </>
-        ) : (
+        ) : step === "skill" ? (
           <>
             <button
               type="button"
@@ -320,8 +348,56 @@ export default function OnboardingFlow({ onComplete }: Props) {
               ← Back
             </button>
             <div className="mb-2 flex items-center gap-2 text-cyan-300">
+              <Wrench className="h-4 w-4" />
+              <span className="text-sm font-medium">Step 3 of 4</span>
+            </div>
+            <h1 className="mb-2 text-2xl font-bold text-white sm:text-3xl">
+              How handy are you under the hood?
+            </h1>
+            <p className="mb-6 text-sm leading-relaxed text-slate-400">
+              One tap — we match coaching depth to your DIY level (not a survey).
+              You can change this later in Settings.
+            </p>
+            <div className="mb-6 grid gap-2">
+              {DIY_SKILL_OPTIONS.map((opt) => {
+                const selected = diySkill === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setDiySkill(opt.value)}
+                    className={`rounded-2xl border px-4 py-3 text-left transition ${
+                      selected
+                        ? "border-cyan-400/70 bg-cyan-500/10"
+                        : "border-slate-800 bg-slate-900/40 hover:border-slate-600"
+                    }`}
+                  >
+                    <p className="font-medium text-white">{opt.label}</p>
+                    <p className="mt-0.5 text-xs text-slate-400">{opt.hint}</p>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={() => setStep("vehicle")}
+              className="mt-auto flex min-h-[56px] w-full items-center justify-center rounded-2xl bg-cyan-500 text-base font-semibold text-black hover:bg-cyan-400"
+            >
+              Continue to vehicle
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => setStep("skill")}
+              className="mb-4 self-start text-sm text-slate-400 hover:text-slate-200"
+            >
+              ← Back
+            </button>
+            <div className="mb-2 flex items-center gap-2 text-cyan-300">
               <Sparkles className="h-4 w-4" />
-              <span className="text-sm font-medium">Step 3 of 3</span>
+              <span className="text-sm font-medium">Step 4 of 4</span>
             </div>
             <h1 className="mb-2 text-2xl font-bold text-white sm:text-3xl">
               Pick your exact vehicle
