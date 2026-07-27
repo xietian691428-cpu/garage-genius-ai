@@ -239,7 +239,13 @@ export async function POST(request: NextRequest) {
         market: currentVehicle.market,
       },
       ragLimit,
-      { diySkill },
+      {
+        diySkill,
+        mileage:
+          typeof currentVehicle.mileage === "number"
+            ? currentVehicle.mileage
+            : null,
+      },
     );
 
     void import("@/lib/flywheel").then(({ logRagRetrievalEvent }) =>
@@ -261,6 +267,13 @@ export async function POST(request: NextRequest) {
     const ragContext = ragService.formatKnowledgeForPrompt(ragHits, {
       market: currentVehicle.market,
       diySkill,
+      make: currentVehicle.make,
+      model: currentVehicle.model,
+      year: Number(currentVehicle.year) || null,
+      mileage:
+        typeof currentVehicle.mileage === "number"
+          ? currentVehicle.mileage
+          : null,
     });
     const ragFocusHint = extractFocusFromRagHits(ragHits);
 

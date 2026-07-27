@@ -299,6 +299,10 @@ export async function promoteReviewToKnowledge(
       flywheel_queue_id: id,
       scenario_slug: item.scenarioSlug,
       step_id: item.stepId,
+      rag_tier: "repair",
+      quality_score: 5,
+      corpus: "flywheel",
+      promoted_from: "coach_step_feedback",
     },
     updated_at: new Date().toISOString(),
   };

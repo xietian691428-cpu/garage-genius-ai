@@ -337,7 +337,7 @@ export const ragService = {
     query: string,
     vehicle: VehicleFilter,
     limit = 5,
-    options?: { diySkill?: string | null },
+    options?: { diySkill?: string | null; mileage?: number | null },
   ): Promise<RagKnowledgeHit[]> {
     const safeLimit = Math.max(1, Math.min(limit, 12));
     const trimmed = query.trim();
@@ -347,10 +347,13 @@ export const ragService = {
     const enrichedQuery = `${vehicle.year} ${vehicle.make} ${vehicle.model} ${market} ${trimmed}`;
 
     const finalize = (hits: RagKnowledgeHit[]) =>
-      prioritizeRagHits(
-        softFilterHitsByMarket(hits, market),
-        options?.diySkill,
-      );
+      prioritizeRagHits(softFilterHitsByMarket(hits, market), {
+        diySkill: options?.diySkill,
+        make: vehicle.make,
+        model: vehicle.model,
+        year: vehicle.year,
+        mileage: options?.mileage ?? null,
+      });
 
     try {
       // Optional embedding — absence is fine for Phase A (FTS)
@@ -398,11 +401,23 @@ export const ragService = {
    */
   formatKnowledgeForPrompt(
     hits: RagKnowledgeHit[],
-    options?: { market?: string; maxChars?: number; diySkill?: string | null },
+    options?: {
+      market?: string;
+      maxChars?: number;
+      diySkill?: string | null;
+      make?: string | null;
+      model?: string | null;
+      year?: number | null;
+      mileage?: number | null;
+    },
   ) {
     return formatKnowledgeForPrompt(hits, options?.maxChars ?? 6500, {
       market: options?.market,
       diySkill: options?.diySkill,
+      make: options?.make,
+      model: options?.model,
+      year: options?.year,
+      mileage: options?.mileage,
     });
   },
 };

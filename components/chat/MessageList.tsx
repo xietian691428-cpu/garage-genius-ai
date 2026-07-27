@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { ChatMessage, VehicleInfo } from "@/lib/types/chat";
 import type { FocusCommand } from "@/lib/types/focus";
 import MessageBubble from "./MessageBubble";
-import { CHAT_STARTER_CHIPS } from "@/lib/chat-repair-loop";
+import { getChatStarterChips } from "@/lib/chat-repair-loop";
 
 interface Props {
   messages: ChatMessage[];
@@ -77,7 +77,7 @@ export default function MessageList({
             Try a starting point
           </p>
           <div className="flex flex-wrap gap-2">
-            {CHAT_STARTER_CHIPS.map((chip) => (
+            {getChatStarterChips(vehicle).map((chip) => (
               <button
                 key={chip.id}
                 type="button"

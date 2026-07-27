@@ -209,6 +209,10 @@ Without `026`, flywheel enqueue/promote no-ops until migration is applied.
 
 **v1 lever = system prompt tone + soft RAG re-rank.** Do not hard-filter knowledge by skill (corpus has no skill taxonomy).
 
+### RAG precision (post–DIY skill)
+
+Soft re-rank in `lib/rag-rank.ts` + `prioritizeRagHits`: skill + make/model/year + mileage band metadata + `quality_score`/`upvotes` + `flywheel_golden`. Chat repair loop asks for **top 3 causes** and Problem→Checks→Solution; starter chips are vehicle-aware via `listRecommendedCoachPlaybooks`. **CoachScenarioPlayer unchanged.**
+
 ---
 
 ## 11. Smoke checks (local)

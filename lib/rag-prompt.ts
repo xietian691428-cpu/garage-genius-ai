@@ -1,10 +1,10 @@
 import type { RagKnowledgeHit } from "@/lib/types/rag";
 import {
-  normalizeDiySkill,
-  ragSkillBoost,
-  type DiySkillLevel,
-} from "@/lib/diy-skill";
+  combinedRagBoost,
+  type RagRankContext,
+} from "@/lib/rag-rank";
 
+export type { RagRankContext };
 /**
  * Prompt priority for retrieved knowledge (higher = show first / emphasize):
  *   1 config   — VCdb configuration cards / fitment ground truth
@@ -101,17 +101,22 @@ export function classifyRagTier(hit: RagKnowledgeHit): RagPriorityTier {
   return "repair";
 }
 
-/** Re-rank FTS/hybrid hits: config > repair > parts, then skill soft-boost, then similarity */
+/** Re-rank FTS/hybrid hits: tier → skill+vehicle+quality soft boost → similarity */
 export function prioritizeRagHits(
   hits: RagKnowledgeHit[],
-  diySkill?: DiySkillLevel | string | null,
+  diySkillOrCtx?: string | RagRankContext | null,
 ): RagKnowledgeHit[] {
-  const skill = normalizeDiySkill(diySkill || "enthusiast");
+  const ctx: RagRankContext =
+    diySkillOrCtx && typeof diySkillOrCtx === "object"
+      ? { ...diySkillOrCtx }
+      : { diySkill: (diySkillOrCtx as string) || "enthusiast" };
+  if (!ctx.diySkill) ctx.diySkill = "enthusiast";
+
   return [...hits].sort((a, b) => {
     const tierDiff =
       TIER_RANK[classifyRagTier(b)] - TIER_RANK[classifyRagTier(a)];
     if (tierDiff !== 0) return tierDiff;
-    const skillDiff = ragSkillBoost(b, skill) - ragSkillBoost(a, skill);
+    const skillDiff = combinedRagBoost(b, ctx) - combinedRagBoost(a, ctx);
     if (skillDiff !== 0) return skillDiff;
     return (b.similarity ?? 0) - (a.similarity ?? 0);
   });
@@ -124,11 +129,17 @@ export function prioritizeRagHits(
 export function formatKnowledgeForPrompt(
   hits: RagKnowledgeHit[],
   maxChars = 6500,
-  options?: { market?: string; diySkill?: DiySkillLevel | string | null },
+  options?: RagRankContext & { market?: string; maxChars?: number },
 ): string {
   if (!hits.length) return "";
 
-  const ranked = prioritizeRagHits(hits, options?.diySkill);
+  const ranked = prioritizeRagHits(hits, {
+    diySkill: options?.diySkill,
+    make: options?.make,
+    model: options?.model,
+    year: options?.year,
+    mileage: options?.mileage,
+  });
   const byTier: Record<RagPriorityTier, RagKnowledgeHit[]> = {
     config: [],
     evidence: [],
