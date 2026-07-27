@@ -59,5 +59,29 @@
     "formatHelp": "Format: P/C/B/U + 4 digits (hex OK).",
     "invalidCode": "Use a valid code like P0420 or U0100.",
     "submit": "Diagnose code"
+  },
+  "obd": {
+    "connectEntry": "Connect OBD",
+    "connectTitle": "Connect Bluetooth OBD-II",
+    "connectSubtitle": "ELM327 BLE adapters — read codes and live sensors, then diagnose in Chat.",
+    "stepsTitle": "Connection steps",
+    "step1": "Plug the adapter into the OBD-II port (usually under the dash, left of the steering column).",
+    "step2": "Turn the ignition ON (engine can stay off). Wait for the adapter LED.",
+    "step3": "Tap Connect and pick your adapter in the system Bluetooth list.",
+    "step4": "We read stored/pending DTCs and basic sensors, then open diagnosis in Chat.",
+    "devicesTitle": "Compatible devices (BLE)",
+    "bleOnlyNote": "Classic Bluetooth (non-BLE) dongles are not supported in the browser. Prefer adapters labeled BLE / 4.0+.",
+    "working": "Connecting and reading…",
+    "workingHint": "Keep the phone near the adapter. Do not leave this screen.",
+    "connectedTo": "Connected to {{name}}",
+    "disconnect": "Disconnect",
+    "connectCta": "Connect & read codes",
+    "readAgain": "Read codes again",
+    "diagnoseInChat": "Open diagnosis in Chat",
+    "codesTitle": "Fault codes",
+    "noCodes": "No stored or pending codes reported.",
+    "sensorsTitle": "Live sensors",
+    "odometer": "Odometer",
+    "errorGeneric": "OBD connection or read failed. Try again."
   }
 }

@@ -26,10 +26,12 @@ import CoachScenarioPlayer from "@/components/coach/CoachScenarioPlayer";
 import DtcEntryBar from "@/components/chat/DtcEntryBar";
 import {
   buildDtcDiagnosisPrompt,
+  buildObdBleDiagnosisPrompt,
   extractDtcCodes,
   lookupDtc,
 } from "@/lib/dtc";
 import type { ObdVisionAnalysis } from "@/lib/types/dtc";
+import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
 import { useSubscription } from "@/hooks/useSubscription";
 import UpgradeButton from "@/components/ui/UpgradeButton";
 import UpgradeModal, {
@@ -206,6 +208,20 @@ export default function CoachLibrary({
     );
   };
 
+  const runObdBleToChat = (snapshot: ObdSessionSnapshot) => {
+    onAskAI(
+      buildObdBleDiagnosisPrompt({
+        deviceName: snapshot.deviceName,
+        codes: snapshot.codes,
+        vehicleLabel: vehicleLabel || undefined,
+        sensors: snapshot.sensors,
+        odometerKm: snapshot.odometerKm,
+        distanceSinceCodesClearedKm: snapshot.distanceSinceCodesClearedKm,
+      }),
+      { playbookSlug: "diagnosis_check_engine" },
+    );
+  };
+
   const runObdScreenshotToChat = async (imageDataUrl: string) => {
     if (!currentVehicle) {
       alert("Select a vehicle first to analyze an OBD screenshot.");
@@ -289,6 +305,7 @@ export default function CoachLibrary({
             variant="coach"
             onCodeSubmit={runDtcToChat}
             onObdImage={(img) => void runObdScreenshotToChat(img)}
+            onObdBleSession={runObdBleToChat}
           />
         ) : null}
         <div className="min-h-0 flex-1">

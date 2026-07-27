@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Binary, Loader2, ScanLine } from "lucide-react";
+import { Binary, Bluetooth, Loader2, ScanLine } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import DtcCodeModal from "@/components/chat/DtcCodeModal";
+import ObdConnectModal from "@/components/obd/ObdConnectModal";
 import { compressImageDataUrl } from "@/lib/image";
+import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
 
 type Props = {
   disabled?: boolean;
@@ -12,10 +14,12 @@ type Props = {
   variant?: "chat" | "coach";
   onCodeSubmit: (code: string) => void;
   onObdImage: (imageDataUrl: string) => void | Promise<void>;
+  /** BLE OBD session → Chat diagnosis inject */
+  onObdBleSession?: (snapshot: ObdSessionSnapshot) => void;
 };
 
 /**
- * Shared “Enter fault code” + “OBD screenshot” entry (Chat + Check Engine coach).
+ * Shared fault-code / OBD screenshot / Connect OBD entry (Chat + Check Engine).
  * Does not modify CoachScenarioPlayer internals.
  */
 export default function DtcEntryBar({
@@ -23,9 +27,11 @@ export default function DtcEntryBar({
   variant = "chat",
   onCodeSubmit,
   onObdImage,
+  onObdBleSession,
 }: Props) {
   const { t } = useTranslation();
   const [modalOpen, setModalOpen] = useState(false);
+  const [bleOpen, setBleOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -73,6 +79,13 @@ export default function DtcEntryBar({
         onClose={() => setModalOpen(false)}
         onSubmit={onCodeSubmit}
       />
+      {onObdBleSession ? (
+        <ObdConnectModal
+          open={bleOpen}
+          onClose={() => setBleOpen(false)}
+          onSessionReady={onObdBleSession}
+        />
+      ) : null}
       <input
         ref={fileRef}
         type="file"
@@ -81,6 +94,17 @@ export default function DtcEntryBar({
         onChange={onFile}
       />
       <div className={wrap}>
+        {onObdBleSession ? (
+          <button
+            type="button"
+            disabled={disabled || busy}
+            onClick={() => setBleOpen(true)}
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-cyan-500/50 bg-cyan-500/15 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-500/25 disabled:opacity-50 sm:flex-none sm:text-sm"
+          >
+            <Bluetooth className="h-3.5 w-3.5" />
+            {t("obd.connectEntry")}
+          </button>
+        ) : null}
         <button
           type="button"
           disabled={disabled || busy}
@@ -94,7 +118,7 @@ export default function DtcEntryBar({
           type="button"
           disabled={disabled || busy}
           onClick={pickObd}
-          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs font-medium text-cyan-200 transition hover:bg-cyan-500/20 disabled:opacity-50 sm:flex-none sm:text-sm"
+          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-600 bg-slate-900/60 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-cyan-500/40 hover:text-cyan-200 disabled:opacity-50 sm:flex-none sm:text-sm"
         >
           {busy ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />

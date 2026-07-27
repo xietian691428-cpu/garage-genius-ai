@@ -59,5 +59,29 @@
     "formatHelp": "Formato: P/C/B/U + 4 dígitos (hex válido).",
     "invalidCode": "Usa un código válido como P0420 o U0100.",
     "submit": "Diagnosticar código"
+  },
+  "obd": {
+    "connectEntry": "Conectar OBD",
+    "connectTitle": "Conectar OBD-II por Bluetooth",
+    "connectSubtitle": "Adaptadores ELM327 BLE — lee códigos y sensores, luego diagnostica en el Chat.",
+    "stepsTitle": "Pasos de conexión",
+    "step1": "Conecta el adaptador al puerto OBD-II (suele estar bajo el salpicadero, a la izquierda del volante).",
+    "step2": "Pon el contacto en ON (el motor puede quedar apagado). Espera el LED del adaptador.",
+    "step3": "Toca Conectar y elige tu adaptador en la lista Bluetooth del sistema.",
+    "step4": "Leemos DTC almacenados/pendientes y sensores básicos, y abrimos el diagnóstico en el Chat.",
+    "devicesTitle": "Dispositivos compatibles (BLE)",
+    "bleOnlyNote": "Los dongles Bluetooth clásico (no BLE) no son compatibles en el navegador. Prefiere adaptadores BLE / 4.0+.",
+    "working": "Conectando y leyendo…",
+    "workingHint": "Mantén el teléfono cerca del adaptador. No salgas de esta pantalla.",
+    "connectedTo": "Conectado a {{name}}",
+    "disconnect": "Desconectar",
+    "connectCta": "Conectar y leer códigos",
+    "readAgain": "Leer códigos de nuevo",
+    "diagnoseInChat": "Abrir diagnóstico en el Chat",
+    "codesTitle": "Códigos de fallo",
+    "noCodes": "No se reportaron códigos almacenados o pendientes.",
+    "sensorsTitle": "Sensores en vivo",
+    "odometer": "Odómetro",
+    "errorGeneric": "Falló la conexión o lectura OBD. Inténtalo de nuevo."
   }
 }

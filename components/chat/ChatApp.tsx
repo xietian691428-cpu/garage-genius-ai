@@ -34,11 +34,13 @@ import {
 } from "@/lib/chat-repair-loop";
 import {
   buildDtcDiagnosisPrompt,
+  buildObdBleDiagnosisPrompt,
   extractDtcCodes,
   lookupDtc,
   lookupDtcsFromText,
 } from "@/lib/dtc";
 import type { ObdVisionAnalysis } from "@/lib/types/dtc";
+import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
 
 interface Props {
   seedPrompt?: string;
@@ -491,6 +493,19 @@ export default function ChatApp({
     );
   };
 
+  const handleObdBleSession = (snapshot: ObdSessionSnapshot) => {
+    void handleSend(
+      buildObdBleDiagnosisPrompt({
+        deviceName: snapshot.deviceName,
+        codes: snapshot.codes,
+        vehicleLabel,
+        sensors: snapshot.sensors,
+        odometerKm: snapshot.odometerKm,
+        distanceSinceCodesClearedKm: snapshot.distanceSinceCodesClearedKm,
+      }),
+    );
+  };
+
   const handleObdScreenshot = async (imageDataUrl: string) => {
     if (!currentVehicle) {
       alert("Add a vehicle to your garage before chatting.");
@@ -654,6 +669,7 @@ export default function ChatApp({
           onSend={(c, imgs) => void handleSend(c, imgs)}
           onFaultCode={handleFaultCode}
           onObdScreenshot={(img) => void handleObdScreenshot(img)}
+          onObdBleSession={handleObdBleSession}
           isLoading={vehiclesLoading || !ready || !currentVehicle}
           isGenerating={isLoading}
           autoSpeak={autoSpeak}

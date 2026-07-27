@@ -155,21 +155,35 @@ export function formatDtcConfirmLine(codes: ParsedDtc[]): string {
  */
 export function buildDtcDiagnosisPrompt(options: {
   codes: ParsedDtc[];
-  source: "manual" | "obd_screenshot" | "chat_text";
+  source: "manual" | "obd_screenshot" | "chat_text" | "obd_bluetooth";
   vehicleLabel?: string;
+  /** Optional live snapshot lines from BLE OBD */
+  liveContext?: string[];
 }): string {
-  const { codes, source, vehicleLabel } = options;
-  const confirm = formatDtcConfirmLine(codes);
-  const codeBlock = codes
-    .map((c) => `- ${c.code}: ${c.desc} (severity: ${c.severity})`)
-    .join("\n");
-  const playbook = codes[0] ? matchPlaybookForDtc(codes[0]) : null;
+  const { codes, source, vehicleLabel, liveContext } = options;
+  const confirm =
+    codes.length > 0
+      ? formatDtcConfirmLine(codes)
+      : source === "obd_bluetooth"
+        ? "Bluetooth OBD connected — no stored/pending fault codes reported. Review live sensors and suggest safe DIY checks."
+        : formatDtcConfirmLine(codes);
+  const codeBlock = codes.length
+    ? codes
+        .map((c) => `- ${c.code}: ${c.desc} (severity: ${c.severity})`)
+        .join("\n")
+    : "- (none)";
+  const playbook = codes[0] ? matchPlaybookForDtc(codes[0]) : {
+    slug: "diagnosis_check_engine",
+    reason: "No codes — still use Check Engine guided flow if the light is on.",
+  };
   const sourceLine =
     source === "obd_screenshot"
       ? "Codes were read from an OBD scanner / dash photo (OCR)."
-      : source === "manual"
-        ? "Codes were entered manually by the owner."
-        : "Codes appeared in the owner's message.";
+      : source === "obd_bluetooth"
+        ? "Codes and sensors were read live over Bluetooth OBD-II (ELM327 BLE)."
+        : source === "manual"
+          ? "Codes were entered manually by the owner."
+          : "Codes appeared in the owner's message.";
 
   return [
     confirm,
@@ -179,9 +193,12 @@ export function buildDtcDiagnosisPrompt(options: {
     "",
     "Codes:",
     codeBlock,
+    ...(liveContext?.length
+      ? ["", "Live OBD context:", ...liveContext.map((l) => `- ${l}`)]
+      : []),
     "",
     "Please diagnose with this structure:",
-    "1) Confirm the code meaning in plain English for a DIY owner.",
+    "1) Confirm the code meaning in plain English for a DIY owner (or explain a clean scan).",
     "2) Top 3 most likely causes for THIS vehicle (ranked), with one safe DIY check each.",
     "3) Solution path: what to verify before buying parts; when to stop DIY / see a shop.",
     "4) Mention the best Coach playbook theme if relevant" +
@@ -191,6 +208,50 @@ export function buildDtcDiagnosisPrompt(options: {
   ]
     .filter((line) => line !== undefined)
     .join("\n");
+}
+
+/** Build Chat diagnosis prompt from a BLE OBD session snapshot. */
+export function buildObdBleDiagnosisPrompt(options: {
+  deviceName: string;
+  codes: Array<{ code: string; desc?: string; severity?: string }>;
+  vehicleLabel?: string;
+  sensors?: {
+    rpm?: number | null;
+    coolantC?: number | null;
+    voltage?: number | null;
+    speedKph?: number | null;
+    throttlePct?: number | null;
+    oilTempC?: number | null;
+  } | null;
+  odometerKm?: number | null;
+  distanceSinceCodesClearedKm?: number | null;
+}): string {
+  const parsed = options.codes.map((c) => lookupDtc(c.code));
+  const live: string[] = [`Adapter: ${options.deviceName}`];
+  if (options.odometerKm != null) {
+    live.push(`Odometer (PID A6): ${options.odometerKm.toLocaleString()} km`);
+  }
+  if (options.distanceSinceCodesClearedKm != null) {
+    live.push(
+      `Distance since codes cleared (PID 31): ${options.distanceSinceCodesClearedKm.toLocaleString()} km`,
+    );
+  }
+  const s = options.sensors;
+  if (s) {
+    if (s.rpm != null) live.push(`RPM: ${s.rpm}`);
+    if (s.coolantC != null) live.push(`Coolant: ${s.coolantC}°C`);
+    if (s.voltage != null) live.push(`Module voltage: ${s.voltage} V`);
+    if (s.speedKph != null) live.push(`Speed: ${s.speedKph} km/h`);
+    if (s.throttlePct != null) live.push(`Throttle: ${s.throttlePct}%`);
+    if (s.oilTempC != null) live.push(`Oil temp: ${s.oilTempC}°C`);
+  }
+
+  return buildDtcDiagnosisPrompt({
+    codes: parsed,
+    source: "obd_bluetooth",
+    vehicleLabel: options.vehicleLabel,
+    liveContext: live,
+  });
 }
 
 export const DTC_FOLLOW_UP_CHIPS: DtcChip[] = [

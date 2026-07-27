@@ -27,6 +27,7 @@ import CameraCapture from "@/components/chat/CameraCapture";
 import DtcEntryBar from "@/components/chat/DtcEntryBar";
 import { compressImageDataUrl } from "@/lib/image";
 import { MAX_PHOTO_DIAGNOSE_IMAGES } from "@/lib/types/subscription";
+import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
 
 interface Props {
   onSend: (content: string, images?: string[]) => void;
@@ -34,6 +35,8 @@ interface Props {
   onFaultCode?: (code: string) => void;
   /** OBD scanner screenshot → vision extract → diagnosis */
   onObdScreenshot?: (imageDataUrl: string) => void | Promise<void>;
+  /** BLE OBD connect → DTCs/sensors → diagnosis */
+  onObdBleSession?: (snapshot: ObdSessionSnapshot) => void;
   /** Composer disabled (no vehicle / not ready) */
   isLoading: boolean;
   /** True only while a reply is generating (shows Stop) */
@@ -86,6 +89,7 @@ export default function ChatInput({
   onSend,
   onFaultCode,
   onObdScreenshot,
+  onObdBleSession,
   isLoading,
   isGenerating = false,
   autoSpeak,
@@ -407,6 +411,7 @@ export default function ChatInput({
             if (!ensurePhotoQuota()) return;
             await onObdScreenshot(img);
           }}
+          onObdBleSession={onObdBleSession}
         />
       ) : null}
 
