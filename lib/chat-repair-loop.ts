@@ -233,22 +233,49 @@ export function getFollowUpChips(options?: {
 
 export function formatMaintenanceHistoryForPrompt(
   records: MaintenanceRecord[],
-  options?: { truncated?: boolean; total?: number },
+  options?: {
+    truncated?: boolean;
+    total?: number;
+    familiarityBlock?: string | null;
+  },
 ): string {
+  const familiarity =
+    options?.familiarityBlock?.trim()
+      ? `\n${options.familiarityBlock.trim()}\n`
+      : "";
+
   if (!records.length) {
-    return `## Recent maintenance history
-No maintenance records saved for this vehicle yet. If the owner mentions past work, ask briefly and proceed.`;
+    return `${familiarity}## Recent maintenance history
+No maintenance records saved for this vehicle yet. If the owner mentions past work, ask briefly and suggest uploading a service receipt or logging the job in History.`;
   }
 
-  const lines = records.slice(0, 8).map((r) => {
+  const lines = records.slice(0, 12).map((r) => {
     const miles =
       r.mileage != null ? ` · ${Number(r.mileage).toLocaleString()} mi` : "";
     const cost =
       r.costCents != null ? ` · $${(r.costCents / 100).toFixed(2)}` : "";
-    const desc = r.description?.trim()
-      ? ` — ${r.description.trim().slice(0, 120)}`
+    const shop = r.shopName?.trim() ? ` · @ ${r.shopName.trim()}` : "";
+    const parts = Array.isArray(r.partsUsed)
+      ? r.partsUsed
+          .map((p) => {
+            if (typeof p === "string") return p;
+            if (p && typeof p === "object" && "name" in p) {
+              return String((p as { name: unknown }).name || "").trim();
+            }
+            return "";
+          })
+          .filter(Boolean)
+          .slice(0, 6)
+          .join(", ")
       : "";
-    return `- ${r.performedAt.slice(0, 10)} · ${r.title} (${r.category})${miles}${cost}${desc}`;
+    const partsBit = parts ? ` · parts: ${parts}` : "";
+    const src = r.source ? ` [${r.source}]` : "";
+    const desc = r.description?.trim()
+      ? ` — ${r.description.trim().slice(0, 100)}`
+      : r.notes?.trim()
+        ? ` — ${r.notes.trim().slice(0, 100)}`
+        : "";
+    return `- ${r.performedAt.slice(0, 10)} · ${r.title} (${r.category})${miles}${cost}${shop}${partsBit}${src}${desc}`;
   });
 
   const more =
@@ -256,24 +283,37 @@ No maintenance records saved for this vehicle yet. If the owner mentions past wo
       ? `\n(${records.length} shown of ${options.total}; Free plan truncates history.)`
       : "";
 
-  return `## Recent maintenance history (from garage log)
-Use this as context for multi-turn coaching. Prefer not re-asking for jobs already logged.
+  return `${familiarity}## Recent maintenance history (from garage log / receipt scans)
+Use these as ground truth for THIS vehicle. Prefer citing them (date + mileage) over generic schedules.
+Do NOT re-recommend jobs clearly already done unless a wear interval clearly applies (e.g. pads at 60k mi, now 72k → check wear, do not say "you still need first pads").
 ${lines.join("\n")}${more}`;
 }
 
-/** Drop welcome-only and trim to a recent window for API payload. */
+/** Drop welcome-only, trim window, and cap per-message length for API payload. */
 export function trimMessagesForApi(
   messages: ChatMessage[],
   windowSize = CHAT_API_MESSAGE_WINDOW,
+  options?: { maxContentChars?: number; imageHeavy?: boolean },
 ): { role: string; content: string }[] {
+  const maxChars = options?.maxContentChars ?? (options?.imageHeavy ? 4_000 : 6_000);
+  const win = options?.imageHeavy
+    ? Math.min(windowSize, 16)
+    : windowSize;
   const usable = messages.filter(
     (m) =>
       m.id !== "welcome" &&
       (m.role === "user" || m.role === "assistant") &&
       Boolean(m.content?.trim()),
   );
-  const sliced = usable.slice(-windowSize);
-  return sliced.map((m) => ({ role: m.role, content: m.content }));
+  const sliced = usable.slice(-win);
+  return sliced.map((m) => {
+    const raw = m.content.trim();
+    const content =
+      raw.length > maxChars
+        ? `${raw.slice(0, maxChars)}\n…[truncated for length]`
+        : raw;
+    return { role: m.role, content };
+  });
 }
 
 /** Repair-loop instructions appended to system prompt. */
@@ -290,4 +330,5 @@ Do not restart from zero when garage profile + history already answer the questi
 1. Diagnose → 2. Checks → 3. Parts/fix → 4. Verify / revise top-3.
 When Retrieved Knowledge is present (especially car_fault / car_repair_qa / owner_reviews / flywheel_golden), prefer symptom → first checks → confirmed fix and cite titles briefly.
 Prefer continuing the prior diagnosis over generic reset questions.
+When maintenance history lists a completed job, acknowledge it and adjust intervals (e.g. "Pads replaced at 60k — at 72k inspect thickness, do not buy pads again unless worn").
 `.trim();

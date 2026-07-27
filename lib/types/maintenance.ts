@@ -9,7 +9,13 @@ export type MaintenanceCategory =
   | "filter"
   | "other";
 
-export type MaintenanceSource = "manual" | "chat" | "parts";
+export type MaintenanceSource = "manual" | "chat" | "parts" | "receipt";
+
+export type MaintenancePartUsed = {
+  name: string;
+  qty?: number;
+  oem?: string;
+};
 
 export type MaintenanceRecord = {
   id: string;
@@ -21,7 +27,9 @@ export type MaintenanceRecord = {
   mileage?: number;
   /** USD cents */
   costCents?: number;
-  partsUsed?: unknown[];
+  partsUsed?: MaintenancePartUsed[] | unknown[];
+  /** Shop / dealer from receipt or manual entry */
+  shopName?: string;
   performedAt: string; // YYYY-MM-DD
   source: MaintenanceSource;
   notes?: string;
@@ -36,8 +44,25 @@ export type MaintenanceRecordInput = {
   description?: string;
   mileage?: number;
   costCents?: number;
-  partsUsed?: unknown[];
+  partsUsed?: MaintenancePartUsed[] | unknown[];
+  shopName?: string;
   performedAt: string;
   source?: MaintenanceSource;
   notes?: string;
 };
+
+export type MaintenanceRecordUpdate = Partial<
+  Omit<MaintenanceRecordInput, "vehicleId">
+> & { vehicleId?: string };
+
+export const MAINTENANCE_CATEGORIES: MaintenanceCategory[] = [
+  "general",
+  "oil",
+  "brakes",
+  "tires",
+  "engine",
+  "electrical",
+  "suspension",
+  "filter",
+  "other",
+];

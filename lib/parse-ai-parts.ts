@@ -140,7 +140,8 @@ export function extractInventoryItemsFromContent(
   return parts.map((part) =>
     recommendationToInventory(part, vehicle, {
       currentStock: 0,
-      minStock: part.category === "consumable" ? 1 : 0,
+      minStock: 0,
+      location: "Wishlist",
     }),
   );
 }

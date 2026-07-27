@@ -15,6 +15,7 @@ import {
   consumeAiTokens,
   requireAiUser,
 } from "@/lib/ai-abuse";
+import { aiUpstreamResponse } from "@/lib/ai-errors";
 
 export const runtime = "nodejs";
 
@@ -225,7 +226,12 @@ Rules:
     const abuse = aiAbuseResponse(error);
     if (abuse) return abuse;
 
-    console.error("[/api/vision/analyze-vehicle]", error);
+    const upstream = aiUpstreamResponse(error);
+    if (upstream) return upstream;
+
+    console.error("[/api/vision/analyze-vehicle] unexpected", {
+      message: error instanceof Error ? error.message : String(error),
+    });
     return Response.json(
       {
         success: false,
@@ -233,6 +239,8 @@ Rules:
           error instanceof Error
             ? error.message
             : "Vision analysis failed",
+        code: "AI_UNAVAILABLE",
+        retryable: true,
       },
       { status: 500 },
     );

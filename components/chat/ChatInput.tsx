@@ -11,7 +11,9 @@ import {
   Volume2,
   VolumeX,
   Square,
+  FileText,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   isSpeechSynthesisSupported,
   saveAutoSpeakPreference,
@@ -37,6 +39,8 @@ interface Props {
   onObdScreenshot?: (imageDataUrl: string) => void | Promise<void>;
   /** BLE OBD connect → DTCs/sensors → diagnosis */
   onObdBleSession?: (snapshot: ObdSessionSnapshot) => void;
+  /** Open receipt / invoice scan → confirm → maintenance history */
+  onScanReceipt?: () => void;
   /** Composer disabled (no vehicle / not ready) */
   isLoading: boolean;
   /** True only while a reply is generating (shows Stop) */
@@ -90,6 +94,7 @@ export default function ChatInput({
   onFaultCode,
   onObdScreenshot,
   onObdBleSession,
+  onScanReceipt,
   isLoading,
   isGenerating = false,
   autoSpeak,
@@ -98,6 +103,7 @@ export default function ChatInput({
   draftValue,
   onDraftConsumed,
 }: Props) {
+  const { t } = useTranslation();
   const busy = isLoading || isGenerating;
   const [input, setInput] = useState("");
   const [images, setImages] = useState<string[]>([]);
@@ -426,6 +432,18 @@ export default function ChatInput({
         <span className="sm:hidden">Photo diagnosis</span>
         <span className="hidden sm:inline">Take photo for AI diagnosis</span>
       </button>
+
+      {onScanReceipt ? (
+        <button
+          type="button"
+          onClick={onScanReceipt}
+          disabled={busy}
+          className="mb-3 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-2xl border border-slate-600 bg-slate-900/80 px-3 text-sm font-medium text-slate-100 transition hover:border-cyan-500/40 hover:text-cyan-200 disabled:opacity-50"
+        >
+          <FileText className="h-4 w-4 text-cyan-400" />
+          {t("history.chatScanCta")}
+        </button>
+      ) : null}
 
       {images.length > 0 && (
         <div className="mb-3">

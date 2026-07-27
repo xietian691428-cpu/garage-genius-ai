@@ -1,3 +1,14 @@
+/**
+ * Legacy localStorage inventory helpers.
+ *
+ * Product UI must use `inventoryService` (Supabase). This module only supports:
+ * - one-time migration reads (`loadInventoryForMigration`)
+ * - pure mappers used by parsers (`recommendationToInventory`)
+ *
+ * Write APIs are intentionally removed to prevent “saved locally but missing
+ * on Parts tab” confusion.
+ */
+
 import type {
   InventoryItem,
   PartRecommendation,
@@ -13,7 +24,7 @@ import type { VehicleInfo } from "@/lib/types/chat";
 
 const INVENTORY_KEY = "garageGenius_inventory";
 
-/** 旧版 localStorage 结构 → 新版迁移 */
+/** @deprecated Prefer cloud inventoryService — local bag is migration-only. */
 interface LegacyInventoryItem {
   id: string;
   vehicleId: string;
@@ -67,7 +78,7 @@ function migrateLegacyItem(raw: LegacyInventoryItem): InventoryItem {
       legacyCategory === "consumable" ? "consumable" : undefined,
     ),
     currentStock: raw.currentStock ?? raw.quantityOnHand ?? 0,
-    minStock: raw.minStock ?? raw.minQuantity ?? 1,
+    minStock: raw.minStock ?? raw.minQuantity ?? 0,
     price:
       typeof raw.price === "number"
         ? raw.price
@@ -82,83 +93,41 @@ function migrateLegacyItem(raw: LegacyInventoryItem): InventoryItem {
   };
 }
 
-function readAll(): InventoryItem[] {
+/**
+ * Read-only access to the legacy localStorage bag (migration / diagnostics).
+ * Do not use for product saves — use inventoryService instead.
+ */
+export function loadInventoryForMigration(vehicleId?: string): InventoryItem[] {
   if (typeof window === "undefined") return [];
 
   try {
     const raw = localStorage.getItem(INVENTORY_KEY);
     if (!raw) return [];
 
-    const parsed = JSON.parse(raw) as (StoredInventoryItem | LegacyInventoryItem)[];
+    const parsed = JSON.parse(raw) as (
+      | StoredInventoryItem
+      | LegacyInventoryItem
+    )[];
     if (!Array.isArray(parsed)) return [];
 
-    return parsed.map((item) => {
+    const all = parsed.map((item) => {
       if ("currentStock" in item && "oemNumber" in item) {
         return deserializeItem(item as StoredInventoryItem);
       }
       return migrateLegacyItem(item as LegacyInventoryItem);
     });
+
+    if (!vehicleId) return all;
+    return all.filter((item) => item.vehicleId === vehicleId);
   } catch {
     return [];
   }
 }
 
-function serializeItem(item: InventoryItem): StoredInventoryItem {
-  return {
-    ...item,
-    lastUpdated: item.lastUpdated.toISOString(),
-  };
-}
+/** @deprecated Use loadInventoryForMigration — name kept for older imports. */
+export const loadInventory = loadInventoryForMigration;
 
-function writeAll(items: InventoryItem[]): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(
-    INVENTORY_KEY,
-    JSON.stringify(items.map(serializeItem)),
-  );
-}
-
-export function loadInventory(vehicleId?: string): InventoryItem[] {
-  const all = readAll();
-  if (!vehicleId) return all;
-  return all.filter((item) => item.vehicleId === vehicleId);
-}
-
-export function saveInventoryItem(item: InventoryItem): void {
-  const all = readAll();
-  const index = all.findIndex((i) => i.id === item.id);
-  const toSave: InventoryItem = {
-    ...item,
-    lastUpdated: new Date(),
-  };
-
-  if (index >= 0) {
-    all[index] = toSave;
-  } else {
-    all.push(toSave);
-  }
-  writeAll(all);
-}
-
-export function deleteInventoryItem(id: string): void {
-  writeAll(readAll().filter((item) => item.id !== id));
-}
-
-export function updateStock(id: string, delta: number): InventoryItem | null {
-  const all = readAll();
-  const index = all.findIndex((i) => i.id === id);
-  if (index < 0) return null;
-
-  const updated: InventoryItem = {
-    ...all[index],
-    currentStock: Math.max(0, all[index].currentStock + delta),
-    lastUpdated: new Date(),
-  };
-  all[index] = updated;
-  writeAll(all);
-  return updated;
-}
-
+/** Pure mapper: AI recommendation → form-shaped inventory item (no I/O). */
 export function recommendationToInventory(
   rec: PartRecommendation,
   vehicle: VehicleInfo,
@@ -185,29 +154,19 @@ export function recommendationToInventory(
     oemNumber: rec.oemPartNumber,
     brand: rec.aftermarketBrand,
     category: inferInventoryCategory(rec.name, rec.category),
-    currentStock: options?.currentStock ?? rec.quantityNeeded ?? 1,
-    minStock: options?.minStock ?? (rec.category === "consumable" ? 1 : 0),
+    currentStock: options?.currentStock ?? 0,
+    minStock: options?.minStock ?? 0,
     price: parsePriceString(rec.estimatedPrice),
-    location: options?.location ?? "",
+    location: options?.location ?? "Wishlist",
     purchaseLinks: channelsToPurchaseLinks(channels),
-    notes: [rec.notes, rec.aftermarketPartNumber && `AM #: ${rec.aftermarketPartNumber}`, fitmentNote]
+    notes: [
+      rec.notes,
+      rec.aftermarketPartNumber && `AM #: ${rec.aftermarketPartNumber}`,
+      fitmentNote,
+    ]
       .filter(Boolean)
       .join(" · "),
     lastUpdated: new Date(),
     lastUsedInRepair: options?.lastUsedInRepair,
   };
-}
-
-export function addRecommendationsToInventory(
-  recs: PartRecommendation[],
-  vehicle: VehicleInfo,
-): InventoryItem[] {
-  const added = recs.map((rec) =>
-    recommendationToInventory(rec, vehicle, {
-      currentStock: 0,
-      minStock: rec.category === "consumable" ? 1 : 0,
-    }),
-  );
-  added.forEach(saveInventoryItem);
-  return added;
 }

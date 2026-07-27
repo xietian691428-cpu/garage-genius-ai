@@ -1,25 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { History, Plus, Trash2, Wrench } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FileText, History, Pencil, Plus, Trash2, Wrench } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { VehicleInfo } from "@/lib/types/chat";
 import type { MaintenanceRecord } from "@/lib/types/maintenance";
 import { maintenanceService } from "@/lib/maintenance-records";
 import { FREE_MAINTENANCE_PREVIEW } from "@/lib/history-limits";
 import { useSubscription } from "@/hooks/useSubscription";
 import UpgradeModal from "@/components/ui/UpgradeModal";
-
-const CATEGORIES = [
-  "general",
-  "oil",
-  "brakes",
-  "tires",
-  "engine",
-  "electrical",
-  "suspension",
-  "filter",
-  "other",
-] as const;
+import ReceiptConfirmModal from "@/components/history/ReceiptConfirmModal";
+import {
+  computeVehicleFamiliarity,
+  type VehicleFamiliarity,
+} from "@/lib/vehicle-familiarity";
+import { partsToText } from "@/lib/receipt-parse";
 
 type Props = {
   vehicles: VehicleInfo[];
@@ -32,41 +27,43 @@ function formatMoney(cents?: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+function sourceLabel(
+  source: MaintenanceRecord["source"],
+  t: (key: string) => string,
+) {
+  switch (source) {
+    case "receipt":
+      return t("history.sourceReceipt");
+    case "chat":
+      return t("history.sourceChat");
+    case "parts":
+      return t("history.sourceParts");
+    default:
+      return t("history.sourceManual");
+  }
+}
+
 export default function MaintenanceHistory({
   vehicles,
   currentVehicle,
   vehiclesLoading = false,
 }: Props) {
-  const { isPro, isFree, features } = useSubscription();
+  const { t } = useTranslation();
+  const { isFree, features } = useSubscription();
   const [vehicleFilter, setVehicleFilter] = useState<string>("current");
   const [records, setRecords] = useState<MaintenanceRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [truncated, setTruncated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
-
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<string>("general");
-  const [performedAt, setPerformedAt] = useState(
-    () => new Date().toISOString().slice(0, 10),
+  const [modalMode, setModalMode] = useState<"scan" | "manual" | "edit" | null>(
+    null,
   );
-  const [mileage, setMileage] = useState("");
-  const [cost, setCost] = useState("");
-  const [notes, setNotes] = useState("");
-  const [formVehicleId, setFormVehicleId] = useState(
-    currentVehicle?.id ?? "",
-  );
+  const [editing, setEditing] = useState<MaintenanceRecord | null>(null);
 
   const canBrowseFullHistory = features.maintenanceHistory;
 
-  useEffect(() => {
-    setFormVehicleId(currentVehicle?.id ?? "");
-  }, [currentVehicle?.id]);
-
-  // Free: force current-vehicle preview only
   useEffect(() => {
     if (!canBrowseFullHistory && vehicleFilter !== "current") {
       setVehicleFilter("current");
@@ -118,55 +115,37 @@ export default function MaintenanceHistory({
     void refresh();
   }, [refresh]);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-    if (!features.maintenanceHistory) {
-      setShowForm(false);
-      return;
-    }
-    if (!formVehicleId) {
-      alert("Add a vehicle to your garage before logging service.");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const costNum = cost.trim() ? Number.parseFloat(cost) : NaN;
-      await maintenanceService.create({
-        vehicleId: formVehicleId,
-        title: title.trim(),
-        category,
-        performedAt,
-        mileage: mileage.trim() ? Number.parseInt(mileage, 10) : undefined,
-        costCents: Number.isFinite(costNum)
-          ? Math.round(costNum * 100)
-          : undefined,
-        notes: notes.trim() || undefined,
-        source: "manual",
-      });
-      setTitle("");
-      setNotes("");
-      setMileage("");
-      setCost("");
-      setShowForm(false);
-      await refresh();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Could not save record");
-    } finally {
-      setSaving(false);
-    }
-  };
+  const familiarity: VehicleFamiliarity | null = useMemo(() => {
+    if (!currentVehicle?.id || vehicleFilter !== "current") return null;
+    return computeVehicleFamiliarity(records, total);
+  }, [currentVehicle?.id, vehicleFilter, records, total]);
 
   const handleDelete = async (id: string) => {
-    if (!features.maintenanceHistory) return;
-    if (!confirm("Delete this maintenance record?")) return;
+    if (!confirm(t("history.deleteConfirm"))) return;
     try {
       await maintenanceService.remove(id);
       await refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Delete failed");
+      alert(err instanceof Error ? err.message : t("history.deleteFailed"));
     }
+  };
+
+  const openManual = () => {
+    if (!currentVehicle && vehicles.length === 0) {
+      alert(t("history.vehicleRequired"));
+      return;
+    }
+    setEditing(null);
+    setModalMode("manual");
+  };
+
+  const openScan = () => {
+    if (!currentVehicle && vehicles.length === 0) {
+      alert(t("history.vehicleRequired"));
+      return;
+    }
+    setEditing(null);
+    setModalMode("scan");
   };
 
   const vehicleLabel = (id: string) => {
@@ -181,38 +160,42 @@ export default function MaintenanceHistory({
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-white md:text-3xl">
             <History className="h-7 w-7 text-cyan-400" aria-hidden />
-            Maintenance History
+            {t("history.title")}
           </h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Service logs synced to your account, filtered by vehicle.
-          </p>
+          <p className="mt-1 text-sm text-slate-400">{t("history.subtitle")}</p>
+          {familiarity && (
+            <p className="mt-2 text-xs text-cyan-300/90">
+              {t("history.familiarity")}: {familiarity.label} (
+              {familiarity.score}/100)
+            </p>
+          )}
         </div>
 
-        {features.maintenanceHistory ? (
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => setShowForm((o) => !o)}
+            onClick={openScan}
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400"
+          >
+            <FileText className="h-4 w-4" />
+            {t("history.scanReceipt")}
+          </button>
+          <button
+            type="button"
+            onClick={openManual}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-600 bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:border-cyan-500/40"
           >
             <Plus className="h-4 w-4" />
-            Log service
+            {t("history.logService")}
           </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowUpgrade(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400"
-          >
-            Unlock with Pro
-          </button>
-        )}
+        </div>
       </div>
 
       {isFree && (
         <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
           Free plan shows the latest {FREE_MAINTENANCE_PREVIEW} records
           {truncated ? ` (${total} total on file)` : ""}. Upgrade to Pro for full
-          history, multi-vehicle filtering, and logging — cancel anytime.
+          history and multi-vehicle filtering — cancel anytime.
           <div className="mt-2">
             <button
               type="button"
@@ -227,7 +210,7 @@ export default function MaintenanceHistory({
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          Vehicle
+          {t("history.vehicle")}
         </label>
         <select
           value={vehicleFilter}
@@ -254,112 +237,8 @@ export default function MaintenanceHistory({
         </select>
       </div>
 
-      {showForm && features.maintenanceHistory && (
-        <form
-          onSubmit={(e) => void handleCreate(e)}
-          className="mb-6 grid gap-3 rounded-2xl border border-slate-800 bg-[#111827] p-4 md:grid-cols-2"
-        >
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-xs text-slate-400">Title</label>
-            <input
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Oil change, brake pads…"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-slate-400">Vehicle</label>
-            <select
-              value={formVehicleId}
-              onChange={(e) => setFormVehicleId(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
-            >
-              {vehicles.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name} · {v.year} {v.make} {v.model}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-slate-400">Category</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white capitalize"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-slate-400">Date</label>
-            <input
-              type="date"
-              required
-              value={performedAt}
-              onChange={(e) => setPerformedAt(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-slate-400">Mileage</label>
-            <input
-              type="number"
-              min={0}
-              value={mileage}
-              onChange={(e) => setMileage(e.target.value)}
-              placeholder="85000"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-slate-400">Cost (USD)</label>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={cost}
-              onChange={(e) => setCost(e.target.value)}
-              placeholder="42.99"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-xs text-slate-400">Notes</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
-            />
-          </div>
-          <div className="flex gap-2 md:col-span-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60"
-            >
-              {saving ? "Saving…" : "Save record"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
-
       {loading || vehiclesLoading ? (
-        <div className="py-16 text-center text-slate-500">Loading history…</div>
+        <div className="py-16 text-center text-slate-500">{t("common.loading")}</div>
       ) : error ? (
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           {error}
@@ -368,15 +247,13 @@ export default function MaintenanceHistory({
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center text-slate-500">
           <Wrench className="h-10 w-10 text-slate-600" />
           <p>No maintenance records yet for this filter.</p>
-          {features.maintenanceHistory && (
-            <button
-              type="button"
-              onClick={() => setShowForm(true)}
-              className="text-sm text-cyan-400 hover:underline"
-            >
-              Log your first service
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={openScan}
+            className="text-sm text-cyan-400 hover:underline"
+          >
+            {t("history.scanReceipt")}
+          </button>
         </div>
       ) : (
         <ul className="grid gap-3">
@@ -392,36 +269,75 @@ export default function MaintenanceHistory({
                     <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">
                       {r.category}
                     </span>
+                    <span className="rounded-full bg-slate-800/80 px-2 py-0.5 text-[10px] text-slate-500">
+                      {sourceLabel(r.source, t)}
+                    </span>
                   </div>
                   <p className="mt-1 text-xs text-slate-500">
                     {r.performedAt}
-                    {r.mileage != null ? ` · ${r.mileage.toLocaleString()} mi` : ""}
+                    {r.mileage != null
+                      ? ` · ${r.mileage.toLocaleString()} mi`
+                      : ""}
                     {formatMoney(r.costCents)
                       ? ` · ${formatMoney(r.costCents)}`
                       : ""}
+                    {r.shopName ? ` · ${r.shopName}` : ""}
                     {vehicleFilter === "all" || vehicleFilter === "current"
                       ? ` · ${vehicleLabel(r.vehicleId)}`
                       : ""}
                   </p>
+                  {partsToText(r.partsUsed) ? (
+                    <p className="mt-1 text-xs text-slate-400">
+                      {t("history.parts")}: {partsToText(r.partsUsed)}
+                    </p>
+                  ) : null}
                   {r.notes && (
                     <p className="mt-2 text-sm text-slate-400">{r.notes}</p>
                   )}
                 </div>
-                {isPro && (
+                <div className="flex shrink-0 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(r);
+                      setModalMode("edit");
+                    }}
+                    className="rounded-lg p-2 text-slate-500 hover:bg-slate-800 hover:text-cyan-300"
+                    aria-label={t("history.editRecord")}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
                   <button
                     type="button"
                     onClick={() => void handleDelete(r.id)}
                     className="rounded-lg p-2 text-slate-500 hover:bg-slate-800 hover:text-red-400"
-                    aria-label="Delete record"
+                    aria-label={t("history.deleteConfirm")}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
-                )}
+                </div>
               </div>
             </li>
           ))}
         </ul>
       )}
+
+      <ReceiptConfirmModal
+        open={modalMode != null}
+        onClose={() => {
+          setModalMode(null);
+          setEditing(null);
+        }}
+        vehicles={vehicles}
+        defaultVehicleId={
+          resolvedVehicleId || currentVehicle?.id || vehicles[0]?.id
+        }
+        mode={modalMode === "edit" ? "edit" : modalMode || "manual"}
+        editing={editing}
+        onSaved={() => {
+          void refresh();
+        }}
+      />
 
       <UpgradeModal
         open={showUpgrade}

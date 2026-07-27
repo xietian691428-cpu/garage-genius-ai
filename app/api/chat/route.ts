@@ -3,6 +3,7 @@ import {
   callDeepSeek,
   estimateTokensFromMessages,
   normalizeImageUrl,
+  trimDeepSeekConversation,
   type DeepSeekMessage,
 } from "@/lib/deepseek";
 import { DISCLAIMER } from "@/lib/constants";
@@ -18,6 +19,7 @@ import {
   consumeAiTokens,
   getBearerToken,
 } from "@/lib/ai-abuse";
+import { aiUpstreamResponse } from "@/lib/ai-errors";
 import { ragService } from "@/lib/rag";
 import {
   entitlementsForTier,
@@ -293,18 +295,28 @@ export async function POST(request: NextRequest) {
 
     const affiliateCatalog = formatAffiliateCatalogForPrompt(prioritized);
 
-    const fullMessages: DeepSeekMessage[] = [
-      buildChatSystemPrompt(
-        currentVehicle,
-        uniqueImages.length > 0,
-        ragContext,
-        conflictContext,
-        affiliateCatalog,
-        typeof maintenanceSummary === "string" ? maintenanceSummary : null,
-        diySkill,
-      ),
-      ...userMessages,
-    ];
+    const maintenanceCap =
+      typeof maintenanceSummary === "string"
+        ? maintenanceSummary.length > 3_000
+          ? `${maintenanceSummary.slice(0, 3_000)}\n…[truncated]`
+          : maintenanceSummary
+        : null;
+
+    const fullMessages: DeepSeekMessage[] = trimDeepSeekConversation(
+      [
+        buildChatSystemPrompt(
+          currentVehicle,
+          uniqueImages.length > 0,
+          ragContext,
+          conflictContext,
+          affiliateCatalog,
+          maintenanceCap,
+          diySkill,
+        ),
+        ...userMessages,
+      ],
+      { imageHeavy: uniqueImages.length > 0 },
+    );
 
     const estimatedTokens = Math.max(
       AI_ROUTE_TOKEN_FLOOR.chat,
@@ -390,7 +402,13 @@ export async function POST(request: NextRequest) {
     const abuse = aiAbuseResponse(error);
     if (abuse) return abuse;
 
-    console.error("[/api/chat]", error);
+    const upstream = aiUpstreamResponse(error);
+    if (upstream) return upstream;
+
+    console.error("[/api/chat] unexpected", {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : undefined,
+    });
 
     const message =
       error instanceof Error ? error.message : "Unknown error";
@@ -407,7 +425,12 @@ export async function POST(request: NextRequest) {
           : isInsufficientBalance
             ? "DeepSeek account balance is insufficient. Please top up at platform.deepseek.com and try again."
             : "AI service is temporarily unavailable. Please try again.",
-        code: isQuota ? "TOKEN_QUOTA_EXCEEDED" : undefined,
+        code: isQuota
+          ? "TOKEN_QUOTA_EXCEEDED"
+          : isInsufficientBalance
+            ? "INSUFFICIENT_BALANCE"
+            : "AI_UNAVAILABLE",
+        retryable: !isQuota && !isInsufficientBalance,
       },
       { status: isQuota || isInsufficientBalance ? 402 : 500 },
     );

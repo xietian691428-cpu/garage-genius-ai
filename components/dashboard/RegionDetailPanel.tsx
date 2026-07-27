@@ -233,7 +233,15 @@ export default function RegionDetailPanel({
           {error && (
             <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-6 text-red-300">
               <AlertTriangle className="mb-2 h-6 w-6" />
-              {error}
+              <p>{error}</p>
+              <button
+                type="button"
+                onClick={onRefreshAI}
+                disabled={loading}
+                className="mt-4 rounded-xl bg-cyan-500 px-3 py-1.5 text-sm font-semibold text-black hover:bg-cyan-400 disabled:opacity-50"
+              >
+                Retry
+              </button>
             </div>
           )}
 

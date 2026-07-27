@@ -1,11 +1,16 @@
 import { inventoryService } from "@/lib/supabase-inventory";
 import type { InventoryItem } from "@/lib/types/inventory";
+import {
+  inferInventoryCategory,
+  normalizeInventoryCategory,
+  type InventoryCategory,
+} from "@/lib/types/parts";
 
 export interface PartsDataItem {
   oemNumber?: string;
   brand?: string;
   name: string;
-  category?: InventoryItem["category"];
+  category?: InventoryItem["category"] | string;
   quantity?: number;
   price?: number | string;
   purchaseLinks?: string[];
@@ -23,24 +28,6 @@ export const extractPartsData = (content: string): PartsDataItem[] | null => {
     return null;
   }
 };
-
-function inferCategory(name: string): InventoryItem["category"] {
-  const n = name.toLowerCase();
-  if (n.includes("brake") || n.includes("pad") || n.includes("rotor")) {
-    return "brake";
-  }
-  if (n.includes("oil") || n.includes("filter")) return "filter";
-  if (n.includes("engine")) return "engine";
-  if (
-    n.includes("shock") ||
-    n.includes("strut") ||
-    n.includes("control arm")
-  ) {
-    return "suspension";
-  }
-  if (n.includes("battery") || n.includes("alternator")) return "electrical";
-  return "consumable";
-}
 
 function parsePrice(price: number | string | undefined): number {
   if (typeof price === "number") return Number.isFinite(price) ? price : 0;
@@ -69,6 +56,20 @@ export function formatPartsPrice(price: number | string | undefined): string {
   return n > 0 ? `$${n.toFixed(2)}` : String(price);
 }
 
+/** Resolve a DB-safe inventory category from AI / affiliate payload. */
+export function resolvePartsCategory(
+  raw: string | undefined,
+  name: string,
+): InventoryCategory {
+  return normalizeInventoryCategory(raw, name) || inferInventoryCategory(name);
+}
+
+/**
+ * AI / Chat wishlist defaults:
+ * - location Wishlist
+ * - min_stock 0 so the row is not flagged as low stock
+ * - current_stock 0 (not yet purchased)
+ */
 export async function savePartsToInventory(
   parts: PartsDataItem[],
   vehicleId: string,
@@ -83,9 +84,12 @@ export async function savePartsToInventory(
     oem_number: p.oemNumber?.trim() || undefined,
     brand: p.brand || "Unknown",
     name: p.name,
-    category: p.category || inferCategory(p.name),
+    category: resolvePartsCategory(
+      typeof p.category === "string" ? p.category : undefined,
+      p.name,
+    ),
     current_stock: 0,
-    min_stock: 1,
+    min_stock: 0,
     price: parsePrice(p.price),
     location: "Wishlist",
     purchase_links: p.purchaseLinks || [],

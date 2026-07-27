@@ -3,13 +3,16 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   inventoryService,
+  isLowStockItem,
   migrateFromLocalStorage,
+  type InventoryUpsert,
 } from "@/lib/supabase-inventory";
 import type { InventoryItem as DbInventoryItem } from "@/lib/types/inventory";
 import type { InventoryItem as FormInventoryItem } from "@/lib/types/parts";
+import { normalizeInventoryCategory } from "@/lib/types/parts";
 import type { VehicleInfo } from "@/lib/types/chat";
 import { formatVehicleYmmMarket } from "@/lib/types/vehicle-market";
-import { AlertTriangle, Package, Plus } from "lucide-react";
+import { AlertTriangle, Package, Plus, Trash2 } from "lucide-react";
 import PartFormModal from "./PartFormModal";
 
 type Props = {
@@ -19,16 +22,21 @@ type Props = {
   onVehicleChange: (vehicle: VehicleInfo) => void | Promise<void>;
 };
 
-function formToDb(
-  item: FormInventoryItem,
-  vehicleId: string,
-): Omit<DbInventoryItem, "id" | "last_updated"> {
+function isCloudRowId(id: string | undefined | null): boolean {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    id,
+  );
+}
+
+function formToDb(item: FormInventoryItem, vehicleId: string): InventoryUpsert {
   return {
+    ...(isCloudRowId(item.id) ? { id: item.id } : {}),
     vehicle_id: vehicleId,
     oem_number: item.oemNumber?.trim() || undefined,
     brand: item.brand?.trim() || "Unknown",
     name: item.name.trim(),
-    category: item.category,
+    category: normalizeInventoryCategory(item.category, item.name),
     current_stock: Math.max(0, Number(item.currentStock) || 0),
     min_stock: Math.max(0, Number(item.minStock) || 0),
     price: Math.max(0, Number(item.price) || 0),
@@ -104,20 +112,35 @@ export default function PartsInventory({
   }, [vehicleId, vehiclesLoading, loadInventory]);
 
   const filteredItems = items.filter((item) => {
-    if (filter === "low-stock") return item.current_stock <= item.min_stock;
+    if (filter === "low-stock") return isLowStockItem(item);
     if (filter === "all") return true;
     return item.category === filter;
   });
 
-  const lowStockCount = items.filter(
-    (i) => i.current_stock <= i.min_stock,
-  ).length;
+  const lowStockCount = items.filter(isLowStockItem).length;
 
   const handleSaveForm = async (formItem: FormInventoryItem) => {
     if (!vehicleId) throw new Error("No vehicle selected");
     await inventoryService.upsertItem(formToDb(formItem, vehicleId));
     setEditing(null);
     await loadInventory(vehicleId);
+  };
+
+  const handleDelete = async (
+    e: React.MouseEvent,
+    item: DbInventoryItem,
+  ) => {
+    e.stopPropagation();
+    if (!vehicleId) return;
+    if (!confirm(`Delete “${item.name}” from this vehicle’s inventory?`)) {
+      return;
+    }
+    try {
+      await inventoryService.remove(item.id);
+      await loadInventory(vehicleId);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not delete part");
+    }
   };
 
   const vehicleLabel = currentVehicle
@@ -180,22 +203,30 @@ export default function PartsInventory({
       )}
 
       <div className="mb-8 flex flex-wrap gap-3">
-        {["all", "low-stock", "brake", "engine", "filter", "consumable"].map(
-          (f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setFilter(f)}
-              className={`rounded-2xl px-5 py-2 capitalize transition-colors ${
-                filter === f
-                  ? "bg-cyan-500 text-black"
-                  : "bg-slate-800 hover:bg-slate-700"
-              }`}
-            >
-              {f === "low-stock" ? `Low Stock (${lowStockCount})` : f}
-            </button>
-          ),
-        )}
+        {[
+          "all",
+          "low-stock",
+          "brake",
+          "engine",
+          "filter",
+          "consumable",
+          "suspension",
+          "electrical",
+          "other",
+        ].map((f) => (
+          <button
+            key={f}
+            type="button"
+            onClick={() => setFilter(f)}
+            className={`rounded-2xl px-5 py-2 capitalize transition-colors ${
+              filter === f
+                ? "bg-cyan-500 text-black"
+                : "bg-slate-800 hover:bg-slate-700"
+            }`}
+          >
+            {f === "low-stock" ? `Low Stock (${lowStockCount})` : f}
+          </button>
+        ))}
       </div>
 
       {loading || vehiclesLoading ? (
@@ -209,51 +240,68 @@ export default function PartsInventory({
         </div>
       ) : (
         <div className="grid gap-4">
-          {filteredItems.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                if (!currentVehicle) return;
-                setEditing(dbToForm(item, currentVehicle.id));
-                setShowForm(true);
-              }}
-              className="flex w-full items-center justify-between rounded-3xl border border-slate-700 bg-slate-900 p-6 text-left transition-colors hover:border-cyan-400/50"
-            >
-              <div className="flex items-center gap-6">
-                <Package className="h-10 w-10 shrink-0 text-cyan-400" />
-                <div>
-                  <h3 className="text-lg font-semibold">{item.name}</h3>
-                  <p className="text-sm text-slate-400">
-                    {item.brand}
-                    {item.oem_number ? ` • ${item.oem_number}` : ""}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">{item.location}</p>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <div className="text-2xl font-bold">
-                  ${Number(item.price).toFixed(2)}
-                </div>
-                <div
-                  className={`text-sm ${
-                    item.current_stock <= item.min_stock
-                      ? "text-red-400"
-                      : "text-emerald-400"
-                  }`}
+          {filteredItems.map((item) => {
+            const low = isLowStockItem(item);
+            return (
+              <div
+                key={item.id}
+                className="flex w-full items-center justify-between gap-3 rounded-3xl border border-slate-700 bg-slate-900 p-6 transition-colors hover:border-cyan-400/50"
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!currentVehicle) return;
+                    setEditing(dbToForm(item, currentVehicle.id));
+                    setShowForm(true);
+                  }}
+                  className="flex min-w-0 flex-1 items-center gap-6 text-left"
                 >
-                  {item.current_stock} / {item.min_stock} in stock
-                </div>
-                {item.current_stock <= item.min_stock && (
-                  <div className="mt-1 flex items-center justify-end gap-1 text-xs text-amber-400">
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                    Reorder suggested
+                  <Package className="h-10 w-10 shrink-0 text-cyan-400" />
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-semibold">{item.name}</h3>
+                    <p className="text-sm text-slate-400">
+                      {item.brand}
+                      {item.oem_number ? ` • ${item.oem_number}` : ""}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {item.location}
+                      {item.location === "Wishlist" ? " · not purchased yet" : ""}
+                    </p>
                   </div>
-                )}
+                </button>
+
+                <div className="flex shrink-0 items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-2xl font-bold">
+                      ${Number(item.price).toFixed(2)}
+                    </div>
+                    <div
+                      className={`text-sm ${
+                        low ? "text-red-400" : "text-emerald-400"
+                      }`}
+                    >
+                      {item.current_stock} / {item.min_stock} in stock
+                    </div>
+                    {low && (
+                      <div className="mt-1 flex items-center justify-end gap-1 text-xs text-amber-400">
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        Reorder suggested
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => void handleDelete(e, item)}
+                    className="rounded-xl p-2.5 text-slate-500 hover:bg-slate-800 hover:text-red-400"
+                    aria-label={`Delete ${item.name}`}
+                    title="Delete"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
-            </button>
-          ))}
+            );
+          })}
         </div>
       )}
 

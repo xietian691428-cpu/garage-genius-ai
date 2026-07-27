@@ -28,10 +28,17 @@ import { extractFocusCommand, resolveFocusCommand } from "@/lib/parse-ai-focus";
 import type { FocusCommand } from "@/lib/types/focus";
 import type { RagKnowledgeHit } from "@/lib/types/rag";
 import { maintenanceService } from "@/lib/maintenance-records";
+import { useTranslation } from "react-i18next";
 import {
   formatMaintenanceHistoryForPrompt,
   trimMessagesForApi,
 } from "@/lib/chat-repair-loop";
+import {
+  computeVehicleFamiliarity,
+  formatFamiliarityForPrompt,
+} from "@/lib/vehicle-familiarity";
+import ReceiptConfirmModal from "@/components/history/ReceiptConfirmModal";
+import type { MaintenanceRecord } from "@/lib/types/maintenance";
 import {
   buildDtcDiagnosisPrompt,
   buildObdBleDiagnosisPrompt,
@@ -78,6 +85,7 @@ export default function ChatApp({
   onArchiveVehicle,
   onRemoveVehicle,
 }: Props) {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showVehicleSwitcher, setShowVehicleSwitcher] = useState(false);
@@ -85,6 +93,9 @@ export default function ChatApp({
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [draftValue, setDraftValue] = useState<string | undefined>();
   const [maintenanceSummary, setMaintenanceSummary] = useState<string>("");
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [maintenanceTick, setMaintenanceTick] = useState(0);
+  const [requestError, setRequestError] = useState<string | null>(null);
   const seedSentRef = useRef<string | null>(null);
   const lastSpokenIdRef = useRef<string | null>(null);
   const shouldSpeakNextAssistantRef = useRef(false);
@@ -93,6 +104,7 @@ export default function ChatApp({
   const loadedKeyRef = useRef<string | null>(null);
   const playbookSlugRef = useRef<string | null>(playbookSlug ?? null);
   const abortRef = useRef<AbortController | null>(null);
+  const stoppedByUserRef = useRef(false);
   const messagesRef = useRef<ChatMessage[]>([]);
   const { refresh: refreshTokenUsage } = useTokenUsage();
   const { isFree, isPro, features } = useSubscription();
@@ -200,8 +212,13 @@ export default function ChatApp({
           isPro,
         });
         if (cancelled) return;
+        const familiarity = computeVehicleFamiliarity(records, total);
         setMaintenanceSummary(
-          formatMaintenanceHistoryForPrompt(records, { truncated, total }),
+          formatMaintenanceHistoryForPrompt(records, {
+            truncated,
+            total,
+            familiarityBlock: formatFamiliarityForPrompt(familiarity),
+          }),
         );
       } catch (err) {
         console.warn("[ChatApp] maintenance context:", err);
@@ -211,7 +228,28 @@ export default function ChatApp({
     return () => {
       cancelled = true;
     };
-  }, [currentVehicle?.id, isPro, vehiclesLoading]);
+  }, [currentVehicle?.id, isPro, vehiclesLoading, maintenanceTick]);
+
+  const refreshMaintenanceContext = () => {
+    setMaintenanceTick((n) => n + 1);
+  };
+
+  const handleReceiptSaved = (record: MaintenanceRecord) => {
+    refreshMaintenanceContext();
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: `✅ **${record.title}** (${record.performedAt.slice(0, 10)}${
+          record.mileage != null
+            ? ` · ${Number(record.mileage).toLocaleString()} mi`
+            : ""
+        }) — ${t("history.savedToHistory")}`,
+        timestamp: new Date(),
+      },
+    ]);
+  };
 
   // Persist to Supabase (debounced) + local mirror
   useEffect(() => {
@@ -323,6 +361,7 @@ export default function ChatApp({
   };
 
   const handleStop = () => {
+    stoppedByUserRef.current = true;
     abortRef.current?.abort();
     abortRef.current = null;
     setIsLoading(false);
@@ -341,11 +380,20 @@ export default function ChatApp({
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
+    stoppedByUserRef.current = false;
 
     shouldSpeakNextAssistantRef.current = Boolean(
       autoSpeak && features.voiceEnabled,
     );
     setIsLoading(true);
+    setRequestError(null);
+
+    const CLIENT_TIMEOUT_MS = 90_000;
+    const timeoutId = window.setTimeout(() => {
+      if (abortRef.current === controller && !stoppedByUserRef.current) {
+        controller.abort();
+      }
+    }, CLIENT_TIMEOUT_MS);
 
     try {
       const imagePayloads: string[] = [];
@@ -360,7 +408,7 @@ export default function ChatApp({
       } = await supabase.auth.getSession();
       const accessToken = session?.access_token;
       if (!accessToken) {
-        throw new Error("Please sign in to use AI chat.");
+        throw new Error(t("ai.signInRequired"));
       }
 
       const response = await fetch("/api/chat", {
@@ -371,7 +419,9 @@ export default function ChatApp({
         },
         signal: controller.signal,
         body: JSON.stringify({
-          messages: trimMessagesForApi(nextMessages),
+          messages: trimMessagesForApi(nextMessages, undefined, {
+            imageHeavy: imagePayloads.length > 0,
+          }),
           images: imagePayloads,
           image: imagePayloads[0],
           currentVehicle,
@@ -380,18 +430,33 @@ export default function ChatApp({
         }),
       });
 
-      const data = (await response.json()) as {
+      let data: {
         content?: string;
         error?: string;
+        code?: string;
+        retryable?: boolean;
         suggestedFocus?: FocusCommand | null;
         ragHits?: RagKnowledgeHit[];
       };
-
-      if (!response.ok) {
-        throw new Error(data.error || "Chat request failed");
+      try {
+        data = (await response.json()) as typeof data;
+      } catch {
+        throw new Error(
+          response.ok
+            ? t("ai.emptyReply")
+            : t("ai.requestFailed"),
+        );
       }
 
-      const assistantContent = data.content || "I could not generate a reply.";
+      if (!response.ok) {
+        throw new Error(data.error || t("ai.requestFailed"));
+      }
+
+      if (!data.content?.trim()) {
+        throw new Error(t("ai.emptyReply"));
+      }
+
+      const assistantContent = data.content.trim();
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
@@ -400,6 +465,7 @@ export default function ChatApp({
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      setRequestError(null);
       void refreshTokenUsage();
 
       const focus =
@@ -411,19 +477,34 @@ export default function ChatApp({
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content: "_Generation stopped._ You can continue or regenerate.",
-            timestamp: new Date(),
-          },
-        ]);
+        if (stoppedByUserRef.current) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              role: "assistant",
+              content: t("ai.stopped"),
+              timestamp: new Date(),
+            },
+          ]);
+        } else {
+          const msg = t("ai.timeout");
+          setRequestError(msg);
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              role: "assistant",
+              content: `⚠️ ${msg}`,
+              timestamp: new Date(),
+            },
+          ]);
+        }
         return;
       }
       const message =
-        err instanceof Error ? err.message : "Something went wrong.";
+        err instanceof Error ? err.message : t("ai.requestFailed");
+      setRequestError(message);
       setMessages((prev) => [
         ...prev,
         {
@@ -434,6 +515,7 @@ export default function ChatApp({
         },
       ]);
     } finally {
+      window.clearTimeout(timeoutId);
       if (abortRef.current === controller) abortRef.current = null;
       setIsLoading(false);
     }
@@ -516,10 +598,12 @@ export default function ChatApp({
     } = await supabase.auth.getSession();
     const token = session?.access_token;
     if (!token) {
-      alert("Sign in to analyze an OBD screenshot.");
+      alert(t("ai.signInRequired"));
       return;
     }
 
+    setIsLoading(true);
+    setRequestError(null);
     try {
       const res = await fetch("/api/vision/analyze-obd", {
         method: "POST",
@@ -538,15 +622,19 @@ export default function ChatApp({
           },
         }),
       });
-      const json = (await res.json()) as {
+      let json: {
         success?: boolean;
         data?: ObdVisionAnalysis;
         codes?: ObdVisionAnalysis["codes"];
         error?: string;
       };
+      try {
+        json = (await res.json()) as typeof json;
+      } catch {
+        throw new Error(t("ai.requestFailed"));
+      }
       if (!res.ok) {
-        alert(json.error || "Could not read the OBD screenshot.");
-        return;
+        throw new Error(json.error || t("ai.requestFailed"));
       }
       const codesRaw = json.data?.codes ?? json.codes ?? [];
       const codes = codesRaw.map((c) => lookupDtc(c.code));
@@ -558,6 +646,7 @@ export default function ChatApp({
       for (const c of [...codes, ...extra]) byCode.set(c.code, c);
       const merged = [...byCode.values()];
 
+      setIsLoading(false);
       if (merged.length) {
         await handleSend(
           buildDtcDiagnosisPrompt({
@@ -574,8 +663,19 @@ export default function ChatApp({
         );
       }
     } catch (err) {
-      console.error("[ChatApp] OBD screenshot", err);
-      alert("Could not analyze the OBD screenshot. Try again.");
+      const message =
+        err instanceof Error ? err.message : t("ai.requestFailed");
+      setRequestError(message);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: `⚠️ ${message}`,
+          timestamp: new Date(),
+        },
+      ]);
+      setIsLoading(false);
     }
   };
 
@@ -665,11 +765,31 @@ export default function ChatApp({
           onEditUser={handleEditUser}
           onQuickPrompt={handleQuickPrompt}
         />
+        {requestError && !isLoading ? (
+          <div className="shrink-0 border-t border-amber-800/40 bg-amber-950/40 px-4 py-2.5">
+            <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2">
+              <p className="text-sm text-amber-100">
+                {t("ai.requestFailed")}: {requestError}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setRequestError(null);
+                  void handleRegenerate();
+                }}
+                className="rounded-xl bg-cyan-500 px-3 py-1.5 text-sm font-semibold text-black hover:bg-cyan-400"
+              >
+                {t("ai.retry")}
+              </button>
+            </div>
+          </div>
+        ) : null}
         <ChatInput
           onSend={(c, imgs) => void handleSend(c, imgs)}
           onFaultCode={handleFaultCode}
           onObdScreenshot={(img) => void handleObdScreenshot(img)}
           onObdBleSession={handleObdBleSession}
+          onScanReceipt={() => setReceiptModalOpen(true)}
           isLoading={vehiclesLoading || !ready || !currentVehicle}
           isGenerating={isLoading}
           autoSpeak={autoSpeak}
@@ -679,6 +799,15 @@ export default function ChatApp({
           onDraftConsumed={() => setDraftValue(undefined)}
         />
       </div>
+
+      <ReceiptConfirmModal
+        open={receiptModalOpen}
+        onClose={() => setReceiptModalOpen(false)}
+        vehicles={vehicles}
+        defaultVehicleId={currentVehicle?.id}
+        mode="scan"
+        onSaved={handleReceiptSaved}
+      />
 
       <MobileVehicleSwitcher
         open={showVehicleSwitcher}

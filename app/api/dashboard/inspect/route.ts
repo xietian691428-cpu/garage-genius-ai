@@ -27,6 +27,14 @@ import {
   consumeAiTokens,
   requireAiUser,
 } from "@/lib/ai-abuse";
+import { aiUpstreamResponse } from "@/lib/ai-errors";
+import { createSupabaseAdmin } from "@/lib/supabase-admin";
+import {
+  computeVehicleFamiliarity,
+  formatFamiliarityForPrompt,
+} from "@/lib/vehicle-familiarity";
+import { formatMaintenanceHistoryForPrompt } from "@/lib/chat-repair-loop";
+import type { MaintenanceRecord } from "@/lib/types/maintenance";
 
 const MIN_SYMPTOM_LENGTH = 3;
 
@@ -37,6 +45,7 @@ function buildInspectPrompt(
   symptoms: string,
   isGeneral: boolean,
   affiliateCatalog?: string | null,
+  maintenanceBlock?: string | null,
 ): string {
   const focus = isGeneral
     ? "Provide a concise general inspection guide for this area (no specific symptoms)."
@@ -46,6 +55,10 @@ function buildInspectPrompt(
     ? `\n${affiliateCatalog.trim()}\nIf catalog parts exist, use their OEM/brand/price/links in purchaseParts and partsTable.\n`
     : "";
 
+  const historyBlock = maintenanceBlock?.trim()
+    ? `\n${maintenanceBlock.trim()}\nPrefer citing logged jobs; do not re-recommend completed work unless wear intervals clearly apply.\n`
+    : "";
+
   const market = normalizeVehicleMarket(vehicle.market);
 
   return `${formatMarketContextBlock(vehicle)}
@@ -53,6 +66,7 @@ function buildInspectPrompt(
 Vehicle: ${vehicle.year} ${vehicle.make} ${vehicle.model}, ${vehicle.mileage.toLocaleString()} mi, ${vehicle.engine}.
 Area: ${regionName} — ${regionDescription}
 ${focus}
+${historyBlock}
 ${catalogBlock}
 Specifications must follow ${market} region manuals and regulations.
 Return ONLY valid JSON:
@@ -172,11 +186,51 @@ export async function POST(request: NextRequest) {
     });
     const affiliateCatalog = formatAffiliateCatalogForPrompt(affiliateMatches);
 
+    let maintenanceBlock: string | null = null;
+    try {
+      if (currentVehicle.id) {
+        const admin = createSupabaseAdmin();
+        const { data } = await admin
+          .from("maintenance_records")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("vehicle_id", currentVehicle.id)
+          .order("performed_at", { ascending: false })
+          .limit(12);
+        const records: MaintenanceRecord[] = (data ?? []).map((row) => ({
+          id: row.id,
+          userId: row.user_id,
+          vehicleId: row.vehicle_id,
+          title: row.title,
+          category: row.category,
+          description: row.description ?? undefined,
+          mileage: row.mileage ?? undefined,
+          costCents: row.cost_cents ?? undefined,
+          partsUsed: Array.isArray(row.parts_used) ? row.parts_used : [],
+          shopName:
+            "shop_name" in row && row.shop_name
+              ? String(row.shop_name)
+              : undefined,
+          performedAt: row.performed_at,
+          source: row.source,
+          notes: row.notes ?? undefined,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        }));
+        const familiarity = computeVehicleFamiliarity(records);
+        maintenanceBlock = formatMaintenanceHistoryForPrompt(records, {
+          familiarityBlock: formatFamiliarityForPrompt(familiarity),
+        });
+      }
+    } catch (err) {
+      console.warn("[/api/dashboard/inspect] maintenance context:", err);
+    }
+
     const messages: DeepSeekMessage[] = [
       {
         role: "system",
         content:
-          "You are Garage Genius AI. Respond with valid JSON only. Be concise. Prefer Affiliate Catalog OEM/price/links when provided.",
+          "You are Garage Genius AI. Respond with valid JSON only. Be concise. Prefer Affiliate Catalog OEM/price/links when provided. Cite garage maintenance history when relevant.",
       },
       {
         role: "user",
@@ -187,6 +241,7 @@ export async function POST(request: NextRequest) {
           trimmedSymptoms,
           isGeneral,
           affiliateCatalog,
+          maintenanceBlock,
         ),
       },
     ];
@@ -245,7 +300,12 @@ export async function POST(request: NextRequest) {
     const abuse = aiAbuseResponse(error);
     if (abuse) return abuse;
 
-    console.error("[/api/dashboard/inspect]", error);
+    const upstream = aiUpstreamResponse(error);
+    if (upstream) return upstream;
+
+    console.error("[/api/dashboard/inspect] unexpected", {
+      message: error instanceof Error ? error.message : String(error),
+    });
 
     const message =
       error instanceof Error ? error.message : "Unknown error";
@@ -257,6 +317,10 @@ export async function POST(request: NextRequest) {
         error: isInsufficientBalance
           ? "DeepSeek account balance is insufficient. Please top up at platform.deepseek.com."
           : "AI inspection is temporarily unavailable. Please try again.",
+        code: isInsufficientBalance
+          ? "INSUFFICIENT_BALANCE"
+          : "AI_UNAVAILABLE",
+        retryable: !isInsufficientBalance,
       },
       { status: isInsufficientBalance ? 402 : 500 },
     );

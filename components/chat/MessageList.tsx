@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { ChatMessage, VehicleInfo } from "@/lib/types/chat";
 import type { FocusCommand } from "@/lib/types/focus";
 import MessageBubble from "./MessageBubble";
@@ -27,6 +28,7 @@ export default function MessageList({
   onEditUser,
   onQuickPrompt,
 }: Props) {
+  const { t } = useTranslation();
   const bottomRef = useRef<HTMLDivElement>(null);
   const showStarters =
     Boolean(onQuickPrompt) &&
@@ -74,7 +76,7 @@ export default function MessageList({
       {showStarters && (
         <div className="mx-auto max-w-xl px-1 pb-2">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-            Try a starting point
+            {t("ai.tryStartingPoint")}
           </p>
           <div className="flex flex-wrap gap-2">
             {getChatStarterChips(vehicle).map((chip) => (
@@ -92,11 +94,11 @@ export default function MessageList({
       )}
 
       {isLoading && (
-        <div className="flex justify-start">
+        <div className="flex justify-start" role="status" aria-live="polite">
           <div className="rounded-3xl bg-slate-800 px-5 py-4">
-            <div className="flex items-center gap-2 text-slate-400">
+            <div className="flex items-center gap-2 text-slate-300">
               <div className="h-2 w-2 animate-pulse rounded-full bg-cyan-400" />
-              Thinking…
+              {t("ai.thinking")}
             </div>
           </div>
         </div>

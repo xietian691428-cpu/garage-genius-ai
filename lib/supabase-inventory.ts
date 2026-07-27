@@ -4,6 +4,7 @@
 
 import { supabase } from "@/lib/supabase";
 import type { InventoryItem } from "@/lib/types/inventory";
+import { normalizeInventoryCategory } from "@/lib/types/parts";
 
 const MIGRATED_KEY_PREFIX = "garageGenius_inventory_migrated_";
 
@@ -15,14 +16,28 @@ function migratedKey(userId: string, vehicleId: string) {
   return `${MIGRATED_KEY_PREFIX}${userId}_${vehicleId}`;
 }
 
+function isCloudRowId(id: string | undefined | null): boolean {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    id,
+  );
+}
+
 export const inventoryService = {
   async getInventory(vehicleId: string): Promise<InventoryItem[]> {
     if (!vehicleId) return [];
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) return [];
 
     const { data, error } = await supabase
       .from("inventory_items")
       .select("*")
       .eq("vehicle_id", vehicleId)
+      .eq("user_id", user.id)
       .order("last_updated", { ascending: false });
 
     if (error) throw error;
@@ -36,14 +51,59 @@ export const inventoryService = {
     } = await supabase.auth.getUser();
     if (userError || !user) throw new Error("Sign in required to save inventory");
 
+    const category = normalizeInventoryCategory(item.category, item.name);
+
+    // Prefer primary-key update when editing an existing cloud row (keeps id
+    // stable even if OEM is cleared / regenerated).
+    if (isCloudRowId(item.id)) {
+      const oem =
+        item.oem_number?.trim() ||
+        `manual-${crypto.randomUUID().slice(0, 8)}`;
+
+      const { data, error } = await supabase
+        .from("inventory_items")
+        .update({
+          vehicle_id: item.vehicle_id,
+          oem_number: oem,
+          brand: item.brand,
+          name: item.name,
+          category,
+          current_stock: item.current_stock,
+          min_stock: item.min_stock,
+          price: item.price,
+          location: item.location,
+          purchase_links: item.purchase_links ?? [],
+          notes: item.notes ?? null,
+          last_used_in_repair: item.last_used_in_repair ?? null,
+          user_id: user.id,
+          last_updated: new Date().toISOString(),
+        })
+        .eq("id", item.id!)
+        .eq("user_id", user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as InventoryItem;
+    }
+
     const oem =
       item.oem_number?.trim() ||
-      // Unique index on (oem_number, vehicle_id) — avoid empty-string collisions
       `manual-${crypto.randomUUID().slice(0, 8)}`;
 
     const payload = {
-      ...item,
+      vehicle_id: item.vehicle_id,
       oem_number: oem,
+      brand: item.brand,
+      name: item.name,
+      category,
+      current_stock: item.current_stock,
+      min_stock: item.min_stock,
+      price: item.price,
+      location: item.location,
+      purchase_links: item.purchase_links ?? [],
+      notes: item.notes ?? null,
+      last_used_in_repair: item.last_used_in_repair ?? null,
       user_id: user.id,
       last_updated: new Date().toISOString(),
     };
@@ -74,6 +134,7 @@ export const inventoryService = {
       .upsert(
         items.map((item) => ({
           ...item,
+          category: normalizeInventoryCategory(item.category, item.name),
           oem_number:
             item.oem_number?.trim() ||
             `ai-${crypto.randomUUID().slice(0, 8)}`,
@@ -89,6 +150,12 @@ export const inventoryService = {
   },
 
   async updateStock(id: string, newStock: number, repairId?: string) {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error("Sign in required");
+
     const { data, error } = await supabase
       .from("inventory_items")
       .update({
@@ -97,6 +164,7 @@ export const inventoryService = {
         ...(repairId ? { last_used_in_repair: repairId } : {}),
       })
       .eq("id", id)
+      .eq("user_id", user.id)
       .select()
       .single();
 
@@ -105,21 +173,35 @@ export const inventoryService = {
   },
 
   async remove(id: string): Promise<void> {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error("Sign in required");
+
     const { error } = await supabase
       .from("inventory_items")
       .delete()
-      .eq("id", id);
+      .eq("id", id)
+      .eq("user_id", user.id);
     if (error) throw error;
   },
 
   async getLowStock(vehicleId: string): Promise<InventoryItem[]> {
     const items = await inventoryService.getInventory(vehicleId);
-    return items.filter((i) => i.current_stock <= i.min_stock);
+    return items.filter(isLowStockItem);
   },
 };
 
+/** Wishlist with min_stock 0 should not flash as "low stock". */
+export function isLowStockItem(item: Pick<InventoryItem, "current_stock" | "min_stock" | "location">): boolean {
+  if (item.location === "Wishlist" && item.min_stock <= 0) return false;
+  return item.min_stock > 0 && item.current_stock <= item.min_stock;
+}
+
 /**
  * One-time migrate legacy localStorage inventory into cloud for this vehicle.
+ * Read-only on localStorage — never write back to the legacy bag from product UI.
  */
 export async function migrateFromLocalStorage(vehicleId: string): Promise<void> {
   if (typeof window === "undefined" || !vehicleId) return;
@@ -145,23 +227,28 @@ export async function migrateFromLocalStorage(vehicleId: string): Promise<void> 
       return;
     }
 
-    // Prefer items already tagged for this vehicle; otherwise migrate all once
-    // onto the first cloud vehicle the user opens.
+    // Only migrate rows tagged for this vehicle (avoids dumping one bag onto every car).
     const tagged = oldItems.filter(
       (item) => String(item.vehicleId ?? "") === vehicleId,
     );
-    const source = tagged.length > 0 ? tagged : oldItems;
+    if (tagged.length === 0) {
+      localStorage.setItem(flag, "1");
+      return;
+    }
 
-    const newItems = source.map((item) => ({
+    const newItems = tagged.map((item) => ({
       vehicle_id: vehicleId,
       oem_number: String(
         item.oemNumber || item.oemPartNumber || "",
       ).trim() || undefined,
       brand: String(item.brand || item.aftermarketBrand || "Unknown"),
       name: String(item.name || "Unknown part"),
-      category: inferCategory(String(item.name || "")),
+      category: normalizeInventoryCategory(
+        String(item.category || ""),
+        String(item.name || ""),
+      ),
       current_stock: Number(item.currentStock ?? item.quantityOnHand ?? 0) || 0,
-      min_stock: Number(item.minStock ?? item.minQuantity ?? 1) || 1,
+      min_stock: Number(item.minStock ?? item.minQuantity ?? 0) || 0,
       price:
         typeof item.price === "string"
           ? parseFloat(String(item.price).replace(/[^0-9.]/g, "")) || 0
@@ -178,22 +265,4 @@ export async function migrateFromLocalStorage(vehicleId: string): Promise<void> 
   } catch (e) {
     console.error("[inventory] Migration failed:", e);
   }
-}
-
-function inferCategory(name: string): InventoryItem["category"] {
-  const n = name.toLowerCase();
-  if (n.includes("brake") || n.includes("pad") || n.includes("rotor")) {
-    return "brake";
-  }
-  if (n.includes("oil") || n.includes("filter")) return "filter";
-  if (n.includes("engine")) return "engine";
-  if (
-    n.includes("shock") ||
-    n.includes("strut") ||
-    n.includes("control arm")
-  ) {
-    return "suspension";
-  }
-  if (n.includes("battery") || n.includes("alternator")) return "electrical";
-  return "consumable";
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   createAffiliatePartAction,
   deleteAffiliatePartAction,
@@ -261,28 +262,46 @@ function linkCount(part: AffiliatePart) {
 }
 
 export default function PartsManager({ parts }: { parts: AffiliatePart[] }) {
+  const router = useRouter();
+  const [rows, setRows] = useState<AffiliatePart[]>(parts);
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRows(parts);
+  }, [parts]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this affiliate part?")) return;
     setBusyId(id);
     setError(null);
     const result = await deleteAffiliatePartAction(id);
-    if (!result.ok) setError(result.error ?? "Delete failed.");
+    if (!result.ok) {
+      setError(result.error ?? "Delete failed.");
+    } else {
+      setRows((prev) => prev.filter((p) => p.id !== id));
+      router.refresh();
+    }
     setBusyId(null);
   };
 
   const handleToggle = async (part: AffiliatePart) => {
     setBusyId(part.id);
     setError(null);
-    const result = await toggleAffiliatePartActiveAction(
-      part.id,
-      !part.is_active,
-    );
-    if (!result.ok) setError(result.error ?? "Update failed.");
+    const nextActive = !part.is_active;
+    const result = await toggleAffiliatePartActiveAction(part.id, nextActive);
+    if (!result.ok) {
+      setError(result.error ?? "Update failed.");
+    } else {
+      setRows((prev) =>
+        prev.map((p) =>
+          p.id === part.id ? { ...p, is_active: nextActive } : p,
+        ),
+      );
+      router.refresh();
+    }
     setBusyId(null);
   };
 
@@ -318,7 +337,12 @@ export default function PartsManager({ parts }: { parts: AffiliatePart[] }) {
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">
             New affiliate part
           </h2>
-          <PartForm onDone={() => setShowCreate(false)} />
+          <PartForm
+            onDone={() => {
+              setShowCreate(false);
+              router.refresh();
+            }}
+          />
         </div>
       )}
 
@@ -336,7 +360,7 @@ export default function PartsManager({ parts }: { parts: AffiliatePart[] }) {
               </tr>
             </thead>
             <tbody>
-              {parts.length === 0 && (
+              {rows.length === 0 && (
                 <tr>
                   <td
                     colSpan={6}
@@ -346,7 +370,7 @@ export default function PartsManager({ parts }: { parts: AffiliatePart[] }) {
                   </td>
                 </tr>
               )}
-              {parts.map((part) => (
+              {rows.map((part) => (
                 <tr key={part.id} className="border-b border-slate-800/80">
                   <td className="px-4 py-3 align-top">
                     <p className="font-medium text-white">{part.name}</p>
@@ -429,8 +453,11 @@ export default function PartsManager({ parts }: { parts: AffiliatePart[] }) {
             Edit part
           </h2>
           <PartForm
-            part={parts.find((p) => p.id === editingId)}
-            onDone={() => setEditingId(null)}
+            part={rows.find((p) => p.id === editingId)}
+            onDone={() => {
+              setEditingId(null);
+              router.refresh();
+            }}
           />
         </div>
       )}

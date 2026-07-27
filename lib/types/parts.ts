@@ -136,3 +136,34 @@ export const INVENTORY_CATEGORY_LABELS: Record<InventoryCategory, string> = {
   consumable: "Consumable",
   other: "Other",
 };
+
+export const INVENTORY_CATEGORIES: InventoryCategory[] = [
+  "brake",
+  "engine",
+  "filter",
+  "suspension",
+  "electrical",
+  "consumable",
+  "other",
+];
+
+/** Map AI / free-text categories onto DB check constraint values. */
+export function normalizeInventoryCategory(
+  raw: string | null | undefined,
+  nameHint?: string,
+): InventoryCategory {
+  const v = (raw || "").trim().toLowerCase();
+  if ((INVENTORY_CATEGORIES as string[]).includes(v)) {
+    return v as InventoryCategory;
+  }
+  // Common AI aliases
+  if (v === "replacement" || v === "wear" || v === "part") {
+    return inferInventoryCategory(nameHint || "", undefined);
+  }
+  if (v === "brakes" || v === "brake pads") return "brake";
+  if (v === "oils" || v === "fluids" || v === "fluid") return "consumable";
+  if (v === "filters") return "filter";
+  if (v === "electric" || v === "electronics") return "electrical";
+  if (v === "suspensions") return "suspension";
+  return inferInventoryCategory(nameHint || v, undefined);
+}

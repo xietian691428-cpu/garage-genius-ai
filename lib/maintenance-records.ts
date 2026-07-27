@@ -10,6 +10,8 @@ import {
 import type {
   MaintenanceRecord,
   MaintenanceRecordInput,
+  MaintenanceRecordUpdate,
+  MaintenanceSource,
 } from "@/lib/types/maintenance";
 
 type MaintenanceRow = {
@@ -22,8 +24,9 @@ type MaintenanceRow = {
   mileage: number | null;
   cost_cents: number | null;
   parts_used: unknown;
+  shop_name?: string | null;
   performed_at: string;
-  source: "manual" | "chat" | "parts";
+  source: MaintenanceSource;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -40,6 +43,7 @@ function rowToRecord(row: MaintenanceRow): MaintenanceRecord {
     mileage: row.mileage ?? undefined,
     costCents: row.cost_cents ?? undefined,
     partsUsed: Array.isArray(row.parts_used) ? row.parts_used : [],
+    shopName: row.shop_name ?? undefined,
     performedAt: row.performed_at,
     source: row.source,
     notes: row.notes ?? undefined,
@@ -106,10 +110,50 @@ export const maintenanceService = {
         mileage: input.mileage ?? null,
         cost_cents: input.costCents ?? null,
         parts_used: input.partsUsed ?? [],
+        shop_name: input.shopName?.trim() || null,
         performed_at: input.performedAt,
         source: input.source ?? "manual",
         notes: input.notes?.trim() || null,
       })
+      .select("*")
+      .single();
+
+    if (error) throw error;
+    return rowToRecord(data as MaintenanceRow);
+  },
+
+  async update(
+    id: string,
+    patch: MaintenanceRecordUpdate,
+  ): Promise<MaintenanceRecord> {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error("Sign in required");
+
+    const payload: Record<string, unknown> = {};
+    if (patch.vehicleId !== undefined) payload.vehicle_id = patch.vehicleId;
+    if (patch.title !== undefined) payload.title = patch.title.trim();
+    if (patch.category !== undefined) payload.category = patch.category;
+    if (patch.description !== undefined) {
+      payload.description = patch.description?.trim() || null;
+    }
+    if (patch.mileage !== undefined) payload.mileage = patch.mileage ?? null;
+    if (patch.costCents !== undefined) payload.cost_cents = patch.costCents ?? null;
+    if (patch.partsUsed !== undefined) payload.parts_used = patch.partsUsed ?? [];
+    if (patch.shopName !== undefined) {
+      payload.shop_name = patch.shopName?.trim() || null;
+    }
+    if (patch.performedAt !== undefined) payload.performed_at = patch.performedAt;
+    if (patch.source !== undefined) payload.source = patch.source;
+    if (patch.notes !== undefined) payload.notes = patch.notes?.trim() || null;
+
+    const { data, error } = await supabase
+      .from("maintenance_records")
+      .update(payload)
+      .eq("id", id)
+      .eq("user_id", user.id)
       .select("*")
       .single();
 

@@ -64,10 +64,8 @@ export function recommendationsToPartsData(
     oemNumber: p.oemPartNumber,
     brand: p.aftermarketBrand,
     name: p.name,
-    category:
-      p.category === "consumable"
-        ? "consumable"
-        : undefined,
+    // Pass through AI category; savePartsToInventory normalizes to DB whitelist
+    category: p.category,
     quantity: p.quantityNeeded,
     price: p.estimatedPrice,
     purchaseLinks: p.purchaseChannels.map((c) => c.searchUrl).filter(Boolean),

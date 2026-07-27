@@ -1116,7 +1116,7 @@ export default function Dashboard({
                 >
                   <Camera className="h-5 w-5" />
                   {isAnalyzingPhoto
-                    ? "Analyzing…"
+                    ? t("ai.analyzingPhoto")
                     : "Photo diagnosis & update"}
                 </button>
                 <button
@@ -1167,7 +1167,7 @@ export default function Dashboard({
           )}
           {isAnalyzingPhoto && (
             <p className="mb-4 text-center text-sm text-cyan-400">
-              DeepSeek Vision is reading your photo for {vehicleLabel}…
+              {t("ai.analyzingPhoto")}
             </p>
           )}
 
