@@ -15,7 +15,7 @@ Daily maintenance due check for Garage Genius.
 
 ```bash
 supabase functions deploy send-maintenance-reminders
-supabase secrets set RESEND_API_KEY=re_xxx REMINDER_FROM_EMAIL=reminders@yourdomain.com
+supabase secrets set RESEND_API_KEY=re_xxx REMINDER_FROM_EMAIL=reminders@garagegenius.cloud
 # optional:
 supabase secrets set CRON_SECRET=your-long-secret
 ```

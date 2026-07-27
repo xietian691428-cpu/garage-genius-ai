@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
 
   const resendKey = Deno.env.get("RESEND_API_KEY") || "";
   const fromEmail =
-    Deno.env.get("REMINDER_FROM_EMAIL") || "reminders@garagegenius.ai";
+    Deno.env.get("REMINDER_FROM_EMAIL") || "reminders@garagegenius.cloud";
 
   const { data: vehicles, error } = await supabase
     .from("user_vehicles")

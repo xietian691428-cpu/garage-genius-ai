@@ -42,7 +42,7 @@ Copy from [`.env.example`](./.env.example). **Required for production:**
 
 | Variable | Purpose |
 |----------|---------|
-| `NEXT_PUBLIC_APP_URL` | Canonical HTTPS origin (Stripe redirects, OAuth) |
+| `NEXT_PUBLIC_APP_URL` | `https://garagegenius.cloud` (Stripe redirects, OAuth) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Auth + DB |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser client |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server seed, quota, Stripe sync, admin |
@@ -76,7 +76,7 @@ Checklist:
 
 ## D. Stripe webhook & subscription sync (Step 6)
 
-- [ ] Webhook endpoint: `https://<prod-domain>/api/stripe/webhook`
+- [ ] Webhook endpoint: `https://garagegenius.cloud/api/stripe/webhook`
 - [ ] Events enabled at minimum:
   - `checkout.session.completed`
   - `customer.subscription.created` / `updated` / `deleted`

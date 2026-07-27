@@ -6,15 +6,12 @@ import {
   type PortalFlow,
 } from "@/lib/stripe-support";
 import { isQaUnlockEnabled, qaPaymentDisabledMessage } from "@/lib/qa-mode";
+import { getAppBaseUrl } from "@/lib/app-url";
 
 export const runtime = "nodejs";
 
 function appBaseUrl(req: NextRequest): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ??
-    req.nextUrl.origin ??
-    "http://localhost:3000"
-  );
+  return getAppBaseUrl(req.nextUrl.origin);
 }
 
 /**

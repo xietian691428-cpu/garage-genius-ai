@@ -16,12 +16,13 @@ Garage Genius 登录页支持：
 
 | 字段 | 值 |
 |------|-----|
-| Site URL | 生产域名，如 `https://your-domain.com` |
+| Site URL | `https://garagegenius.cloud` |
 | Redirect URLs | 全部加入下面列表 |
 
 ```
 http://localhost:3000/auth/callback
-https://your-domain.com/auth/callback
+https://garagegenius.cloud/auth/callback
+https://garage-genius-ai.vercel.app/auth/callback
 ```
 
 Capacitor / 自定义 scheme 上架后再加，例如：
@@ -77,7 +78,7 @@ garagegenius://auth/callback
 1. 创建 OAuth 2.0 Client（**Web application**）。
 2. Authorized JavaScript origins：
    - `http://localhost:3000`
-   - `https://your-domain.com`
+   - `https://garagegenius.cloud`
 3. Authorized redirect URIs：
    ```
    https://<PROJECT_REF>.supabase.co/auth/v1/callback

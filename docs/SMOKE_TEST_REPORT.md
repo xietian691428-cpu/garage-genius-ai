@@ -4,7 +4,7 @@
 |-------|--------|
 | Date | 2026-07-24 |
 | Environment | Vercel Production |
-| Base URL | https://garage-genius-ai.vercel.app |
+| Base URL | https://garagegenius.cloud (was https://garage-genius-ai.vercel.app) |
 | Tester | Cursor browser automation |
 | Scope | Coach / Chat / RAG / Vehicles / History / Admin / Library / i18n / mobile / perf |
 | Out of scope | Payments, quotas, trial expiry, Portal, refunds |
@@ -72,6 +72,6 @@ Legend: **PASS** | **FAIL** | **BLOCKED** | **SKIP** | **PARTIAL**
 - Blocked: Coach / Chat / vehicles / History / i18n / Admin dashboards (auth)
 
 **Next:** Please **Take Control** of the browser → open  
-https://garage-genius-ai.vercel.app/login?next=/app  
+https://garagegenius.cloud/login?next=/app  
 → sign in (QA OK) → stay on `/app` → reply **继续**.  
 Then we resume steps 2–3–5–6–8.

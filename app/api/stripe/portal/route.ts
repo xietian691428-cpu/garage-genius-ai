@@ -8,6 +8,7 @@ import {
   isQaUnlockEnabled,
   qaPaymentDisabledMessage,
 } from "@/lib/qa-mode";
+import { getAppBaseUrl } from "@/lib/app-url";
 
 export const runtime = "nodejs";
 
@@ -18,11 +19,7 @@ function getAccessToken(req: NextRequest): string | null {
 }
 
 function appBaseUrl(req: NextRequest): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ??
-    req.nextUrl.origin ??
-    "http://localhost:3000"
-  );
+  return getAppBaseUrl(req.nextUrl.origin);
 }
 
 export async function POST(req: NextRequest) {

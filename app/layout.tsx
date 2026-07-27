@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Syne, DM_Sans } from "next/font/google";
 import "./globals.css";
 import I18nProvider from "@/components/i18n/I18nProvider";
+import { getAppBaseUrl } from "@/lib/app-url";
 
 const display = Syne({
   subsets: ["latin"],
@@ -16,6 +17,7 @@ const sans = DM_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getAppBaseUrl()),
   title: "Garage Genius AI — DIY Auto Repair Coach",
   description:
     "AI diagnosis, vehicle dashboard, parts recommendations, and hands-free voice coaching for US & EU DIY car owners. Start free.",

@@ -25,7 +25,7 @@ const config: CapacitorConfig = {
   appName: "Garage Genius AI",
   webDir: "public", // placeholder if using remote URL
   server: {
-    url: process.env.NEXT_PUBLIC_APP_URL, // e.g. https://app.example.com
+    url: process.env.NEXT_PUBLIC_APP_URL, // https://garagegenius.cloud
     cleartext: false,
   },
 };

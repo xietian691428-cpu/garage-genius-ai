@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
   const vapidPrivate = process.env.VAPID_PRIVATE_KEY?.trim();
   const vapidSubject =
-    process.env.VAPID_SUBJECT?.trim() || "mailto:support@garagegenius.ai";
+    process.env.VAPID_SUBJECT?.trim() || "mailto:support@garagegenius.cloud";
   const canPush = Boolean(vapidPublic && vapidPrivate);
   if (canPush) {
     webpush.setVapidDetails(vapidSubject, vapidPublic!, vapidPrivate!);
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
   const resendKey = process.env.RESEND_API_KEY?.trim();
   const fromEmail =
-    process.env.REMINDER_FROM_EMAIL?.trim() || "reminders@garagegenius.ai";
+    process.env.REMINDER_FROM_EMAIL?.trim() || "reminders@garagegenius.cloud";
 
   const { data: vehicles, error } = await admin
     .from("user_vehicles")
