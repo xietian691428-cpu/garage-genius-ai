@@ -32,10 +32,11 @@
     "feedbackSkipNote": "Skip note",
     "adoptButton": "Adopt as Knowledge Base",
     "adoptSaving": "Saving…",
-    "adoptSuccess": "Saved to knowledge base — chat can rank this next.",
+    "adoptSuccess": "Saved for review — chat can use this, and admins will curate it.",
     "adoptFailed": "Couldn’t save. Try again.",
     "adoptSignInPrompt": "Sign in to adopt this step into the knowledge base.",
-    "adoptSignInLink": "Sign in"
+    "adoptSignInLink": "Sign in",
+    "adoptNeedYes": "Mark this step useful (Yes) to unlock Adopt as Knowledge Base."
   },
   "onboarding": {
     "welcomeEyebrow": "Welcome to Garage Genius",

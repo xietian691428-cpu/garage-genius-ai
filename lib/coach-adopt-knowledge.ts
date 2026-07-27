@@ -1,10 +1,15 @@
 /**
- * Adopt a Coach step (or completion summary) into knowledge_base for RAG.
+ * Adopt a Coach step (or completion summary) into knowledge_base for RAG,
+ * then enqueue flywheel for admin review.
  * Does not mutate playbook JSON — write-only path.
+ *
+ * Dedupes by scenario + step + kind + vehicle make/model so multiple users
+ * adopting the same step for the same vehicle bump votes instead of new rows.
  */
 
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { tryGenerateKnowledgeEmbedding } from "@/lib/rag";
+import { enqueueCoachAdopt } from "@/lib/flywheel";
 
 export type CoachAdoptKnowledgeInput = {
   scenarioSlug: string;
@@ -33,7 +38,34 @@ export type CoachAdoptKnowledgeResult = {
   ingestKey: string;
   embedded: boolean;
   qualityScore: number;
+  /** True when an existing make/model row was bumped instead of inserted */
+  deduped: boolean;
+  flywheelEnqueued: boolean;
+  flywheelQueueId?: string;
 };
+
+/** Normalize make/model for stable ingest_key segments. */
+export function normalizeVehicleToken(value?: string | null): string {
+  const t = (value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 48);
+  return t || "generic";
+}
+
+export function buildCoachAdoptIngestKey(input: {
+  scenarioSlug: string;
+  stepId: string;
+  kind: "step" | "completion";
+  vehicleMake?: string | null;
+  vehicleModel?: string | null;
+}): string {
+  const make = normalizeVehicleToken(input.vehicleMake);
+  const model = normalizeVehicleToken(input.vehicleModel);
+  return `coach_adopt:${input.scenarioSlug}:${input.stepId}:${input.kind}:${make}:${model}`;
+}
 
 function resolveQualityScore(input: CoachAdoptKnowledgeInput): number {
   if (
@@ -86,43 +118,24 @@ export async function adoptCoachStepAsKnowledge(
   if (!title || !description) {
     throw new Error("title and description are required");
   }
+  // Adopt CTA is only highlighted after Yes — enforce server-side too
+  if (input.lastVote !== "yes") {
+    throw new Error("Adopt requires a Yes usefulness vote first");
+  }
 
   const qualityScore = resolveQualityScore(input);
   const kind = input.kind || "step";
-  const ingestKey = `coach_adopt:${input.scenarioSlug}:${input.stepId}:${kind}`;
+  const makeNorm = normalizeVehicleToken(input.vehicleMake);
+  const modelNorm = normalizeVehicleToken(input.vehicleModel);
+  const ingestKey = buildCoachAdoptIngestKey({
+    scenarioSlug: input.scenarioSlug,
+    stepId: input.stepId,
+    kind,
+    vehicleMake: input.vehicleMake,
+    vehicleModel: input.vehicleModel,
+  });
   const content = buildContent(input);
   const kbTitle = `[Coach] ${title}`.slice(0, 200);
-
-  const embedding = await tryGenerateKnowledgeEmbedding(`${kbTitle}\n${content}`);
-
-  const metadata: Record<string, unknown> = {
-    ingest_key: ingestKey,
-    scenario_slug: input.scenarioSlug,
-    scenario_id: input.scenarioId,
-    step_id: input.stepId,
-    corpus: "coach_adopt",
-    rag_tier: "repair",
-    quality_score: qualityScore,
-    useful_votes: input.lastVote === "yes" ? 1 : 0,
-    downvotes: input.lastVote === "no" ? 1 : 0,
-    adopted_by: input.userId,
-    adopted_at: new Date().toISOString(),
-    kind,
-  };
-
-  const row: Record<string, unknown> = {
-    title: kbTitle,
-    content,
-    source: "coach_adopt",
-    category: "repair",
-    vehicle_make: input.vehicleMake ?? null,
-    vehicle_model: input.vehicleModel ?? null,
-    vehicle_years: input.vehicleYears ?? null,
-    is_active: true,
-    metadata,
-    updated_at: new Date().toISOString(),
-  };
-  if (embedding) row.embedding = embedding;
 
   const admin = createSupabaseAdmin();
 
@@ -132,35 +145,85 @@ export async function adoptCoachStepAsKnowledge(
     .contains("metadata", { ingest_key: ingestKey })
     .maybeSingle();
 
-  // Re-adopt: keep / bump vote counters so RAG soft ranking can improve over time
+  let knowledgeId: string;
+  let embedded = false;
+  let deduped = false;
+
   if (existing?.id) {
+    // Same step + make/model already adopted — bump votes only (no duplicate write)
+    deduped = true;
     const prevMeta =
       existing.metadata && typeof existing.metadata === "object"
         ? (existing.metadata as Record<string, unknown>)
         : {};
     const prevUseful = Number(prevMeta.useful_votes) || 0;
-    const prevDown = Number(prevMeta.downvotes) || 0;
-    metadata.useful_votes =
-      prevUseful + (input.lastVote === "yes" ? 1 : 0);
-    metadata.downvotes = prevDown + (input.lastVote === "no" ? 1 : 0);
     const prevQ = Number(prevMeta.quality_score);
-    if (Number.isFinite(prevQ)) {
-      metadata.quality_score = Math.max(prevQ, qualityScore);
-    }
-    row.metadata = metadata;
-  }
-
-  let knowledgeId: string;
-  if (existing?.id) {
+    const nextMeta: Record<string, unknown> = {
+      ...prevMeta,
+      ingest_key: ingestKey,
+      scenario_slug: input.scenarioSlug,
+      scenario_id: input.scenarioId,
+      step_id: input.stepId,
+      corpus: "coach_adopt",
+      make_norm: makeNorm,
+      model_norm: modelNorm,
+      useful_votes: prevUseful + 1,
+      quality_score: Number.isFinite(prevQ)
+        ? Math.max(prevQ, qualityScore)
+        : qualityScore,
+      last_adopted_by: input.userId,
+      last_adopted_at: new Date().toISOString(),
+      kind,
+    };
     const { data, error } = await admin
       .from("knowledge_base")
-      .update(row)
+      .update({
+        metadata: nextMeta,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", existing.id)
       .select("id")
       .single();
     if (error) throw error;
     knowledgeId = data.id as string;
   } else {
+    const embedding = await tryGenerateKnowledgeEmbedding(
+      `${kbTitle}\n${content}`,
+    );
+    embedded = Boolean(embedding);
+
+    const metadata: Record<string, unknown> = {
+      ingest_key: ingestKey,
+      scenario_slug: input.scenarioSlug,
+      scenario_id: input.scenarioId,
+      step_id: input.stepId,
+      corpus: "coach_adopt",
+      rag_tier: "repair",
+      quality_score: qualityScore,
+      useful_votes: 1,
+      downvotes: 0,
+      make_norm: makeNorm,
+      model_norm: modelNorm,
+      adopted_by: input.userId,
+      adopted_at: new Date().toISOString(),
+      kind,
+      flywheel_pending: true,
+    };
+
+    const row: Record<string, unknown> = {
+      title: kbTitle,
+      content,
+      source: "coach_adopt",
+      category: "repair",
+      vehicle_make: input.vehicleMake?.trim() || null,
+      vehicle_model: input.vehicleModel?.trim() || null,
+      vehicle_years: input.vehicleYears ?? null,
+      is_active: true,
+      metadata,
+      updated_at: new Date().toISOString(),
+    };
+    if (embedding) row.embedding = embedding;
+
     const { data, error } = await admin
       .from("knowledge_base")
       .insert(row)
@@ -170,35 +233,28 @@ export async function adoptCoachStepAsKnowledge(
     knowledgeId = data.id as string;
   }
 
-  // Mirror into golden_qa for fine-tune export (best-effort; no unique key)
+  // Admin review queue (idempotent per ingest_key / make+model)
+  let flywheelEnqueued = false;
+  let flywheelQueueId: string | undefined;
   try {
-    const { data: existingGolden } = await admin
-      .from("golden_qa")
-      .select("id")
-      .contains("metadata", { ingest_key: ingestKey })
-      .maybeSingle();
-    if (!existingGolden?.id) {
-      await admin.from("golden_qa").insert({
-        question: `Coach step: ${input.scenarioSlug} / ${input.stepId} — ${title}`,
-        answer: content,
-        title: kbTitle,
-        category: "coach",
-        vehicle_make: input.vehicleMake ?? null,
-        vehicle_model: input.vehicleModel ?? null,
-        source_type: "coach_adopt",
-        source_id: null,
-        knowledge_base_id: knowledgeId,
-        quality_score: qualityScore,
-        metadata: {
-          scenario_slug: input.scenarioSlug,
-          step_id: input.stepId,
-          ingest_key: ingestKey,
-        },
-        updated_at: new Date().toISOString(),
-      });
-    }
-  } catch {
-    /* golden optional */
+    const q = await enqueueCoachAdopt({
+      ingestKey,
+      userId: input.userId,
+      scenarioSlug: input.scenarioSlug,
+      scenarioId: input.scenarioId,
+      stepId: input.stepId,
+      vote: "yes",
+      vehicleMake: input.vehicleMake?.trim() || null,
+      vehicleModel: input.vehicleModel?.trim() || null,
+      draftTitle: kbTitle,
+      draftQuestion: `Coach adopt (${kind}): ${input.scenarioSlug} / ${input.stepId} — ${title}`,
+      draftAnswer: content,
+      knowledgeBaseId: knowledgeId,
+    });
+    flywheelEnqueued = q.enqueued;
+    flywheelQueueId = q.id;
+  } catch (err) {
+    console.warn("[coach-adopt] flywheel enqueue failed", err);
   }
 
   try {
@@ -208,7 +264,16 @@ export async function adoptCoachStepAsKnowledge(
       module: "knowledge",
       target_type: "knowledge_base",
       target_id: knowledgeId,
-      detail: { ingestKey, scenarioSlug: input.scenarioSlug, stepId: input.stepId },
+      detail: {
+        ingestKey,
+        scenarioSlug: input.scenarioSlug,
+        stepId: input.stepId,
+        deduped,
+        flywheelEnqueued,
+        flywheelQueueId,
+        makeNorm,
+        modelNorm,
+      },
     });
   } catch {
     /* audit optional */
@@ -217,7 +282,10 @@ export async function adoptCoachStepAsKnowledge(
   return {
     knowledgeId,
     ingestKey,
-    embedded: Boolean(embedding),
+    embedded,
     qualityScore,
+    deduped,
+    flywheelEnqueued,
+    flywheelQueueId,
   };
 }

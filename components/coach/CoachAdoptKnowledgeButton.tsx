@@ -23,7 +23,7 @@ type Props = {
 
 /**
  * Adopt current Coach step / completion into knowledge_base for RAG.
- * Logged-in users see the adopt button; guests see a sign-in prompt.
+ * Highlighted only after a Yes usefulness vote. Guests see sign-in prompt.
  */
 export default function CoachAdoptKnowledgeButton({
   payload,
@@ -35,8 +35,10 @@ export default function CoachAdoptKnowledgeButton({
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState(false);
 
+  const yesVoted = payload.last_vote === "yes";
+
   const adopt = async () => {
-    if (busy || done || !user) return;
+    if (busy || done || !user || !yesVoted) return;
     setBusy(true);
     setFailed(false);
     try {
@@ -52,7 +54,7 @@ export default function CoachAdoptKnowledgeButton({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, last_vote: "yes" }),
       });
       const json = (await res.json()) as CoachAdoptKnowledgeResponse & {
         error?: string;
@@ -104,13 +106,26 @@ export default function CoachAdoptKnowledgeButton({
     );
   }
 
+  // Only highlight after Yes — muted hint until then
+  if (!yesVoted) {
+    return (
+      <p
+        className={`text-center text-[11px] text-slate-600 ${
+          variant === "completion" ? "py-1" : ""
+        }`}
+      >
+        {t("coach.adoptNeedYes")}
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-1.5">
       <button
         type="button"
         disabled={busy}
         onClick={() => void adopt()}
-        className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-500/40 bg-cyan-500/10 px-4 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-500/20 disabled:opacity-50 ${
+        className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-400/60 bg-cyan-500/20 px-4 text-sm font-semibold text-cyan-100 shadow-[0_0_0_1px_rgba(34,211,238,0.15)] transition hover:bg-cyan-500/30 disabled:opacity-50 ${
           variant === "completion" ? "py-3.5" : "py-2.5"
         }`}
       >

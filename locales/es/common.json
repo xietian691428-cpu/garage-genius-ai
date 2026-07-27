@@ -32,10 +32,11 @@
     "feedbackSkipNote": "Omitir nota",
     "adoptButton": "Adoptar en la base de conocimiento",
     "adoptSaving": "Guardando…",
-    "adoptSuccess": "Guardado en la base de conocimiento — el chat puede priorizarlo.",
+    "adoptSuccess": "Guardado para revisión — el chat puede usarlo y el equipo lo curará.",
     "adoptFailed": "No se pudo guardar. Inténtalo de nuevo.",
     "adoptSignInPrompt": "Inicia sesión para adoptar este paso en la base de conocimiento.",
-    "adoptSignInLink": "Iniciar sesión"
+    "adoptSignInLink": "Iniciar sesión",
+    "adoptNeedYes": "Marca este paso como útil (Sí) para desbloquear Adoptar."
   },
   "onboarding": {
     "welcomeEyebrow": "Bienvenido a Garage Genius",

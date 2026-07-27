@@ -136,6 +136,77 @@ export async function enqueueCoachFeedback(row: {
   return { enqueued: Boolean(data?.id), id: data?.id as string | undefined };
 }
 
+/**
+ * Enqueue a user “Adopt as Knowledge Base” for admin review.
+ * Idempotent on ingest_key (stored in `note`).
+ */
+export async function enqueueCoachAdopt(row: {
+  ingestKey: string;
+  userId: string;
+  scenarioSlug: string;
+  scenarioId: string;
+  stepId: string;
+  vote?: "yes" | "no" | null;
+  vehicleMake?: string | null;
+  vehicleModel?: string | null;
+  draftTitle: string;
+  draftQuestion: string;
+  draftAnswer: string;
+  knowledgeBaseId?: string | null;
+}): Promise<{ enqueued: boolean; id?: string }> {
+  const admin = createSupabaseAdmin();
+  const ingestKey = row.ingestKey.trim();
+  if (!ingestKey) return { enqueued: false };
+
+  const { data: existing } = await admin
+    .from("flywheel_review_queue")
+    .select("id")
+    .eq("source_type", "coach_adopt")
+    .eq("note", ingestKey)
+    .in("status", ["pending", "approved", "promoted"])
+    .maybeSingle();
+  if (existing?.id) return { enqueued: false, id: existing.id as string };
+
+  const { data, error } = await admin
+    .from("flywheel_review_queue")
+    .insert({
+      source_type: "coach_adopt",
+      source_id: null,
+      user_id: row.userId,
+      scenario_slug: row.scenarioSlug,
+      scenario_id: row.scenarioId,
+      step_id: row.stepId,
+      vote: row.vote ?? "yes",
+      vehicle_make: row.vehicleMake ?? null,
+      vehicle_model: row.vehicleModel ?? null,
+      note: ingestKey,
+      status: "pending",
+      draft_title: row.draftTitle,
+      draft_question: row.draftQuestion,
+      draft_answer: row.draftAnswer,
+      draft_category: "coach",
+      knowledge_base_id: row.knowledgeBaseId ?? null,
+    })
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    if (/duplicate|unique/i.test(error.message)) {
+      return { enqueued: false };
+    }
+    if (/flywheel_review_queue|does not exist|schema cache|check constraint|coach_adopt/i.test(error.message)) {
+      console.warn(
+        "[flywheel] coach_adopt enqueue failed — run migration 028:",
+        error.message,
+      );
+      return { enqueued: false };
+    }
+    throw error;
+  }
+
+  return { enqueued: Boolean(data?.id), id: data?.id as string | undefined };
+}
+
 /** Backfill: pull recent coach “no” votes not yet in queue. */
 export async function enqueueRecentCoachDownvotes(options?: {
   days?: number;
@@ -302,37 +373,78 @@ export async function promoteReviewToKnowledge(
       rag_tier: "repair",
       quality_score: 5,
       corpus: "flywheel",
-      promoted_from: "coach_step_feedback",
+      promoted_from: item.sourceType || "coach_step_feedback",
     },
     updated_at: new Date().toISOString(),
   };
   if (embedding) kbInsert.embedding = embedding;
 
-  // Upsert by ingest_key when unique index exists; else insert
-  let knowledgeId: string | null = null;
-  const existing = await admin
-    .from("knowledge_base")
-    .select("id")
-    .contains("metadata", { ingest_key: ingestKey })
-    .maybeSingle();
-
-  if (existing.data?.id) {
-    const { data: upd, error: updErr } = await admin
+  // Prefer linked coach_adopt KB (avoid duplicate rows for same step/vehicle)
+  let knowledgeId: string | null = item.knowledgeBaseId;
+  if (knowledgeId) {
+    const { data: prior } = await admin
       .from("knowledge_base")
-      .update(kbInsert)
-      .eq("id", existing.data.id)
+      .select("metadata")
+      .eq("id", knowledgeId)
+      .maybeSingle();
+    const priorMeta =
+      prior?.metadata && typeof prior.metadata === "object"
+        ? (prior.metadata as Record<string, unknown>)
+        : {};
+    const meta = {
+      ...priorMeta,
+      ...(kbInsert.metadata as Record<string, unknown>),
+      // Keep adopt ingest_key so make/model dedupe still finds this row
+      ingest_key: priorMeta.ingest_key || item.note || ingestKey,
+      coach_adopt_ingest_key: item.note,
+      quality_score: 5,
+      corpus: "flywheel",
+      flywheel_pending: false,
+    };
+    const { data: updLinked, error: linkErr } = await admin
+      .from("knowledge_base")
+      .update({
+        title,
+        content,
+        source: "flywheel_golden",
+        category: item.draftCategory || "repair",
+        vehicle_make: item.vehicleMake,
+        vehicle_model: item.vehicleModel,
+        is_active: true,
+        metadata: meta,
+        ...(embedding ? { embedding } : {}),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", knowledgeId)
       .select("id")
       .single();
-    if (updErr) throw updErr;
-    knowledgeId = upd.id as string;
+    if (linkErr) throw linkErr;
+    knowledgeId = updLinked.id as string;
   } else {
-    const { data: ins, error: insErr } = await admin
+    const existing = await admin
       .from("knowledge_base")
-      .insert(kbInsert)
       .select("id")
-      .single();
-    if (insErr) throw insErr;
-    knowledgeId = ins.id as string;
+      .contains("metadata", { ingest_key: ingestKey })
+      .maybeSingle();
+
+    if (existing.data?.id) {
+      const { data: upd, error: updErr } = await admin
+        .from("knowledge_base")
+        .update(kbInsert)
+        .eq("id", existing.data.id)
+        .select("id")
+        .single();
+      if (updErr) throw updErr;
+      knowledgeId = upd.id as string;
+    } else {
+      const { data: ins, error: insErr } = await admin
+        .from("knowledge_base")
+        .insert(kbInsert)
+        .select("id")
+        .single();
+      if (insErr) throw insErr;
+      knowledgeId = ins.id as string;
+    }
   }
 
   const { data: golden, error: gErr } = await admin

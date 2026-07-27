@@ -203,6 +203,9 @@ export type CoachAdoptKnowledgeResponse = {
   ingestKey: string;
   embedded: boolean;
   qualityScore: number;
+  deduped?: boolean;
+  flywheelEnqueued?: boolean;
+  flywheelQueueId?: string;
   error?: string;
   code?: string;
 };

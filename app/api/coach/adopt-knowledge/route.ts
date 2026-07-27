@@ -53,6 +53,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (body.last_vote !== "yes") {
+    return NextResponse.json(
+      {
+        error: "Mark the step useful (Yes) before adopting",
+        code: "VOTE_YES_REQUIRED",
+      },
+      { status: 400 },
+    );
+  }
+
   const input: CoachAdoptKnowledgeInput = {
     scenarioSlug: body.scenario_slug,
     scenarioId: body.scenario_id,
