@@ -144,7 +144,6 @@ export default function Dashboard({
   const [fromCache, setFromCache] = useState(false);
   const [activeFocus, setActiveFocus] = useState<FocusCommand | null>(null);
   const [vitals, setVitals] = useState<VehicleVitals | null>(null);
-  const [isScanning, setIsScanning] = useState(false);
   const [showObdModal, setShowObdModal] = useState(false);
   const [obdNote, setObdNote] = useState<string | null>(null);
   const [liveSensors, setLiveSensors] = useState<ObdLiveSensors | null>(null);
@@ -497,7 +496,6 @@ export default function Dashboard({
       saveVehicleVitals(withScore);
       setLiveSensors(snapshot.sensors);
       setObdNote(snapshot.note);
-      setIsScanning(false);
 
       void vehicleVitalsCloud
         .insertSnapshot({
@@ -1869,7 +1867,6 @@ export default function Dashboard({
         open={showObdModal}
         onClose={() => {
           setShowObdModal(false);
-          setIsScanning(false);
         }}
         autoNotifyOnReady
         onSessionReady={applyLiveObdSession}
