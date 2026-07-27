@@ -67,25 +67,31 @@ export function getChatStarterChips(vehicle?: VehicleInfo | null): StarterChip[]
   return [...vehicleChips, ...base].slice(0, 6);
 }
 
-/** After an assistant reply — invite the next stage of the repair loop. */
+/** After an assistant reply — 2–3 contextual next-step chips. */
 export const FOLLOW_UP_CHIPS: StarterChip[] = [
   {
     id: "top3",
-    label: "Rank top 3 causes",
+    label: "Top 3 causes",
     prompt:
       "Re-rank the top 3 most likely causes for THIS vehicle given everything so far. For each: one DIY check and whether to shop or DIY-fix. Use Problem → Checks → Solution format.",
   },
   {
     id: "more-checks",
-    label: "What should I check next?",
+    label: "What to check next",
     prompt:
-      "Based on your diagnosis, give me a short prioritized DIY checklist of what to inspect or measure next (photo / OBD / fluid / mileage). Keep it safe.",
+      "Based on your diagnosis, give me a short prioritized DIY checklist of what to inspect or measure next (photo / OBD / fluid / feel). Keep it safe.",
   },
   {
     id: "need-parts",
-    label: "Recommend parts to buy",
+    label: "Need parts?",
     prompt:
-      "Recommend the parts I likely need for this vehicle, with OEM/aftermarket notes and purchase links. Emit [[PARTS_DATA]] JSON when ready.",
+      "Do I need parts yet? If yes, recommend fitment-aware parts with OEM/aftermarket notes and purchase links. Emit [[PARTS_DATA]] JSON when ready. If not, tell me what to verify first.",
+  },
+  {
+    id: "check-done",
+    label: "I finished that check",
+    prompt:
+      "I completed the check you suggested. Ask what I observed in one question, then update the Problem → Checks → Solution plan and the top 3 causes.",
   },
   {
     id: "attach-photo",
@@ -95,15 +101,15 @@ export const FOLLOW_UP_CHIPS: StarterChip[] = [
   },
   {
     id: "open-coach",
-    label: "Which Coach guide fits?",
+    label: "Which Coach guide?",
     prompt:
-      "Name the single best Coach playbook theme/slug for this issue on my vehicle and why (1–2 sentences), then the first 3 DIY checks I should do before starting that guided flow.",
+      "Name the single best Coach playbook theme/slug for this issue on my vehicle and why (1–2 sentences), then the first 3 DIY checks before starting that guided flow.",
   },
   {
     id: "fixed",
     label: "That fixed it",
     prompt:
-      "The repair seems to have fixed the issue. Please help me verify with a short road-test / recheck checklist, and suggest what to log in maintenance history.",
+      "The repair seems to have fixed the issue. Give a short verify / road-test checklist and what to log in maintenance history.",
   },
   {
     id: "still-broken",
@@ -112,6 +118,104 @@ export const FOLLOW_UP_CHIPS: StarterChip[] = [
       "I tried the steps but the problem is still there. Ask what changed, then revise the top 3 causes and next DIY checks.",
   },
 ];
+
+const FOCUS_CHECK_CHIPS: Record<string, StarterChip> = {
+  brakes: {
+    id: "check-pads",
+    label: "Check pad thickness",
+    prompt:
+      "Walk me through safely checking front brake pad thickness and rotor condition on this vehicle (jack stands, torque later). Problem → Checks → what thickness means for replace vs OK.",
+  },
+  tires: {
+    id: "check-tread",
+    label: "Check tread / pressure",
+    prompt:
+      "Guide a DIY tire tread depth and cold pressure check for this vehicle. Top 3 wear patterns and what they mean next.",
+  },
+  battery: {
+    id: "check-battery",
+    label: "Check battery / terminals",
+    prompt:
+      "Guide a safe battery terminal / voltage check (multimeter if I have one). Top 3 causes of no-start / dim lights and next DIY step.",
+  },
+  engine: {
+    id: "check-fluids",
+    label: "Check fluids / leaks",
+    prompt:
+      "Give a safe under-hood fluid and visible leak check list for this vehicle. Rank top 3 findings I might see and what to do next.",
+  },
+  suspension: {
+    id: "check-suspension",
+    label: "Bounce / visual check",
+    prompt:
+      "Guide a DIY bounce test and visual bushing/leak check. Top 3 suspension causes for noise/pull and safe next steps.",
+  },
+  ac: {
+    id: "check-ac",
+    label: "AC vents / clutch check",
+    prompt:
+      "Walk through DIY cabin AC checks (vent temp, clutch engagement if visible). Top 3 causes of weak cooling and when to stop DIY.",
+  },
+  hvac: {
+    id: "check-cabin-filter",
+    label: "Cabin filter check",
+    prompt:
+      "Help me inspect/replace the cabin filter if accessible on this vehicle, then list top 3 HVAC airflow causes.",
+  },
+  transmission: {
+    id: "check-trans-fluid",
+    label: "Trans fluid check",
+    prompt:
+      "Explain how to safely check transmission/CVT fluid on THIS vehicle only if the design allows DIY. Top 3 symptoms and shop vs DIY.",
+  },
+  lights: {
+    id: "check-bulbs",
+    label: "Bulb / fuse check",
+    prompt:
+      "Guide a DIY exterior light and fuse check. Top 3 causes of a dead light and next steps.",
+  },
+};
+
+/**
+ * Pick 3 follow-up chips: focus-specific check + top3/parts/done mix.
+ */
+export function getFollowUpChips(options?: {
+  focusPart?: string | null;
+  assistantText?: string | null;
+}): StarterChip[] {
+  const focus = (options?.focusPart || "").toLowerCase();
+  const text = (options?.assistantText || "").toLowerCase();
+  const out: StarterChip[] = [];
+
+  const focusChip =
+    FOCUS_CHECK_CHIPS[focus] ||
+    (text.includes("brake")
+      ? FOCUS_CHECK_CHIPS.brakes
+      : text.includes("battery")
+        ? FOCUS_CHECK_CHIPS.battery
+        : text.includes("tire")
+          ? FOCUS_CHECK_CHIPS.tires
+          : null);
+
+  if (focusChip) out.push(focusChip);
+
+  const byId = (id: string) => FOLLOW_UP_CHIPS.find((c) => c.id === id)!;
+  if (!out.find((c) => c.id === "top3")) out.push(byId("top3"));
+  if (text.includes("part") || text.includes("replace") || text.includes("oem")) {
+    out.push(byId("need-parts"));
+  } else {
+    out.push(byId("more-checks"));
+  }
+  out.push(byId("check-done"));
+
+  // Unique, max 3
+  const seen = new Set<string>();
+  return out.filter((c) => {
+    if (seen.has(c.id)) return false;
+    seen.add(c.id);
+    return true;
+  }).slice(0, 3);
+}
 
 export function formatMaintenanceHistoryForPrompt(
   records: MaintenanceRecord[],
@@ -160,13 +264,16 @@ export function trimMessagesForApi(
 
 /** Repair-loop instructions appended to system prompt. */
 export const REPAIR_LOOP_PROMPT = `
-## Repair loop (keep multi-turn continuity)
-Drive a clear DIY loop across turns — do not restart from zero when the garage profile + history already answer the question:
-1. **Diagnose** — short assessment + **top 3 likely causes ranked** for THIS vehicle (mileage/make/model matter); ask only 1–2 clarifying questions when needed.
-2. **Checks** — for each likely cause, one safe DIY inspection (photo / OBD / fluid / feel). Prefer "Problem → Checks → Solution" structure over a wall of text.
-3. **Parts / fix** — when ready, recommend fitment-aware parts + purchase links and emit [[PARTS_DATA]] … [[/PARTS_DATA]].
-4. **Verify** — after the owner tries a fix, offer a recheck / road-test checklist; if unresolved, revise the top-3 plan.
-When Retrieved Knowledge is present, prefer paths that look like: symptom → first checks → confirmed fix (especially car_fault / car_repair_qa / flywheel_golden hits). Cite titles briefly.
-Always ground advice in the Vehicle Health Profile, Authoritative Configuration, and Recent maintenance history when present.
+## Answer structure (required for diagnosis turns)
+Use this shape unless the user only asked a one-line fact:
+**Problem** — 1–2 sentences on what is going wrong (grounded in THIS vehicle).
+**Top 3 causes** — ranked list; each with a one-line why.
+**Checks** — one safe DIY inspection per cause (photo / OBD / fluid / feel).
+**Solution path** — what to do next (DIY fix vs parts vs shop), then verify steps.
+
+## Repair loop (multi-turn continuity)
+Do not restart from zero when garage profile + history already answer the question:
+1. Diagnose → 2. Checks → 3. Parts/fix → 4. Verify / revise top-3.
+When Retrieved Knowledge is present (especially car_fault / car_repair_qa / owner_reviews / flywheel_golden), prefer symptom → first checks → confirmed fix and cite titles briefly.
 Prefer continuing the prior diagnosis over generic reset questions.
 `.trim();

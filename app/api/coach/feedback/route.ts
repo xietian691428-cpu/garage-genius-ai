@@ -97,5 +97,19 @@ export async function POST(req: Request) {
     console.warn("[coach/feedback] skill signal skipped", err);
   }
 
+  // Feed quality_score / useful_votes on matching KB + golden (affects RAG rank)
+  try {
+    const { applyCoachVoteToKnowledgeQuality } = await import(
+      "@/lib/feedback-quality"
+    );
+    await applyCoachVoteToKnowledgeQuality({
+      scenarioSlug: body.scenario_slug,
+      stepId: body.step_id,
+      vote: body.vote,
+    });
+  } catch (err) {
+    console.warn("[coach/feedback] quality update skipped", err);
+  }
+
   return NextResponse.json({ ok: true, stored: true });
 }

@@ -82,20 +82,36 @@ export function ragContextBoost(
     }
   }
 
-  // Feedback / quality signals already on rows
-  const quality = metaNum(meta, "quality_score");
+  // Feedback / quality signals (owner-reviews upvotes + flywheel quality_score)
+  const quality =
+    metaNum(meta, "quality_score") ?? metaNum(meta, "quality");
   if (quality != null) {
-    boost += Math.min(5, Math.max(0, quality - 2)); // 5 → +3
+    // 1→0 … 5→+6 — verified / promoted answers rise faster
+    boost += Math.min(6, Math.max(0, (quality - 1) * 1.5));
   }
-  const upvotes = metaNum(meta, "upvotes");
+
+  const upvotes =
+    metaNum(meta, "upvotes") ??
+    metaNum(meta, "helpful_votes") ??
+    metaNum(meta, "useful_votes");
   if (upvotes != null && upvotes > 0) {
-    boost += Math.min(4, Math.log10(upvotes + 1) * 2);
+    // log scale: 1→~0.6, 10→~2.2, 100→~4, cap 6
+    boost += Math.min(6, Math.log10(upvotes + 1) * 2.8);
+  }
+
+  const downvotes = metaNum(meta, "downvotes");
+  if (downvotes != null && downvotes > 0) {
+    boost -= Math.min(3, Math.log10(downvotes + 1) * 2);
   }
 
   // Flywheel-promoted & high-value corpora
   if (src.includes("flywheel_golden") || corpus === "flywheel") boost += 5;
   if (corpus === "car_repair_qa" || corpus === "car_fault") boost += 1.5;
-  if (corpus === "owner_reviews" && (upvotes ?? 0) >= 3) boost += 1;
+  // Owner reviews: always give a small corpus bump; upvotes already weighted above
+  if (corpus === "owner_reviews" || src === "user_feedback") {
+    boost += 1;
+    if ((upvotes ?? 0) >= 5) boost += 1.5;
+  }
 
   return boost;
 }

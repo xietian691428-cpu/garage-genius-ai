@@ -19,7 +19,7 @@ import { extractPartsData } from "@/lib/utils/parts";
 import { extractFocusCommand } from "@/lib/parse-ai-focus";
 import PartsRecommendationTable from "../parts/PartsRecommendationTable";
 import { speakText, stopSpeaking } from "@/lib/browser-voice";
-import { FOLLOW_UP_CHIPS } from "@/lib/chat-repair-loop";
+import { getFollowUpChips } from "@/lib/chat-repair-loop";
 
 interface Props {
   message: ChatMessage;
@@ -173,7 +173,10 @@ export default function MessageBubble({
 
         {!isUser && isLastAssistant && onQuickPrompt && (
           <div className="mt-4 flex flex-wrap gap-2">
-            {FOLLOW_UP_CHIPS.map((chip) => (
+            {getFollowUpChips({
+              focusPart: focusCmd?.part ?? null,
+              assistantText: displayContent,
+            }).map((chip) => (
               <button
                 key={chip.id}
                 type="button"
