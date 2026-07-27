@@ -22,20 +22,39 @@ import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 type Props = {
   open: boolean;
   onClose: () => void;
-  /** Called after a successful read — parent injects Chat diagnosis. */
+  /**
+   * Called after a successful read.
+   * Chat/Coach: typically inject diagnosis.
+   * Dashboard: sync vitals / live sensors.
+   */
   onSessionReady: (snapshot: ObdSessionSnapshot) => void;
+  /**
+   * If false, skip auto `onSessionReady` on success (parent only gets
+   * the explicit Ask AI / Diagnose CTA). Default true.
+   */
+  autoNotifyOnReady?: boolean;
+  /**
+   * Optional second action on result (Dashboard “Ask AI diagnosis”).
+   * When set, the primary result CTA calls this instead of re-firing
+   * `onSessionReady`.
+   */
+  onAskAi?: (snapshot: ObdSessionSnapshot) => void;
+  askAiLabel?: string;
 };
 
 type Phase = "guide" | "working" | "result" | "error";
 
 /**
- * Connect OBD guide + BLE scan → structured session for Chat/Coach.
+ * Connect OBD guide + BLE scan → structured session for Chat/Coach/Dashboard.
  * Does not modify CoachScenarioPlayer.
  */
 export default function ObdConnectModal({
   open,
   onClose,
   onSessionReady,
+  autoNotifyOnReady = true,
+  onAskAi,
+  askAiLabel,
 }: Props) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<Phase>("guide");
@@ -85,8 +104,9 @@ export default function ObdConnectModal({
       }
       setSnapshot(session);
       setPhase("result");
-      // Auto-inject Chat diagnosis (aligned with manual / screenshot DTC flow)
-      onSessionReady(session);
+      if (autoNotifyOnReady) {
+        onSessionReady(session);
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("obd.errorGeneric"),
@@ -102,8 +122,13 @@ export default function ObdConnectModal({
     setPhase("guide");
   };
 
-  const injectDiagnosis = () => {
+  const primaryResultAction = () => {
     if (!snapshot) return;
+    if (onAskAi) {
+      onAskAi(snapshot);
+      onClose();
+      return;
+    }
     onSessionReady(snapshot);
     onClose();
   };
@@ -124,7 +149,9 @@ export default function ObdConnectModal({
             >
               {t("obd.connectTitle")}
             </h2>
-            <p className="mt-0.5 text-xs text-slate-400">{t("obd.connectSubtitle")}</p>
+            <p className="mt-0.5 text-xs text-slate-400">
+              {t("obd.connectSubtitle")}
+            </p>
           </div>
           <button
             type="button"
@@ -197,7 +224,9 @@ export default function ObdConnectModal({
                     </li>
                   ))}
                 </ul>
-                <p className="mt-2 text-[11px] text-slate-600">{t("obd.bleOnlyNote")}</p>
+                <p className="mt-2 text-[11px] text-slate-600">
+                  {t("obd.bleOnlyNote")}
+                </p>
               </div>
             </div>
           ) : null}
@@ -213,7 +242,9 @@ export default function ObdConnectModal({
           {phase === "result" && snapshot ? (
             <div className="space-y-3">
               <p className="text-sm text-emerald-300">{snapshot.note}</p>
-              <p className="text-xs text-slate-400">{t("obd.injectedHint")}</p>
+              <p className="text-xs text-slate-400">
+                {onAskAi ? t("obd.dashboardSyncedHint") : t("obd.injectedHint")}
+              </p>
               <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2">
                 <p className="mb-1 text-[11px] font-semibold uppercase text-slate-500">
                   {t("obd.codesTitle")}
@@ -271,10 +302,10 @@ export default function ObdConnectModal({
           {phase === "result" && snapshot ? (
             <button
               type="button"
-              onClick={injectDiagnosis}
+              onClick={primaryResultAction}
               className="ml-auto inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cyan-500 px-3 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400 sm:flex-none"
             >
-              {t("obd.diagnoseInChat")}
+              {askAiLabel || t("obd.diagnoseInChat")}
             </button>
           ) : (
             <button

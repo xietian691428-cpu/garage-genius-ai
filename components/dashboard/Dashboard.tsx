@@ -39,11 +39,16 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { focusPartToRegionId } from "@/lib/types/focus";
 import AddVehicleModal from "@/components/vehicles/AddVehicleModal";
 import CameraCapture from "@/components/chat/CameraCapture";
+import ObdConnectModal from "@/components/obd/ObdConnectModal";
+import { useTranslation } from "react-i18next";
+import {
+  buildObdBleDiagnosisPrompt,
+} from "@/lib/dtc";
+import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
 import {
   buildCodesAskPrompt,
   buildReminders,
   computeHealthScore,
-  demoObdSnapshot,
   estimateMarketBand,
   estimateMilesToService,
   fluidTone,
@@ -65,7 +70,6 @@ import {
 import { supabase } from "@/lib/supabase";
 import {
   getObdConnector,
-  isWebBluetoothAvailable,
   LIVE_SENSOR_PIDS,
   formatLiveSensorValue,
   hasLiveSensorData,
@@ -118,6 +122,7 @@ export default function Dashboard({
   onAddVehicle,
   onUpdateVehicle,
 }: Props) {
+  const { t } = useTranslation();
   const { isFree, features } = useSubscription();
   const vehicle = currentVehicle;
   const [marketFilter, setMarketFilter] = useState<"ALL" | VehicleMarketCode>(
@@ -140,6 +145,7 @@ export default function Dashboard({
   const [activeFocus, setActiveFocus] = useState<FocusCommand | null>(null);
   const [vitals, setVitals] = useState<VehicleVitals | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [showObdModal, setShowObdModal] = useState(false);
   const [obdNote, setObdNote] = useState<string | null>(null);
   const [liveSensors, setLiveSensors] = useState<ObdLiveSensors | null>(null);
   const [isRefreshingSensors, setIsRefreshingSensors] = useState(false);
@@ -415,7 +421,7 @@ export default function Dashboard({
   const handleRefreshSensors = async () => {
     const obd = getObdConnector();
     if (!obd.isConnected) {
-      alert("Connect OBD first (OBD Diagnose), then refresh sensors.");
+      setShowObdModal(true);
       return;
     }
     setIsRefreshingSensors(true);
@@ -426,7 +432,7 @@ export default function Dashboard({
       alert(
         err instanceof Error
           ? err.message
-          : "Could not read live PIDs from the adapter.",
+          : t("obd.errorGeneric"),
       );
     } finally {
       setIsRefreshingSensors(false);
@@ -442,175 +448,97 @@ export default function Dashboard({
       ).length
     : 0;
 
-  const applyObdSnapshot = useCallback(
-    (
-      source: "obd" | "demo",
-      note: string,
-      scannedCodes?: DiagnosticCode[],
-    ) => {
+  /** Persist a real BLE session into Dashboard vitals (never demo / fake codes). */
+  const applyLiveObdSession = useCallback(
+    (snapshot: ObdSessionSnapshot) => {
       if (!vehicle) return;
       const current = vitals ?? loadVehicleVitals(vehicle.id);
-      const snap = demoObdSnapshot();
-      const codes: DiagnosticCode[] = (scannedCodes?.length
-        ? scannedCodes
-        : snap.codes.map((c) => ({ ...c, source }))
-      ).map((c) => ({
-        ...c,
-        source,
-        recordedAt: c.recordedAt || new Date().toISOString(),
+      const scanned: DiagnosticCode[] = snapshot.codes.map((c) => ({
+        code: c.code,
+        desc: c.desc,
+        severity: c.severity,
+        source: "obd" as const,
+        recordedAt: snapshot.at || new Date().toISOString(),
       }));
 
-      // Keep existing fluids when a live OBD scan only returns DTCs
-      const nextFluids =
-        source === "obd" && scannedCodes
-          ? current.fluids.some((f) => f.level !== "unknown")
-            ? current.fluids
-            : snap.fluids
-          : snap.fluids;
-
-      const nextCodes = [...codes, ...current.codes]
+      const nextFluids = current.fluids;
+      const nextCodes = [...scanned, ...current.codes]
         .filter(
           (c, i, arr) => arr.findIndex((x) => x.code === c.code) === i,
         )
         .slice(0, 8);
 
-      persistVitals(
-        {
-          ...current,
-          fluids: nextFluids,
-          codes: nextCodes,
-          lastObdAt: new Date().toISOString(),
-        },
-        { recordHealth: true },
-      );
-      setObdNote(note);
-      const score = computeHealthScore(vehicle, {
-        ...current,
-        fluids: nextFluids,
-        codes: nextCodes,
-      });
-      void vehicleVitalsCloud
-        .insertSnapshot({
-          vehicle,
-          fluids: nextFluids,
-          codes: nextCodes,
-          healthScore: score,
-          notes: note,
-          source,
-        })
-        .then(() => {
-          void loadVitalsHistory(vehicle.id);
-        });
-    },
-    [persistVitals, vehicle, vitals, loadVitalsHistory],
-  );
-
-  const handleOBDScan = async () => {
-    if (!vehicle) {
-      alert("Please select a vehicle first.");
-      return;
-    }
-    if (isScanning) return;
-
-    const base = vitals ?? loadVehicleVitals(vehicle.id);
-    if (!vitals) setVitals(base);
-
-    setIsScanning(true);
-    setObdNote(null);
-
-    try {
-      if (!isWebBluetoothAvailable()) {
-        applyObdSnapshot(
-          "demo",
-          "Web Bluetooth is not available in this browser. Use Chrome on Android with a BLE ELM327 adapter — a demo snapshot was saved so you can keep DIY coaching.",
-        );
-        alert(
-          "Web Bluetooth unavailable.\nUse Chrome on Android + a powered BLE ELM327 near your phone.\nA demo snapshot was saved for now.",
-        );
-        return;
-      }
-
-      const obd = getObdConnector();
-      const connected = await obd.connect();
-
-      if (!connected) {
-        alert(
-          "OBD connection failed.\nMake sure your ELM327 adapter is powered on and close to your phone, then try again.",
-        );
-        setObdNote("OBD connection failed or cancelled.");
-        return;
-      }
-
-      const dtcs = await obd.readDTCs();
-      const scanned: DiagnosticCode[] = dtcs.map((c) => ({
-        code: c.code,
-        desc: c.desc,
-        severity: c.severity,
-        source: "obd" as const,
-        recordedAt: new Date().toISOString(),
-      }));
-
-      try {
-        const sensors = await obd.readLiveSensors();
-        setLiveSensors(sensors);
-      } catch {
-        setLiveSensors(null);
-      }
-
-      const note = scanned.length
-        ? `Detected ${scanned.length} code(s) from ${obd.deviceName}. Review and Ask AI for DIY next steps.`
-        : `OBD scan complete on ${obd.deviceName} — no stored/pending DTCs reported. Vehicle looks healthy.`;
-
-      const healthScore = scanned.length > 0 ? 75 : 92;
-
-      // Prefer keeping existing fluids; fill demo fluids only if never checked
-      const nextFluids = base.fluids.some((f) => f.level !== "unknown")
-        ? base.fluids
-        : demoObdSnapshot().fluids;
-
-      const nextCodes = [...scanned, ...base.codes]
-        .filter((c, i, arr) => arr.findIndex((x) => x.code === c.code) === i)
-        .slice(0, 8);
+      const healthScore =
+        scanned.length > 0
+          ? Math.min(88, computeHealthScore(vehicle, {
+              ...current,
+              codes: nextCodes,
+              fluids: nextFluids,
+            }))
+          : computeHealthScore(vehicle, {
+              ...current,
+              codes: nextCodes,
+              fluids: nextFluids,
+            });
 
       const withScore: VehicleVitals = {
-        ...base,
+        ...current,
         fluids: nextFluids,
         codes: nextCodes,
         lastObdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         healthHistory: [
-          ...base.healthHistory.slice(-29),
+          ...current.healthHistory.slice(-29),
           { at: new Date().toISOString(), score: healthScore },
         ],
       };
 
       setVitals(withScore);
       saveVehicleVitals(withScore);
-      setObdNote(note);
-
-      await vehicleVitalsCloud.insertSnapshot({
-        vehicle,
-        fluids: nextFluids,
-        codes: nextCodes,
-        healthScore,
-        notes: note,
-        source: "obd",
-      });
-      await loadVitalsHistory(vehicle.id);
-
-      alert(
-        scanned.length
-          ? `✅ OBD scan complete!\n${scanned.map((c) => `${c.code}: ${c.desc}`).join("\n")}`
-          : "✅ OBD scan complete!\nNo diagnostic trouble codes found.",
-      );
-    } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "OBD scan failed unexpectedly.";
-      setObdNote(msg);
-      alert(`OBD error: ${msg}`);
-    } finally {
+      setLiveSensors(snapshot.sensors);
+      setObdNote(snapshot.note);
       setIsScanning(false);
+
+      void vehicleVitalsCloud
+        .insertSnapshot({
+          vehicle,
+          fluids: nextFluids,
+          codes: nextCodes,
+          healthScore,
+          notes: snapshot.note,
+          source: "obd",
+        })
+        .then(() => {
+          void loadVitalsHistory(vehicle.id);
+        });
+    },
+    [vehicle, vitals, loadVitalsHistory],
+  );
+
+  const openObdConnect = () => {
+    if (!vehicle) {
+      alert(t("obd.selectVehicleFirst"));
+      return;
     }
+    const base = vitals ?? loadVehicleVitals(vehicle.id);
+    if (!vitals) setVitals(base);
+    setObdNote(null);
+    setShowObdModal(true);
+  };
+
+  const handleObdAskAi = (snapshot: ObdSessionSnapshot) => {
+    if (!vehicle) return;
+    const vehicleLabel = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
+    onAskAI?.(
+      buildObdBleDiagnosisPrompt({
+        deviceName: snapshot.deviceName,
+        codes: snapshot.codes,
+        vehicleLabel,
+        sensors: snapshot.sensors,
+        odometerKm: snapshot.odometerKm,
+        distanceSinceCodesClearedKm: snapshot.distanceSinceCodesClearedKm,
+      }),
+    );
   };
 
   /** Open in-app camera for Vision → Dashboard writeback */
@@ -1195,12 +1123,12 @@ export default function Dashboard({
                 </button>
                 <button
                   type="button"
-                  onClick={() => void handleOBDScan()}
-                  disabled={isScanning}
+                  onClick={openObdConnect}
+                  disabled={showObdModal}
                   className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-40"
                 >
                   <Bluetooth className="h-5 w-5" />
-                  {isScanning ? "Scanning…" : "OBD diagnose"}
+                  {t("obd.connectEntry")}
                 </button>
               </div>
               <div className="flex flex-wrap justify-center gap-3">
@@ -1731,14 +1659,14 @@ export default function Dashboard({
             </div>
             {!hasLiveSensorData(liveSensors) && (
               <p className="mt-4 text-center text-xs text-slate-500">
-                No live data yet — run OBD Diagnose (Chrome + BLE ELM327), then
+                No live data yet — {t("obd.connectEntry")} (Chrome + BLE ELM327), then
                 Refresh Sensors.
               </p>
             )}
             <button
               type="button"
               onClick={() => void handleRefreshSensors()}
-              disabled={isRefreshingSensors || isScanning}
+              disabled={isRefreshingSensors || showObdModal}
               className="mt-6 text-sm font-medium text-cyan-400 hover:text-cyan-300 disabled:opacity-40"
             >
               {isRefreshingSensors ? "Reading…" : "Refresh Sensors"}
@@ -1935,6 +1863,18 @@ export default function Dashboard({
         open={showCamera}
         onClose={() => setShowCamera(false)}
         onCapture={handlePhotoCapture}
+      />
+
+      <ObdConnectModal
+        open={showObdModal}
+        onClose={() => {
+          setShowObdModal(false);
+          setIsScanning(false);
+        }}
+        autoNotifyOnReady
+        onSessionReady={applyLiveObdSession}
+        onAskAi={onAskAI ? handleObdAskAi : undefined}
+        askAiLabel={t("obd.diagnoseInChat")}
       />
 
       {selectedRegion && vehicle && !activeFocus && (

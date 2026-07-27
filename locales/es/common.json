@@ -58,7 +58,8 @@
     "placeholder": "P0420",
     "formatHelp": "Formato: P/C/B/U + 4 dígitos (hex válido).",
     "invalidCode": "Usa un código válido como P0420 o U0100.",
-    "submit": "Diagnosticar código"
+    "submit": "Diagnosticar código",
+    "signInForObdPhoto": "Inicia sesión para analizar una captura OBD."
   },
   "obd": {
     "connectEntry": "Conectar OBD",
@@ -83,6 +84,8 @@
     "readAgain": "Leer códigos de nuevo",
     "diagnoseInChat": "Abrir diagnóstico en el Chat",
     "injectedHint": "El diagnóstico se envió al Chat. Aquí puedes volver a leer o desconectar.",
+    "dashboardSyncedHint": "Los códigos y sensores se guardaron en el Dashboard de este vehículo. Pregunta a la IA para abrir el diagnóstico en el Chat, o vuelve a leer / desconecta.",
+    "selectVehicleFirst": "Selecciona un vehículo primero.",
     "codesTitle": "Códigos de fallo",
     "noCodes": "No se reportaron códigos almacenados o pendientes.",
     "sensorsTitle": "Sensores en vivo",

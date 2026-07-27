@@ -223,34 +223,14 @@ export function severityTone(severity: DiagnosticCode["severity"]): string {
   }
 }
 
-/** Demo / fallback OBD snapshot when Web Bluetooth is unavailable. */
+/** @deprecated Fake OBD path — do not call from product UI (misleads users). */
 export function demoObdSnapshot(): {
   fluids: FluidStatus[];
   codes: DiagnosticCode[];
 } {
-  const now = new Date().toISOString();
-  return {
-    fluids: [
-      { key: "engineOil", label: "Engine Oil", value: "Good", level: "good" },
-      { key: "coolant", label: "Coolant", value: "Normal", level: "normal" },
-      { key: "brakeFluid", label: "Brake Fluid", value: "Good", level: "good" },
-      {
-        key: "tirePressure",
-        label: "Tire Pressure",
-        value: "34 PSI (All)",
-        level: "good",
-      },
-    ],
-    codes: [
-      {
-        code: "P0171",
-        desc: "System Too Lean (Bank 1)",
-        severity: "Moderate",
-        source: "demo",
-        recordedAt: now,
-      },
-    ],
-  };
+  throw new Error(
+    "demoObdSnapshot is disabled — use real BLE OBD, manual fault codes, or OBD screenshot.",
+  );
 }
 
 export function buildCodesAskPrompt(

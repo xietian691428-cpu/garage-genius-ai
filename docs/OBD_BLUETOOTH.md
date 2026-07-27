@@ -1,8 +1,9 @@
 # Bluetooth OBD-II (Web Bluetooth)
 
-Garage Genius can connect to **BLE ELM327-compatible** adapters from Chat and the Check Engine coach guide, read DTCs (+ basic live sensors), and inject a diagnosis prompt into Chat.
+Garage Genius connects to **BLE ELM327-compatible** adapters from **Chat**, **Check Engine coach**, and **Dashboard**, reads DTCs (+ basic live sensors), and can inject a diagnosis prompt into Chat.
 
-> **Hard requirement:** Currently only **BLE (Bluetooth Low Energy) ELM327** adapters are supported. **Classic Bluetooth is not supported in the browser.**
+> **Hard requirement:** Currently only **BLE (Bluetooth Low Energy) ELM327** adapters are supported. **Classic Bluetooth is not supported in the browser.**  
+> **No demo / fake DTC data** is written when Bluetooth is unavailable — use manual fault codes or OBD screenshot instead.
 
 ## Product stance (current phase)
 
@@ -13,7 +14,16 @@ Garage Genius can connect to **BLE ELM327-compatible** adapters from Chat and th
 | Fallback | **iOS** — Bluetooth OBD **not supported**; use **Enter fault code** or **OBD screenshot** |
 | Later | Native Capacitor BLE plugin for iOS store builds |
 
-After a successful read we **inject Chat diagnosis automatically** but **keep the connect sheet open** so the user can **Read again** or **Disconnect**.
+### Shared UI
+
+All three surfaces use **`ObdConnectModal`** (`components/obd/ObdConnectModal.tsx`):
+
+| Surface | On successful read | Primary result CTA |
+|---|---|---|
+| Chat / Check Engine | Auto-inject Chat diagnosis | Re-send diagnosis / close |
+| Dashboard | Sync codes + sensors to vehicle vitals | **Ask AI** → Chat diagnosis (`onAskAi`) |
+
+Modal stays open after read so the user can **Read again** or **Disconnect**.
 
 ## Runtime support
 
@@ -25,44 +35,51 @@ After a successful read we **inject Chat diagnosis automatically** but **keep th
 | Capacitor **Android** | Works when the WebView exposes `navigator.bluetooth` |
 | Classic Bluetooth (non-BLE) dongles | **Not supported** |
 
-Detection helpers: `getObdRuntimeSupport()`, `isCapacitorNative()`, `getCapacitorPlatform()` in `lib/obd.ts`.
+Detection: `getObdRuntimeSupport()` in `lib/obd.ts`.
 
 ## Compatible devices (BLE ELM327 only)
 
-Listed in-app (`OBD_COMPATIBLE_DEVICES` in `lib/types/obd-session.ts`):
+`OBD_COMPATIBLE_DEVICES` in `lib/types/obd-session.ts`:
 
-- **Veepeak OBDCheck BLE / Mini**
-- **OBDLink MX+ / CX** (BLE mode)
-- **Generic ELM327 BLE** clones (packaging must say BLE / 4.0+)
-- **Carista**-class BLE dongles with GATT serial
-
-We try common GATT UART UUID pairs (Nordic UART, FFF0, FFE0, 18F0).
+- Veepeak OBDCheck BLE / Mini  
+- OBDLink MX+ / CX (**BLE mode**)  
+- Generic ELM327 **BLE** clones  
+- Carista-class BLE dongles  
 
 ## What we read (v1)
 
-1. **DTCs** — Mode `03` (stored) + `07` (pending)
-2. **Live sensors** (best-effort Mode `01`): coolant, RPM, speed, throttle, voltage, oil temp
-3. **Mileage hints** (often unsupported): PID `A6` odometer km, PID `31` distance since codes cleared
+1. **DTCs** — Mode `03` + `07`  
+2. **Live sensors** — coolant, RPM, speed, throttle, voltage, oil temp  
+3. **Mileage hints** — PID `A6` / `31` when ECU supports them  
 
-Structured result: `ObdSessionSnapshot` → `buildObdBleDiagnosisPrompt()` → Chat.
+## Photo / screenshot quota
 
-## UX copy (canonical)
+OBD **screenshots** (vision) count against the Free plan **daily photo diagnose** limit in:
 
-- BLE-only: *“Currently only BLE (Bluetooth Low Energy) ELM327 adapters are supported. Classic Bluetooth is not supported in the browser.”*
-- iOS: *“iOS does not support Bluetooth OBD yet. Please use Enter fault code or upload an OBD screenshot.”*
+- Chat (`ChatInput` → `ensurePhotoQuota`)  
+- Check Engine coach (`CoachLibrary.runObdScreenshotToChat` → `recordPhotoDiagnose`)  
+
+BLE connect itself does **not** consume photo quota.
+
+## Canonical copy
+
+- BLE-only: *“Currently only BLE (Bluetooth Low Energy) ELM327 adapters are supported. Classic Bluetooth is not supported in the browser.”*  
+- iOS / no Web Bluetooth: *Use Enter fault code or upload an OBD screenshot.* Never invent demo codes.
 
 ## Local verification before production deploy
 
 1. Chrome Android + real **BLE** ELM327  
-2. Ignition ON → **Connect OBD** → picker → codes/sensors  
-3. Confirm Chat diagnosis inject + modal stays open for Read again / Disconnect  
-4. Confirm Classic / iOS paths show clear fallbacks  
-5. Then `vercel --prod`
+2. Dashboard **Connect OBD** → vitals update → Ask AI → Chat  
+3. Chat / Check Engine Connect OBD → diagnosis inject  
+4. Unsupported browser: modal blocks; **no** fake P0171 on Dashboard  
+5. Free user: Coach OBD screenshot hits photo upgrade when quota exhausted  
+6. Then `vercel --prod`
 
 ## Code map
 
-- `lib/obd.ts` — connector, `connectDetailed`, `readSessionSnapshot`
-- `lib/types/obd-session.ts` — snapshot + device list
-- `components/obd/ObdConnectModal.tsx` — guide + connect UI
-- `lib/dtc.ts` — `buildObdBleDiagnosisPrompt`
-- i18n: `obd.*` in `locales/en-US` and `locales/es`
+- `lib/obd.ts` — connector / `readSessionSnapshot`  
+- `components/obd/ObdConnectModal.tsx` — shared guide + connect UI  
+- `components/dashboard/Dashboard.tsx` — vitals sync + Ask AI  
+- `components/chat/DtcEntryBar.tsx` — Chat / Coach entry  
+- `lib/dtc.ts` — `buildObdBleDiagnosisPrompt`  
+- i18n: `obd.*` / `dtc.*` in `locales/en-US` and `locales/es`

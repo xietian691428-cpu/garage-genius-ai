@@ -58,7 +58,8 @@
     "placeholder": "P0420",
     "formatHelp": "Format: P/C/B/U + 4 digits (hex OK).",
     "invalidCode": "Use a valid code like P0420 or U0100.",
-    "submit": "Diagnose code"
+    "submit": "Diagnose code",
+    "signInForObdPhoto": "Sign in to analyze an OBD screenshot."
   },
   "obd": {
     "connectEntry": "Connect OBD",
@@ -83,6 +84,8 @@
     "readAgain": "Read codes again",
     "diagnoseInChat": "Open diagnosis in Chat",
     "injectedHint": "Diagnosis was sent to Chat. You can Read again or Disconnect here.",
+    "dashboardSyncedHint": "Codes and sensors were saved to this vehicle’s Dashboard. Ask AI to open diagnosis in Chat, or Read again / Disconnect.",
+    "selectVehicleFirst": "Select a vehicle first.",
     "codesTitle": "Fault codes",
     "noCodes": "No stored or pending codes reported.",
     "sensorsTitle": "Live sensors",

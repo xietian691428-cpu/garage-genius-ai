@@ -78,7 +78,7 @@ export default function CoachLibrary({
   onAskAI,
   onGoToParts,
 }: Props) {
-  const { features, isFree } = useSubscription();
+  const { features, isFree, recordPhotoDiagnose } = useSubscription();
   const { t } = useTranslation();
   const [activeSlug, setActiveSlug] = useState<CoachPlaybookSlug | null>(null);
   const [reportBusy, setReportBusy] = useState(false);
@@ -224,14 +224,20 @@ export default function CoachLibrary({
 
   const runObdScreenshotToChat = async (imageDataUrl: string) => {
     if (!currentVehicle) {
-      alert("Select a vehicle first to analyze an OBD screenshot.");
+      alert(t("obd.selectVehicleFirst"));
+      return;
+    }
+    // Same Free daily photo-diagnose soft-cap as Chat
+    if (!features.canUsePhotoDiagnose || !recordPhotoDiagnose()) {
+      setUpgradeReason("photo");
+      setShowUpgrade(true);
       return;
     }
     const {
       data: { session },
     } = await supabase.auth.getSession();
     if (!session?.access_token) {
-      alert("Sign in to analyze an OBD screenshot.");
+      alert(t("dtc.signInForObdPhoto"));
       return;
     }
     try {
