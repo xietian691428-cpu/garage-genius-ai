@@ -139,11 +139,21 @@ export default function ObdConnectModal({
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
           {phase === "guide" || phase === "error" ? (
             <div className="space-y-4">
-              {!support.supported ? (
+              <p className="rounded-xl border border-cyan-700/40 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100">
+                {t("obd.bleOnlyBanner")}
+              </p>
+
+              {support.code === "capacitor_ios" ? (
                 <p className="rounded-xl border border-amber-700/40 bg-amber-950/30 px-3 py-2 text-xs text-amber-100">
-                  {support.message}
+                  {t("obd.iosUnsupported")}
                 </p>
-              ) : null}
+              ) : !support.supported ? (
+                <p className="rounded-xl border border-amber-700/40 bg-amber-950/30 px-3 py-2 text-xs text-amber-100">
+                  {t("obd.browserUnsupported")}
+                </p>
+              ) : (
+                <p className="text-[11px] text-slate-500">{t("obd.iosTip")}</p>
+              )}
 
               {phase === "error" && error ? (
                 <p className="rounded-xl border border-red-700/40 bg-red-950/30 px-3 py-2 text-xs text-red-100">
@@ -203,6 +213,7 @@ export default function ObdConnectModal({
           {phase === "result" && snapshot ? (
             <div className="space-y-3">
               <p className="text-sm text-emerald-300">{snapshot.note}</p>
+              <p className="text-xs text-slate-400">{t("obd.injectedHint")}</p>
               <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2">
                 <p className="mb-1 text-[11px] font-semibold uppercase text-slate-500">
                   {t("obd.codesTitle")}

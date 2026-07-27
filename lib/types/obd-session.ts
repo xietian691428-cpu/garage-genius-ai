@@ -59,21 +59,21 @@ export const OBD_COMPATIBLE_DEVICES: ObdCompatibleDevice[] = [
   {
     id: "veepeak",
     name: "Veepeak OBDCheck BLE / Mini",
-    notes: "Common Nordic UART BLE; works well with Chrome Android & desktop.",
+    notes: "BLE only — Nordic UART; works well with Chrome Android & desktop.",
   },
   {
     id: "obdlink",
     name: "OBDLink MX+ / CX (BLE mode)",
-    notes: "Premium ELM-compatible; prefer BLE pairing name starting with OBDLink.",
+    notes: "BLE mode required — Classic pairing is not supported in the browser.",
   },
   {
     id: "generic-elm",
     name: "Generic ELM327 BLE (v1.5 clones)",
-    notes: "Cheap clones vary — look for names OBD / ELM / BLE. Classic Bluetooth (non-BLE) is not supported in browsers.",
+    notes: "Must be BLE / 4.0+. Classic Bluetooth ELM327 dongles are not supported.",
   },
   {
     id: "carista",
     name: "Carista / similar BLE dongles",
-    notes: "When advertised as BLE GATT serial; results depend on firmware.",
+    notes: "BLE GATT serial only; firmware quality varies.",
   },
 ];

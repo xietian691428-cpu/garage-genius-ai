@@ -214,7 +214,7 @@ export function getObdRuntimeSupport(): {
       supported: false,
       code: "capacitor_ios",
       message:
-        "Bluetooth OBD is not available in the iOS app WebView. Use Enter fault code, OBD screenshot, or Chrome on Android/desktop.",
+        "iOS does not support Bluetooth OBD yet. Use Enter fault code or upload an OBD screenshot. Chrome on Android/desktop works with BLE ELM327 adapters only.",
     };
   }
   if (!isWebBluetoothAvailable()) {
@@ -222,7 +222,7 @@ export function getObdRuntimeSupport(): {
       supported: false,
       code: "unsupported",
       message:
-        "Web Bluetooth is not available here. Use Chrome or Edge on Android/desktop with a BLE ELM327 adapter.",
+        "Web Bluetooth is not available here. Use Chrome or Edge on Android/desktop with a BLE (Bluetooth Low Energy) ELM327 adapter. Classic Bluetooth is not supported. On iOS, use Enter fault code or OBD screenshot instead.",
     };
   }
   return { supported: true, code: null, message: "" };
@@ -254,7 +254,7 @@ function mapConnectError(err: unknown): ObdConnectResult {
       ok: false,
       code: "service",
       message:
-        "Connected but no compatible OBD BLE serial service was found. Try another ELM327 BLE adapter.",
+        "No compatible BLE serial service found. Currently only BLE (Bluetooth Low Energy) ELM327 adapters are supported — Classic Bluetooth is not supported in the browser.",
     };
   }
   if (/gatt|disconnect/i.test(msg)) {
