@@ -40,10 +40,13 @@ export async function GET(req: NextRequest) {
         diySkill: "beginner",
         confidence: 40,
         source: "default",
-        migrationRequired: true,
       });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[diy-skill] read failed:", error.message);
+    return NextResponse.json(
+      { error: "Could not load DIY skill level." },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({
@@ -85,13 +88,22 @@ export async function PATCH(req: NextRequest) {
     .eq("id", user.id);
 
   if (error) {
+    if (/diy_skill|does not exist|schema cache/i.test(error.message)) {
+      console.error(
+        "[diy-skill] column/table missing — apply migration 027_diy_skill.sql:",
+        error.message,
+      );
+      return NextResponse.json(
+        {
+          error:
+            "Could not save DIY skill level right now. Please try again later.",
+        },
+        { status: 500 },
+      );
+    }
+    console.error("[diy-skill] update failed:", error.message);
     return NextResponse.json(
-      {
-        error: error.message,
-        hint: /diy_skill/i.test(error.message)
-          ? "Run migration 027_diy_skill.sql"
-          : undefined,
-      },
+      { error: "Could not save DIY skill level. Please try again." },
       { status: 500 },
     );
   }

@@ -429,7 +429,7 @@ export async function POST(request: NextRequest) {
         error: isQuota
           ? "Token quota exceeded. Please upgrade or recharge."
           : isInsufficientBalance
-            ? "DeepSeek account balance is insufficient. Please top up at platform.deepseek.com and try again."
+            ? "AI service is temporarily unavailable. Please try again later or contact support."
             : "AI service is temporarily unavailable. Please try again.",
         code: isQuota
           ? "TOKEN_QUOTA_EXCEEDED"

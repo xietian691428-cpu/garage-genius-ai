@@ -94,7 +94,7 @@
     "devicesTitle": "Compatible devices (BLE ELM327 only)",
     "bleOnlyBanner": "Currently only BLE (Bluetooth Low Energy) ELM327 adapters are supported. Classic Bluetooth is not supported in the browser.",
     "bleOnlyNote": "Look for packaging that says BLE, Bluetooth 4.0+, or “Bluetooth Low Energy”. Older classic-only dongles will not appear or will fail to connect.",
-    "iosUnsupported": "iOS does not support Bluetooth OBD yet. Please use Enter fault code or upload an OBD screenshot. Bluetooth OBD works on Chrome for Android and desktop.",
+    "iosUnsupported": "iOS (including the App Store app) cannot use live Bluetooth OBD. Enter the fault code manually or upload an OBD screenshot. BLE OBD works on Chrome for Android/desktop with a BLE ELM327 adapter.",
     "browserUnsupported": "Web Bluetooth is not available in this browser. Use Chrome or Edge on Android/desktop with a BLE ELM327 adapter. On iOS, use Enter fault code or OBD screenshot instead.",
     "iosTip": "iOS tip: Bluetooth OBD is not available yet — use Enter fault code or OBD screenshot.",
     "working": "Connecting and reading…",

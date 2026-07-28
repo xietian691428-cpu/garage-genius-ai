@@ -33,10 +33,13 @@ export async function enableWebPushReminders(
 
   const vapid = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
   if (!vapid) {
+    console.warn(
+      "[push] NEXT_PUBLIC_VAPID_PUBLIC_KEY missing — push cannot be enabled.",
+    );
     return {
       ok: false,
       message:
-        "Push is not configured yet (missing NEXT_PUBLIC_VAPID_PUBLIC_KEY).",
+        "Push notifications are temporarily unavailable. Please try again later.",
     };
   }
 

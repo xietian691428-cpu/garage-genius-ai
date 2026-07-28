@@ -4,6 +4,10 @@ import type {
   CheckoutSelection,
   PaidPlan,
 } from "@/lib/types/subscription";
+import {
+  getBillingMode,
+  nativeUpgradeBlockedMessage,
+} from "@/lib/native-platform";
 
 async function authHeaders(): Promise<HeadersInit> {
   const {
@@ -20,12 +24,21 @@ async function authHeaders(): Promise<HeadersInit> {
   };
 }
 
+function assertWebStripeAllowed(action: string): void {
+  if (getBillingMode() === "web_stripe") return;
+  throw new Error(
+    `${nativeUpgradeBlockedMessage()} (${action} is unavailable in the store app until In-App Purchase is enabled.)`,
+  );
+}
+
 export async function startCheckout(
   selection: CheckoutSelection | BillingInterval = {
     plan: "pro",
     interval: "monthly",
   },
 ) {
+  assertWebStripeAllowed("Checkout");
+
   const body: CheckoutSelection =
     typeof selection === "string"
       ? { plan: "pro", interval: selection }
@@ -53,6 +66,8 @@ export async function startPlanCheckout(
 }
 
 export async function openBillingPortal() {
+  assertWebStripeAllowed("Billing portal");
+
   const res = await fetch("/api/stripe/portal", {
     method: "POST",
     headers: await authHeaders(),
@@ -68,6 +83,8 @@ export async function openBillingPortal() {
 
 /** One-time token pack checkout → Stripe hosted page. */
 export async function startTokenRecharge(tokens: number, priceUsd: number) {
+  assertWebStripeAllowed("Token recharge");
+
   const res = await fetch("/api/stripe/recharge", {
     method: "POST",
     headers: await authHeaders(),

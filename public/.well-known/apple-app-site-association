@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["TEAMID.com.garagegenius.ai"],
+        "paths": ["/auth/callback*", "/app*", "/login*", "/pricing*"]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["TEAMID.com.garagegenius.ai"]
+  }
+}

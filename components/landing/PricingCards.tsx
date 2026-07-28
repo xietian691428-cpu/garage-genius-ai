@@ -11,6 +11,10 @@ import {
   type SubscriptionTier,
 } from "@/lib/types/subscription";
 import { startCheckout, openBillingPortal } from "@/lib/billing";
+import {
+  getBillingMode,
+  nativeUpgradeBlockedMessage,
+} from "@/lib/native-platform";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { TrialStatusBanner } from "@/components/subscription/TrialBanners";
@@ -75,6 +79,7 @@ export default function PricingCards({
   );
   const [busyPlan, setBusyPlan] = useState<PaidPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const nativeIapRequired = getBillingMode() === "native_iap_required";
 
   const yearlySavings = useMemo(() => {
     const pro = PLAN_ENTITLEMENTS.pro;
@@ -95,6 +100,11 @@ export default function PricingCards({
 
     if (!user) {
       window.location.href = `/login?next=${encodeURIComponent("/pricing")}`;
+      return;
+    }
+
+    if (nativeIapRequired) {
+      setError(nativeUpgradeBlockedMessage());
       return;
     }
 
@@ -127,6 +137,9 @@ export default function PricingCards({
       if (tier === "free" && user) return "Open garage";
       return user ? "Continue free" : "Start free";
     }
+    if (nativeIapRequired) {
+      return "Available on web";
+    }
     if (planTier === "pro" && isTrialing) return "Keep Pro after trial";
     if (planTier === "pro" && isPro && !isHeavy) return "Manage billing";
     if (planTier === "pro_heavy" && isHeavy) return "Manage billing";
@@ -138,6 +151,17 @@ export default function PricingCards({
   return (
     <div className={className}>
       <TrialStatusBanner resolved={resolved} loading={subLoading} className="mb-6" />
+
+      {nativeIapRequired && (
+        <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <p className="text-sm font-semibold text-amber-200">
+            Store app billing
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-slate-400">
+            {nativeUpgradeBlockedMessage()}
+          </p>
+        </div>
+      )}
 
       {contextCopy && (
         <div className="mb-6 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3">

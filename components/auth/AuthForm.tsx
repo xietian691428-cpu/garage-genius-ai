@@ -101,7 +101,7 @@ export default function AuthForm() {
         const { session, user } = await signUpWithEmail(email, password);
         if (!session || !user?.email_confirmed_at) {
           setInfo(
-            "We sent a confirmation link to your email. Open it to verify, then sign in. You can resend the email below if needed.",
+            "Account created. Check your email for a confirmation link, then sign in. Didn’t get it? Use Resend below — and check spam.",
           );
           setMode("signin");
         } else {
@@ -143,7 +143,7 @@ export default function AuthForm() {
       setError(
         err instanceof Error
           ? err.message
-          : `${provider === "apple" ? "Apple" : "Google"} sign-in is not configured yet.`,
+          : `${provider === "apple" ? "Apple" : "Google"} sign-in is temporarily unavailable. Please use email instead.`,
       );
       setBusy(false);
     }
@@ -174,8 +174,7 @@ export default function AuthForm() {
           {mode === "signin" ? "Sign in" : "Create account"}
         </h2>
         <p className="mt-1 text-sm text-slate-400">
-          Required for AI chat, token quota, and purchases. Built for iPhone &amp;
-          Android stores.
+          Sign in to save your vehicles, chat history, and subscriptions.
         </p>
       </div>
 

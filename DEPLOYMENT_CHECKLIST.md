@@ -17,9 +17,9 @@ Migrations **001–024**: assumed applied (including playbook usage + Stripe rev
 | 2 | 5 Production env (Stripe live, DeepSeek, Admin) | **You — configure host** |
 | 2 | 6 Stripe webhook → profiles / subscriptions | **You — smoke** |
 | 2 | 7 Full smoke (register → quota → upgrade → cancel → billing help) | **You — smoke** |
-| 3 | 8 Capacitor iOS/Android | **Prep doc** → `docs/STORE_LAUNCH.md` |
-| 3 | 9 IAP / Stripe hybrid | **Prep doc** → `docs/STORE_LAUNCH.md` |
-| 3 | 10 Store listing assets | **Prep doc** → `docs/STORE_LAUNCH.md` |
+| 3 | 8 Capacitor iOS/Android | **Scaffolded** → `docs/STORE_LAUNCH.md` |
+| 3 | 9 IAP / Stripe hybrid | **Policy + Stripe blocked on native**; IAP TBD |
+| 3 | 10 Store listing assets | **Copy templates in STORE_LAUNCH** — screenshots TBD |
 
 ---
 

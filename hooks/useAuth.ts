@@ -127,13 +127,18 @@ export function useAuth() {
         },
       });
       if (error) {
-        const hint =
-          provider === "apple"
-            ? " Enable Apple under Supabase → Authentication → Providers (see docs/AUTH_PROVIDERS.md)."
-            : " Enable Google under Supabase → Authentication → Providers (see docs/AUTH_PROVIDERS.md).";
-        throw new Error(
-          `${error.message}${/provider is not enabled|unsupported provider/i.test(error.message) ? hint : ""}`,
-        );
+        if (/provider is not enabled|unsupported provider/i.test(error.message)) {
+          console.warn(
+            `[auth] ${provider} OAuth provider not enabled — configure in Supabase (docs/AUTH_PROVIDERS.md).`,
+            error.message,
+          );
+          throw new Error(
+            provider === "apple"
+              ? "Sign in with Apple is temporarily unavailable. Please use email instead."
+              : "Google sign-in is temporarily unavailable. Please use email instead.",
+          );
+        }
+        throw new Error(error.message);
       }
       return data;
     },

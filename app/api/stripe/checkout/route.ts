@@ -72,10 +72,13 @@ export async function POST(req: NextRequest) {
     const priceId = priceIdForSelection({ plan, interval });
 
     if (isPlaceholderPriceId(priceId)) {
+      console.error(
+        "[stripe/checkout] Price IDs not configured (STRIPE_PRICE_PRO_* / STRIPE_PRICE_HEAVY_*).",
+      );
       return NextResponse.json(
         {
           error:
-            "Stripe Price IDs not configured. Set STRIPE_PRICE_PRO_MONTHLY / YEARLY and STRIPE_PRICE_HEAVY_MONTHLY / YEARLY.",
+            "Checkout is temporarily unavailable. Please try again later or contact support.",
         },
         { status: 500 },
       );

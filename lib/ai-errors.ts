@@ -66,11 +66,11 @@ export function aiUpstreamResponse(error: unknown): Response | null {
       : error.code === "rate_limit"
         ? "AI is rate-limited right now. Please wait a moment and try again."
         : error.code === "insufficient_balance"
-          ? "DeepSeek account balance is insufficient. Please top up at platform.deepseek.com and try again."
+          ? "AI service is temporarily unavailable. Please try again later or contact support."
           : error.code === "empty"
             ? "AI returned an empty reply. Please try again."
             : error.code === "config"
-              ? "AI service is not configured. Please contact support."
+              ? "AI service is temporarily unavailable. Please contact support."
               : "AI service is temporarily unavailable. Please try again.";
 
   console.error("[ai-upstream]", {

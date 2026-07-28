@@ -53,7 +53,7 @@ export default function DiySkillSettings() {
           error?: string;
           hint?: string;
         };
-        throw new Error(body.hint || body.error || `HTTP ${res.status}`);
+        throw new Error(body.error || "Could not save DIY skill level.");
       }
       setMessage("Coaching depth updated");
     } catch (err) {

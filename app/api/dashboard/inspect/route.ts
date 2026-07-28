@@ -318,7 +318,7 @@ export async function POST(request: NextRequest) {
     return Response.json(
       {
         error: isInsufficientBalance
-          ? "DeepSeek account balance is insufficient. Please top up at platform.deepseek.com."
+          ? "AI inspection is temporarily unavailable. Please try again later or contact support."
           : "AI inspection is temporarily unavailable. Please try again.",
         code: isInsufficientBalance
           ? "INSUFFICIENT_BALANCE"

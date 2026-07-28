@@ -1807,14 +1807,14 @@ export default function Dashboard({
               )}
             </div>
             <p className="mb-4 text-xs text-slate-500">
-              From maintenance cron / email / push · run migration 017–019
+              Service reminders from email, push, and in-app alerts
             </p>
             {inboxLoading ? (
               <p className="text-sm text-slate-500">Loading…</p>
             ) : inbox.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-slate-700 px-4 py-6 text-center text-sm text-slate-500">
-                No reminders yet. Enable Push above and deploy the daily Edge /
-                cron job when ready.
+                No reminders yet. Enable Push above to get due-date alerts on
+                this device.
               </p>
             ) : (
               <ul className="space-y-2">

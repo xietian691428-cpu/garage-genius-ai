@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Garage Genius AI</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        font-family: system-ui, -apple-system, sans-serif;
+        background: #0a0f1c;
+        color: #e2e8f0;
+        padding: 1.5rem;
+        text-align: center;
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin: 0 0 0.5rem;
+      }
+      p {
+        margin: 0;
+        max-width: 22rem;
+        line-height: 1.45;
+        color: #94a3b8;
+        font-size: 0.9rem;
+      }
+      a {
+        color: #22d3ee;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Garage Genius AI</h1>
+      <p>
+        Opening the secure app…
+        If nothing loads, open
+        <a href="https://garagegenius.cloud">garagegenius.cloud</a>
+        in your browser.
+      </p>
+    </div>
+    <script>
+      // When Capacitor server.url is set, the remote app loads instead of this file.
+      // This page is a fallback for offline / misconfigured builds.
+      setTimeout(function () {
+        if (!window.Capacitor) {
+          window.location.replace("https://garagegenius.cloud/app");
+        }
+      }, 800);
+    </script>
+  </body>
+</html>

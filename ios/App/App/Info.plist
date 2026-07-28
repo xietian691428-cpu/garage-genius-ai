@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CAPACITOR_DEBUG</key>
+	<string>$(CAPACITOR_DEBUG)</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Garage Genius AI</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.garagegenius.ai</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>garagegenius</string>
+			</array>
+		</dict>
+	</array>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Garage Genius uses the camera so you can photograph vehicle parts, OBD screens, and repair receipts for AI DIY guidance.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Garage Genius needs photo library access so you can choose existing vehicle, OBD, or receipt images for diagnosis.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Garage Genius may save annotated repair photos you choose to keep in your library.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Garage Genius uses the microphone for hands-free voice coaching while your hands are busy under the hood (Pro / trial).</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Bluetooth is reserved for future native OBD adapters. On iOS today, use Enter fault code or an OBD screenshot instead of live Bluetooth OBD.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Bluetooth is reserved for future native OBD adapters. On iOS today, use Enter fault code or an OBD screenshot instead of live Bluetooth OBD.</string>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv7</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+</dict>
+</plist>

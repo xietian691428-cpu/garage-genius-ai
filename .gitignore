@@ -37,6 +37,17 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Capacitor / Android local SDK path (machine-specific)
+android/local.properties
+android/.gradle/
+android/**/build/
+ios/App/Pods/
+ios/App/build/
+ios/DerivedData/
+
+# Supabase CLI local cache
+supabase/.temp/
+
 # local junk / archives (never deploy)
 /tmp/
 stripe.tar.gz
