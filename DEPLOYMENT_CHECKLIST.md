@@ -30,7 +30,8 @@ Migrations **001–024**: assumed applied (including playbook usage + Stripe rev
 - [ ] `npm run lint` clean (or only acknowledged warnings)
 - [ ] `npm run build` succeeds on the deploy target (Node version matches Vercel)
 - [ ] `assertCoachProductionReady()` → **27** playbooks, safety UX rules present
-- [ ] No `NEXT_PUBLIC_QA_UNLOCK` / `QA_UNLOCK` in production env
+- [ ] `NEXT_PUBLIC_QA_UNLOCK` / `QA_UNLOCK` **unset** in production (code also hard-blocks when `VERCEL_ENV=production`)
+- [ ] OAuth buttons only when `NEXT_PUBLIC_AUTH_APPLE` / `NEXT_PUBLIC_AUTH_GOOGLE` enabled after Supabase providers are live
 - [ ] Secrets not committed (`.env.local` gitignored)
 - [ ] Legal pages load: `/privacy`, `/terms` (linked from login, Settings, landing footer, pricing)
 

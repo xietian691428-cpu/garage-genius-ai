@@ -35,38 +35,33 @@ const FEATURES = [
   {
     id: "voice",
     title: "Hands-free voice coaching",
-    body: "Pro mic + auto-read so you can listen while your hands are greasy. Built for under-the-car DIY, not desk chat.",
+    body: "Pro / trial mic + auto-read so you can listen while your hands are greasy. Built for under-the-car DIY, not desk chat.",
     icon: Mic,
   },
 ] as const;
 
-const STORIES = [
+const SCENARIOS = [
   {
-    quote:
-      "I replaced my Civic’s front pads following the voice steps. Felt like a patient shop foreman in my ear — not a wall of forum posts.",
-    name: "Marcus T.",
-    detail: "2016 Honda Civic · Austin, TX",
+    title: "Brake noise before a weekend drive",
+    body: "Open Dashboard, tap Brakes, and walk a short checklist before you buy pads or schedule a shop visit.",
   },
   {
-    quote:
-      "The dashboard map alone saved me a diagnostic fee. I tapped ‘cooling,’ followed the checklist, and found a soft upper hose before it cooked.",
-    name: "Elena R.",
-    detail: "2014 Toyota Camry · Denver, CO",
+    title: "Check-engine light with a code",
+    body: "Paste the DTC into Chat or Coach, compare likely causes, then save parts and maintenance notes to History.",
   },
   {
-    quote:
-      "Parts suggestions matched what my indie shop would have ordered. I kept the inventory list so the next brake job was one Amazon cart away.",
-    name: "James K.",
-    detail: "2018 Ford F-150 · Columbus, OH",
+    title: "Receipt after a repair",
+    body: "Snap the invoice, confirm the parsed jobs, and keep the record with your vehicle so the next diagnosis has context.",
   },
 ] as const;
+
+const TRIAL_COPY =
+  "Free to start · 14-day Pro trial on signup (no card required) · Cancel anytime";
 
 export default function LandingPage() {
   const { isAuthenticated, loading } = useAuth();
   const primaryHref = isAuthenticated ? "/app" : "/login?next=/app";
-  const primaryLabel = isAuthenticated
-    ? "Open garage"
-    : "Start Free Trial";
+  const primaryLabel = isAuthenticated ? "Open garage" : "Start free";
 
   return (
     <div className="landing-root">
@@ -109,7 +104,7 @@ export default function LandingPage() {
                 Sign in
               </Link>
               <Link href={primaryHref} className="landing-nav-cta">
-                Start Free Trial
+                Start free
               </Link>
             </>
           )}
@@ -138,9 +133,7 @@ export default function LandingPage() {
               See how it works
             </a>
           </div>
-          <p className="landing-hero-note">
-            Free to start · 14-day Pro trial on paid plans · Cancel anytime
-          </p>
+          <p className="landing-hero-note">{TRIAL_COPY}</p>
         </div>
 
         <div className="landing-hero-visual" aria-hidden>
@@ -199,8 +192,8 @@ export default function LandingPage() {
             Everything you need before you turn a bolt
           </h2>
           <p>
-            Instant value on open — dashboard, diagnosis, parts, and Pro voice —
-            so you feel confident under the hood.
+            Instant value on open — dashboard, diagnosis, parts, and Pro / trial
+            voice — so you feel confident under the hood.
           </p>
         </div>
 
@@ -228,26 +221,26 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="stories" className="landing-section landing-section-muted">
+      <section id="scenarios" className="landing-section landing-section-muted">
         <div className="landing-section-head">
           <h2 className="font-[family-name:var(--font-display)]">
-            Built for driveway DIYers
+            What you can do
           </h2>
           <p>
-            Stories from weekend mechanics who wanted shop-level guidance without
-            the shop bill.
+            Example workflows inside Garage Genius — not customer reviews.
           </p>
         </div>
 
         <div className="landing-stories">
-          {STORIES.map((story) => (
-            <blockquote key={story.name} className="landing-story">
-              <p>“{story.quote}”</p>
-              <footer>
-                <cite>{story.name}</cite>
-                <span>{story.detail}</span>
-              </footer>
-            </blockquote>
+          {SCENARIOS.map((item) => (
+            <article key={item.title} className="landing-story">
+              <h3 className="font-[family-name:var(--font-display)] text-base font-semibold text-white">
+                {item.title}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                {item.body}
+              </p>
+            </article>
           ))}
         </div>
       </section>

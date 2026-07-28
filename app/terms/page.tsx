@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalDocLayout title="Terms of Service" updated="July 24, 2026">
+    <LegalDocLayout title="Terms of Service" updated="July 28, 2026">
       <section>
         <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
           1. Agreement
@@ -48,18 +48,34 @@ export default function TermsPage() {
           You are responsible for your login credentials and for activity under
           your account. Provide accurate vehicle information when using
           fitment-sensitive features. Do not abuse rate limits, scrape the
-          service, or attempt to bypass Free / Pro quotas.
+          service, or attempt to bypass Free / Pro quotas. You may delete your
+          account at any time in Settings; deletion is permanent and ends access
+          to stored chats, vehicles, and history we host for you.
         </p>
       </section>
 
       <section>
         <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
-          4. Subscriptions &amp; billing
+          4. Photos, receipts, and AI features
+        </h2>
+        <p className="mt-2">
+          If you upload vehicle photos, OBD screen captures, or repair receipts,
+          you confirm you have the right to share them and that they do not
+          contain unnecessary personal data of others. You understand images and
+          related text may be processed by AI providers to deliver the feature
+          you requested. AI results are probabilistic and may omit hazards —
+          always verify with official manuals and safe shop practices.
+        </p>
+      </section>
+
+      <section>
+        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
+          5. Subscriptions &amp; billing
         </h2>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>
-            New accounts may receive a limited Pro trial as described in-app /
-            on Pricing.
+            New accounts receive a limited Pro trial as described in-app / on
+            Pricing (typically 14 days, no card required to start).
           </li>
           <li>
             Paid plans renew until cancelled. Manage or cancel via Stripe
@@ -71,12 +87,18 @@ export default function TermsPage() {
             Fees are generally non-refundable except where required by law or
             our refund policy / support process.
           </li>
+          <li>
+            Deleting your account cancels access immediately; we attempt to stop
+            recurring Stripe subscriptions tied to the account, but you should
+            also confirm cancellation in the Customer Portal or store if a
+            charge continues.
+          </li>
         </ul>
       </section>
 
       <section>
         <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
-          5. Acceptable use
+          6. Acceptable use
         </h2>
         <p className="mt-2">
           Do not use the service for unlawful activity, to harm others, to
@@ -88,7 +110,7 @@ export default function TermsPage() {
 
       <section>
         <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
-          6. Intellectual property
+          7. Intellectual property
         </h2>
         <p className="mt-2">
           The app, coach playbooks, branding, and software remain our property
@@ -99,13 +121,15 @@ export default function TermsPage() {
 
       <section>
         <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
-          7. Disclaimers &amp; liability
+          8. Disclaimers &amp; liability
         </h2>
         <p className="mt-2">
           The service is provided &quot;as is&quot; without warranties of
-          uninterrupted or error-free operation. AI outputs may be wrong or
-          incomplete. To the fullest extent permitted by law, we are not liable
-          for vehicle damage, injury, or consequential losses arising from
+          uninterrupted or error-free operation. AI outputs, playbook steps, and
+          part suggestions may be wrong or incomplete. Illustrations or media may
+          be unavailable for some coach steps; text instructions remain the
+          source of truth. To the fullest extent permitted by law, we are not
+          liable for vehicle damage, injury, or consequential losses arising from
           reliance on DIY guidance. Some jurisdictions do not allow certain
           exclusions — your rights there still apply.
         </p>
@@ -113,7 +137,7 @@ export default function TermsPage() {
 
       <section>
         <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
-          8. Changes &amp; contact
+          9. Changes &amp; contact
         </h2>
         <p className="mt-2">
           We may update these Terms; the &quot;Last updated&quot; date will

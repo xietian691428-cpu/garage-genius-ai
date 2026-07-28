@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import SubscriptionAIAssistant from "@/components/subscription/SubscriptionAIAssistant";
 import DiySkillSettings from "@/components/settings/DiySkillSettings";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
+import { supabase } from "@/lib/supabase";
 
 export default function SettingsPanel() {
   const { t } = useTranslation();
@@ -27,6 +28,8 @@ export default function SettingsPanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showBillingHelp, setShowBillingHelp] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const handleManageBilling = async () => {
     setBusy(true);
@@ -46,6 +49,38 @@ export default function SettingsPanel() {
       window.location.href = "/login";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign out failed");
+      setBusy(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirm !== "DELETE") {
+      setError('Type DELETE in capitals to confirm account deletion.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error("Not signed in");
+
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ confirm: "DELETE" }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        throw new Error(json.error || "Could not delete account");
+      }
+      await signOut();
+      window.location.href = "/?deleted=1";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Delete failed");
       setBusy(false);
     }
   };
@@ -169,6 +204,68 @@ export default function SettingsPanel() {
         >
           Sign out
         </button>
+
+        <section className="rounded-3xl border border-red-900/50 bg-red-950/20 p-5">
+          <h2 className="text-xs font-medium uppercase tracking-wide text-red-300/80">
+            Delete account
+          </h2>
+          <p className="mt-2 text-sm text-slate-400">
+            Permanently deletes your Garage Genius account, vehicles, chats,
+            maintenance history, and inventory we store for you. This cannot be
+            undone. Active Stripe subscriptions are cancelled when possible —
+            also confirm in Manage billing if a charge continues.
+          </p>
+          {!deleteOpen ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setDeleteOpen(true);
+                setError(null);
+              }}
+              className="mt-4 w-full rounded-2xl border border-red-500/40 px-4 py-3 text-sm font-medium text-red-200 hover:border-red-400 disabled:opacity-60"
+            >
+              Delete my account…
+            </button>
+          ) : (
+            <div className="mt-4 space-y-3">
+              <label className="block space-y-1.5">
+                <span className="text-xs text-slate-500">
+                  Type <span className="font-mono text-red-200">DELETE</span> to
+                  confirm
+                </span>
+                <input
+                  value={deleteConfirm}
+                  onChange={(e) => setDeleteConfirm(e.target.value)}
+                  autoComplete="off"
+                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-red-400"
+                  placeholder="DELETE"
+                />
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    setDeleteOpen(false);
+                    setDeleteConfirm("");
+                  }}
+                  className="flex-1 rounded-2xl border border-slate-700 px-4 py-3 text-sm text-slate-300 disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={busy || deleteConfirm !== "DELETE"}
+                  onClick={() => void handleDeleteAccount()}
+                  className="flex-1 rounded-2xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-60"
+                >
+                  {busy ? "Deleting…" : "Delete forever"}
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
 
         <LiabilityDisclaimer variant="panel" className="mt-2" />
 

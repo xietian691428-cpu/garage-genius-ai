@@ -286,9 +286,9 @@ export default function PricingCards({
 
       {footnote && (
         <p className="mt-10 text-center text-xs text-slate-500">
-          New accounts include a {TRIAL_DAYS}-day Pro Trial automatically. Paid
-          Stripe checkouts may include a trial when configured. Cancel anytime.
-          Token top-ups on{" "}
+          New accounts get a {TRIAL_DAYS}-day Pro trial automatically — no card
+          required to start. Upgrade anytime to keep Pro after the trial.
+          Cancel paid plans anytime. Token top-ups on{" "}
           <Link href="/recharge" className="text-cyan-400 hover:underline">
             /recharge
           </Link>

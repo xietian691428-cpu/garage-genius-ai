@@ -2,7 +2,8 @@
  * Web Bluetooth + ELM327-style OBD-II helper for garage DIY scans.
  *
  * Supported in Chrome / Edge / Android Chrome. Safari & iOS WebViews generally
- * do not expose Web Bluetooth — callers should fall back to demo snapshots.
+ * do not expose Web Bluetooth — callers should use photo / manual DTC fallbacks
+ * (never invent live OBD readings).
  *
  * BLE UUIDs vary by adapter brand (Veepeak, OBDLINK, generic ELM327 clones).
  * We try a short list of common Nordic UART / custom OBD services.

@@ -1,9 +1,10 @@
 /**
  * QA / beta unlock — open all Pro Heavy entitlements without Stripe.
  *
- * Enable during tester rounds:
- *   NEXT_PUBLIC_QA_UNLOCK=true   (Vercel + .env.local)
+ * Enable only on local / Preview for tester rounds:
+ *   NEXT_PUBLIC_QA_UNLOCK=true
  *
+ * Hard-blocked on Vercel Production builds even if the env var is mis-set.
  * Disable for production launch (remove var or set false, redeploy).
  */
 
@@ -17,7 +18,14 @@ import { TOKEN_PLAN_LIMITS } from "@/lib/types/tokens";
 
 export const QA_UNLOCK_ENV = "NEXT_PUBLIC_QA_UNLOCK";
 
+function isVercelProduction(): boolean {
+  return process.env.VERCEL_ENV === "production";
+}
+
 export function isQaUnlockEnabled(): boolean {
+  // Never unlock paid entitlements on production deploys.
+  if (isVercelProduction()) return false;
+
   const raw =
     process.env.NEXT_PUBLIC_QA_UNLOCK?.trim() ??
     process.env.QA_UNLOCK?.trim() ??

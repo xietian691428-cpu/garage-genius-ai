@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Car } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { safeNextPath, useAuth } from "@/hooks/useAuth";
+import {
+  hasAnyOAuthProvider,
+  isAppleAuthEnabled,
+  isGoogleAuthEnabled,
+} from "@/lib/auth-providers";
 
 type Mode = "signin" | "signup";
 
@@ -47,8 +52,11 @@ function GoogleIcon({ className }: { className?: string }) {
 export default function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") || "/app";
+  const nextPath = safeNextPath(searchParams.get("next"));
   const oauthErrorParam = searchParams.get("error");
+  const showApple = isAppleAuthEnabled();
+  const showGoogle = isGoogleAuthEnabled();
+  const showOAuth = hasAnyOAuthProvider();
   const {
     isAuthenticated,
     loading: authLoading,
@@ -71,7 +79,7 @@ export default function AuthForm() {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      router.replace(nextPath.startsWith("/") ? nextPath : "/");
+      router.replace(nextPath);
     }
   }, [authLoading, isAuthenticated, nextPath, router]);
 
@@ -96,11 +104,11 @@ export default function AuthForm() {
           );
           setMode("signin");
         } else {
-          router.replace(nextPath.startsWith("/") ? nextPath : "/");
+          router.replace(nextPath);
         }
       } else {
         await signInWithEmail(email, password);
-        router.replace(nextPath.startsWith("/") ? nextPath : "/");
+        router.replace(nextPath);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed.");
@@ -155,35 +163,43 @@ export default function AuthForm() {
         </p>
       </div>
 
-      {/* Apple first — App Store guideline when offering third-party login */}
-      <div className="space-y-2.5">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void onOAuth("apple")}
-          className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-black px-4 py-3.5 text-sm font-semibold text-white ring-1 ring-slate-600 transition hover:bg-zinc-900 disabled:opacity-60"
-          aria-label="Sign in with Apple"
-        >
-          <AppleIcon className="h-5 w-5 shrink-0" />
-          Sign in with Apple
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void onOAuth("google")}
-          className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-slate-600 bg-white px-4 py-3.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:opacity-60"
-          aria-label="Continue with Google"
-        >
-          <GoogleIcon className="h-5 w-5 shrink-0" />
-          Continue with Google
-        </button>
-      </div>
+      {/* Apple first when enabled — App Store guideline if offering other 3P login */}
+      {showOAuth && (
+        <>
+          <div className="space-y-2.5">
+            {showApple && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void onOAuth("apple")}
+                className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-black px-4 py-3.5 text-sm font-semibold text-white ring-1 ring-slate-600 transition hover:bg-zinc-900 disabled:opacity-60"
+                aria-label="Sign in with Apple"
+              >
+                <AppleIcon className="h-5 w-5 shrink-0" />
+                Sign in with Apple
+              </button>
+            )}
+            {showGoogle && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void onOAuth("google")}
+                className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-slate-600 bg-white px-4 py-3.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:opacity-60"
+                aria-label="Continue with Google"
+              >
+                <GoogleIcon className="h-5 w-5 shrink-0" />
+                Continue with Google
+              </button>
+            )}
+          </div>
 
-      <div className="flex items-center gap-3 text-xs text-slate-500">
-        <div className="h-px flex-1 bg-slate-700" />
-        or email
-        <div className="h-px flex-1 bg-slate-700" />
-      </div>
+          <div className="flex items-center gap-3 text-xs text-slate-500">
+            <div className="h-px flex-1 bg-slate-700" />
+            or email
+            <div className="h-px flex-1 bg-slate-700" />
+          </div>
+        </>
+      )}
 
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-3">
         <label className="block space-y-1.5">
@@ -299,8 +315,8 @@ export default function AuthForm() {
         <Link href="/privacy" className="text-slate-400 underline">
           Privacy Policy
         </Link>
-        . We may process repair chats for your account quota. We do not sell
-        your data. Apple Hide My Email still works with Garage Genius.
+        . We may process repair chats and photos you upload for the features you
+        use and for account quota. We do not sell your data.
       </p>
     </div>
   );

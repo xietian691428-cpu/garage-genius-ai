@@ -67,6 +67,7 @@ export default function CoachScenarioPlayer({
   const [feedbackKey, setFeedbackKey] = useState(0);
   /** Last yes/no on this step — seeds quality_score when adopting to KB */
   const [lastVote, setLastVote] = useState<CoachStepFeedbackVote | null>(null);
+  const [mediaFailed, setMediaFailed] = useState(false);
 
   const rawStep = useMemo(
     () => scenario.steps.find((s) => s.id === stepId) ?? scenario.steps[0],
@@ -109,6 +110,7 @@ export default function CoachScenarioPlayer({
     setRiskOpen(false);
     setPendingBtn(null);
     setRiskChecked(false);
+    setMediaFailed(false);
   }, [stepId]);
 
   function runAction(btn: CoachActionButton) {
@@ -268,22 +270,30 @@ export default function CoachScenarioPlayer({
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-lg">
-          {/* Visual-first media */}
+          {/* Visual-first media — never show broken 404 frames */}
           <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-900">
-            {asset?.src ? (
+            {asset?.src && !mediaFailed ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={asset.poster || asset.src}
                 alt={asset.alt || step.title}
                 className="h-full w-full object-cover opacity-90"
+                onError={() => setMediaFailed(true)}
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-slate-600">
-                <Shield className="h-12 w-12" />
+              <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+                <Shield className="h-10 w-10 text-slate-600" aria-hidden />
+                <p className="text-sm font-medium text-slate-400">
+                  Illustration unavailable
+                </p>
+                <p className="text-xs text-slate-500">
+                  Follow the text steps below — visuals for this step are not
+                  loaded yet.
+                </p>
               </div>
             )}
             <div className="absolute bottom-2 left-2 rounded-lg bg-black/55 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300">
-              {step.visual_type}
+              {asset?.src && !mediaFailed ? step.visual_type : "text"}
             </div>
           </div>
 
