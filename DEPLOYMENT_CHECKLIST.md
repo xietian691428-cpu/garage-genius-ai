@@ -72,6 +72,19 @@ Checklist:
 
 - [x] `001`–`024` applied (user confirmed)
 - [ ] Spot-check tables exist: `profiles`, `coach_playbook_usage`, `stripe_subscriptions`, `subscription_support_requests`, `knowledge_base`
+- [ ] **Production must include `030_inventory_rls_tighten.sql`**
+  - Tightens `inventory_items` RLS to `auth.uid() = user_id` only (removes `user_id is null` access).
+  - Verify in Supabase SQL editor:
+
+```sql
+select polname, pg_get_expr(polqual, polrelid) as using_expr
+from pg_policy
+join pg_class on pg_class.oid = polrelid
+where relname = 'inventory_items';
+```
+
+  - Expect policies that only allow `auth.uid() = user_id` (no `user_id is null`).
+  - If missing: run migration `030` (or paste its SQL) on the production project, then re-check.
 
 ---
 

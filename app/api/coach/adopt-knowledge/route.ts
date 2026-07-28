@@ -5,6 +5,7 @@ import {
   type CoachAdoptKnowledgeInput,
 } from "@/lib/coach-adopt-knowledge";
 import type { CoachAdoptKnowledgeRequest } from "@/lib/types/coach-scenario";
+import { assertEmailVerified, aiAbuseResponse } from "@/lib/ai-abuse";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,13 @@ export async function POST(req: NextRequest) {
       { error: "Sign in required", code: "AUTH_REQUIRED" },
       { status: 401 },
     );
+  }
+
+  try {
+    assertEmailVerified(user);
+  } catch (err) {
+    const blocked = aiAbuseResponse(err);
+    if (blocked) return blocked;
   }
 
   let body: CoachAdoptKnowledgeRequest;

@@ -17,6 +17,7 @@ import {
   aiAbuseResponse,
   assertAiRateLimit,
   assertAiTokenBudget,
+  assertEmailVerified,
   consumeAiTokens,
   getBearerToken,
 } from "@/lib/ai-abuse";
@@ -172,6 +173,14 @@ export async function POST(request: NextRequest) {
         { error: "Invalid or expired session. Please sign in again." },
         { status: 401 },
       );
+    }
+
+    try {
+      assertEmailVerified(user);
+    } catch (err) {
+      const blocked = aiAbuseResponse(err);
+      if (blocked) return blocked;
+      throw err;
     }
 
     // Anti-abuse: per-user hourly/daily request caps (before RAG / DeepSeek)

@@ -16,6 +16,7 @@ import { TrialEndedModal } from "@/components/subscription/TrialBanners";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useVehicles } from "@/hooks/useVehicles";
 import QaModeBanner from "@/components/qa/QaModeBanner";
+import VerifyEmailBanner from "@/components/auth/VerifyEmailBanner";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 import type { VehicleInfo } from "@/lib/types/chat";
@@ -123,6 +124,7 @@ function GarageAppInner() {
         onClose={dismissTrialEndedPrompt}
       />
       <QaModeBanner />
+      <VerifyEmailBanner />
 
       {vehiclesLoading && (
         <div className="flex min-h-dvh items-center justify-center bg-[#0a0f1c] text-slate-400">

@@ -5,7 +5,7 @@
 import type { NextRequest } from "next/server";
 import {
   AiAbuseError,
-  requireAiUser,
+  requireVerifiedAiUser,
 } from "@/lib/ai-abuse";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { resolveSubscription } from "@/lib/subscription";
@@ -84,7 +84,7 @@ export async function requireProUser(req: NextRequest): Promise<{
   tier: SubscriptionTier;
   entitlements: PlanEntitlements;
 }> {
-  const user = await requireAiUser(req);
+  const user = await requireVerifiedAiUser(req);
   const { tier, isPro, entitlements } = await resolveUserEntitlements(user.id);
   if (!isPro) {
     throw new PaywallError(
@@ -105,7 +105,7 @@ export async function requireEntitlement(
   tier: SubscriptionTier;
   entitlements: PlanEntitlements;
 }> {
-  const user = await requireAiUser(req);
+  const user = await requireVerifiedAiUser(req);
   const { tier, isPro, entitlements } = await resolveUserEntitlements(user.id);
   const allowed = Boolean(entitlements[key]);
   if (!isPro || !allowed) {

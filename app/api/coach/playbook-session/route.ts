@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   aiAbuseResponse,
-  requireAiUser,
+  requireVerifiedAiUser,
 } from "@/lib/ai-abuse";
 import {
   assertAndConsumePlaybookRun,
@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 /** GET — current 30-day (from signup) playbook quota for the signed-in user */
 export async function GET(req: NextRequest) {
   try {
-    const user = await requireAiUser(req);
+    const user = await requireVerifiedAiUser(req);
     const quota = await getPlaybookQuota(user.id);
     return NextResponse.json({ ok: true, quota });
   } catch (err) {
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const user = await requireAiUser(req);
+    const user = await requireVerifiedAiUser(req);
     let playbookSlug: string | null = null;
     try {
       const body = (await req.json()) as { playbookSlug?: string };

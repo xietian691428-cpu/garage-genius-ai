@@ -63,6 +63,7 @@ export default function AuthForm() {
     signInWithEmail,
     signUpWithEmail,
     signInWithOAuth,
+    resendVerificationEmail,
   } = useAuth();
 
   const [mode, setMode] = useState<Mode>("signin");
@@ -97,10 +98,10 @@ export default function AuthForm() {
         if (password !== confirm) {
           throw new Error("Passwords do not match.");
         }
-        const { session } = await signUpWithEmail(email, password);
-        if (!session) {
+        const { session, user } = await signUpWithEmail(email, password);
+        if (!session || !user?.email_confirmed_at) {
           setInfo(
-            "Check your email to confirm your account, then sign in. (If email confirm is disabled in Supabase, you can sign in now.)",
+            "We sent a confirmation link to your email. Open it to verify, then sign in. You can resend the email below if needed.",
           );
           setMode("signin");
         } else {
@@ -112,6 +113,21 @@ export default function AuthForm() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onResendVerify = async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      await resendVerificationEmail(email);
+      setInfo("Verification email resent. Check your inbox (and spam folder).");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not resend verification email.",
+      );
     } finally {
       setBusy(false);
     }
@@ -254,9 +270,19 @@ export default function AuthForm() {
           </p>
         )}
         {info && (
-          <p className="rounded-2xl bg-cyan-500/10 px-4 py-3 text-sm text-cyan-200">
-            {info}
-          </p>
+          <div className="space-y-2 rounded-2xl bg-cyan-500/10 px-4 py-3 text-sm text-cyan-200">
+            <p>{info}</p>
+            {email.trim() && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void onResendVerify()}
+                className="text-xs font-semibold text-cyan-300 underline hover:text-cyan-200 disabled:opacity-60"
+              >
+                Resend verification email
+              </button>
+            )}
+          </div>
         )}
 
         <button

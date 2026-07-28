@@ -10,6 +10,7 @@ import {
   qaPaymentDisabledMessage,
 } from "@/lib/qa-mode";
 import { getAppBaseUrl } from "@/lib/app-url";
+import { assertEmailVerified } from "@/lib/ai-abuse";
 
 export const runtime = "nodejs";
 
@@ -64,6 +65,21 @@ export async function POST(req: NextRequest) {
 
     if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    try {
+      assertEmailVerified(user);
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error:
+            err instanceof Error
+              ? err.message
+              : "Verify your email before buying tokens.",
+          code: "email_unverified",
+        },
+        { status: 403 },
+      );
     }
 
     const admin = createSupabaseAdmin();

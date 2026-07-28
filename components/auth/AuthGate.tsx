@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { safeNextPath } from "@/lib/safe-next-path";
 
 /**
  * Requires a signed-in user for the main app (token billing + store accounts).
@@ -15,7 +16,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading) return;
     if (!isAuthenticated) {
-      const next = encodeURIComponent(pathname || "/");
+      const next = encodeURIComponent(safeNextPath(pathname || "/app"));
       router.replace(`/login?next=${next}`);
     }
   }, [isAuthenticated, loading, pathname, router]);

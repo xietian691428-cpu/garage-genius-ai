@@ -181,5 +181,17 @@
     "sourceParts": "Parts",
     "chatScanCta": "Scan service receipt",
     "savedToHistory": "Saved to maintenance history for this vehicle. I’ll use it in future diagnoses."
+  },
+  "auth": {
+    "verifyTitle": "Verify your email to unlock core features",
+    "verifyBody": "We sent a confirmation link to {{email}}. Chat, Coach, upgrades, and account deletion stay locked until you confirm.",
+    "verifyResend": "Resend email",
+    "verifyResent": "Verification email sent. Check inbox and spam.",
+    "verifyResendFailed": "Could not resend verification email.",
+    "verifyIConfirmed": "I confirmed — refresh",
+    "verifyRefreshed": "Status refreshed. If still locked, open the link in the email again.",
+    "verifyRefreshFailed": "Could not refresh account status.",
+    "verifyWorking": "Working…",
+    "verifyBeforeDelete": "Verify email before deleting account"
   }
 }

@@ -4,6 +4,7 @@ import {
   createSupabaseUserClient,
 } from "@/lib/supabase-admin";
 import { getStripe } from "@/lib/stripe";
+import { assertEmailVerified } from "@/lib/ai-abuse";
 
 export const runtime = "nodejs";
 
@@ -41,6 +42,21 @@ export async function POST(req: NextRequest) {
     } = await userClient.auth.getUser();
     if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    try {
+      assertEmailVerified(user);
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error:
+            err instanceof Error
+              ? err.message
+              : "Verify your email before deleting your account.",
+          code: "email_unverified",
+        },
+        { status: 403 },
+      );
     }
 
     const admin = createSupabaseAdmin();

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { safeNextPath } from "@/hooks/useAuth";
+import { safeNextPath } from "@/lib/safe-next-path";
 
 /**
  * OAuth / magic-link return URL (PKCE).

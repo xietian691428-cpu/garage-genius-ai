@@ -16,7 +16,8 @@ import { supabase } from "@/lib/supabase";
 
 export default function SettingsPanel() {
   const { t } = useTranslation();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isEmailVerified, resendVerificationEmail, refreshUser } =
+    useAuth();
   const {
     isPro,
     isTrialing,
@@ -118,6 +119,57 @@ export default function SettingsPanel() {
           <p className="mt-1 text-xs text-slate-500">
             User ID: {user?.id?.slice(0, 8)}…
           </p>
+          {!isEmailVerified && (
+            <div className="mt-4 rounded-2xl border border-amber-700/40 bg-amber-950/30 px-3 py-3 text-sm text-amber-100">
+              <p className="font-medium">{t("auth.verifyTitle")}</p>
+              <p className="mt-1 text-xs text-amber-100/80">
+                {t("auth.verifyBody", { email: user?.email ?? "" })}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    void (async () => {
+                      setBusy(true);
+                      setError(null);
+                      try {
+                        await resendVerificationEmail();
+                      } catch (err) {
+                        setError(
+                          err instanceof Error
+                            ? err.message
+                            : t("auth.verifyResendFailed"),
+                        );
+                      } finally {
+                        setBusy(false);
+                      }
+                    })();
+                  }}
+                  className="rounded-xl bg-amber-500/20 px-3 py-2 text-xs font-semibold text-amber-50 ring-1 ring-amber-500/40"
+                >
+                  {t("auth.verifyResend")}
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    void (async () => {
+                      setBusy(true);
+                      try {
+                        await refreshUser();
+                      } finally {
+                        setBusy(false);
+                      }
+                    })();
+                  }}
+                  className="rounded-xl border border-amber-500/30 px-3 py-2 text-xs text-amber-100"
+                >
+                  {t("auth.verifyIConfirmed")}
+                </button>
+              </div>
+            </div>
+          )}
         </section>
 
         <TrialStatusBanner
@@ -218,14 +270,16 @@ export default function SettingsPanel() {
           {!deleteOpen ? (
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || !isEmailVerified}
               onClick={() => {
                 setDeleteOpen(true);
                 setError(null);
               }}
               className="mt-4 w-full rounded-2xl border border-red-500/40 px-4 py-3 text-sm font-medium text-red-200 hover:border-red-400 disabled:opacity-60"
             >
-              Delete my account…
+              {!isEmailVerified
+                ? t("auth.verifyBeforeDelete")
+                : "Delete my account…"}
             </button>
           ) : (
             <div className="mt-4 space-y-3">

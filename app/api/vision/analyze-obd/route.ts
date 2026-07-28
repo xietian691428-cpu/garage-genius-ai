@@ -14,7 +14,7 @@ import {
   assertAiRateLimit,
   assertAiTokenBudget,
   consumeAiTokens,
-  requireAiUser,
+  requireVerifiedAiUser,
 } from "@/lib/ai-abuse";
 import { aiUpstreamResponse } from "@/lib/ai-errors";
 
@@ -93,7 +93,7 @@ function normalizeObdAnalysis(raw: Record<string, unknown>): ObdVisionAnalysis {
  */
 export async function POST(req: NextRequest) {
   try {
-    const user = await requireAiUser(req);
+    const user = await requireVerifiedAiUser(req);
     await assertAiRateLimit(user.id, "vision");
 
     const body = await req.json();

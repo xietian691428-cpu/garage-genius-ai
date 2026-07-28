@@ -25,7 +25,7 @@ import {
   assertAiRateLimit,
   assertAiTokenBudget,
   consumeAiTokens,
-  requireAiUser,
+  requireVerifiedAiUser,
 } from "@/lib/ai-abuse";
 import { aiUpstreamResponse } from "@/lib/ai-errors";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
@@ -138,7 +138,7 @@ function normalizeInspection(
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireAiUser(request);
+    const user = await requireVerifiedAiUser(request);
     await assertAiRateLimit(user.id, "inspect");
 
     const body = await request.json();

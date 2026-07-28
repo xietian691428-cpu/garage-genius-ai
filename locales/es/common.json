@@ -181,5 +181,17 @@
     "sourceParts": "Piezas",
     "chatScanCta": "Escanear factura de servicio",
     "savedToHistory": "Guardado en el historial de mantenimiento de este vehículo. Lo usaré en futuros diagnósticos."
+  },
+  "auth": {
+    "verifyTitle": "Verifica tu correo para desbloquear funciones principales",
+    "verifyBody": "Enviamos un enlace de confirmación a {{email}}. Chat, Coach, mejoras y eliminación de cuenta permanecen bloqueados hasta que confirmes.",
+    "verifyResend": "Reenviar correo",
+    "verifyResent": "Correo de verificación enviado. Revisa bandeja de entrada y spam.",
+    "verifyResendFailed": "No se pudo reenviar el correo de verificación.",
+    "verifyIConfirmed": "Ya confirmé — actualizar",
+    "verifyRefreshed": "Estado actualizado. Si sigue bloqueado, abre de nuevo el enlace del correo.",
+    "verifyRefreshFailed": "No se pudo actualizar el estado de la cuenta.",
+    "verifyWorking": "Procesando…",
+    "verifyBeforeDelete": "Verifica el correo antes de eliminar la cuenta"
   }
 }

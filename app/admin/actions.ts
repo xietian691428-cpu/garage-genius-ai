@@ -3,8 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  assertAdminLoginAllowed,
+  clearAdminLoginFailures,
   clearAdminSession,
   createAdminSession,
+  getRequestIpHint,
+  recordAdminLoginFailure,
   requireAdmin,
   verifyAdminCredentials,
 } from "@/lib/admin-auth";
@@ -85,13 +89,22 @@ export async function adminLoginAction(
   const password = String(formData.get("password") ?? "");
 
   try {
+    assertAdminLoginAllowed(email);
+
     if (!verifyAdminCredentials(email, password)) {
+      recordAdminLoginFailure(email);
+      const ip = await getRequestIpHint();
+      console.warn("[admin-login] failed", {
+        email: email.trim().toLowerCase(),
+        ip,
+      });
       return {
         ok: false,
         error:
           "Invalid email or password. Use the exact ADMIN_PASSWORD (not the .env escape characters). If your password contains $ or #, set ADMIN_PASSWORD_B64 in .env.local and restart npm run dev.",
       };
     }
+    clearAdminLoginFailures(email);
     await createAdminSession();
     return { ok: true };
   } catch (err) {

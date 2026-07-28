@@ -8,10 +8,15 @@
  */
 
 import type { NextRequest } from "next/server";
+import type { User } from "@supabase/supabase-js";
 import { createSupabaseAdmin, createSupabaseUserClient } from "@/lib/supabase-admin";
 import { tokenService } from "@/lib/token-service";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
 import type { TokenPlan } from "@/lib/types/tokens";
+import {
+  isEmailVerificationRequired,
+  isUserEmailVerified,
+} from "@/lib/email-verification";
 
 export type AiRouteName = "chat" | "vision" | "inspect";
 
@@ -69,10 +74,7 @@ export class AiAbuseError extends Error {
 }
 
 /** Resolve signed-in user from Bearer JWT or throw 401. */
-export async function requireAiUser(req: NextRequest): Promise<{
-  id: string;
-  email?: string | null;
-}> {
+export async function requireAiUser(req: NextRequest): Promise<User> {
   const accessToken = getBearerToken(req);
   if (!accessToken) {
     throw new AiAbuseError(
@@ -96,12 +98,31 @@ export async function requireAiUser(req: NextRequest): Promise<{
     );
   }
 
-  return { id: user.id, email: user.email };
+  return user;
+}
+
+/** Require verified email for gated product features. */
+export function assertEmailVerified(user: User): void {
+  if (!isEmailVerificationRequired()) return;
+  if (isUserEmailVerified(user)) return;
+  throw new AiAbuseError(
+    "Verify your email to use this feature. Check your inbox or resend the confirmation link from Settings.",
+    403,
+    "email_unverified",
+  );
+}
+
+/** Resolve signed-in user + require verified email. */
+export async function requireVerifiedAiUser(req: NextRequest): Promise<User> {
+  const user = await requireAiUser(req);
+  assertEmailVerified(user);
+  return user;
 }
 
 /**
  * Count recent AI requests and reject if over plan/env caps.
  * Always inserts a log row when allowed (call before DeepSeek).
+ * Fail-closed: DB errors reject the request.
  */
 export async function assertAiRateLimit(
   userId: string,
@@ -116,7 +137,7 @@ export async function assertAiRateLimit(
   const hourAgo = new Date(now - 60 * 60 * 1000).toISOString();
   const dayAgo = new Date(now - 24 * 60 * 60 * 1000).toISOString();
 
-  const [{ count: hourCount }, { count: dayCount }] = await Promise.all([
+  const [hourRes, dayRes] = await Promise.all([
     admin
       .from("ai_request_log")
       .select("id", { count: "exact", head: true })
@@ -129,7 +150,19 @@ export async function assertAiRateLimit(
       .gte("created_at", dayAgo),
   ]);
 
-  if ((hourCount ?? 0) >= limits.perHour) {
+  if (hourRes.error || dayRes.error) {
+    console.error(
+      "[ai-abuse] rate-limit query failed:",
+      hourRes.error?.message || dayRes.error?.message,
+    );
+    throw new AiAbuseError(
+      "Security check unavailable. Please try again in a moment.",
+      503,
+      "rate_limit_unavailable",
+    );
+  }
+
+  if ((hourRes.count ?? 0) >= limits.perHour) {
     throw new AiAbuseError(
       `Too many AI requests this hour (limit ${limits.perHour} for ${plan}). Try again later.`,
       429,
@@ -137,7 +170,7 @@ export async function assertAiRateLimit(
     );
   }
 
-  if ((dayCount ?? 0) >= limits.perDay) {
+  if ((dayRes.count ?? 0) >= limits.perDay) {
     throw new AiAbuseError(
       `Daily AI request limit reached (${limits.perDay} for ${plan}). Try again tomorrow or upgrade.`,
       429,
@@ -150,9 +183,13 @@ export async function assertAiRateLimit(
     route,
   });
 
-  // Table missing during rollout — fail open with log (don't block product)
   if (error) {
-    console.warn("[ai-abuse] ai_request_log insert failed:", error.message);
+    console.error("[ai-abuse] ai_request_log insert failed:", error.message);
+    throw new AiAbuseError(
+      "Could not record this request for abuse protection. Please try again shortly.",
+      503,
+      "rate_limit_unavailable",
+    );
   }
 }
 

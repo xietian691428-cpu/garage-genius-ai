@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { safeNextPath } from "@/lib/safe-next-path";
+import { isUserEmailVerified } from "@/lib/email-verification";
 
 export type OAuthProvider = "apple" | "google";
 
@@ -11,11 +13,6 @@ export type AuthView = {
   session: Session | null;
   loading: boolean;
 };
-
-function safeNextPath(next?: string | null): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//")) return "/app";
-  return next;
-}
 
 function oauthRedirectTo(next?: string | null): string | undefined {
   if (typeof window === "undefined") return undefined;
@@ -81,6 +78,29 @@ export function useAuth() {
     return data;
   }, []);
 
+  const resendVerificationEmail = useCallback(
+    async (email?: string) => {
+      const target = (email ?? user?.email ?? "").trim();
+      if (!target) throw new Error("Email is required to resend verification.");
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: target,
+        options: {
+          emailRedirectTo: oauthRedirectTo("/app"),
+        },
+      });
+      if (error) throw error;
+    },
+    [user?.email],
+  );
+
+  const refreshUser = useCallback(async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) throw error;
+    setUser(data.user);
+    return data.user;
+  }, []);
+
   /**
    * Starts OAuth (PKCE). Browser redirects to the provider, then back to /auth/callback.
    * @param next post-login path (defaults to /app)
@@ -95,7 +115,6 @@ export function useAuth() {
           skipBrowserRedirect: false,
           ...(provider === "apple"
             ? {
-                // Apple returns name only on the first consent; email always when permitted.
                 scopes: "name email",
               }
             : {
@@ -131,9 +150,12 @@ export function useAuth() {
     session,
     loading,
     isAuthenticated: Boolean(user),
+    isEmailVerified: isUserEmailVerified(user),
     signInWithEmail,
     signUpWithEmail,
     signInWithOAuth,
+    resendVerificationEmail,
+    refreshUser,
     signOut,
   };
 }

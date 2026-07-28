@@ -35,6 +35,26 @@ garagegenius://auth/callback
 
 ---
 
+## 1b. Email confirmation（注册必须验证）
+
+在 Supabase Dashboard → **Authentication** → **Providers** → **Email**：
+
+| 设置 | 建议值 |
+|------|--------|
+| Enable Email provider | On |
+| Confirm email | **On**（生产必须开） |
+| Secure email change | On（推荐） |
+
+Confirm email 开启后：
+
+1. `signUp` 会发送确认邮件（链接回到 `/auth/callback` → `/app`）。
+2. 未验证用户可登录，但 Chat / Coach / 升级 / 充值 / 删号会被服务端拦截（`email_unverified`）。
+3. 应用内横幅与 Settings 支持 **Resend verification email**。
+
+本地若要跳过验证（仅开发）：`REQUIRE_EMAIL_VERIFICATION=0`。
+
+---
+
 ## 2. Sign in with Apple（必需预留）
 
 ### Apple Developer
