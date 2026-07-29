@@ -234,9 +234,9 @@ Templates live at:
 
 **You must:**
 
-1. Replace `TEAMID` in `apple-app-site-association` with your Apple Team ID.  
+1. Replace `TEAMID` in `apple-app-site-association` with your Apple Team ID (**done:** `JUUADU6WTN`).  
 2. Replace `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` with Play App Signing cert fingerprint.  
-3. Xcode → Signing & Capabilities → **Associated Domains**: `applinks:garagegenius.cloud`  
+3. Xcode → Signing & Capabilities → **Associated Domains**: `applinks:garagegenius.cloud` (**wired in** `App.entitlements`)  
 4. Supabase Redirect URLs also include:  
    `https://garagegenius.cloud/auth/callback`  
    `garagegenius://auth/callback`

@@ -3,12 +3,12 @@
     "apps": [],
     "details": [
       {
-        "appIDs": ["TEAMID.com.garagegenius.ai"],
+        "appIDs": ["JUUADU6WTN.com.garagegenius.ai"],
         "paths": ["/auth/callback*", "/app*", "/login*", "/pricing*"]
       }
     ]
   },
   "webcredentials": {
-    "apps": ["TEAMID.com.garagegenius.ai"]
+    "apps": ["JUUADU6WTN.com.garagegenius.ai"]
   }
 }
