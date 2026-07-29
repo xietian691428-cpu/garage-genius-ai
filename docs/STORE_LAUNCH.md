@@ -103,14 +103,16 @@ Brand colors: background **`#0a0f1c`**, accent **`#22d3ee`** (same as landing). 
 | `splash.png` | **≥2732×2732** | Centered logo on `#0a0f1c` |
 | `splash-dark.png` | **≥2732×2732** | Same as splash for this dark-first app |
 
-Regenerate procedural brand sources anytime:
+Regenerate from the designer master (preferred):
 
 ```bash
-npm run cap:assets:sources
-# or: python3 scripts/generate-native-brand-assets.py
+# Place / replace resources/brand-master.png (1024×1024, final art)
+npm run cap:assets:sources   # scripts/apply-brand-master-assets.py
+npm run cap:assets           # expands to iOS + Android
+npm run cap:sync
 ```
 
-Replace those PNGs with designer finals when ready, then re-run generate.
+Procedural fallback (old generator): `python3 scripts/generate-native-brand-assets.py` — only if no master art.
 
 ### Generate into native projects
 
