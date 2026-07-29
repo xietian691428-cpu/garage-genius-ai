@@ -11,6 +11,8 @@
     "cap:ios": "npx cap open ios",
     "cap:android": "npx cap open android",
     "cap:copy": "npx cap copy",
+    "cap:assets:sources": "python3 scripts/generate-native-brand-assets.py",
+    "cap:assets": "npm run cap:assets:sources && npx @capacitor/assets generate --assetPath resources --ios --android --iconBackgroundColor '#0a0f1c' --iconBackgroundColorDark '#0a0f1c' --splashBackgroundColor '#0a0f1c' --splashBackgroundColorDark '#0a0f1c'",
     "seed:knowledge": "node --env-file=.env.local --import tsx scripts/seed-knowledge.ts",
     "seed:knowledge:text-only": "node --env-file=.env.local --import tsx scripts/seed-knowledge.ts -- --skip-embeddings",
     "seed:knowledge:file": "node --env-file=.env.local --import tsx scripts/seed-knowledge.ts -- --file=scripts/data/knowledge-seed.json --file-only",
@@ -81,6 +83,7 @@
   },
   "devDependencies": {
     "@capacitor/android": "^8.4.2",
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.4.2",
     "@capacitor/ios": "^8.4.2",
     "@tailwindcss/postcss": "^4",

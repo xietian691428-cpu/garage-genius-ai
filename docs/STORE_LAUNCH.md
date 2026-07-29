@@ -87,11 +87,75 @@ npm run cap:ios    # opens Xcode
 
 Internal TestFlight can ship **Free + trial** features. Do **not** rely on in-app Stripe for digital Pro until StoreKit is wired.
 
+---
+
+## 2b. App icon & splash (source → generate)
+
+Brand colors: background **`#0a0f1c`**, accent **`#22d3ee`** (same as landing). Mark = cyan rounded square + dark car silhouette (no wordmark on the icon).
+
+### Source file specs (put under `resources/`)
+
+| File | Size | Notes |
+|------|------|--------|
+| `icon-only.png` | **1024×1024** | Opaque RGB, **no transparency**, no rounded mask (stores apply masking) |
+| `icon-foreground.png` | **1024×1024** | Transparent PNG; keep mark inside ~66% center safe zone (Android adaptive) |
+| `icon-background.png` | **1024×1024** | Solid `#0a0f1c` (or subtle texture) |
+| `splash.png` | **≥2732×2732** | Centered logo on `#0a0f1c` |
+| `splash-dark.png` | **≥2732×2732** | Same as splash for this dark-first app |
+
+Regenerate procedural brand sources anytime:
+
+```bash
+npm run cap:assets:sources
+# or: python3 scripts/generate-native-brand-assets.py
+```
+
+Replace those PNGs with designer finals when ready, then re-run generate.
+
+### Generate into native projects
+
+```bash
+npm run cap:assets
+# expands to @capacitor/assets generate --assetPath resources --ios --android …
+npm run cap:sync
+```
+
+### Output layout (after generate)
+
+```
+resources/                          # sources only
+ios/App/App/Assets.xcassets/
+  AppIcon.appiconset/AppIcon-512@2x.png
+  Splash.imageset/Default@*~universal~anyany*.png
+android/app/src/main/res/
+  mipmap-*/ic_launcher*.png         # mdpi…xxxhdpi + adaptive foreground/background
+  mipmap-anydpi-v26/ic_launcher*.xml
+  drawable*/splash.png              # port/land + night variants
+```
+
+`capacitor.config.ts` SplashScreen: `#0a0f1c`, show ~1.2s, fade-out 300ms, auto-hide.
+
+### Local verification
+
+```bash
+npm run cap:sync
+npm run cap:ios       # Xcode → Run → home-screen icon + LaunchScreen
+npm run cap:android   # Android Studio → Run → launcher + splash
+```
+
+Checks:
+
+- [ ] iOS home screen / App Store Connect icon uses cyan car mark (not Capacitor default)
+- [ ] Android adaptive icon looks correct on circle / squircle
+- [ ] Cold start splash is dark `#0a0f1c` with centered mark, then fades into WebView
+- [ ] No white flash between native splash and `garagegenius.cloud`
+
 Key files:
 
 | File | Purpose |
 |------|---------|
-| `capacitor.config.ts` | appId, server URL, allowNavigation |
+| `capacitor.config.ts` | appId, server URL, allowNavigation, SplashScreen |
+| `resources/` | Icon + splash **sources** for `@capacitor/assets` |
 | `native-shell/www/` | Offline splash fallback |
 | `ios/App/App/Info.plist` | Privacy usage strings + `garagegenius://` scheme |
 | `android/app/src/main/AndroidManifest.xml` | Permissions + intent filters |
@@ -301,5 +365,5 @@ Terms URL: **https://garagegenius.cloud/terms**
 1. ~~Wire `@capacitor/app` URL open → navigate WebView~~ — `NativeDeepLinkBridge` in root layout.  
 2. StoreKit 2 + Play Billing products + server receipt verify.  
 3. Optional native BLE plugin for iOS OBD.  
-4. App icon set + splash assets in `ios/` / `android/`.  
+4. ~~App icon set + splash assets in `ios/` / `android/`~~ — see §2b (`npm run cap:assets`).  
 5. TestFlight / internal testing track smoke (auth, chat, coach, camera, delete account).
