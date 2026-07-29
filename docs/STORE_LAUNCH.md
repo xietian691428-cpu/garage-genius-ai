@@ -47,19 +47,45 @@ Native shell: Capacitor 8 (remote URL → production Next.js)
 
 ---
 
-## 2. Capacitor local workflow
+## 2a. iOS internal test (TestFlight) — do this first
+
+Android waits until iOS smoke is green.
 
 ```bash
-# Install (already in package.json after scaffold)
-npm install
-
-# Sync web fallback + native projects after config changes
-npm run cap:sync
-
-# Open IDEs
-npm run cap:ios      # requires Xcode + Apple signing team
-npm run cap:android  # requires Android Studio + JDK + SDK
+npm run cap:sync   # or: npx cap sync ios
+npm run cap:ios    # opens Xcode
 ```
+
+### In Xcode (one-time)
+
+1. Open **App** target → **Signing & Capabilities**
+2. Team: your Apple Developer team (paid account required for TestFlight)
+3. Bundle ID must stay **`com.garagegenius.ai`** (create App ID in Apple Developer if missing)
+4. Optionally add capability **Associated Domains** → `applinks:garagegenius.cloud` (after Team ID is in AASA)
+5. Select a physical iPhone (simulator works for UI smoke; camera/mic better on device)
+6. Product → **Run** (⌘R) — confirms shell loads `https://garagegenius.cloud`
+
+### Archive → TestFlight
+
+1. Scheme: **App** · Destination: **Any iOS Device**
+2. Product → **Archive**
+3. Organizer → **Distribute App** → **App Store Connect** → Upload
+4. App Store Connect → app **Garage Genius AI** → TestFlight → add Internal testers
+5. Wait for processing + compliance (export encryption already set `ITSAppUsesNonExemptEncryption=false` in Info.plist)
+
+### Smoke checklist on device
+
+- [ ] Splash → web app loads (needs network to `garagegenius.cloud`)
+- [ ] Sign up / sign in (email verify works)
+- [ ] Add vehicle / Dashboard / Chat / Coach
+- [ ] Camera or photo pick for receipt / OBD screenshot
+- [ ] OBD live Bluetooth **not** offered as working on iOS (manual code / screenshot)
+- [ ] Pricing upgrade shows store-safe message (no Stripe Checkout in WebView)
+- [ ] Delete account path still reachable in Settings
+
+### Blockers for paid IAP
+
+Internal TestFlight can ship **Free + trial** features. Do **not** rely on in-app Stripe for digital Pro until StoreKit is wired.
 
 Key files:
 

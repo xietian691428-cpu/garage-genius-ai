@@ -35,6 +35,9 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- HTTPS-only app; declare no non-exempt encryption for App Store / TestFlight export questions -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>Garage Genius uses the camera so you can photograph vehicle parts, OBD screens, and repair receipts for AI DIY guidance.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

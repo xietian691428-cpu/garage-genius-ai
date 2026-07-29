@@ -34,6 +34,10 @@ yarn-error.log*
 .env*
 !.env.example
 
+# Apple Sign In private keys / generated secrets (never commit)
+AuthKey_*.p8
+*.p8
+
 # vercel
 .vercel
 
