@@ -74,102 +74,99 @@ def draw_car(
     glass: tuple[int, ...] | None = None,
 ) -> None:
     """
-    Streamlined side-view sedan — soft Bézier silhouette for Western/EU taste.
-    Readable at small sizes; rounded nose, arched roof, soft rear.
+    Low, elongated sedan silhouette — soft continuous curves (US/EU taste).
+    Longer wheelbase, gentle roof arc, rounded nose and rear.
     """
     s = scale
     glass_fill = glass if glass is not None else (8, 12, 22, 255)
 
-    y_rocker = cy + 0.12 * s
-    y_belt = cy - 0.02 * s
-    y_roof = cy - 0.30 * s
+    # Lower / longer proportions than a boxy hatch
+    y_rocker = cy + 0.10 * s
+    y_belt = cy + 0.01 * s
+    y_roof = cy - 0.22 * s
 
-    nose_low = (cx - 0.44 * s, y_rocker - 0.01 * s)
-    tail_low = (cx + 0.44 * s, y_rocker - 0.02 * s)
+    nose_low = (cx - 0.48 * s, y_rocker)
+    tail_low = (cx + 0.48 * s, y_rocker)
 
-    # Lower edge nose → tail
+    # Smooth rocker
     lower = _cubic(
         nose_low,
-        (cx - 0.20 * s, y_rocker + 0.02 * s),
-        (cx + 0.18 * s, y_rocker + 0.02 * s),
+        (cx - 0.18 * s, y_rocker + 0.015 * s),
+        (cx + 0.18 * s, y_rocker + 0.015 * s),
         tail_low,
-        16,
-    )
-    # Soft rear bumper up to trunk
-    rear_up = _cubic(
-        tail_low,
-        (cx + 0.48 * s, y_belt + 0.06 * s),
-        (cx + 0.46 * s, y_belt - 0.02 * s),
-        (cx + 0.36 * s, y_belt - 0.06 * s),
-        16,
-    )
-    # Trunk → arched roof → A-pillar
-    roof = _cubic(
-        (cx + 0.36 * s, y_belt - 0.06 * s),
-        (cx + 0.28 * s, y_roof + 0.02 * s),
-        (cx + 0.06 * s, y_roof - 0.02 * s),
-        (cx - 0.10 * s, y_roof + 0.01 * s),
-        22,
-    )
-    # Smooth hood down to nose
-    hood = _cubic(
-        (cx - 0.10 * s, y_roof + 0.01 * s),
-        (cx - 0.22 * s, y_belt - 0.10 * s),
-        (cx - 0.34 * s, y_belt - 0.04 * s),
-        (cx - 0.44 * s, y_belt + 0.02 * s),
         18,
     )
-    # Soft front bumper closing
+    # Rounded rear into trunk line
+    rear_up = _cubic(
+        tail_low,
+        (cx + 0.52 * s, y_belt + 0.04 * s),
+        (cx + 0.50 * s, y_belt - 0.02 * s),
+        (cx + 0.38 * s, y_belt - 0.05 * s),
+        18,
+    )
+    # Single gentle roof arc (no center peak)
+    roof = _cubic(
+        (cx + 0.38 * s, y_belt - 0.05 * s),
+        (cx + 0.18 * s, y_roof),
+        (cx - 0.06 * s, y_roof),
+        (cx - 0.22 * s, y_belt - 0.06 * s),
+        28,
+    )
+    # Long sloping hood
+    hood = _cubic(
+        (cx - 0.22 * s, y_belt - 0.06 * s),
+        (cx - 0.32 * s, y_belt - 0.02 * s),
+        (cx - 0.42 * s, y_belt + 0.02 * s),
+        (cx - 0.48 * s, y_belt + 0.04 * s),
+        18,
+    )
+    # Soft rounded nose
     front_close = _cubic(
-        (cx - 0.44 * s, y_belt + 0.02 * s),
-        (cx - 0.48 * s, y_belt + 0.08 * s),
-        (cx - 0.47 * s, y_rocker - 0.02 * s),
+        (cx - 0.48 * s, y_belt + 0.04 * s),
+        (cx - 0.52 * s, y_belt + 0.08 * s),
+        (cx - 0.51 * s, y_rocker + 0.01 * s),
         nose_low,
-        12,
+        14,
     )
 
     outline = lower + rear_up[1:] + roof[1:] + hood[1:] + front_close[1:]
     draw.polygon(outline, fill=fill)
 
-    # Cabin glass — soft bubble
-    win = _cubic(
-        (cx - 0.14 * s, y_belt - 0.02 * s),
-        (cx - 0.08 * s, y_roof + 0.06 * s),
-        (cx + 0.14 * s, y_roof + 0.05 * s),
-        (cx + 0.26 * s, y_belt - 0.04 * s),
-        20,
+    # Wide cabin glass with soft corners
+    win_top = _cubic(
+        (cx - 0.18 * s, y_belt - 0.01 * s),
+        (cx - 0.10 * s, y_roof + 0.05 * s),
+        (cx + 0.12 * s, y_roof + 0.05 * s),
+        (cx + 0.28 * s, y_belt - 0.03 * s),
+        22,
     )
-    win_bottom = _cubic(
-        (cx + 0.26 * s, y_belt - 0.04 * s),
-        (cx + 0.12 * s, y_belt + 0.02 * s),
-        (cx - 0.02 * s, y_belt + 0.02 * s),
-        (cx - 0.14 * s, y_belt - 0.02 * s),
+    win_bot = _cubic(
+        (cx + 0.28 * s, y_belt - 0.03 * s),
+        (cx + 0.10 * s, y_belt + 0.015 * s),
+        (cx - 0.04 * s, y_belt + 0.015 * s),
+        (cx - 0.18 * s, y_belt - 0.01 * s),
         12,
     )
-    draw.polygon(win + win_bottom[1:], fill=glass_fill)
+    draw.polygon(win_top + win_bot[1:], fill=glass_fill)
 
-    # Wheels
-    r = 0.095 * s
-    for wx in (cx - 0.26 * s, cx + 0.24 * s):
-        wy = y_rocker + 0.02 * s
+    # Slightly larger wheels, planted on the rocker
+    r = 0.10 * s
+    for wx in (cx - 0.28 * s, cx + 0.28 * s):
+        wy = y_rocker + 0.015 * s
         draw.ellipse((wx - r, wy - r, wx + r, wy + r), fill=fill)
-        hr = r * 0.38
+        hr = r * 0.36
         draw.ellipse((wx - hr, wy - hr, wx + hr, wy + hr), fill=glass_fill)
 
 
 def make_icon_only(size: int = 1024) -> Image.Image:
-    img = Image.new("RGBA", (size, size), BG)
+    # 2× supersample for smoother Bézier edges
+    hi = size * 2
+    img = Image.new("RGBA", (hi, hi), BG)
     draw = ImageDraw.Draw(img)
-    pad = size * 0.12
-    rounded_rect(draw, (pad, pad, size - pad, size - pad), radius=size * 0.22, fill=CYAN)
-    draw_car(
-        draw,
-        size / 2,
-        size / 2 + size * 0.02,
-        size * 0.55,
-        INK,
-        glass=CYAN,
-    )
+    pad = hi * 0.12
+    rounded_rect(draw, (pad, pad, hi - pad, hi - pad), radius=hi * 0.22, fill=CYAN)
+    draw_car(draw, hi / 2, hi / 2 + hi * 0.02, hi * 0.55, INK, glass=CYAN)
+    img = img.resize((size, size), Image.Resampling.LANCZOS)
     out = Image.new("RGB", (size, size), BG[:3])
     out.paste(img, mask=img.split()[-1])
     return out
@@ -177,19 +174,13 @@ def make_icon_only(size: int = 1024) -> Image.Image:
 
 def make_icon_foreground(size: int = 1024) -> Image.Image:
     """Adaptive icon foreground: mark inside ~66% safe zone, transparent outside."""
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    hi = size * 2
+    img = Image.new("RGBA", (hi, hi), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    pad = size * 0.18
-    rounded_rect(draw, (pad, pad, size - pad, size - pad), radius=size * 0.18, fill=CYAN)
-    draw_car(
-        draw,
-        size / 2,
-        size / 2 + size * 0.015,
-        size * 0.48,
-        INK,
-        glass=CYAN,
-    )
-    return img
+    pad = hi * 0.18
+    rounded_rect(draw, (pad, pad, hi - pad, hi - pad), radius=hi * 0.18, fill=CYAN)
+    draw_car(draw, hi / 2, hi / 2 + hi * 0.015, hi * 0.48, INK, glass=CYAN)
+    return img.resize((size, size), Image.Resampling.LANCZOS)
 
 
 def make_icon_background(size: int = 1024) -> Image.Image:
@@ -197,24 +188,24 @@ def make_icon_background(size: int = 1024) -> Image.Image:
 
 
 def make_splash(size: int = 2732) -> Image.Image:
-    img = Image.new("RGB", (size, size), BG[:3])
-    overlay = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(overlay)
-    tile = size * 0.22
-    left = (size - tile) / 2
-    top = (size - tile) / 2 - size * 0.02
+    hi = size  # already large; light supersample via 1.5× if memory ok
+    scale_f = 2
+    canvas = size * scale_f
+    img = Image.new("RGBA", (canvas, canvas), (*BG[:3], 255))
+    draw = ImageDraw.Draw(img)
+    tile = canvas * 0.22
+    left = (canvas - tile) / 2
+    top = (canvas - tile) / 2 - canvas * 0.02
     rounded_rect(draw, (left, top, left + tile, top + tile), radius=tile * 0.22, fill=CYAN)
     draw_car(
         draw,
-        size / 2,
-        size / 2 - size * 0.02 + tile * 0.02,
+        canvas / 2,
+        canvas / 2 - canvas * 0.02 + tile * 0.02,
         tile * 0.55,
         INK,
         glass=CYAN,
     )
-    img = img.convert("RGBA")
-    img = Image.alpha_composite(img, overlay)
-    return img.convert("RGB")
+    return img.resize((size, size), Image.Resampling.LANCZOS).convert("RGB")
 
 
 def main() -> None:
