@@ -229,7 +229,13 @@ function GarageAppInner() {
                 />
               )}
 
-              {activeTab === "settings" && <SettingsPanel />}
+              {activeTab === "settings" && (
+                <SettingsPanel
+                  currentVehicle={currentVehicle}
+                  vehiclesLoading={vehiclesLoading}
+                  onUpdateVehicle={updateVehicle}
+                />
+              )}
             </div>
 
             <MobileTabBar activeTab={activeTab} onTabChange={handleTabChange} />

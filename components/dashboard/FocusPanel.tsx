@@ -15,6 +15,7 @@ import {
   buildFocusSafety,
   buildFocusSteps,
   buildFocusTools,
+  sanitizeFocusCommand,
 } from "@/lib/parse-ai-focus";
 import {
   isSpeechSynthesisSupported,
@@ -33,10 +34,14 @@ type FocusPanelProps = {
 
 export default function FocusPanel({
   region,
-  command,
+  command: rawCommand,
   onClose,
   onStartVoiceCoach,
 }: FocusPanelProps) {
+  const command = sanitizeFocusCommand(rawCommand, "focus.FocusPanel") ?? {
+    type: "focus" as const,
+    part: rawCommand.part,
+  };
   const steps = buildFocusSteps(command);
   const tools = buildFocusTools(command);
   const safety = buildFocusSafety(command);

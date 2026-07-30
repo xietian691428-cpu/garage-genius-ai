@@ -69,6 +69,7 @@ ${focus}
 ${historyBlock}
 ${catalogBlock}
 Specifications must follow ${market} region manuals and regulations.
+Write every JSON string field in clear US English only (never Chinese).
 Return ONLY valid JSON:
 {
   "title": "string",

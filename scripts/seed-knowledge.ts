@@ -30,6 +30,10 @@ import { createClient } from "@supabase/supabase-js";
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { ragService } from "@/lib/rag";
+import {
+  logCjkRagLeakage,
+  shouldSkipZhKnowledgeEmbedding,
+} from "@/lib/rag-language-guard";
 
 /** Canonical shape for every knowledge row we import. */
 export type KnowledgeSeedItem = {
@@ -199,12 +203,27 @@ function normalizeItem(item: KnowledgeSeedItem): KnowledgeSeedItem {
 }
 
 async function maybeEmbedding(
-  text: string,
+  item: KnowledgeSeedItem,
   skip: boolean,
 ): Promise<number[] | null> {
   if (skip) return null;
+  if (shouldSkipZhKnowledgeEmbedding(item)) {
+    logCjkRagLeakage({
+      path: "seed.maybeEmbedding",
+      reason: "corpus.car_repair_qa",
+      title: item.title,
+      corpus: String(item.metadata?.corpus || ""),
+      language: String(item.metadata?.language || ""),
+    });
+    console.warn(
+      `  ⏭  Embedding skipped (ZH / CarRepairQA blocked for EN product): ${item.title.slice(0, 60)}`,
+    );
+    return null;
+  }
   try {
-    return await ragService.generateEmbedding(text);
+    return await ragService.generateEmbedding(
+      `${item.title}\n\n${item.content}`,
+    );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.warn(`  ⚠️  Embedding skipped: ${msg}`);
@@ -445,10 +464,7 @@ async function seedKnowledge() {
     for (const [index, item] of items.entries()) {
       const n = index + 1;
       try {
-        const embedding = await maybeEmbedding(
-          `${item.title}\n\n${item.content}`,
-          skipEmbeddings,
-        );
+        const embedding = await maybeEmbedding(item, skipEmbeddings);
 
         const row = {
           title: item.title,

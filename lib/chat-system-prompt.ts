@@ -17,6 +17,14 @@ import {
   formatDiySkillPromptBlock,
   type DiySkillLevel,
 } from "@/lib/diy-skill";
+import {
+  formatInsuranceProfileForPrompt,
+  INSURANCE_SOFT_LANGUAGE_PROMPT,
+} from "@/lib/insurance-tips";
+import {
+  formatObdPreferencePromptBlock,
+  type ObdAdapterPreference,
+} from "@/lib/obd-preference";
 
 const PARTS_DATA_EXAMPLE = `[
   {
@@ -53,6 +61,10 @@ function formatVehicleHealthProfile(vehicle: VehicleInfo): string {
   const notes = vehicle.notes?.trim()
     ? `Owner notes: ${vehicle.notes.trim()}`
     : null;
+  const tags = vehicle.tags?.length
+    ? `Profile tags: ${vehicle.tags.join(", ")}`
+    : null;
+  const insuranceBlock = formatInsuranceProfileForPrompt(vehicle);
 
   return `## Vehicle Health Profile (auto-loaded from garage)
 Treat this as the user's saved vehicle file — confirm it warmly at the start of coaching replies; do not pretend you do not know it.
@@ -60,7 +72,7 @@ Treat this as the user's saved vehicle file — confirm it warmly at the start o
 - Odometer: ${miles}
 - Powertrain: ${vehicle.engine || "unknown"}${vehicle.transmission ? ` · ${vehicle.transmission}` : ""}${vehicle.driveType ? ` · ${vehicle.driveType}` : ""}
 - ${lastService}
-${notes ? `- ${notes}\n` : ""}If mileage is missing or the symptom is unclear, ask briefly — then coach with best-effort guidance.`;
+${tags ? `- ${tags}\n` : ""}${notes ? `- ${notes}\n` : ""}${insuranceBlock ? `\n${insuranceBlock}\n` : ""}If mileage is missing or the symptom is unclear, ask briefly — then coach with best-effort guidance.`;
 }
 
 export function buildChatSystemPrompt(
@@ -76,9 +88,12 @@ export function buildChatSystemPrompt(
   maintenanceHistory?: string | null,
   /** DIY skill band for tone / depth */
   diySkill?: DiySkillLevel | string | null,
+  /** Optional OBD adapter ownership preference */
+  obdPreference?: ObdAdapterPreference | null,
 ): DeepSeekMessage {
   const fitment = fitmentSearchString(vehicle);
   const skillBlock = formatDiySkillPromptBlock(diySkill);
+  const obdPrefBlock = formatObdPreferencePromptBlock(obdPreference);
   const visionNote = hasImage
     ? `
 ## Photo diagnosis (garage DIY)
@@ -118,6 +133,8 @@ export function buildChatSystemPrompt(
 
 ${skillBlock}
 
+${obdPrefBlock}
+
 ${marketBlock}
 
 ${healthProfile}
@@ -132,12 +149,15 @@ ${REPAIR_LOOP_PROMPT}
 
 ${LEGAL_SOFT_LANGUAGE_PROMPT}
 
+${INSURANCE_SOFT_LANGUAGE_PROMPT}
+
 Coach + fitment rules (this turn):
 - Open full replies by confirming the Vehicle Health Profile (year/make/model/mileage) in a natural coach voice.
 - When maintenance history is present, reference relevant past jobs (date / mileage / parts) before suggesting repeats.
 - For diagnosis / planning replies, follow **Problem → Top 3 causes → Checks → Solution path** from the Repair loop section.
 - Use Coach Mode structure for diagnosis / planning; use Live Repair Mode when the user is mid-job.
 - Always respond in English — even if the user writes in another language.
+- Focus Mode <focus-data> message and steps must be US English only (never Chinese from RAG).
 - Strictly match this exact vehicle fitment: ${fitment}.
 - Specifications must follow **${market}** region manuals and regulations (see Market / Region Context).
 - Respect the vehicle's Market / country version — do not mix USDM / EUDM / UKDM specs.

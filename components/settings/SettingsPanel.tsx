@@ -11,10 +11,24 @@ import LocaleSwitcher from "@/components/i18n/LocaleSwitcher";
 import { useTranslation } from "react-i18next";
 import SubscriptionAIAssistant from "@/components/subscription/SubscriptionAIAssistant";
 import DiySkillSettings from "@/components/settings/DiySkillSettings";
+import InsuranceProfileSettings from "@/components/settings/InsuranceProfileSettings";
+import ObdToolsSettings from "@/components/settings/ObdToolsSettings";
+import ShareAppCard from "@/components/settings/ShareAppCard";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 import { supabase } from "@/lib/supabase";
+import type { VehicleInfo } from "@/lib/types/chat";
 
-export default function SettingsPanel() {
+type Props = {
+  currentVehicle?: VehicleInfo | null;
+  vehiclesLoading?: boolean;
+  onUpdateVehicle?: (vehicle: VehicleInfo) => Promise<VehicleInfo | void>;
+};
+
+export default function SettingsPanel({
+  currentVehicle = null,
+  vehiclesLoading = false,
+  onUpdateVehicle,
+}: Props) {
   const { t } = useTranslation();
   const { user, signOut, isEmailVerified, resendVerificationEmail, refreshUser } =
     useAuth();
@@ -189,6 +203,16 @@ export default function SettingsPanel() {
 
         <DiySkillSettings />
 
+        <ObdToolsSettings />
+
+        {onUpdateVehicle ? (
+          <InsuranceProfileSettings
+            vehicle={currentVehicle}
+            loading={vehiclesLoading}
+            onSave={onUpdateVehicle}
+          />
+        ) : null}
+
         <section className="rounded-3xl border border-slate-800 bg-[#111827] p-5">
           <h2 className="text-xs font-medium uppercase tracking-wide text-slate-500">
             Subscription
@@ -241,6 +265,8 @@ export default function SettingsPanel() {
         >
           Buy more tokens
         </Link>
+
+        <ShareAppCard />
 
         {error && (
           <p className="rounded-2xl bg-red-500/10 px-4 py-3 text-sm text-red-300">

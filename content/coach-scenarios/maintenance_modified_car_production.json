@@ -157,7 +157,7 @@
   "steps": [
     {
       "safety_warning": null,
-      "trust_nudge": null,
+      "trust_nudge": "Modifications or non-OEM parts can affect insurance coverage. Rules vary by country, state, and insurer — check your policy or contact your insurer before modifying. This is general information only; Garage Genius AI does not provide insurance or legal advice.",
       "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
       "is_operational": false,
       "risk_confirm": null,
@@ -203,10 +203,20 @@
     },
     {
       "safety_warning": null,
-      "trust_nudge": null,
+      "trust_nudge": "Keep a written mod inventory — many policies ask you to disclose non-OEM parts. Confirm disclosure and coverage requirements with your insurer; we never determine whether a claim will be covered.",
       "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
       "is_operational": true,
-      "risk_confirm": null,
+      "risk_confirm": {
+        "required": true,
+        "title": "Insurance reminder before logging mods",
+        "body": "Modified or non-OEM parts may affect coverage depending on your country and insurer. Check your policy or contact your insurer before installing. Garage Genius AI does not provide insurance or legal advice and never determines claim outcomes.",
+        "checkbox_label": "I understand this is general information only",
+        "confirm_label": "I understand — continue",
+        "cancel_label": "Find a nearby shop",
+        "cancel_action": "book_shop",
+        "risk_level": "high",
+        "disclaimer": "Modifications or non-OEM parts can affect insurance coverage. Rules vary by country, state, and insurer. This is general information only — always check your policy or contact your insurer before modifying your vehicle. Garage Genius AI does not provide insurance or legal advice."
+      },
       "difficulty": "Easy",
       "duration_minutes": 3,
       "id": "inventory",
@@ -353,7 +363,7 @@
       "risk_confirm": {
         "required": true,
         "title": "ECU / forced-induction risk",
-        "body": "Incorrect tunes, boost leaks, or DIY rail work can destroy engines or cause fire. Professional calibration and diagnostics only. When unsure, find a nearby shop.",
+        "body": "Incorrect tunes, boost leaks, or DIY rail work can destroy engines or cause fire. Professional calibration and diagnostics only. Forced-induction and ECU changes are often subject to policy conditions — contact your insurer or review your policy for disclosure requirements. When unsure, find a nearby shop. Garage Genius AI does not provide insurance or legal advice.",
         "checkbox_label": "I have read and understand the risks",
         "confirm_label": "I understand — continue",
         "cancel_label": "Find a nearby shop",

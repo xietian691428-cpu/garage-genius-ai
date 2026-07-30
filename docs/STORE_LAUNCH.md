@@ -271,11 +271,13 @@ Garage Genius AI is a DIY auto-repair coach for weekend mechanics in the US & EU
 IMPORTANT SAFETY NOTICE
 Garage Genius provides general DIY educational guidance only. It is not a substitute for a licensed mechanic, official service manuals, or professional shop work. High-risk systems (brakes, airbags, fuel, jacking, hybrid/EV high voltage) require extra caution — confirm with a qualified technician when unsure.
 
+Insurance tips about modifications / non-OEM parts are educational reminders only. Garage Genius AI does not provide insurance or legal advice and never determines whether a claim will be covered — always check your policy or contact your insurer.
+
 On iPhone, live Bluetooth OBD is not available; enter fault codes manually or upload an OBD screenshot. BLE OBD works on supported Android Chrome environments with compatible adapters.
 
 Privacy Policy: https://garagegenius.cloud/privacy
 Terms of Service: https://garagegenius.cloud/terms
-Support: Settings → Billing help (in app) or your store support URL
+Support: xietian691428@gmail.com · Settings → Billing help (in app) or your store support URL
 ```
 
 ### Spanish short blurb (optional locale)
@@ -312,10 +314,13 @@ Declare collection for:
 |------|-----------------|---------|
 | Email / user ID | Yes | Account |
 | Vehicle profile | Yes | App functionality |
+| Optional country/region + insurer label | Yes | Personalized insurance *education* tips only (not claim adjudication) |
 | Chat / coach text | Yes | App functionality |
 | Photos (vehicle / OBD / receipts) | Yes | App functionality → AI processing |
 | Purchase history (when IAP/Stripe) | Yes | Commerce |
 | Diagnostics / crash (if you add later) | Optional | Analytics |
+
+**Insurance tips:** Modifications / non-OEM reminders are educational only. Do not claim coverage outcomes. Product does not scrape or store full insurer policy terms for auto-adjudication.
 
 **Not collected for core app:** precise location, contacts, tracking for ads (no third-party ad SDK today).
 

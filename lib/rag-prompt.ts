@@ -3,8 +3,21 @@ import {
   combinedRagBoost,
   type RagRankContext,
 } from "@/lib/rag-rank";
+import {
+  filterEnglishKnowledgeHits as filterEnglishKnowledgeHitsGuarded,
+} from "@/lib/rag-language-guard";
 
 export type { RagRankContext };
+
+/** Re-export EN product language gate (single source of truth). */
+export {
+  containsCjkText,
+  filterEnglishKnowledgeHits,
+  isNonEnglishKnowledgeHit,
+  logCjkRagLeakage,
+  shouldSkipZhKnowledgeEmbedding,
+} from "@/lib/rag-language-guard";
+
 /**
  * Prompt priority for retrieved knowledge (higher = show first / emphasize):
  *   1 config   — VCdb configuration cards / fitment ground truth
@@ -133,13 +146,18 @@ export function formatKnowledgeForPrompt(
 ): string {
   if (!hits.length) return "";
 
-  const ranked = prioritizeRagHits(hits, {
+  const englishOnly = filterEnglishKnowledgeHitsGuarded(
+    hits,
+    "rag.formatKnowledgeForPrompt",
+  );
+  const ranked = prioritizeRagHits(englishOnly, {
     diySkill: options?.diySkill,
     make: options?.make,
     model: options?.model,
     year: options?.year,
     mileage: options?.mileage,
   });
+  if (!ranked.length) return "";
   const byTier: Record<RagPriorityTier, RagKnowledgeHit[]> = {
     config: [],
     evidence: [],
@@ -231,6 +249,7 @@ Rules when using these sources (Coach Mode):
 4. Use **PARTS** entries last — never override the authoritative config for drivetrain or engine.
 5. Prefer hits whose Market matches the vehicle; ignore advice that conflicts with the vehicle Market / region context.
 6. Mention the source title briefly when you rely on a hit. If none apply, say so and continue with best practice.
+7. **Language:** All user-facing text (including Focus Mode message / steps) must be clear US English. Never paste Chinese or other non-English source text into the reply or <focus-data>.
 
 ${blocks.join("\n\n")}`;
 }

@@ -19,6 +19,8 @@ import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
 import { OBD_COMPATIBLE_DEVICES } from "@/lib/types/obd-session";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
+import { useObdPreference } from "@/hooks/useObdPreference";
+import { shouldEmphasizeObdConnect } from "@/lib/obd-preference";
 
 type Props = {
   open: boolean;
@@ -43,11 +45,11 @@ type Props = {
   askAiLabel?: string;
 };
 
-type Phase = "guide" | "working" | "result" | "error";
+type Phase = "pref" | "guide" | "working" | "result" | "error";
 
 /**
  * Connect OBD guide + BLE scan → structured session for Chat/Coach/Dashboard.
- * Does not modify CoachScenarioPlayer.
+ * Soft preference prompt when ownership is unset. Does not modify CoachScenarioPlayer.
  */
 export default function ObdConnectModal({
   open,
@@ -58,24 +60,57 @@ export default function ObdConnectModal({
   askAiLabel,
 }: Props) {
   const { t } = useTranslation();
+  const { pref, loading: prefLoading, setHasObdAdapter } = useObdPreference();
   const [phase, setPhase] = useState<Phase>("guide");
   const [error, setError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<ObdSessionSnapshot | null>(null);
   const [connectedName, setConnectedName] = useState<string | null>(null);
+  const [prefBusy, setPrefBusy] = useState(false);
   useBodyScrollLock(open);
 
   const support = getObdRuntimeSupport();
+  const emphasize = shouldEmphasizeObdConnect(pref);
 
   useEffect(() => {
-    if (!open) return;
-    setPhase("guide");
+    if (!open || prefLoading) return;
     setError(null);
     setSnapshot(null);
     const obd = getObdConnector();
     setConnectedName(obd.isConnected ? obd.deviceName : null);
-  }, [open]);
+    if (pref.preferenceUnset) {
+      setPhase("pref");
+    } else if (!pref.hasObdAdapter) {
+      // Explicitly said no — parent usually hides entry; soft tip only.
+      setPhase("pref");
+      setError(t("obd.noAdapterLiveHint"));
+    } else {
+      setPhase("guide");
+    }
+  }, [open, prefLoading, pref.preferenceUnset, pref.hasObdAdapter, t]);
 
   if (!open) return null;
+
+  const savePrefAndContinue = async (has: boolean) => {
+    setPrefBusy(true);
+    try {
+      await setHasObdAdapter(has);
+      if (has) {
+        setPhase("guide");
+      } else {
+        onClose();
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : t("obd.prefSaveFailed"),
+      );
+    } finally {
+      setPrefBusy(false);
+    }
+  };
+
+  const skipPref = () => {
+    onClose();
+  };
 
   const connectAndRead = async () => {
     setPhase("working");
@@ -148,10 +183,14 @@ export default function ObdConnectModal({
               id="obd-connect-title"
               className="text-base font-semibold text-white"
             >
-              {t("obd.connectTitle")}
+              {phase === "pref"
+                ? t("obd.prefPromptTitle")
+                : t("obd.connectTitle")}
             </h2>
             <p className="mt-0.5 text-xs text-slate-400">
-              {t("obd.connectSubtitle")}
+              {phase === "pref"
+                ? t("obd.prefPromptSubtitle")
+                : t("obd.connectSubtitle")}
             </p>
           </div>
           <button
@@ -165,12 +204,48 @@ export default function ObdConnectModal({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+          {phase === "pref" ? (
+            <div className="space-y-4">
+              <p className="text-sm leading-relaxed text-slate-300">
+                {t("obd.prefPromptBody")}
+              </p>
+              <p className="text-xs text-slate-500">{t("obd.prefPromptNote")}</p>
+              {error ? (
+                <p className="rounded-xl border border-red-700/40 bg-red-950/30 px-3 py-2 text-xs text-red-100">
+                  {error}
+                </p>
+              ) : null}
+              <div className="grid gap-2">
+                <button
+                  type="button"
+                  disabled={prefBusy}
+                  onClick={() => void savePrefAndContinue(true)}
+                  className="rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-black hover:bg-cyan-400 disabled:opacity-50"
+                >
+                  {t("obd.prefYes")}
+                </button>
+                <button
+                  type="button"
+                  disabled={prefBusy}
+                  onClick={() => void savePrefAndContinue(false)}
+                  className="rounded-2xl border border-slate-600 px-4 py-3 text-sm text-slate-200 hover:border-slate-500 disabled:opacity-50"
+                >
+                  {t("obd.prefNo")}
+                </button>
+                <button
+                  type="button"
+                  disabled={prefBusy}
+                  onClick={skipPref}
+                  className="px-4 py-2 text-sm text-slate-400 hover:text-slate-200 disabled:opacity-50"
+                >
+                  {t("obd.prefSkip")}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           {phase === "guide" || phase === "error" ? (
             <div className="space-y-4">
-              <p className="rounded-xl border border-cyan-700/40 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100">
-                {t("obd.bleOnlyBanner")}
-              </p>
-
               {support.code === "capacitor_ios" ? (
                 <p className="rounded-xl border border-amber-700/40 bg-amber-950/30 px-3 py-2 text-xs text-amber-100">
                   {t("obd.iosUnsupported")}
@@ -180,7 +255,9 @@ export default function ObdConnectModal({
                   {t("obd.browserUnsupported")}
                 </p>
               ) : (
-                <p className="text-[11px] text-slate-500">{t("obd.iosTip")}</p>
+                <p className="rounded-xl border border-cyan-700/40 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100">
+                  {t("obd.bleOnlyBanner")}
+                </p>
               )}
 
               {phase === "error" && error ? (
@@ -196,39 +273,47 @@ export default function ObdConnectModal({
                 </p>
               ) : null}
 
-              <div>
-                <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {t("obd.stepsTitle")}
-                </h3>
-                <ol className="list-decimal space-y-1 pl-4 text-sm text-slate-300">
-                  <li>{t("obd.step1")}</li>
-                  <li>{t("obd.step2")}</li>
-                  <li>{t("obd.step3")}</li>
-                  <li>{t("obd.step4")}</li>
-                </ol>
-              </div>
-
-              <div>
-                <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {t("obd.devicesTitle")}
-                </h3>
-                <ul className="space-y-2">
-                  {OBD_COMPATIBLE_DEVICES.map((d) => (
-                    <li
-                      key={d.id}
-                      className="rounded-xl border border-slate-800 bg-slate-950/50 px-3 py-2"
-                    >
-                      <p className="text-sm font-medium text-slate-200">
-                        {d.name}
-                      </p>
-                      <p className="text-[11px] text-slate-500">{d.notes}</p>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-2 text-[11px] text-slate-600">
-                  {t("obd.bleOnlyNote")}
+              {emphasize || support.supported ? (
+                <div>
+                  <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {t("obd.stepsTitle")}
+                  </h3>
+                  <ol className="list-decimal space-y-1 pl-4 text-sm text-slate-300">
+                    <li>{t("obd.step1")}</li>
+                    <li>{t("obd.step2")}</li>
+                    <li>{t("obd.step3")}</li>
+                    <li>{t("obd.step4")}</li>
+                  </ol>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-300">
+                  {t("obd.iosPreferManual")}
                 </p>
-              </div>
+              )}
+
+              {emphasize ? (
+                <div>
+                  <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {t("obd.devicesTitle")}
+                  </h3>
+                  <ul className="space-y-2">
+                    {OBD_COMPATIBLE_DEVICES.map((d) => (
+                      <li
+                        key={d.id}
+                        className="rounded-xl border border-slate-800 bg-slate-950/50 px-3 py-2"
+                      >
+                        <p className="text-sm font-medium text-slate-200">
+                          {d.name}
+                        </p>
+                        <p className="text-[11px] text-slate-500">{d.notes}</p>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-[11px] text-slate-600">
+                    {t("obd.bleOnlyNote")}
+                  </p>
+                </div>
+              ) : null}
             </div>
           ) : null}
 
@@ -289,38 +374,40 @@ export default function ObdConnectModal({
           ) : null}
         </div>
 
-        <div className="flex shrink-0 flex-wrap gap-2 border-t border-slate-800 px-4 py-3">
-          {connectedName ? (
-            <button
-              type="button"
-              onClick={disconnect}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-600 px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-900"
-            >
-              <BluetoothOff className="h-4 w-4" />
-              {t("obd.disconnect")}
-            </button>
-          ) : null}
+        {phase !== "pref" ? (
+          <div className="flex shrink-0 flex-wrap gap-2 border-t border-slate-800 px-4 py-3">
+            {connectedName ? (
+              <button
+                type="button"
+                onClick={disconnect}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-600 px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-900"
+              >
+                <BluetoothOff className="h-4 w-4" />
+                {t("obd.disconnect")}
+              </button>
+            ) : null}
 
-          {phase === "result" && snapshot ? (
-            <button
-              type="button"
-              onClick={primaryResultAction}
-              className="ml-auto inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cyan-500 px-3 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400 sm:flex-none"
-            >
-              {askAiLabel || t("obd.diagnoseInChat")}
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={!support.supported || phase === "working"}
-              onClick={() => void connectAndRead()}
-              className="ml-auto inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cyan-500 px-3 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400 disabled:opacity-50 sm:flex-none"
-            >
-              <Bluetooth className="h-4 w-4" />
-              {connectedName ? t("obd.readAgain") : t("obd.connectCta")}
-            </button>
-          )}
-        </div>
+            {phase === "result" && snapshot ? (
+              <button
+                type="button"
+                onClick={primaryResultAction}
+                className="ml-auto inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cyan-500 px-3 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400 sm:flex-none"
+              >
+                {askAiLabel || t("obd.diagnoseInChat")}
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={!support.supported || phase === "working"}
+                onClick={() => void connectAndRead()}
+                className="ml-auto inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cyan-500 px-3 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400 disabled:opacity-50 sm:flex-none"
+              >
+                <Bluetooth className="h-4 w-4" />
+                {connectedName ? t("obd.readAgain") : t("obd.connectCta")}
+              </button>
+            )}
+          </div>
+        ) : null}
       </div>
     </div>
   );

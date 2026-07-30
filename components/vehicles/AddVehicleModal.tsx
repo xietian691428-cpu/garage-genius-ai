@@ -19,6 +19,12 @@ import VehicleProfileTags, {
 } from "./VehicleProfileTags";
 import UpgradeModal from "@/components/ui/UpgradeModal";
 import { useSubscription } from "@/hooks/useSubscription";
+import {
+  COMMON_INSURANCE_PROVIDERS,
+  INSURANCE_COUNTRY_REGIONS,
+  US_STATE_OPTIONS,
+} from "@/lib/insurance-tips";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   open: boolean;
@@ -68,6 +74,7 @@ export default function AddVehicleModal({
 }: Props) {
   const isEdit = Boolean(initialVehicle);
   const { features } = useSubscription();
+  const { t } = useTranslation();
   const canEditTags = features.customProfileTags;
 
   const [name, setName] = useState("My Main Car");
@@ -77,6 +84,9 @@ export default function AddVehicleModal({
   const [manualModel, setManualModel] = useState("");
   const [manualEngine, setManualEngine] = useState("");
   const [profileTags, setProfileTags] = useState<string[]>([]);
+  const [countryRegion, setCountryRegion] = useState("");
+  const [countryState, setCountryState] = useState("");
+  const [insuranceProvider, setInsuranceProvider] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showTagUpgrade, setShowTagUpgrade] = useState(false);
@@ -101,6 +111,9 @@ export default function AddVehicleModal({
           (PROFILE_TAG_OPTIONS as readonly string[]).includes(t),
         ),
       );
+      setCountryRegion(initialVehicle.countryRegion || "");
+      setCountryState(initialVehicle.countryState || "");
+      setInsuranceProvider(initialVehicle.insuranceProvider || "");
     } else {
       setName("My Main Car");
       setMarket(loadPreferredMarket());
@@ -109,6 +122,9 @@ export default function AddVehicleModal({
       setManualModel("");
       setManualEngine("");
       setProfileTags([]);
+      setCountryRegion("");
+      setCountryState("");
+      setInsuranceProvider("");
     }
     setSaveError(null);
     setSaving(false);
@@ -210,6 +226,12 @@ export default function AddVehicleModal({
         notes: initialVehicle?.notes,
         tags: nextTags,
         vcdb: useCatalog ? vcdb ?? undefined : initialVehicle?.vcdb,
+        countryRegion: countryRegion.trim() || undefined,
+        countryState:
+          countryRegion === "United States"
+            ? countryState.trim() || undefined
+            : undefined,
+        insuranceProvider: insuranceProvider.trim() || undefined,
       };
 
       if (isEdit && onSave) {
@@ -273,8 +295,75 @@ export default function AddVehicleModal({
             onChange={setProfileTags}
             canEdit={canEditTags}
             onLockedClick={() => setShowTagUpgrade(true)}
+            hint={
+              profileTags.includes("Modified")
+                ? t("legal.insurance.softTipDefault")
+                : undefined
+            }
           />
         </div>
+
+        <details className="mt-4 rounded-xl border border-slate-700/60 p-3">
+          <summary className="cursor-pointer text-sm text-slate-300">
+            {t("legal.insurance.settingsTitle")}{" "}
+            <span className="text-slate-500">
+              ({t("legal.insurance.optional")})
+            </span>
+          </summary>
+          <p className="mt-2 text-xs text-slate-400">
+            {t("legal.insurance.settingsHint")}
+          </p>
+          <div className="mt-3 space-y-3">
+            <select
+              value={countryRegion}
+              onChange={(e) => {
+                setCountryRegion(e.target.value);
+                if (e.target.value !== "United States") setCountryState("");
+              }}
+              className={inputClass}
+            >
+              <option value="">{t("legal.insurance.countrySkip")}</option>
+              {INSURANCE_COUNTRY_REGIONS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+            {countryRegion === "United States" ? (
+              <select
+                value={countryState}
+                onChange={(e) => setCountryState(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">{t("legal.insurance.stateSkip")}</option>
+                {US_STATE_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+            <div>
+              <input
+                list="vehicle-insurance-providers"
+                type="text"
+                value={insuranceProvider}
+                onChange={(e) => setInsuranceProvider(e.target.value)}
+                placeholder={t("legal.insurance.providerPlaceholder")}
+                className={inputClass}
+                autoComplete="off"
+              />
+              <datalist id="vehicle-insurance-providers">
+                {COMMON_INSURANCE_PROVIDERS.map((p) => (
+                  <option key={p} value={p} />
+                ))}
+              </datalist>
+              <p className="mt-1.5 text-[11px] text-slate-500">
+                {t("legal.insurance.providerHelp")}
+              </p>
+            </div>
+          </div>
+        </details>
 
         {!picker.make && (
           <details className="mt-3 rounded-xl border border-slate-700/60 p-3">

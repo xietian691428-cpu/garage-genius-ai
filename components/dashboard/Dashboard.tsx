@@ -41,6 +41,8 @@ import AddVehicleModal from "@/components/vehicles/AddVehicleModal";
 import CameraCapture from "@/components/chat/CameraCapture";
 import ObdConnectModal from "@/components/obd/ObdConnectModal";
 import { useTranslation } from "react-i18next";
+import { useObdPreference } from "@/hooks/useObdPreference";
+import { shouldShowObdConnectEntry } from "@/lib/obd-preference";
 import {
   buildObdBleDiagnosisPrompt,
 } from "@/lib/dtc";
@@ -124,6 +126,8 @@ export default function Dashboard({
 }: Props) {
   const { t } = useTranslation();
   const { isFree, features } = useSubscription();
+  const { pref: obdPref } = useObdPreference();
+  const showObdConnectEntry = shouldShowObdConnectEntry(obdPref);
   const vehicle = currentVehicle;
   const [marketFilter, setMarketFilter] = useState<"ALL" | VehicleMarketCode>(
     "ALL",
@@ -1119,15 +1123,17 @@ export default function Dashboard({
                     ? t("ai.analyzingPhoto")
                     : "Photo diagnosis & update"}
                 </button>
-                <button
-                  type="button"
-                  onClick={openObdConnect}
-                  disabled={showObdModal}
-                  className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-40"
-                >
-                  <Bluetooth className="h-5 w-5" />
-                  {t("obd.connectEntry")}
-                </button>
+                {showObdConnectEntry ? (
+                  <button
+                    type="button"
+                    onClick={openObdConnect}
+                    disabled={showObdModal}
+                    className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-40"
+                  >
+                    <Bluetooth className="h-5 w-5" />
+                    {t("obd.connectEntry")}
+                  </button>
+                ) : null}
               </div>
               <div className="flex flex-wrap justify-center gap-3">
                 <button
@@ -1659,8 +1665,9 @@ export default function Dashboard({
             </div>
             {!hasLiveSensorData(liveSensors) && (
               <p className="mt-4 text-center text-xs text-slate-500">
-                No live data yet — {t("obd.connectEntry")} (Chrome + BLE ELM327), then
-                Refresh Sensors.
+                {showObdConnectEntry
+                  ? `No live data yet — ${t("obd.connectEntry")} (Chrome + BLE ELM327), then Refresh Sensors.`
+                  : t("obd.noAdapterLiveHint")}
               </p>
             )}
             <button

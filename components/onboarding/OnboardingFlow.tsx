@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  Bluetooth,
   Camera,
   Car,
   Crosshair,
@@ -34,7 +35,7 @@ import {
   type DiySkillLevel,
 } from "@/lib/diy-skill";
 
-type Step = "welcome" | "market" | "skill" | "vehicle";
+type Step = "welcome" | "market" | "skill" | "obd" | "vehicle";
 
 type Props = {
   onComplete: (vehicle: VehicleInfo) => Promise<VehicleInfo>;
@@ -91,6 +92,8 @@ export default function OnboardingFlow({ onComplete }: Props) {
     return loadPreferredMarket();
   });
   const [diySkill, setDiySkill] = useState<DiySkillLevel>("beginner");
+  /** null = skipped / unset; true/false = explicit choice */
+  const [hasObdAdapter, setHasObdAdapter] = useState<boolean | null>(null);
   const [name, setName] = useState("Daily Driver");
   const [mileage, setMileage] = useState("");
   const [profileTags, setProfileTags] = useState<string[]>([]);
@@ -160,6 +163,20 @@ export default function OnboardingFlow({ onComplete }: Props) {
         } catch {
           /* non-blocking */
         }
+        if (hasObdAdapter !== null) {
+          try {
+            await fetch("/api/obd-preference", {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({ hasObdAdapter }),
+            });
+          } catch {
+            /* non-blocking */
+          }
+        }
       }
 
       const parsedMileage = Math.max(
@@ -214,12 +231,14 @@ export default function OnboardingFlow({ onComplete }: Props) {
     <div className="fixed inset-0 z-[80] overflow-y-auto bg-[#0a0f1c]">
       <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6">
         <div className="mb-6 flex items-center gap-2">
-          {(["welcome", "market", "skill", "vehicle"] as const).map((s) => {
+          {(["welcome", "market", "skill", "obd", "vehicle"] as const).map(
+            (s) => {
             const order = {
               welcome: 0,
               market: 1,
               skill: 2,
-              vehicle: 3,
+              obd: 3,
+              vehicle: 4,
             } as const;
             const active = order[step] >= order[s];
             const current = step === s;
@@ -235,7 +254,8 @@ export default function OnboardingFlow({ onComplete }: Props) {
                 }`}
               />
             );
-          })}
+          },
+          )}
         </div>
 
         {step === "welcome" ? (
@@ -295,7 +315,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
             </button>
             <div className="mb-2 flex items-center gap-2 text-cyan-300">
               <Globe2 className="h-4 w-4" />
-              <span className="text-sm font-medium">Step 2 of 4</span>
+              <span className="text-sm font-medium">Step 2 of 5</span>
             </div>
             <h1 className="mb-2 text-2xl font-bold text-white sm:text-3xl">
               Where was this car sold?
@@ -349,7 +369,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
             </button>
             <div className="mb-2 flex items-center gap-2 text-cyan-300">
               <Wrench className="h-4 w-4" />
-              <span className="text-sm font-medium">Step 3 of 4</span>
+              <span className="text-sm font-medium">Step 3 of 5</span>
             </div>
             <h1 className="mb-2 text-2xl font-bold text-white sm:text-3xl">
               How handy are you under the hood?
@@ -380,13 +400,13 @@ export default function OnboardingFlow({ onComplete }: Props) {
             </div>
             <button
               type="button"
-              onClick={() => setStep("vehicle")}
+              onClick={() => setStep("obd")}
               className="mt-auto flex min-h-[56px] w-full items-center justify-center rounded-2xl bg-cyan-500 text-base font-semibold text-black hover:bg-cyan-400"
             >
-              Continue to vehicle
+              Continue
             </button>
           </>
-        ) : (
+        ) : step === "obd" ? (
           <>
             <button
               type="button"
@@ -396,8 +416,76 @@ export default function OnboardingFlow({ onComplete }: Props) {
               ← Back
             </button>
             <div className="mb-2 flex items-center gap-2 text-cyan-300">
+              <Bluetooth className="h-4 w-4" />
+              <span className="text-sm font-medium">
+                {t("onboarding.obdStepLabel")}
+              </span>
+            </div>
+            <h1 className="mb-2 text-2xl font-bold text-white sm:text-3xl">
+              {t("onboarding.obdTitle")}
+            </h1>
+            <p className="mb-6 text-sm leading-relaxed text-slate-400">
+              {t("onboarding.obdHint")}
+            </p>
+            <div className="mb-4 grid gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setHasObdAdapter(true);
+                  setStep("vehicle");
+                }}
+                className={`rounded-2xl border px-4 py-3 text-left transition ${
+                  hasObdAdapter === true
+                    ? "border-cyan-400/70 bg-cyan-500/10"
+                    : "border-slate-800 bg-slate-900/40 hover:border-slate-600"
+                }`}
+              >
+                <p className="font-medium text-white">{t("obd.prefYes")}</p>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  {t("onboarding.obdYesHint")}
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHasObdAdapter(false);
+                  setStep("vehicle");
+                }}
+                className={`rounded-2xl border px-4 py-3 text-left transition ${
+                  hasObdAdapter === false
+                    ? "border-cyan-400/70 bg-cyan-500/10"
+                    : "border-slate-800 bg-slate-900/40 hover:border-slate-600"
+                }`}
+              >
+                <p className="font-medium text-white">{t("obd.prefNo")}</p>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  {t("onboarding.obdNoHint")}
+                </p>
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setHasObdAdapter(null);
+                setStep("vehicle");
+              }}
+              className="mt-auto w-full py-3 text-sm text-slate-400 hover:text-slate-200"
+            >
+              {t("onboarding.obdSkip")}
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => setStep("obd")}
+              className="mb-4 self-start text-sm text-slate-400 hover:text-slate-200"
+            >
+              ← Back
+            </button>
+            <div className="mb-2 flex items-center gap-2 text-cyan-300">
               <Sparkles className="h-4 w-4" />
-              <span className="text-sm font-medium">Step 4 of 4</span>
+              <span className="text-sm font-medium">Step 5 of 5</span>
             </div>
             <h1 className="mb-2 text-2xl font-bold text-white sm:text-3xl">
               Pick your exact vehicle

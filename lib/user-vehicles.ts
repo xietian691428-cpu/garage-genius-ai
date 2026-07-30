@@ -40,6 +40,10 @@ export type UserVehicleRow = {
   vcdb: VcdbResolvedConfig | null;
   /** Sales-market / owner-manual version (defaults to US if column missing) */
   market?: string | null;
+  /** Optional insurance jurisdiction — education tips only */
+  country_region?: string | null;
+  country_state?: string | null;
+  insurance_provider?: string | null;
   is_current: boolean;
   /** Soft-archive timestamp — null = active garage */
   archived_at?: string | null;
@@ -73,6 +77,9 @@ export function rowToVehicleInfo(row: UserVehicleRow): VehicleInfo {
     tags: row.tags ?? undefined,
     vcdb: row.vcdb ?? undefined,
     market: normalizeVehicleMarket(row.market),
+    countryRegion: row.country_region?.trim() || undefined,
+    countryState: row.country_state?.trim() || undefined,
+    insuranceProvider: row.insurance_provider?.trim() || undefined,
   };
 }
 
@@ -106,6 +113,9 @@ export function vehicleInfoToRow(
       vehicle.market,
       DEFAULT_VEHICLE_MARKET,
     ),
+    country_region: vehicle.countryRegion?.trim() || null,
+    country_state: vehicle.countryState?.trim() || null,
+    insurance_provider: vehicle.insuranceProvider?.trim() || null,
     is_current: options?.isCurrent ?? false,
   };
 }

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalDocLayout title="Privacy Policy" updated="July 28, 2026">
+    <LegalDocLayout title="Privacy Policy" updated="July 30, 2026">
       <section>
         <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
           1. Who we are
@@ -17,8 +17,15 @@ export default function PrivacyPage() {
         <p className="mt-2">
           Garage Genius AI (&quot;we&quot;, &quot;us&quot;) provides an AI DIY
           auto-repair coach for vehicle owners. This policy explains what we
-          collect and why. Contact: use in-app Settings or the support email on
-          your store listing / billing receipt.
+          collect and why. Contact:{" "}
+          <a
+            href="mailto:xietian691428@gmail.com"
+            className="text-cyan-400 hover:underline"
+          >
+            xietian691428@gmail.com
+          </a>
+          , in-app Settings, or the support email on your store listing /
+          billing receipt.
         </p>
       </section>
 
@@ -34,7 +41,9 @@ export default function PrivacyPage() {
           <li>
             <strong className="text-slate-200">Vehicle profile:</strong> year,
             make, model, mileage, market, tags, and related specs you enter or
-            match.
+            match. Optional fields may include country/region and an insurer
+            name used only to personalize general insurance reminders — not to
+            adjudicate claims or store full policy terms.
           </li>
           <li>
             <strong className="text-slate-200">Chat &amp; coach usage:</strong>{" "}
@@ -73,6 +82,10 @@ export default function PrivacyPage() {
         </h2>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>Provide diagnosis, coach playbooks, dashboard checks, and vehicle tools.</li>
+          <li>
+            Show optional general reminders about modifications / non-OEM parts
+            and insurance (education only — we do not determine claim coverage).
+          </li>
           <li>
             Read photos / receipts you submit to extract repair context (e.g.
             symptoms, DTCs, shop invoice line items) and return guidance.
@@ -139,8 +152,14 @@ export default function PrivacyPage() {
           (or the applicable app store), disable push reminders, limit what
           vehicle or photo data you enter, and delete your account. For EU / UK
           users, you may have rights of access, correction, erasure, and
-          objection under applicable law — contact support to exercise them if
-          in-app tools are not enough.
+          objection under applicable law — contact{" "}
+          <a
+            href="mailto:xietian691428@gmail.com"
+            className="text-cyan-400 hover:underline"
+          >
+            xietian691428@gmail.com
+          </a>{" "}
+          to exercise them if in-app tools are not enough.
         </p>
       </section>
 

@@ -17,7 +17,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { extractPartsData } from "@/lib/utils/parts";
-import { extractFocusCommand } from "@/lib/parse-ai-focus";
+import { extractFocusCommand, sanitizeFocusCommand } from "@/lib/parse-ai-focus";
 import PartsRecommendationTable from "../parts/PartsRecommendationTable";
 import { speakText, stopSpeaking } from "@/lib/browser-voice";
 import { getFollowUpChips } from "@/lib/chat-repair-loop";
@@ -53,7 +53,9 @@ export default function MessageBubble({
       );
   const partsData = !isUser ? extractPartsData(message.content) : null;
   const parts = messageImages(message);
-  const focusCmd = !isUser ? extractFocusCommand(message.content) : null;
+  const focusCmd = !isUser
+    ? sanitizeFocusCommand(extractFocusCommand(message.content), "focus.MessageBubble")
+    : null;
   const [copied, setCopied] = useState(false);
 
   const handleReplay = () => {

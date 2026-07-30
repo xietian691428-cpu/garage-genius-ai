@@ -24,6 +24,7 @@ import {
 import { toCoachVehicleContext } from "@/lib/coach-scenarios/vehicle-context";
 import CoachScenarioPlayer from "@/components/coach/CoachScenarioPlayer";
 import DtcEntryBar from "@/components/chat/DtcEntryBar";
+import InsuranceModTip from "@/components/legal/InsuranceModTip";
 import {
   buildDtcDiagnosisPrompt,
   buildObdBleDiagnosisPrompt,
@@ -315,6 +316,11 @@ export default function CoachLibrary({
           />
         ) : null}
         <div className="min-h-0 flex-1">
+          {activeSlug === "maintenance_modified_car" ? (
+            <div className="border-b border-slate-800 bg-[#0a0f1c] px-3 py-2 sm:px-4">
+              <InsuranceModTip vehicle={currentVehicle} />
+            </div>
+          ) : null}
           <CoachScenarioPlayer
             scenario={scenario}
             vehicle={vehicleCtx}

@@ -29,6 +29,15 @@ export interface VehicleInfo {
   lastMaintenance?: string; // YYYY-MM-DD
   notes?: string;
   tags?: string[]; // 如 ["EV", "Modified", "Daily Driver"]
+  /**
+   * Optional insurance jurisdiction (e.g. "United States").
+   * Education tips only — never used to adjudicate coverage.
+   */
+  countryRegion?: string;
+  /** Optional US state / province for insurance tips. */
+  countryState?: string;
+  /** Optional insurer name for soft tip personalization. */
+  insuranceProvider?: string;
   /** Authoritative AutoCare VCdb match when picked via cascade UI */
   vcdb?: VcdbResolvedConfig;
 }

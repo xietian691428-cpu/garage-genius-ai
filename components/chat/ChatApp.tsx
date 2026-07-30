@@ -24,7 +24,7 @@ import { supabase } from "@/lib/supabase";
 import { useTokenUsage } from "@/hooks/useTokenUsage";
 import { useSubscription } from "@/hooks/useSubscription";
 import UpgradeButton from "@/components/ui/UpgradeButton";
-import { extractFocusCommand, resolveFocusCommand } from "@/lib/parse-ai-focus";
+import { extractFocusCommand, resolveFocusCommand, sanitizeFocusCommand } from "@/lib/parse-ai-focus";
 import type { FocusCommand } from "@/lib/types/focus";
 import type { RagKnowledgeHit } from "@/lib/types/rag";
 import { maintenanceService } from "@/lib/maintenance-records";
@@ -468,10 +468,12 @@ export default function ChatApp({
       setRequestError(null);
       void refreshTokenUsage();
 
-      const focus =
+      const focus = sanitizeFocusCommand(
         data.suggestedFocus ||
-        resolveFocusCommand(assistantContent, data.ragHits) ||
-        extractFocusCommand(assistantContent);
+          resolveFocusCommand(assistantContent, data.ragHits) ||
+          extractFocusCommand(assistantContent),
+        "focus.ChatApp",
+      );
       if (focus && onFocusDetected) {
         onFocusDetected(focus);
       }

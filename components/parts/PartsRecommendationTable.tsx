@@ -16,6 +16,7 @@ import {
   storeLabelFromUrl,
   type PartsDataItem,
 } from "@/lib/utils/parts";
+import InsuranceModTip from "@/components/legal/InsuranceModTip";
 
 type Props = {
   parts: PartsDataItem[];
@@ -163,6 +164,10 @@ export default function PartsRecommendationTable({
       <p className="border-b border-slate-800/80 px-4 py-2 text-[11px] leading-relaxed text-slate-400">
         {t("parts.compareHint")}
       </p>
+
+      <div className="border-b border-slate-800/80 px-3 py-2">
+        <InsuranceModTip vehicle={vehicle} />
+      </div>
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[520px] text-left text-sm">

@@ -5,10 +5,89 @@ import {
 } from "@/lib/types/focus";
 import type { RagKnowledgeHit } from "@/lib/types/rag";
 import { getDashboardRegion } from "@/lib/dashboard-regions";
+import {
+  containsCjkText,
+  filterEnglishKnowledgeHits,
+  isNonEnglishKnowledgeHit,
+  logCjkRagLeakage,
+} from "@/lib/rag-language-guard";
 
 const FOCUS_TAG_REGEX = /<focus>\s*([a-z0-9_\-\s]+)\s*<\/focus>/i;
 const FOCUS_DATA_REGEX = /<focus-data>\s*([\s\S]*?)\s*<\/focus-data>/i;
 const FOCUS_JSON_FENCE_REGEX = /```(?:focus-json|json)\s*\n([\s\S]*?)\n```/i;
+
+/** Fixed EN checklist when Focus has no safe English steps after sanitization. */
+export const FOCUS_ENGLISH_FALLBACK_CHECKLIST: string[] = [
+  "Confirm the vehicle is safe to inspect (parked, brake set, cool if needed).",
+  "Visually check the highlighted area for leaks, damage, loose connectors, or wear.",
+  "Note any warning lights, unusual smells, noises, or recent work.",
+  "If a code is available, enter it or upload an OBD screenshot — do not guess.",
+  "If unsure or the repair is high-risk, stop and consult a qualified technician.",
+];
+
+export { containsCjkText };
+
+function englishOnlyString(
+  value?: string | null,
+  logPath?: string,
+): string | undefined {
+  if (!value?.trim()) return undefined;
+  if (containsCjkText(value)) {
+    if (logPath) {
+      logCjkRagLeakage({
+        path: logPath,
+        reason: "focus.field",
+        title: value,
+      });
+    }
+    return undefined;
+  }
+  return value.trim();
+}
+
+function englishOnlyStrings(
+  values?: string[],
+  logPath?: string,
+): string[] | undefined {
+  if (!values?.length) return undefined;
+  const list = values
+    .map((s) => englishOnlyString(s, logPath))
+    .filter((s): s is string => Boolean(s));
+  return list.length > 0 ? list : undefined;
+}
+
+/** Drop CJK strings from a Focus payload; keep part / English fields. */
+export function sanitizeFocusCommand(
+  command: FocusCommand | null,
+  path = "focus.sanitizeFocusCommand",
+): FocusCommand | null {
+  if (!command) return null;
+
+  const hadCjk =
+    containsCjkText(command.message) ||
+    containsCjkText(command.action) ||
+    (command.steps || []).some((s) => containsCjkText(s)) ||
+    (command.tools || []).some((s) => containsCjkText(s)) ||
+    (command.safetyNotes || []).some((s) => containsCjkText(s));
+
+  if (hadCjk) {
+    logCjkRagLeakage({
+      path,
+      reason: "focus.field",
+      title: command.message || command.action || command.part,
+    });
+  }
+
+  return {
+    type: "focus",
+    part: command.part,
+    message: englishOnlyString(command.message),
+    action: englishOnlyString(command.action),
+    steps: englishOnlyStrings(command.steps),
+    tools: englishOnlyStrings(command.tools),
+    safetyNotes: englishOnlyStrings(command.safetyNotes),
+  };
+}
 
 const PART_ALIASES: Record<string, FocusPartId> = {
   engine: "engine",
@@ -129,12 +208,17 @@ function parseFocusObject(raw: unknown): FocusCommand | null {
   return {
     type: "focus",
     part,
-    message: typeof obj.message === "string" ? obj.message.trim() : undefined,
-    action: typeof obj.action === "string" ? obj.action.trim() : undefined,
-    steps: asStringArray(obj.steps),
-    tools: asStringArray(obj.tools),
-    safetyNotes:
+    message: englishOnlyString(
+      typeof obj.message === "string" ? obj.message.trim() : undefined,
+    ),
+    action: englishOnlyString(
+      typeof obj.action === "string" ? obj.action.trim() : undefined,
+    ),
+    steps: englishOnlyStrings(asStringArray(obj.steps)),
+    tools: englishOnlyStrings(asStringArray(obj.tools)),
+    safetyNotes: englishOnlyStrings(
       asStringArray(obj.safetyNotes) ?? asStringArray(obj.safety),
+    ),
   };
 }
 
@@ -196,14 +280,33 @@ export function extractFocusFromRagHits(
 ): FocusCommand | null {
   if (!hits?.length) return null;
 
-  const ranked = [...hits].sort(
+  // Hard-exclude zh / CJK hits (logs blocked ids) — never use Chinese title/content.
+  const englishHits = filterEnglishKnowledgeHits(
+    hits,
+    "focus.extractFocusFromRagHits",
+  );
+  const ranked = [...englishHits].sort(
     (a, b) => (b.similarity ?? 0) - (a.similarity ?? 0),
   );
 
   for (const hit of ranked) {
+    // Never feed Chinese title/content into Focus parsers.
+    if (containsCjkText(hit.title) || containsCjkText(hit.content)) {
+      logCjkRagLeakage({
+        path: "focus.extractFocusFromRagHits.skip",
+        reason: "focus.field",
+        hitId: hit.id,
+        title: hit.title,
+      });
+      continue;
+    }
+
+    const safeTitle = englishOnlyString(hit.title);
+    const safeContent = hit.content?.trim() || "";
+
     // 1) Explicit markers inside knowledge content / title
     const fromContent = extractFocusCommand(
-      `${hit.title ?? ""}\n${hit.content ?? ""}`,
+      `${safeTitle ?? ""}\n${safeContent}`,
     );
     if (fromContent) {
       return enrichFocusFromHit(fromContent, hit);
@@ -215,12 +318,16 @@ export function extractFocusFromRagHits(
       parseFocusObject(meta.focus) ||
       parseFocusObject({
         type: "focus",
-        part: meta.part ?? meta.region ?? meta.focusPart ?? meta.dashboard_region,
+        part:
+          meta.part ?? meta.region ?? meta.focusPart ?? meta.dashboard_region,
         message:
-          typeof meta.message === "string"
+          typeof meta.message === "string" && !containsCjkText(meta.message)
             ? meta.message
-            : hit.title || undefined,
-        action: typeof meta.action === "string" ? meta.action : undefined,
+            : safeTitle || undefined,
+        action:
+          typeof meta.action === "string" && !containsCjkText(meta.action)
+            ? meta.action
+            : undefined,
         steps: meta.steps,
         tools: meta.tools,
         safetyNotes: meta.safetyNotes ?? meta.safety,
@@ -230,15 +337,15 @@ export function extractFocusFromRagHits(
       return enrichFocusFromHit(metaFocus, hit);
     }
 
-    // 3) category → dashboard part
+    // 3) category → dashboard part (English message only — never Chinese titles)
     const fromCategory = normalizeFocusPart(hit.category);
     if (fromCategory) {
       return enrichFocusFromHit(
         {
           type: "focus",
           part: fromCategory,
-          message: hit.title
-            ? `Focus on ${hit.title}`
+          message: safeTitle
+            ? `Focus on ${safeTitle}`
             : `Primary area: ${fromCategory}`,
         },
         hit,
@@ -253,15 +360,36 @@ function enrichFocusFromHit(
   command: FocusCommand,
   hit: RagKnowledgeHit,
 ): FocusCommand {
-  const stepsFromContent = extractNumberedSteps(hit.content);
-  return {
+  // Refuse Chinese content for steps/message even if somehow present.
+  if (containsCjkText(hit.title) || containsCjkText(hit.content)) {
+    logCjkRagLeakage({
+      path: "focus.enrichFocusFromHit",
+      reason: "focus.field",
+      hitId: hit.id,
+      title: hit.title,
+    });
+    return (
+      sanitizeFocusCommand({
+        type: "focus",
+        part: command.part,
+        message: `Primary area: ${command.part}`,
+      })!
+    );
+  }
+
+  const stepsFromContent = englishOnlyStrings(
+    extractNumberedSteps(hit.content),
+    "focus.enrichFocusFromHit.steps",
+  );
+  const englishTitle = englishOnlyString(hit.title);
+  return sanitizeFocusCommand({
     ...command,
-    message: command.message || hit.title || undefined,
+    message: englishOnlyString(command.message) || englishTitle || undefined,
     steps:
       command.steps && command.steps.length > 0
-        ? command.steps
+        ? englishOnlyStrings(command.steps)
         : stepsFromContent,
-  };
+  })!;
 }
 
 /** Pull short numbered diagnostic/repair lines from knowledge text. */
@@ -285,28 +413,30 @@ export function mergeFocusCommands(
   fromReply: FocusCommand | null,
   fromRag: FocusCommand | null,
 ): FocusCommand | null {
-  if (!fromReply && !fromRag) return null;
-  if (!fromReply) return fromRag;
-  if (!fromRag) return fromReply;
+  const a = sanitizeFocusCommand(fromReply);
+  const b = sanitizeFocusCommand(fromRag);
+  if (!a && !b) return null;
+  if (!a) return b;
+  if (!b) return a;
 
-  return {
+  return sanitizeFocusCommand({
     type: "focus",
-    part: fromReply.part,
-    message: fromReply.message || fromRag.message,
-    action: fromReply.action || fromRag.action,
+    part: a.part,
+    message: a.message || b.message,
+    action: a.action || b.action,
     steps:
-      fromReply.steps && fromReply.steps.length > 0
-        ? fromReply.steps
-        : fromRag.steps,
+      a.steps && a.steps.length > 0
+        ? a.steps
+        : b.steps,
     tools:
-      fromReply.tools && fromReply.tools.length > 0
-        ? fromReply.tools
-        : fromRag.tools,
+      a.tools && a.tools.length > 0
+        ? a.tools
+        : b.tools,
     safetyNotes:
-      fromReply.safetyNotes && fromReply.safetyNotes.length > 0
-        ? fromReply.safetyNotes
-        : fromRag.safetyNotes,
-  };
+      a.safetyNotes && a.safetyNotes.length > 0
+        ? a.safetyNotes
+        : b.safetyNotes,
+  });
 }
 
 /**
@@ -333,30 +463,37 @@ export function stripFocusFromContent(content: string): string {
     .trim();
 }
 
-/** Build display steps when AI only sent part/action. */
+/** Build display steps when AI only sent part/action. Never surfaces CJK. */
 export function buildFocusSteps(command: FocusCommand): string[] {
-  if (command.steps && command.steps.length > 0) return command.steps;
+  const englishSteps = englishOnlyStrings(
+    command.steps,
+    "focus.buildFocusSteps",
+  );
+  if (englishSteps && englishSteps.length > 0) return englishSteps;
 
   const region = getDashboardRegion(command.part);
   const steps: string[] = [];
 
-  if (command.message) {
-    steps.push(command.message);
+  const message = englishOnlyString(command.message, "focus.buildFocusSteps");
+  if (message) {
+    steps.push(message);
   }
-  if (command.action) {
-    steps.push(`Primary action: ${humanizeAction(command.action)}.`);
+  const action = englishOnlyString(command.action, "focus.buildFocusSteps");
+  if (action) {
+    steps.push(`Primary action: ${humanizeAction(action)}.`);
   }
-  if (region) {
+  if (region?.quickChecklist?.length) {
     steps.push(...region.quickChecklist);
   }
   if (steps.length === 0) {
-    steps.push("Inspect this area carefully and note anything unusual.");
+    steps.push(...FOCUS_ENGLISH_FALLBACK_CHECKLIST);
   }
   return steps;
 }
 
 export function buildFocusTools(command: FocusCommand): string[] {
-  if (command.tools && command.tools.length > 0) return command.tools;
+  const tools = englishOnlyStrings(command.tools);
+  if (tools && tools.length > 0) return tools;
   return [
     "Flashlight or phone light",
     "Gloves",
@@ -366,9 +503,10 @@ export function buildFocusTools(command: FocusCommand): string[] {
 }
 
 export function buildFocusSafety(command: FocusCommand): string[] {
+  const notes = englishOnlyStrings(command.safetyNotes);
   const base =
-    command.safetyNotes && command.safetyNotes.length > 0
-      ? command.safetyNotes
+    notes && notes.length > 0
+      ? notes
       : [
           "Park on level ground, set the parking brake, and chock wheels if needed.",
           "Never work under a vehicle supported only by a jack.",

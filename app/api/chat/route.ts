@@ -43,6 +43,7 @@ import {
 import { fitmentSearchString } from "@/lib/vcdb/format";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
 import { normalizeDiySkill } from "@/lib/diy-skill";
+import { parseObdAdapterPreference } from "@/lib/obd-preference";
 
 export const runtime = "nodejs";
 
@@ -221,18 +222,22 @@ export async function POST(request: NextRequest) {
         : content.trim() ||
           `${fitmentSearchString(currentVehicle)} diagnosis`;
 
-    // DIY skill band (profiles.diy_skill) — tone + soft RAG ranking
+    // DIY skill band + OBD adapter preference (profiles)
     let diySkill = "beginner";
+    let obdPreference = parseObdAdapterPreference(null);
     try {
       const admin = createSupabaseAdmin();
       const { data: prof } = await admin
         .from("profiles")
-        .select("diy_skill")
+        .select(
+          "diy_skill, has_obd_adapter, has_obd_adapter_source, has_obd_adapter_updated_at",
+        )
         .eq("id", user.id)
         .maybeSingle();
       diySkill = normalizeDiySkill(prof?.diy_skill);
+      obdPreference = parseObdAdapterPreference(prof);
     } catch {
-      /* keep beginner */
+      /* keep defaults */
     }
 
     const ragHits = await ragService.retrieveRelevantKnowledge(
@@ -318,6 +323,7 @@ export async function POST(request: NextRequest) {
           affiliateCatalog,
           maintenanceCap,
           diySkill,
+          obdPreference,
         ),
         ...userMessages,
       ],

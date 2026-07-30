@@ -10,6 +10,7 @@ import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { supabase as browserSupabase } from "@/lib/supabase";
 import type { RagKnowledgeHit } from "@/lib/types/rag";
 import {
+  filterEnglishKnowledgeHits,
   formatKnowledgeForPrompt,
   prioritizeRagHits,
 } from "@/lib/rag-prompt";
@@ -347,13 +348,19 @@ export const ragService = {
     const enrichedQuery = `${vehicle.year} ${vehicle.make} ${vehicle.model} ${market} ${trimmed}`;
 
     const finalize = (hits: RagKnowledgeHit[]) =>
-      prioritizeRagHits(softFilterHitsByMarket(hits, market), {
-        diySkill: options?.diySkill,
-        make: vehicle.make,
-        model: vehicle.model,
-        year: vehicle.year,
-        mileage: options?.mileage ?? null,
-      });
+      prioritizeRagHits(
+        softFilterHitsByMarket(
+          filterEnglishKnowledgeHits(hits, "rag.retrieveRelevantKnowledge"),
+          market,
+        ),
+        {
+          diySkill: options?.diySkill,
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year,
+          mileage: options?.mileage ?? null,
+        },
+      );
 
     try {
       // Optional embedding — absence is fine for Phase A (FTS)

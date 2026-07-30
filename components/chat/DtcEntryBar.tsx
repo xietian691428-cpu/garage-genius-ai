@@ -7,6 +7,8 @@ import DtcCodeModal from "@/components/chat/DtcCodeModal";
 import ObdConnectModal from "@/components/obd/ObdConnectModal";
 import { compressImageDataUrl } from "@/lib/image";
 import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
+import { useObdPreference } from "@/hooks/useObdPreference";
+import { shouldShowObdConnectEntry } from "@/lib/obd-preference";
 
 type Props = {
   disabled?: boolean;
@@ -20,6 +22,7 @@ type Props = {
 
 /**
  * Shared fault-code / OBD screenshot / Connect OBD entry (Chat + Check Engine).
+ * Connect OBD is shown when the user has an adapter or preference is unset.
  * Does not modify CoachScenarioPlayer internals.
  */
 export default function DtcEntryBar({
@@ -30,10 +33,14 @@ export default function DtcEntryBar({
   onObdBleSession,
 }: Props) {
   const { t } = useTranslation();
+  const { pref } = useObdPreference();
   const [modalOpen, setModalOpen] = useState(false);
   const [bleOpen, setBleOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const showConnect =
+    Boolean(onObdBleSession) && shouldShowObdConnectEntry(pref);
 
   const pickObd = () => {
     if (disabled || busy) return;
@@ -79,7 +86,7 @@ export default function DtcEntryBar({
         onClose={() => setModalOpen(false)}
         onSubmit={onCodeSubmit}
       />
-      {onObdBleSession ? (
+      {showConnect && onObdBleSession ? (
         <ObdConnectModal
           open={bleOpen}
           onClose={() => setBleOpen(false)}
@@ -94,7 +101,7 @@ export default function DtcEntryBar({
         onChange={onFile}
       />
       <div className={wrap}>
-        {onObdBleSession ? (
+        {showConnect ? (
           <button
             type="button"
             disabled={disabled || busy}

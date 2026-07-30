@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalDocLayout title="Terms of Service" updated="July 28, 2026">
+    <LegalDocLayout title="Terms of Service" updated="July 30, 2026">
       <section>
         <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
           1. Agreement
@@ -31,12 +31,17 @@ export default function TermsPage() {
         <p className="mt-2">
           Garage Genius AI provides <strong className="text-slate-200">general DIY
           educational guidance only</strong>. It is not a licensed mechanic,
-          dealership, or certified repair shop. This is general guidance only.
-          Always refer to your vehicle’s official owner’s manual or consult a
-          qualified technician. Garage Genius AI is not responsible for any
-          damage, injury, or costs resulting from DIY actions or reliance on
-          this information — especially brakes, airbags, fuel systems,
-          jacking/lifting, high-voltage hybrids/EVs, and structural repairs.
+          dealership, or certified repair shop. It does{" "}
+          <strong className="text-slate-200">not</strong> provide insurance or
+          legal advice and never determines whether a claim will be covered.
+          Reminders about modifications or non-OEM parts are general information
+          only — always check your policy or contact your insurer. This is
+          general guidance only. Always refer to your vehicle’s official owner’s
+          manual or consult a qualified technician. Garage Genius AI is not
+          responsible for any damage, injury, or costs resulting from DIY actions
+          or reliance on this information — especially brakes, airbags, fuel
+          systems, jacking/lifting, high-voltage hybrids/EVs, and structural
+          repairs.
         </p>
       </section>
 
@@ -142,8 +147,15 @@ export default function TermsPage() {
         <p className="mt-2">
           We may update these Terms; the &quot;Last updated&quot; date will
           change. Continued use after changes means you accept the revised
-          Terms. Questions: Settings → Billing help, or the support channel on
-          your store listing.
+          Terms. Questions:{" "}
+          <a
+            href="mailto:xietian691428@gmail.com"
+            className="text-cyan-400 hover:underline"
+          >
+            xietian691428@gmail.com
+          </a>
+          , Settings → Billing help, or the support channel on your store
+          listing.
         </p>
       </section>
     </LegalDocLayout>

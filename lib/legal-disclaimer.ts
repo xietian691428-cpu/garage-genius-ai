@@ -35,6 +35,14 @@ export const LEGAL_SOFT_LANGUAGE_PROMPT = `
 - Remind the owner that DIY carries risk of damage, injury, or extra cost.
 `.trim();
 
+/** Canonical EN insurance disclaimer (mirrored in i18n `legal.insurance.disclaimer`). */
+export const LEGAL_INSURANCE_DISCLAIMER_EN =
+  "Modifications or non-OEM parts can affect insurance coverage. Rules vary by country, state, and insurer. This is general information only — always check your policy or contact your insurer before modifying your vehicle. Garage Genius AI does not provide insurance or legal advice.";
+
+/** Canonical ES insurance disclaimer (mirrored in i18n). */
+export const LEGAL_INSURANCE_DISCLAIMER_ES =
+  "Las modificaciones o piezas que no sean del fabricante original pueden afectar la cobertura del seguro. Las normas varían según el país, el estado y la aseguradora. Esta es información general: consulte siempre su póliza o contacte a su aseguradora antes de modificar el vehículo. Garage Genius AI no ofrece asesoramiento de seguros ni legal.";
+
 const HIGH_RISK_PATTERN =
   /\b(brake|brakes|rotor|caliper|jack|jacking|lift|hoist|stands?|battery|airbag|srs|high[\s-]?voltage|hv\b|ev battery|under\s+the\s+(car|vehicle)|fuel\s+rail|fuel\s+line|strut\s+spring|coil\s+spring|compression|hot\s+coolant|radiator\s+cap|exhaust\s+manifold|timing\s+belt|clutch)\b/i;
 
