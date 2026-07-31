@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { startTokenRecharge } from "@/lib/billing";
+import {
+  BILLING_RECHARGE_UNAVAILABLE,
+  toUserFacingBillingError,
+} from "@/lib/billing-errors";
 import { TOKEN_RECHARGE_PACKS } from "@/lib/types/tokens";
 import TokenDisplay from "@/components/ui/token-display";
 
@@ -30,7 +34,7 @@ export default function RechargePage() {
     try {
       await startTokenRecharge(tokens, price);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Recharge failed");
+      setError(toUserFacingBillingError(err, BILLING_RECHARGE_UNAVAILABLE));
       setLoading(null);
     }
   };

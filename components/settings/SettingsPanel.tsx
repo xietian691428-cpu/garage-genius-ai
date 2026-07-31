@@ -5,6 +5,10 @@ import { useAuth } from "@/hooks/useAuth";
 import TokenDisplay from "@/components/ui/token-display";
 import { useSubscription } from "@/hooks/useSubscription";
 import { openBillingPortal } from "@/lib/billing";
+import {
+  BILLING_PORTAL_UNAVAILABLE,
+  toUserFacingBillingError,
+} from "@/lib/billing-errors";
 import { useState } from "react";
 import { TrialStatusBanner } from "@/components/subscription/TrialBanners";
 import LocaleSwitcher from "@/components/i18n/LocaleSwitcher";
@@ -52,7 +56,7 @@ export default function SettingsPanel({
     try {
       await openBillingPortal();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Portal failed");
+      setError(toUserFacingBillingError(err, BILLING_PORTAL_UNAVAILABLE));
       setBusy(false);
     }
   };

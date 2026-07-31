@@ -12,6 +12,10 @@ import {
 } from "@/lib/types/subscription";
 import { startCheckout, openBillingPortal } from "@/lib/billing";
 import {
+  BILLING_PORTAL_UNAVAILABLE,
+  toUserFacingBillingError,
+} from "@/lib/billing-errors";
+import {
   getBillingMode,
   nativeUpgradeBlockedMessage,
 } from "@/lib/native-platform";
@@ -116,7 +120,7 @@ export default function PricingCards({
         setBusyPlan(planTier);
         await openBillingPortal();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Could not open portal");
+        setError(toUserFacingBillingError(err, BILLING_PORTAL_UNAVAILABLE));
         setBusyPlan(null);
       }
       return;
@@ -126,7 +130,7 @@ export default function PricingCards({
       setBusyPlan(planTier);
       await startCheckout({ plan: planTier, interval });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Checkout failed");
+      setError(toUserFacingBillingError(err));
       setBusyPlan(null);
     }
   };

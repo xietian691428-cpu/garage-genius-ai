@@ -11,6 +11,10 @@ import {
 } from "@/lib/qa-mode";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { assertEmailVerified } from "@/lib/ai-abuse";
+import {
+  BILLING_RECHARGE_UNAVAILABLE,
+  toUserFacingBillingError,
+} from "@/lib/billing-errors";
 
 export const runtime = "nodejs";
 
@@ -151,8 +155,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: session.url, sessionId: session.id });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Recharge failed";
     console.error("Stripe recharge error:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: toUserFacingBillingError(err, BILLING_RECHARGE_UNAVAILABLE) },
+      { status: 500 },
+    );
   }
 }

@@ -15,8 +15,16 @@ let stripeClient: Stripe | null = null;
 export function getStripe(): Stripe {
   if (stripeClient) return stripeClient;
 
-  const key = process.env.STRIPE_SECRET_KEY;
+  const key = process.env.STRIPE_SECRET_KEY?.trim();
   if (!key) {
+    throw new Error("Missing STRIPE_SECRET_KEY");
+  }
+
+  // Catch mis-pasted Price IDs / publishable keys into the secret slot early.
+  if (!key.startsWith("sk_test_") && !key.startsWith("sk_live_")) {
+    console.error(
+      "[stripe] STRIPE_SECRET_KEY must start with sk_test_ or sk_live_ (got unexpected format).",
+    );
     throw new Error("Missing STRIPE_SECRET_KEY");
   }
 

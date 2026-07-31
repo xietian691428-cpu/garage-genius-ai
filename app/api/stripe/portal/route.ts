@@ -9,6 +9,10 @@ import {
   qaPaymentDisabledMessage,
 } from "@/lib/qa-mode";
 import { getAppBaseUrl } from "@/lib/app-url";
+import {
+  BILLING_PORTAL_UNAVAILABLE,
+  toUserFacingBillingError,
+} from "@/lib/billing-errors";
 
 export const runtime = "nodejs";
 
@@ -54,8 +58,9 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (profileError) {
+      console.error("[stripe/portal] profile load failed:", profileError.message);
       return NextResponse.json(
-        { error: profileError.message },
+        { error: BILLING_PORTAL_UNAVAILABLE },
         { status: 500 },
       );
     }
@@ -75,8 +80,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Portal failed";
     console.error("Stripe portal error:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: toUserFacingBillingError(err, BILLING_PORTAL_UNAVAILABLE) },
+      { status: 500 },
+    );
   }
 }

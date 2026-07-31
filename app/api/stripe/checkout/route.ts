@@ -19,6 +19,10 @@ import {
 } from "@/lib/qa-mode";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { assertEmailVerified } from "@/lib/ai-abuse";
+import {
+  BILLING_CHECKOUT_UNAVAILABLE,
+  toUserFacingBillingError,
+} from "@/lib/billing-errors";
 
 export const runtime = "nodejs";
 
@@ -119,8 +123,9 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (profileError) {
+      console.error("[stripe/checkout] profile load failed:", profileError.message);
       return NextResponse.json(
-        { error: profileError.message },
+        { error: BILLING_CHECKOUT_UNAVAILABLE },
         { status: 500 },
       );
     }
@@ -179,8 +184,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Checkout failed";
     console.error("Stripe checkout error:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: toUserFacingBillingError(err, BILLING_CHECKOUT_UNAVAILABLE) },
+      { status: 500 },
+    );
   }
 }

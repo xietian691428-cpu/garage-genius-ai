@@ -8,6 +8,12 @@ import {
   getBillingMode,
   nativeUpgradeBlockedMessage,
 } from "@/lib/native-platform";
+import {
+  BILLING_CHECKOUT_UNAVAILABLE,
+  BILLING_PORTAL_UNAVAILABLE,
+  BILLING_RECHARGE_UNAVAILABLE,
+  toUserFacingBillingError,
+} from "@/lib/billing-errors";
 
 async function authHeaders(): Promise<HeadersInit> {
   const {
@@ -52,7 +58,12 @@ export async function startCheckout(
 
   const data = (await res.json()) as { url?: string; error?: string };
   if (!res.ok || !data.url) {
-    throw new Error(data.error ?? "Unable to start checkout.");
+    throw new Error(
+      toUserFacingBillingError(
+        data.error ?? "Unable to start checkout.",
+        BILLING_CHECKOUT_UNAVAILABLE,
+      ),
+    );
   }
 
   window.location.assign(data.url);
@@ -75,7 +86,12 @@ export async function openBillingPortal() {
 
   const data = (await res.json()) as { url?: string; error?: string };
   if (!res.ok || !data.url) {
-    throw new Error(data.error ?? "Unable to open billing portal.");
+    throw new Error(
+      toUserFacingBillingError(
+        data.error ?? "Unable to open billing portal.",
+        BILLING_PORTAL_UNAVAILABLE,
+      ),
+    );
   }
 
   window.location.assign(data.url);
@@ -93,7 +109,12 @@ export async function startTokenRecharge(tokens: number, priceUsd: number) {
 
   const data = (await res.json()) as { url?: string; error?: string };
   if (!res.ok || !data.url) {
-    throw new Error(data.error ?? "Unable to start token recharge.");
+    throw new Error(
+      toUserFacingBillingError(
+        data.error ?? "Unable to start token recharge.",
+        BILLING_RECHARGE_UNAVAILABLE,
+      ),
+    );
   }
 
   window.location.assign(data.url);

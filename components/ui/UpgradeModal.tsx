@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Check, Sparkles, X } from "lucide-react";
 import { startCheckout } from "@/lib/billing";
+import { toUserFacingBillingError } from "@/lib/billing-errors";
 import {
   getBillingMode,
   nativeUpgradeBlockedMessage,
@@ -58,7 +59,7 @@ export default function UpgradeModal({
     try {
       await startCheckout({ plan: "pro", interval });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Checkout failed");
+      setError(toUserFacingBillingError(err));
       setBusy(null);
     }
   };
