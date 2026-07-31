@@ -22,7 +22,14 @@ export const metadata: Metadata = {
   title: "Garage Genius AI — DIY Auto Repair Coach",
   description:
     "AI diagnosis, vehicle dashboard, parts recommendations, and Pro / trial voice coaching for US & EU DIY car owners. Free to start with a 14-day Pro trial.",
-  icons: { icon: "/favicon.ico" },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/icon.png", type: "image/png", sizes: "32x32" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
