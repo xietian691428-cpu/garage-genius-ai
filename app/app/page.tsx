@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, Suspense } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthGate from "@/components/auth/AuthGate";
 import Sidebar from "@/components/layout/Sidebar";
@@ -15,9 +15,11 @@ import type { FocusCommand } from "@/lib/types/focus";
 import { TrialEndedModal } from "@/components/subscription/TrialBanners";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useVehicles } from "@/hooks/useVehicles";
+import { useBrowserChromeInset } from "@/hooks/useBrowserChromeInset";
 import QaModeBanner from "@/components/qa/QaModeBanner";
 import VerifyEmailBanner from "@/components/auth/VerifyEmailBanner";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
+import { isNativeCapacitor } from "@/lib/native-platform";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 import type { VehicleInfo } from "@/lib/types/chat";
 import {
@@ -67,6 +69,15 @@ function GarageAppInner() {
     archiveVehicle,
     removeVehicle,
   } = useVehicles();
+
+  // Mobile Safari: lift bottom chrome; native Capacitor keeps iOS-style bottom tabs.
+  useBrowserChromeInset();
+  const [mobileNavPlacement, setMobileNavPlacement] = useState<"top" | "bottom">(
+    "top",
+  );
+  useEffect(() => {
+    setMobileNavPlacement(isNativeCapacitor() ? "bottom" : "top");
+  }, []);
 
   const setAppTab = useCallback(
     (tab: AppTab) => {
@@ -143,19 +154,30 @@ function GarageAppInner() {
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-            <header className="flex shrink-0 items-center gap-2 border-b border-slate-800 bg-[#0a0f1c] px-4 py-2.5 pt-[max(0.5rem,env(safe-area-inset-top))] lg:hidden">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-500">
-                <span className="text-sm font-bold text-black">G</span>
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-white">
-                  Garage Genius
-                </p>
-                <p className="truncate text-[10px] text-cyan-400">
-                  AI Auto Assistant
-                </p>
-              </div>
-            </header>
+            <div className="shrink-0 pt-[max(0.35rem,env(safe-area-inset-top))] lg:hidden">
+              {mobileNavPlacement === "top" && (
+                <MobileTabBar
+                  activeTab={activeTab}
+                  onTabChange={handleTabChange}
+                  placement="top"
+                />
+              )}
+              {mobileNavPlacement === "bottom" && (
+                <header className="flex items-center gap-2 border-b border-slate-800 bg-[#0a0f1c] px-4 py-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-500">
+                    <span className="text-sm font-bold text-black">G</span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-white">
+                      Garage Genius
+                    </p>
+                    <p className="truncate text-[10px] text-cyan-400">
+                      AI Auto Assistant
+                    </p>
+                  </div>
+                </header>
+              )}
+            </div>
 
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               {activeTab === "dashboard" && (
@@ -238,7 +260,13 @@ function GarageAppInner() {
               )}
             </div>
 
-            <MobileTabBar activeTab={activeTab} onTabChange={handleTabChange} />
+            {mobileNavPlacement === "bottom" && (
+              <MobileTabBar
+                activeTab={activeTab}
+                onTabChange={handleTabChange}
+                placement="bottom"
+              />
+            )}
           </div>
         </div>
       )}

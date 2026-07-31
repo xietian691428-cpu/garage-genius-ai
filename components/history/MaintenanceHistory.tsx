@@ -155,7 +155,7 @@ export default function MaintenanceHistory({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto p-4 md:p-8">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto p-4 pb-[var(--content-pad-bottom)] md:p-8 lg:pb-8">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-white md:text-3xl">

@@ -46,6 +46,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: "#0a0f1c",
+  // Helps mobile browsers resize layout when chrome/keyboard changes.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({

@@ -907,7 +907,7 @@ export default function Dashboard({
   };
 
   return (
-    <div className="relative flex-1 overflow-auto bg-[#0a0f1c] p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6 lg:p-8">
+    <div className="relative flex-1 overflow-auto bg-[#0a0f1c] p-3 pb-[var(--content-pad-bottom)] sm:p-6 lg:p-8 lg:pb-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex flex-col gap-3 sm:mb-10 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div>

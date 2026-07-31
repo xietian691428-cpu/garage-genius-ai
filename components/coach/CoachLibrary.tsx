@@ -348,7 +348,7 @@ export default function CoachLibrary({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-[#0a0f1c]">
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-[#0a0f1c] pb-[var(--content-pad-bottom)] lg:pb-0">
       <div className="mx-auto w-full max-w-3xl px-4 py-6">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-start gap-3">

@@ -117,7 +117,7 @@ export default function SettingsPanel({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:p-8">
+    <div className="flex-1 overflow-y-auto p-4 pb-[var(--content-pad-bottom)] sm:p-8 lg:pb-8">
       <div className="mx-auto max-w-lg space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Account</h1>

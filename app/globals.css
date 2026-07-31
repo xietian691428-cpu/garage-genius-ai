@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /* ── 断点策略（Tailwind 默认）────────────────────────────
-   < 640px   手机竖屏（iPhone / Android）— 底栏 MobileTabBar
-   640–1023  大屏手机横屏、平板竖屏（iPad mini）— 底栏 + 更宽内容
+   < 640px   手机竖屏 — Web: 顶栏导航；Capacitor 原生壳: 底栏
+   640–1023  大屏手机横屏、平板竖屏 — 同上
    ≥ 1024    桌面 + iPad 横屏 — 左侧 Sidebar
    ≥ 1280    宽屏显示器 — Sidebar 略宽
 ──────────────────────────────────────────────────────── */
@@ -16,7 +16,13 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
+  /* iPhone Safari URL bar overlay — synced by useBrowserChromeInset */
+  --browser-chrome-bottom: 0px;
   --touch-min: 44px;
+  --content-pad-bottom: max(
+    1rem,
+    calc(var(--safe-bottom) + var(--browser-chrome-bottom))
+  );
 }
 
 @theme inline {

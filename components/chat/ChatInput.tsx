@@ -383,7 +383,7 @@ export default function ChatInput({
         } left today`;
 
   return (
-    <div className="shrink-0 border-t border-slate-800 bg-[#111827] p-3 sm:p-4 lg:pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <div className="shrink-0 border-t border-slate-800 bg-[#111827] p-3 pb-[var(--content-pad-bottom)] sm:p-4 sm:pb-[var(--content-pad-bottom)] lg:pb-[max(1rem,env(safe-area-inset-bottom))]">
       <UpgradeModal
         open={upgradeOpen}
         onClose={() => setUpgradeOpen(false)}
