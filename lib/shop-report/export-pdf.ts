@@ -189,6 +189,36 @@ export function exportShopReportPdf(
   }
   y = dy + 10;
 
+  // Appendix: diagnostic screenshots (separate page when present)
+  const images = (payload.images || []).filter(Boolean).slice(0, 3);
+  if (images.length > 0) {
+    doc.addPage();
+    y = MARGIN;
+    sectionTitle("Appendix — Diagnostic Screenshots");
+    para(
+      "Owner-provided photos / OBD screenshots for technician reference only.",
+      9,
+    );
+    for (let i = 0; i < images.length; i++) {
+      const dataUrl = images[i];
+      const format = dataUrl.includes("image/png") ? "PNG" : "JPEG";
+      const maxW = CONTENT_W;
+      const maxH = 220;
+      try {
+        ensureSpace(maxH + 28);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(80, 80, 80);
+        doc.text(`Figure ${i + 1}`, MARGIN, y);
+        y += 12;
+        doc.addImage(dataUrl, format, MARGIN, y, maxW, maxH, undefined, "FAST");
+        y += maxH + 16;
+      } catch {
+        para(`(Figure ${i + 1} could not be embedded)`);
+      }
+    }
+  }
+
   // Footer on each page
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {

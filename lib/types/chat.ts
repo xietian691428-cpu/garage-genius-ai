@@ -26,6 +26,8 @@ export interface VehicleInfo {
   /** e.g. "0W-16" */
   oilViscosity?: string;
   vin?: string;
+  /** Optional license / number plate for shop handoff */
+  licensePlate?: string;
   lastMaintenance?: string; // YYYY-MM-DD
   notes?: string;
   tags?: string[]; // 如 ["EV", "Modified", "Daily Driver"]

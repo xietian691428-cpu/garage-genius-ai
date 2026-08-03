@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import {
   assertAiRateLimit,
@@ -9,6 +10,7 @@ import {
 } from "@/lib/ai-abuse";
 import { callDeepSeekJson } from "@/lib/deepseek";
 import { createSupabaseAdmin, createSupabaseUserClient } from "@/lib/supabase-admin";
+import { getAppBaseUrl } from "@/lib/app-url";
 import {
   collectCodesFromMessages,
   createShopReportId,
@@ -17,6 +19,7 @@ import {
   buildShopReportPreview,
 } from "@/lib/shop-report/context";
 import { buildShopReportMessages } from "@/lib/shop-report/prompt";
+import { toPublicShopReportPayload } from "@/lib/shop-report/public-view";
 import type { VehicleInfo } from "@/lib/types/chat";
 import type {
   ShopReportFactor,
@@ -26,6 +29,8 @@ import type {
 import { SHOP_REPORT_DISCLAIMER } from "@/lib/types/shop-report";
 
 export const runtime = "nodejs";
+
+const SHARE_DAYS = 30;
 
 type LlmShape = {
   symptoms?: string;
@@ -57,7 +62,6 @@ function sanitizeFactors(raw: LlmShape["contributingFactors"]): ShopReportFactor
     const explanation = (f?.explanation || "").trim();
     const howToVerify = (f?.howToVerify || "").trim();
     if (!title || !explanation) continue;
-    // Soft rewrite if model slipped into command tone
     const safeExpl = /replace\b|root cause is\b|you must\b/i.test(explanation)
       ? `Common causes reported for this combination include considerations around ${title.toLowerCase()}. These are for professional verification only.`
       : explanation;
@@ -84,6 +88,23 @@ function sanitizeSteps(steps: string[]): string[] {
       return s;
     })
     .slice(0, 8);
+}
+
+function makePublicToken(): string {
+  return randomBytes(24).toString("base64url");
+}
+
+function sanitizeImages(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((x): x is string => typeof x === "string")
+    .filter(
+      (x) =>
+        x.startsWith("data:image/") &&
+        x.length > 2_000 &&
+        x.length < 500_000,
+    )
+    .slice(0, 3);
 }
 
 export async function POST(req: NextRequest) {
@@ -152,6 +173,8 @@ export async function POST(req: NextRequest) {
     const codes = collectCodesFromMessages(messages);
     const transcript = truncateTranscript(messages);
     const ownerNotes = (body.options?.ownerNotes || "").trim().slice(0, 500);
+    const includeImages = Boolean(body.options?.includeImages);
+    const images = includeImages ? sanitizeImages(body.images) : [];
 
     const llm = await callDeepSeekJson(
       buildShopReportMessages({
@@ -188,6 +211,7 @@ export async function POST(req: NextRequest) {
           source: body.source === "coach" ? "coach" : "chat",
           vehicleId: vehicle.id,
           codeCount: codes.length,
+          imageCount: images.length,
         },
       });
     } catch (consumeError) {
@@ -206,6 +230,12 @@ export async function POST(req: NextRequest) {
     const reportId = createShopReportId();
     const includeFullVin = Boolean(body.options?.includeFullVin);
     const vin = vehicle.vin?.trim().toUpperCase() || null;
+    const plate =
+      vehicle.licensePlate?.trim().toUpperCase().slice(0, 16) || null;
+    const publicToken = makePublicToken();
+    const expiresAt = new Date(
+      Date.now() + SHARE_DAYS * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
     const payload: ShopReportPayload = {
       reportId,
@@ -219,7 +249,7 @@ export async function POST(req: NextRequest) {
         mileage: vehicle.mileage,
         vinLast8: vinLast8(vin),
         vinFull: includeFullVin ? vin : null,
-        plate: null,
+        plate,
       },
       ownerObservations: {
         symptoms: (parsed.symptoms || preview.symptomPreview).trim(),
@@ -242,6 +272,7 @@ export async function POST(req: NextRequest) {
       ),
       ownerNotes: ownerNotes || null,
       disclaimer: SHOP_REPORT_DISCLAIMER,
+      images: images.length ? images : undefined,
     };
 
     if (payload.contributingFactors.length === 0) {
@@ -256,20 +287,27 @@ export async function POST(req: NextRequest) {
       ];
     }
 
-    // Best-effort archive (migration 033). Ignore if table missing.
+    // Archive + public share: store public-safe payload (no full VIN).
+    const archivePayload = toPublicShopReportPayload(payload);
+    let archived = false;
+    const vehicleId =
+      vehicle.id && vehicle.id !== "coach-session" ? vehicle.id : null;
+
     try {
       const admin = createSupabaseAdmin();
-      const vehicleId =
-        vehicle.id && vehicle.id !== "coach-session" ? vehicle.id : null;
       const { error: archiveError } = await admin.from("shop_reports").insert({
         user_id: user.id,
         vehicle_id: vehicleId,
         report_code: reportId,
         source: payload.source,
-        payload,
+        payload: archivePayload,
+        public_token: publicToken,
+        expires_at: expiresAt,
       });
       if (archiveError) {
         console.warn("[shop-report] archive skipped:", archiveError.message);
+      } else {
+        archived = true;
       }
     } catch (err) {
       console.warn(
@@ -278,10 +316,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const base = getAppBaseUrl(req.nextUrl.origin);
+    const publicUrl = archived ? `${base}/r/${publicToken}` : null;
+
     return NextResponse.json({
       payload,
       preview,
-      archived: true,
+      archived,
+      public_token: archived ? publicToken : null,
+      public_url: publicUrl,
+      expires_at: archived ? expiresAt : null,
     });
   } catch (err) {
     const blocked = aiAbuseResponse(err);

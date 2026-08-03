@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download, FileText, Share2, X } from "lucide-react";
+import { Check, Copy, Download, FileText, Link2, Share2, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { VehicleInfo } from "@/lib/types/chat";
 import type {
@@ -11,6 +11,10 @@ import type {
   ShopReportSource,
 } from "@/lib/types/shop-report";
 import { buildShopReportPreview } from "@/lib/shop-report/context";
+import {
+  collectMessageImages,
+  prepareShopReportImages,
+} from "@/lib/shop-report/images";
 import {
   defaultShopReportFileName,
   exportShopReportPdf,
@@ -44,8 +48,16 @@ export default function ShopReportModal({
   const [ownerNotes, setOwnerNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const [payload, setPayload] = useState<ShopReportPayload | null>(null);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [publicUrl, setPublicUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const availableImages = useMemo(
+    () => collectMessageImages(messages, 3),
+    [messages],
+  );
 
   const preview = useMemo(
     () =>
@@ -72,11 +84,18 @@ export default function ShopReportModal({
     ownerNotes,
   };
 
+  const showToast = (msg: string) => {
+    setToast(msg);
+    window.setTimeout(() => setToast(null), 2200);
+  };
+
   const generate = async () => {
     setError(null);
     setBusy(true);
     setPayload(null);
     setPdfBlob(null);
+    setPublicUrl(null);
+    setCopied(false);
     try {
       if (!preview.hasEnoughData) {
         throw new Error(
@@ -91,6 +110,11 @@ export default function ShopReportModal({
         throw new Error("Sign in to generate a shop report.");
       }
 
+      let images: string[] = [];
+      if (includeImages && availableImages.length > 0) {
+        images = await prepareShopReportImages(availableImages, 3);
+      }
+
       const res = await fetch("/api/shop-report/generate", {
         method: "POST",
         headers: {
@@ -103,11 +127,13 @@ export default function ShopReportModal({
           messages,
           coachContext,
           options,
+          images,
         }),
       });
 
       const data = (await res.json()) as {
         payload?: ShopReportPayload;
+        public_url?: string | null;
         error?: string;
       };
       if (!res.ok || !data.payload) {
@@ -117,6 +143,7 @@ export default function ShopReportModal({
       const blob = exportShopReportPdf(data.payload);
       setPayload(data.payload);
       setPdfBlob(blob);
+      setPublicUrl(data.public_url ?? null);
     } catch (err) {
       setError(
         err instanceof Error
@@ -138,6 +165,21 @@ export default function ShopReportModal({
     URL.revokeObjectURL(url);
   };
 
+  const copyLink = async () => {
+    if (!publicUrl) {
+      showToast("Share link unavailable — apply migration 034 and regenerate.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setCopied(true);
+      showToast("Link copied — valid for 30 days");
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showToast("Could not copy link");
+    }
+  };
+
   const share = async () => {
     if (!payload || !pdfBlob) return;
     const file = new File([pdfBlob], defaultShopReportFileName(payload), {
@@ -147,21 +189,24 @@ export default function ShopReportModal({
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           title: "Owner Diagnostic Summary",
-          text: `${preview.ymm} — Garage Genius shop handoff`,
+          text: publicUrl
+            ? `${preview.ymm} — ${publicUrl}`
+            : `${preview.ymm} — Garage Genius shop handoff`,
           files: [file],
         });
         return;
       }
-      if (navigator.share) {
+      if (navigator.share && publicUrl) {
         await navigator.share({
           title: "Owner Diagnostic Summary",
-          text: "Download the PDF from Garage Genius, then share with your shop.",
+          text: publicUrl,
+          url: publicUrl,
         });
         return;
       }
       download();
     } catch {
-      /* user cancelled */
+      /* cancelled */
     }
   };
 
@@ -177,6 +222,12 @@ export default function ShopReportModal({
         className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-3xl border border-slate-700 bg-[#111827] p-5 shadow-2xl sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
+        {toast && (
+          <div className="mb-3 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-center text-xs font-medium text-cyan-200">
+            {toast}
+          </div>
+        )}
+
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-cyan-400/90">
@@ -205,6 +256,11 @@ export default function ShopReportModal({
         <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-900/60 p-3 text-sm">
           <p className="font-medium text-white">{preview.ymm}</p>
           <p className="text-xs text-slate-400">{preview.mileageLabel}</p>
+          {vehicle.licensePlate ? (
+            <p className="text-xs text-slate-400">
+              Plate {vehicle.licensePlate}
+            </p>
+          ) : null}
           <p className="mt-2 text-xs text-slate-300 line-clamp-3">
             {preview.symptomPreview}
           </p>
@@ -225,23 +281,27 @@ export default function ShopReportModal({
                 onChange={(e) => setIncludeFullVin(e.target.checked)}
               />
               <span>
-                Include full VIN
+                Include full VIN in PDF
                 <span className="block text-xs text-slate-500">
-                  Default shows last 8 only.
+                  Default / share link show last 8 only.
                 </span>
               </span>
             </label>
-            <label className="flex items-start gap-2 text-sm text-slate-500">
+            <label className="flex items-start gap-2 text-sm text-slate-300">
               <input
                 type="checkbox"
                 className="mt-1"
                 checked={includeImages}
                 onChange={(e) => setIncludeImages(e.target.checked)}
-                disabled
+                disabled={availableImages.length === 0}
               />
               <span>
-                Include photos / screenshots
-                <span className="block text-xs">Coming next — PDF text-only for MVP.</span>
+                Include screenshots
+                <span className="block text-xs text-slate-500">
+                  {availableImages.length === 0
+                    ? "No photos in this chat yet."
+                    : `Up to ${Math.min(3, availableImages.length)} image(s) on PDF page 2.`}
+                </span>
               </span>
             </label>
             <label className="flex items-start gap-2 text-sm text-slate-500">
@@ -254,7 +314,7 @@ export default function ShopReportModal({
               />
               <span>
                 Include parts inventory
-                <span className="block text-xs">Coming next.</span>
+                <span className="block text-xs">Coming later.</span>
               </span>
             </label>
             <div>
@@ -287,8 +347,8 @@ export default function ShopReportModal({
         {payload && pdfBlob && (
           <div className="mt-4 space-y-3">
             <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
-              Report #{payload.reportId} ready. Saved to your vehicle profile
-              when archive is available.
+              Report #{payload.reportId} ready
+              {publicUrl ? " · 30-day share link available" : ""}.
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <button
@@ -308,9 +368,27 @@ export default function ShopReportModal({
                 Share
               </button>
             </div>
-            <p className="text-[11px] text-slate-500">
-              Copy Link (30-day web report) ships in a later release.
-            </p>
+            <button
+              type="button"
+              onClick={() => void copyLink()}
+              disabled={!publicUrl}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-40"
+            >
+              {copied ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+              <Link2 className="h-4 w-4" />
+              {copied ? "Copied" : "Copy Link"}
+            </button>
+            {publicUrl ? (
+              <p className="break-all text-[11px] text-slate-500">{publicUrl}</p>
+            ) : (
+              <p className="text-[11px] text-amber-300/90">
+                Share link needs migration 034 + successful archive.
+              </p>
+            )}
           </div>
         )}
 

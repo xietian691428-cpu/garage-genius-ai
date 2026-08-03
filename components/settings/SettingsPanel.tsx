@@ -18,6 +18,7 @@ import DiySkillSettings from "@/components/settings/DiySkillSettings";
 import InsuranceProfileSettings from "@/components/settings/InsuranceProfileSettings";
 import ObdToolsSettings from "@/components/settings/ObdToolsSettings";
 import ShareAppCard from "@/components/settings/ShareAppCard";
+import ShopReportsPanel from "@/components/shop-report/ShopReportsPanel";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 import { supabase } from "@/lib/supabase";
 import type { VehicleInfo } from "@/lib/types/chat";
@@ -216,6 +217,11 @@ export default function SettingsPanel({
             onSave={onUpdateVehicle}
           />
         ) : null}
+
+        <ShopReportsPanel
+          vehicle={currentVehicle}
+          loading={vehiclesLoading}
+        />
 
         <section className="rounded-3xl border border-slate-800 bg-[#111827] p-5">
           <h2 className="text-xs font-medium uppercase tracking-wide text-slate-500">

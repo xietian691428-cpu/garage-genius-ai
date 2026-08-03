@@ -87,6 +87,8 @@ export default function AddVehicleModal({
   const [countryRegion, setCountryRegion] = useState("");
   const [countryState, setCountryState] = useState("");
   const [insuranceProvider, setInsuranceProvider] = useState("");
+  const [licensePlate, setLicensePlate] = useState("");
+  const [vin, setVin] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showTagUpgrade, setShowTagUpgrade] = useState(false);
@@ -114,6 +116,8 @@ export default function AddVehicleModal({
       setCountryRegion(initialVehicle.countryRegion || "");
       setCountryState(initialVehicle.countryState || "");
       setInsuranceProvider(initialVehicle.insuranceProvider || "");
+      setLicensePlate(initialVehicle.licensePlate || "");
+      setVin(initialVehicle.vin || "");
     } else {
       setName("My Main Car");
       setMarket(loadPreferredMarket());
@@ -125,6 +129,8 @@ export default function AddVehicleModal({
       setCountryRegion("");
       setCountryState("");
       setInsuranceProvider("");
+      setLicensePlate("");
+      setVin("");
     }
     setSaveError(null);
     setSaving(false);
@@ -221,7 +227,8 @@ export default function AddVehicleModal({
         oilViscosity: useCatalog
           ? vcdb?.oilViscosity ?? undefined
           : initialVehicle?.oilViscosity,
-        vin: initialVehicle?.vin,
+        vin: vin.trim().toUpperCase() || undefined,
+        licensePlate: licensePlate.trim().toUpperCase() || undefined,
         lastMaintenance: initialVehicle?.lastMaintenance,
         notes: initialVehicle?.notes,
         tags: nextTags,
@@ -302,6 +309,35 @@ export default function AddVehicleModal({
             }
           />
         </div>
+
+        <details className="mt-4 rounded-xl border border-slate-700/60 p-3">
+          <summary className="cursor-pointer text-sm text-slate-300">
+            Identifiers{" "}
+            <span className="text-slate-500">(optional)</span>
+          </summary>
+          <p className="mt-2 text-xs text-slate-400">
+            License plate and VIN help shop handoff reports. Full VIN is never
+            required on share links.
+          </p>
+          <div className="mt-3 space-y-3">
+            <input
+              type="text"
+              value={licensePlate}
+              onChange={(e) => setLicensePlate(e.target.value.slice(0, 16))}
+              placeholder="License plate"
+              className={inputClass}
+              autoComplete="off"
+            />
+            <input
+              type="text"
+              value={vin}
+              onChange={(e) => setVin(e.target.value.slice(0, 17))}
+              placeholder="VIN (optional)"
+              className={inputClass}
+              autoComplete="off"
+            />
+          </div>
+        </details>
 
         <details className="mt-4 rounded-xl border border-slate-700/60 p-3">
           <summary className="cursor-pointer text-sm text-slate-300">

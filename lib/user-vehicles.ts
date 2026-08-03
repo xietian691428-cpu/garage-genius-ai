@@ -34,6 +34,7 @@ export type UserVehicleRow = {
   oil_capacity: string | null;
   oil_viscosity: string | null;
   vin: string | null;
+  license_plate?: string | null;
   last_maintenance: string | null;
   notes: string | null;
   tags: string[] | null;
@@ -72,6 +73,7 @@ export function rowToVehicleInfo(row: UserVehicleRow): VehicleInfo {
     oilCapacity: row.oil_capacity ?? undefined,
     oilViscosity: row.oil_viscosity ?? undefined,
     vin: row.vin ?? undefined,
+    licensePlate: row.license_plate?.trim() || undefined,
     lastMaintenance: row.last_maintenance ?? undefined,
     notes: row.notes ?? undefined,
     tags: row.tags ?? undefined,
@@ -105,6 +107,7 @@ export function vehicleInfoToRow(
     oil_capacity: vehicle.oilCapacity ?? vehicle.vcdb?.oilCapacity ?? null,
     oil_viscosity: vehicle.oilViscosity ?? vehicle.vcdb?.oilViscosity ?? null,
     vin: vehicle.vin ?? null,
+    license_plate: vehicle.licensePlate?.trim() || null,
     last_maintenance: vehicle.lastMaintenance ?? null,
     notes: vehicle.notes ?? null,
     tags: vehicle.tags ?? [],
@@ -217,11 +220,23 @@ export const userVehiclesService = {
       delete insertPayload.id;
     }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("user_vehicles")
       .insert(insertPayload)
       .select("*")
       .single();
+
+    // Pre-migration 034: license_plate column may not exist yet.
+    if (error && /license_plate/i.test(error.message)) {
+      delete insertPayload.license_plate;
+      const retry = await supabase
+        .from("user_vehicles")
+        .insert(insertPayload)
+        .select("*")
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) throw error;
     const saved = rowToVehicleInfo(data as UserVehicleRow);
@@ -241,12 +256,24 @@ export const userVehiclesService = {
     const payload = vehicleInfoToRow(vehicle, user.id);
     const { id: _id, user_id: _uid, is_current: _cur, ...fields } = payload;
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("user_vehicles")
       .update(fields)
       .eq("id", vehicle.id)
       .select("*")
       .single();
+
+    if (error && /license_plate/i.test(error.message)) {
+      const { license_plate: _lp, ...rest } = fields as Record<string, unknown>;
+      const retry = await supabase
+        .from("user_vehicles")
+        .update(rest)
+        .eq("id", vehicle.id)
+        .select("*")
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) throw error;
     const saved = rowToVehicleInfo(data as UserVehicleRow);

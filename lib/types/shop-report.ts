@@ -43,6 +43,8 @@ export type ShopReportPayload = {
   technicianNextSteps: string[];
   ownerNotes: string | null;
   disclaimer: string;
+  /** Optional compressed diagnostic screenshots (data URLs) */
+  images?: string[];
 };
 
 export type ShopReportGenerateOptions = {
@@ -72,6 +74,8 @@ export type ShopReportGenerateRequest = {
   source: ShopReportSource;
   vehicle: VehicleInfo;
   messages?: ShopReportChatMessage[];
+  /** Pre-compressed screenshots from the client (max 3) */
+  images?: string[];
   /** Coach completion / last-step text when source=coach */
   coachContext?: {
     scenarioTitle: string;
@@ -80,6 +84,18 @@ export type ShopReportGenerateRequest = {
     lastStepText?: string;
   };
   options: ShopReportGenerateOptions;
+};
+
+export type ShopReportListItem = {
+  id: string;
+  reportCode: string;
+  source: ShopReportSource;
+  createdAt: string;
+  expiresAt: string | null;
+  publicToken: string | null;
+  codes: string[];
+  status: "active" | "expired";
+  publicUrl: string | null;
 };
 
 export const SHOP_REPORT_DISCLAIMER =
