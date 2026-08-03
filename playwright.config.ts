@@ -24,6 +24,7 @@ export default defineConfig({
     video: "retain-on-failure",
     actionTimeout: 20_000,
     navigationTimeout: 45_000,
+    permissions: ["clipboard-read", "clipboard-write"],
   },
   projects: [
     {

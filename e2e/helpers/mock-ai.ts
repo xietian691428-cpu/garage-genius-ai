@@ -12,6 +12,7 @@ export async function mockAiRoutes(page: Page): Promise<void> {
       return;
     }
     const body = [
+      "E2E_MOCK_CHAT_OK",
       "Education-only DIY guidance for your symptoms and DTC.",
       `Code ${FIXTURE.dtc} often relates to catalyst efficiency — verify freeze-frame data and inspect for exhaust leaks before any parts decision.`,
       "This is not a certified diagnosis. Confirm with a professional technician.",
@@ -21,8 +22,6 @@ export async function mockAiRoutes(page: Page): Promise<void> {
       contentType: "application/json",
       body: JSON.stringify({
         content: body,
-        reply: body,
-        message: body,
       }),
     });
   });
