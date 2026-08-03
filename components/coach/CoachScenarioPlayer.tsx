@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   ChevronLeft,
   ExternalLink,
+  FileText,
   Shield,
   Store,
 } from "lucide-react";
@@ -23,7 +24,9 @@ import CoachStepFeedback, {
   postCoachStepFeedback,
 } from "@/components/coach/CoachStepFeedback";
 import CoachAdoptKnowledgeButton from "@/components/coach/CoachAdoptKnowledgeButton";
+import ShopReportModal from "@/components/shop-report/ShopReportModal";
 import type { CoachStepFeedbackVote } from "@/lib/types/coach-scenario";
+import type { VehicleInfo } from "@/lib/types/chat";
 
 type Props = {
   scenario: CoachScenario;
@@ -68,6 +71,7 @@ export default function CoachScenarioPlayer({
   /** Last yes/no on this step — seeds quality_score when adopting to KB */
   const [lastVote, setLastVote] = useState<CoachStepFeedbackVote | null>(null);
   const [mediaFailed, setMediaFailed] = useState(false);
+  const [shopReportOpen, setShopReportOpen] = useState(false);
 
   const rawStep = useMemo(
     () => scenario.steps.find((s) => s.id === stepId) ?? scenario.steps[0],
@@ -183,6 +187,19 @@ export default function CoachScenarioPlayer({
     ]
       .filter(Boolean)
       .join("\n\n");
+    const shopVehicle = {
+      id: vehicle.id || "coach-session",
+      name: vehicle.name || `${vehicle.year || ""} ${vehicle.make || ""}`.trim(),
+      year: vehicle.year || new Date().getFullYear(),
+      make: vehicle.make || "Unknown",
+      model: vehicle.model || "Unknown",
+      submodel: vehicle.submodel,
+      mileage: vehicle.mileage || 0,
+      engine: vehicle.engine || "",
+      vin: vehicle.vin,
+      market: vehicle.market as VehicleInfo["market"],
+      tags: vehicle.tags,
+    } satisfies VehicleInfo;
     return (
       <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-[#0a0f1c] px-4 py-6">
         <div className="mx-auto w-full max-w-lg space-y-4">
@@ -212,6 +229,14 @@ export default function CoachScenarioPlayer({
               vehicle_model: vehicle.model ?? null,
             }}
           />
+          <button
+            type="button"
+            onClick={() => setShopReportOpen(true)}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-4 py-3.5 text-sm font-semibold text-black hover:bg-cyan-400"
+          >
+            <FileText className="h-4 w-4" />
+            Export for Shop
+          </button>
           <div className="flex flex-col gap-2 pt-2">
             {(scenario.completion.action_buttons || []).slice(0, 2).map((btn) => (
               <button
@@ -225,7 +250,7 @@ export default function CoachScenarioPlayer({
                 }}
                 className={`rounded-2xl px-4 py-3.5 text-sm font-semibold ${
                   btn.style === "primary"
-                    ? "bg-cyan-500 text-black"
+                    ? "border border-slate-600 text-slate-100"
                     : "border border-slate-700 text-slate-200"
                 }`}
               >
@@ -233,6 +258,18 @@ export default function CoachScenarioPlayer({
               </button>
             ))}
           </div>
+          <ShopReportModal
+            open={shopReportOpen}
+            onClose={() => setShopReportOpen(false)}
+            source="coach"
+            vehicle={shopVehicle}
+            coachContext={{
+              scenarioTitle: scenario.title || scenario.completion.title,
+              scenarioSlug: scenario.slug,
+              completionText: completionDesc,
+              lastStepText: lastStepBlurb,
+            }}
+          />
         </div>
       </div>
     );

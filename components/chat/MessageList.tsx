@@ -16,6 +16,7 @@ interface Props {
   onRegenerate?: () => void;
   onEditUser?: (content: string) => void;
   onQuickPrompt?: (prompt: string) => void;
+  onGenerateShopReport?: () => void;
 }
 
 export default function MessageList({
@@ -27,6 +28,7 @@ export default function MessageList({
   onRegenerate,
   onEditUser,
   onQuickPrompt,
+  onGenerateShopReport,
 }: Props) {
   const { t } = useTranslation();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -68,6 +70,11 @@ export default function MessageList({
           onQuickPrompt={
             msg.role === "assistant" && msg.id === lastAssistantId
               ? onQuickPrompt
+              : undefined
+          }
+          onGenerateShopReport={
+            msg.role === "assistant" && msg.id === lastAssistantId
+              ? onGenerateShopReport
               : undefined
           }
         />

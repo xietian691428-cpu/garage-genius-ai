@@ -38,6 +38,7 @@ import {
   formatFamiliarityForPrompt,
 } from "@/lib/vehicle-familiarity";
 import ReceiptConfirmModal from "@/components/history/ReceiptConfirmModal";
+import ShopReportModal from "@/components/shop-report/ShopReportModal";
 import type { MaintenanceRecord } from "@/lib/types/maintenance";
 import {
   buildDtcDiagnosisPrompt,
@@ -48,6 +49,7 @@ import {
 } from "@/lib/dtc";
 import type { ObdVisionAnalysis } from "@/lib/types/dtc";
 import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
+import { FileText } from "lucide-react";
 
 interface Props {
   seedPrompt?: string;
@@ -94,6 +96,7 @@ export default function ChatApp({
   const [draftValue, setDraftValue] = useState<string | undefined>();
   const [maintenanceSummary, setMaintenanceSummary] = useState<string>("");
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [shopReportOpen, setShopReportOpen] = useState(false);
   const [maintenanceTick, setMaintenanceTick] = useState(0);
   const [requestError, setRequestError] = useState<string | null>(null);
   const seedSentRef = useRef<string | null>(null);
@@ -738,7 +741,20 @@ export default function ChatApp({
           >
             <VehiclePanel vehicle={currentVehicle} isMobile />
           </button>
-          {isFree && <UpgradeButton label="Pro" />}
+          <div className="flex shrink-0 items-center gap-1.5">
+            {currentVehicle && (
+              <button
+                type="button"
+                onClick={() => setShopReportOpen(true)}
+                className="inline-flex items-center gap-1 rounded-xl border border-slate-700 px-2 py-1.5 text-[11px] font-medium text-cyan-300 hover:bg-slate-800"
+                title="Generate Shop Report"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Shop
+              </button>
+            )}
+            {isFree && <UpgradeButton label="Pro" />}
+          </div>
         </div>
 
         <div className="hidden items-center justify-between border-b border-slate-800 bg-[#111827] px-4 py-3 lg:flex">
@@ -754,7 +770,19 @@ export default function ChatApp({
               </span>
             )}
           </div>
-          {isFree && <UpgradeButton label="Upgrade to Pro" />}
+          <div className="flex items-center gap-2">
+            {currentVehicle && (
+              <button
+                type="button"
+                onClick={() => setShopReportOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-slate-800"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Generate Shop Report
+              </button>
+            )}
+            {isFree && <UpgradeButton label="Upgrade to Pro" />}
+          </div>
         </div>
 
         <MessageList
@@ -766,6 +794,7 @@ export default function ChatApp({
           onRegenerate={() => void handleRegenerate()}
           onEditUser={handleEditUser}
           onQuickPrompt={handleQuickPrompt}
+          onGenerateShopReport={() => setShopReportOpen(true)}
         />
         {requestError && !isLoading ? (
           <div className="shrink-0 border-t border-amber-800/40 bg-amber-950/40 px-4 py-2.5">
@@ -810,6 +839,23 @@ export default function ChatApp({
         mode="scan"
         onSaved={handleReceiptSaved}
       />
+
+      {currentVehicle && (
+        <ShopReportModal
+          open={shopReportOpen}
+          onClose={() => setShopReportOpen(false)}
+          source="chat"
+          vehicle={currentVehicle}
+          messages={messages
+            .filter((m) => m.id !== "welcome")
+            .map((m) => ({
+              role: m.role,
+              content: m.content,
+              image: m.image,
+              images: m.images,
+            }))}
+        />
+      )}
 
       <MobileVehicleSwitcher
         open={showVehicleSwitcher}

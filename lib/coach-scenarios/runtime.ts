@@ -1,6 +1,8 @@
 import type { CoachAdaptiveRule, CoachScenario, CoachScenarioStep } from "@/lib/types/coach-scenario";
 
 export type CoachVehicleContext = {
+  /** Garage vehicle id when available (shop report archive). */
+  id?: string;
   year?: number;
   make?: string;
   model?: string;

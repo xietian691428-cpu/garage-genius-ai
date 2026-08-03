@@ -11,6 +11,7 @@ export function toCoachVehicleContext(
 ): CoachVehicleContext {
   if (!vehicle) return {};
   return {
+    id: vehicle.id,
     year: vehicle.year,
     make: vehicle.make,
     model: vehicle.model,

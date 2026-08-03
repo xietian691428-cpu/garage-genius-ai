@@ -15,6 +15,7 @@ import {
   Check,
   RefreshCw,
   Pencil,
+  FileText,
 } from "lucide-react";
 import { extractPartsData } from "@/lib/utils/parts";
 import { extractFocusCommand, sanitizeFocusCommand } from "@/lib/parse-ai-focus";
@@ -33,6 +34,7 @@ interface Props {
   onRegenerate?: () => void;
   onEditUser?: (content: string) => void;
   onQuickPrompt?: (prompt: string) => void;
+  onGenerateShopReport?: () => void;
 }
 
 export default function MessageBubble({
@@ -44,6 +46,7 @@ export default function MessageBubble({
   onRegenerate,
   onEditUser,
   onQuickPrompt,
+  onGenerateShopReport,
 }: Props) {
   const isUser = message.role === "user";
   const displayContent = isUser
@@ -122,6 +125,17 @@ export default function MessageBubble({
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 Regenerate
+              </button>
+            )}
+            {isLastAssistant && onGenerateShopReport && (
+              <button
+                type="button"
+                onClick={onGenerateShopReport}
+                className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-cyan-300 transition hover:bg-slate-900"
+                title="Generate Shop Report"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Shop Report
               </button>
             )}
             <button
