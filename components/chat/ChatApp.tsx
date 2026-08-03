@@ -751,6 +751,7 @@ export default function ChatApp({
             {currentVehicle && (
               <button
                 type="button"
+                data-testid="shop-report-open"
                 onClick={() => setShopReportOpen(true)}
                 className="inline-flex items-center gap-1 rounded-xl border border-slate-700 px-2 py-1.5 text-[11px] font-medium text-cyan-300 hover:bg-slate-800"
                 title="Generate Shop Report"
@@ -780,6 +781,7 @@ export default function ChatApp({
             {currentVehicle && (
               <button
                 type="button"
+                data-testid="shop-report-open-desktop"
                 onClick={() => setShopReportOpen(true)}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-slate-800"
               >

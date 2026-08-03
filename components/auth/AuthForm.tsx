@@ -225,6 +225,7 @@ export default function AuthForm() {
             type="email"
             required
             autoComplete="email"
+            data-testid="login-email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white outline-none focus:border-cyan-400"
@@ -241,6 +242,7 @@ export default function AuthForm() {
             autoComplete={
               mode === "signin" ? "current-password" : "new-password"
             }
+            data-testid="login-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white outline-none focus:border-cyan-400"
@@ -287,6 +289,7 @@ export default function AuthForm() {
         <button
           type="submit"
           disabled={busy}
+          data-testid="login-submit"
           className="w-full rounded-2xl bg-cyan-500 px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-cyan-400 disabled:opacity-60"
         >
           {busy

@@ -276,6 +276,7 @@ export default function ShopReportModal({
             <label className="flex items-start gap-2 text-sm text-slate-300">
               <input
                 type="checkbox"
+                data-testid="shop-report-include-vin"
                 className="mt-1"
                 checked={includeFullVin}
                 onChange={(e) => setIncludeFullVin(e.target.checked)}
@@ -290,6 +291,7 @@ export default function ShopReportModal({
             <label className="flex items-start gap-2 text-sm text-slate-300">
               <input
                 type="checkbox"
+                data-testid="shop-report-include-images"
                 className="mt-1"
                 checked={includeImages}
                 onChange={(e) => setIncludeImages(e.target.checked)}
@@ -353,6 +355,7 @@ export default function ShopReportModal({
             <div className="flex flex-col gap-2 sm:flex-row">
               <button
                 type="button"
+                data-testid="shop-report-download"
                 onClick={download}
                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-black hover:bg-cyan-400"
               >
@@ -370,6 +373,7 @@ export default function ShopReportModal({
             </div>
             <button
               type="button"
+              data-testid="shop-report-copy-link"
               onClick={() => void copyLink()}
               disabled={!publicUrl}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-40"
@@ -403,6 +407,7 @@ export default function ShopReportModal({
           {!payload && (
             <button
               type="button"
+              data-testid="shop-report-generate"
               disabled={busy || !preview.hasEnoughData}
               onClick={() => void generate()}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400 disabled:opacity-50"

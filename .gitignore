@@ -12,6 +12,11 @@
 
 # testing
 /coverage
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/
+.env.e2e.local
 
 # next.js
 /.next/
@@ -33,6 +38,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+!.env.e2e.example
 
 # Apple Sign In private keys / generated secrets (never commit)
 AuthKey_*.p8

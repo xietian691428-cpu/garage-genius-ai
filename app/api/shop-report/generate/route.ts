@@ -20,9 +20,12 @@ import {
 } from "@/lib/shop-report/context";
 import { buildShopReportMessages } from "@/lib/shop-report/prompt";
 import { toPublicShopReportPayload } from "@/lib/shop-report/public-view";
+import {
+  sanitizeShopReportFactors,
+  sanitizeShopReportSteps,
+} from "@/lib/shop-report/sanitize";
 import type { VehicleInfo } from "@/lib/types/chat";
 import type {
-  ShopReportFactor,
   ShopReportGenerateRequest,
   ShopReportPayload,
 } from "@/lib/types/shop-report";
@@ -53,41 +56,6 @@ function asStringList(v: unknown): string[] {
     .map((x) => (typeof x === "string" ? x.trim() : ""))
     .filter(Boolean)
     .slice(0, 12);
-}
-
-function sanitizeFactors(raw: LlmShape["contributingFactors"]): ShopReportFactor[] {
-  const out: ShopReportFactor[] = [];
-  for (const f of raw || []) {
-    const title = (f?.title || "").trim();
-    const explanation = (f?.explanation || "").trim();
-    const howToVerify = (f?.howToVerify || "").trim();
-    if (!title || !explanation) continue;
-    const safeExpl = /replace\b|root cause is\b|you must\b/i.test(explanation)
-      ? `Common causes reported for this combination include considerations around ${title.toLowerCase()}. These are for professional verification only.`
-      : explanation;
-    out.push({
-      title,
-      explanation: safeExpl,
-      howToVerify:
-        howToVerify ||
-        "Verify with standard shop procedures and OEM guidance.",
-    });
-    if (out.length >= 5) break;
-  }
-  return out;
-}
-
-function sanitizeSteps(steps: string[]): string[] {
-  return steps
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => {
-      if (/^replace\b/i.test(s)) {
-        return `Inspect / verify condition related to: ${s.replace(/^replace\b/i, "").trim()}`;
-      }
-      return s;
-    })
-    .slice(0, 8);
 }
 
 function makePublicToken(): string {
@@ -261,13 +229,15 @@ export async function POST(req: NextRequest) {
         liveDataSummary: parsed.liveDataSummary?.trim() || null,
         dataSourceNote: parsed.dataSourceNote?.trim() || null,
       },
-      contributingFactors: sanitizeFactors(parsed.contributingFactors),
+      contributingFactors: sanitizeShopReportFactors(
+        parsed.contributingFactors,
+      ),
       checksCompleted: asStringList(
         parsed.checksCompleted?.length
           ? parsed.checksCompleted
           : parsed.checksDone,
       ),
-      technicianNextSteps: sanitizeSteps(
+      technicianNextSteps: sanitizeShopReportSteps(
         asStringList(parsed.technicianNextSteps),
       ),
       ownerNotes: ownerNotes || null,

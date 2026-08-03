@@ -72,6 +72,7 @@ export default function DtcCodeModal({ open, onClose, onSubmit }: Props) {
 
         <input
           ref={inputRef}
+          data-testid="dtc-input"
           value={value}
           onChange={(e) => {
             setValue(e.target.value.toUpperCase().replace(/[^PCBU0-9A-F]/gi, "").slice(0, 5));
@@ -108,6 +109,7 @@ export default function DtcCodeModal({ open, onClose, onSubmit }: Props) {
           </button>
           <button
             type="button"
+            data-testid="dtc-submit"
             onClick={submit}
             className="flex-1 rounded-xl bg-cyan-500 px-3 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400"
           >

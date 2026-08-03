@@ -287,6 +287,7 @@ export default function SettingsPanel({
         <button
           type="button"
           disabled={busy}
+          data-testid="auth-sign-out"
           onClick={() => void handleSignOut()}
           className="w-full rounded-2xl border border-slate-700 px-4 py-3 text-sm text-slate-300 transition hover:border-red-400/40 hover:text-red-300 disabled:opacity-60"
         >

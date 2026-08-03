@@ -78,3 +78,16 @@ export function shouldWriteObdMileage(
   if (next === current) return "touch";
   return "skip";
 }
+
+/** Gate before calling mileage-sync API / DB write. */
+export function canAttemptObdMileageWriteback(
+  hasObdAdapter: boolean,
+  odometerKm: number | null | undefined,
+): boolean {
+  return (
+    hasObdAdapter === true &&
+    odometerKm != null &&
+    Number.isFinite(odometerKm) &&
+    odometerKm > 0
+  );
+}

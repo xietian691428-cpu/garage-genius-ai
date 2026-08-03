@@ -63,6 +63,7 @@ export default function ObdToolsSettings() {
           <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-700 bg-slate-950/60 px-4 py-3">
             <input
               type="checkbox"
+              data-testid="settings-obd-toggle"
               className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-900 text-cyan-500 focus:ring-cyan-500/40"
               checked={checked}
               disabled={saving}

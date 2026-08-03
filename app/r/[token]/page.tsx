@@ -62,7 +62,10 @@ export default async function PublicShopReportPage({ params }: Props) {
           Read-only shop handoff · expires in 30 days from creation
         </p>
       </div>
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+      <div
+        data-testid="shop-report-public"
+        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8"
+      >
         <ShopReportDocument payload={payload} />
       </div>
     </div>
@@ -78,7 +81,10 @@ function ExpiredOrMissing({
 }) {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-[#0a0f1c] px-4">
-      <div className="w-full max-w-md rounded-3xl border border-slate-700 bg-[#111827] p-6 text-center">
+      <div
+        data-testid="shop-report-public-error"
+        className="w-full max-w-md rounded-3xl border border-slate-700 bg-[#111827] p-6 text-center"
+      >
         <p className="text-sm font-medium text-cyan-400">Garage Genius AI</p>
         <h1 className="mt-2 text-xl font-semibold text-white">
           {kind === "expired" ? "Link expired" : "Report not found"}

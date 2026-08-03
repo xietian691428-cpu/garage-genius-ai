@@ -533,6 +533,7 @@ export default function ChatInput({
           <textarea
             ref={textareaRef}
             rows={1}
+            data-testid="chat-input"
             value={input}
             onChange={(e) => {
               setInput(e.target.value);
@@ -572,6 +573,7 @@ export default function ChatInput({
           ) : (
             <button
               type="button"
+              data-testid="chat-send"
               onClick={handleSubmit}
               disabled={busy || (!input.trim() && images.length === 0)}
               className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-3xl bg-cyan-500 px-4 font-medium text-black transition-all hover:bg-cyan-400 disabled:bg-slate-700 disabled:text-slate-400 sm:min-h-[48px] sm:px-8"

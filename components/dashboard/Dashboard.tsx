@@ -994,6 +994,7 @@ export default function Dashboard({
                 {canAdd && (
                   <button
                     type="button"
+                    data-testid="add-vehicle-open"
                     onClick={() => setShowAddVehicle(true)}
                     className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-cyan-500 px-4 text-sm font-medium text-slate-950"
                   >
@@ -1034,6 +1035,7 @@ export default function Dashboard({
             {canAdd && vehicles.length >= 1 && (
               <button
                 type="button"
+                data-testid="add-vehicle-open"
                 onClick={() => setShowAddVehicle(true)}
                 className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-slate-700 px-3 text-sm text-slate-200 hover:border-cyan-500/50"
               >

@@ -4,6 +4,7 @@ import {
   createSupabaseUserClient,
 } from "@/lib/supabase-admin";
 import {
+  canAttemptObdMileageWriteback,
   convertOdometerKmToUnit,
   formatMileageWithUnit,
   mileageUnitFromMarket,
@@ -124,7 +125,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (!profile?.has_obd_adapter) {
+  if (!canAttemptObdMileageWriteback(Boolean(profile?.has_obd_adapter), odometerKm)) {
     return NextResponse.json(
       { updated: false, skipped: "no_adapter" as const },
       { status: 200 },

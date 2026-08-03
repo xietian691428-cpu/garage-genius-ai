@@ -146,7 +146,10 @@ export default function ShopReportsPanel({ vehicle, loading }: Props) {
   }
 
   return (
-    <section className="rounded-3xl border border-slate-800 bg-[#111827] p-5">
+    <section
+      data-testid="shop-reports-list"
+      className="rounded-3xl border border-slate-800 bg-[#111827] p-5"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -229,6 +232,7 @@ export default function ShopReportsPanel({ vehicle, loading }: Props) {
                     href={r.publicUrl}
                     target="_blank"
                     rel="noreferrer"
+                    data-testid="shop-report-view"
                     className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2 py-1.5 text-[11px] text-slate-200 hover:border-cyan-500/40"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
@@ -250,6 +254,7 @@ export default function ShopReportsPanel({ vehicle, loading }: Props) {
                 </button>
                 <button
                   type="button"
+                  data-testid="shop-report-delete"
                   disabled={actionId === r.id}
                   onClick={() => void deleteReport(r.id)}
                   className="inline-flex items-center gap-1 rounded-lg border border-rose-900/50 px-2 py-1.5 text-[11px] text-rose-300 hover:bg-rose-950/40 disabled:opacity-50"

@@ -89,6 +89,7 @@ export default function AddVehicleModal({
   const [insuranceProvider, setInsuranceProvider] = useState("");
   const [licensePlate, setLicensePlate] = useState("");
   const [vin, setVin] = useState("");
+  const [mileage, setMileage] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showTagUpgrade, setShowTagUpgrade] = useState(false);
@@ -118,6 +119,9 @@ export default function AddVehicleModal({
       setInsuranceProvider(initialVehicle.insuranceProvider || "");
       setLicensePlate(initialVehicle.licensePlate || "");
       setVin(initialVehicle.vin || "");
+      setMileage(
+        initialVehicle.mileage > 0 ? String(initialVehicle.mileage) : "",
+      );
     } else {
       setName("My Main Car");
       setMarket(loadPreferredMarket());
@@ -131,6 +135,7 @@ export default function AddVehicleModal({
       setInsuranceProvider("");
       setLicensePlate("");
       setVin("");
+      setMileage("");
     }
     setSaveError(null);
     setSaving(false);
@@ -207,7 +212,12 @@ export default function AddVehicleModal({
         model,
         submodel: useCatalog ? picker.submodel || undefined : undefined,
         market,
-        mileage: initialVehicle?.mileage ?? 0,
+        mileage: Math.max(
+          0,
+          Number.parseInt(mileage.replace(/[^\d]/g, ""), 10) ||
+            initialVehicle?.mileage ||
+            0,
+        ),
         engine,
         transmission: useCatalog
           ? picker.transmission || vcdb?.transmission || undefined
@@ -266,6 +276,7 @@ export default function AddVehicleModal({
       role="dialog"
       aria-modal="true"
       aria-label={isEdit ? "Edit vehicle" : "Add new vehicle"}
+      data-testid="add-vehicle-dialog"
     >
       <div className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-[#1e2937] p-6 sm:rounded-3xl sm:p-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <h3 className="mb-1 text-xl font-semibold">
@@ -289,8 +300,19 @@ export default function AddVehicleModal({
         <input
           type="text"
           placeholder="Vehicle Nickname (e.g. Daily Driver)"
+          data-testid="vehicle-nickname"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          className={`${inputClass} mb-4`}
+        />
+
+        <input
+          type="text"
+          inputMode="numeric"
+          placeholder="Current mileage (optional)"
+          data-testid="vehicle-mileage"
+          value={mileage}
+          onChange={(e) => setMileage(e.target.value.replace(/[^\d]/g, "").slice(0, 7))}
           className={`${inputClass} mb-4`}
         />
 
@@ -322,6 +344,7 @@ export default function AddVehicleModal({
           <div className="mt-3 space-y-3">
             <input
               type="text"
+              data-testid="vehicle-license-plate"
               value={licensePlate}
               onChange={(e) => setLicensePlate(e.target.value.slice(0, 16))}
               placeholder="License plate"
@@ -330,6 +353,7 @@ export default function AddVehicleModal({
             />
             <input
               type="text"
+              data-testid="vehicle-vin"
               value={vin}
               onChange={(e) => setVin(e.target.value.slice(0, 17))}
               placeholder="VIN (optional)"
@@ -410,6 +434,7 @@ export default function AddVehicleModal({
               <input
                 type="text"
                 placeholder="Make"
+                data-testid="vehicle-manual-make"
                 value={manualMake}
                 onChange={(e) => setManualMake(e.target.value)}
                 className={inputClass}
@@ -417,6 +442,7 @@ export default function AddVehicleModal({
               <input
                 type="text"
                 placeholder="Model"
+                data-testid="vehicle-manual-model"
                 value={manualModel}
                 onChange={(e) => setManualModel(e.target.value)}
                 className={inputClass}
@@ -424,6 +450,7 @@ export default function AddVehicleModal({
               <input
                 type="text"
                 placeholder="Engine"
+                data-testid="vehicle-manual-engine"
                 value={manualEngine}
                 onChange={(e) => setManualEngine(e.target.value)}
                 className={inputClass}
@@ -443,6 +470,7 @@ export default function AddVehicleModal({
           </button>
           <button
             type="button"
+            data-testid="vehicle-save"
             onClick={() => void handleSubmit()}
             disabled={!canSubmit}
             className="min-h-[48px] flex-1 rounded-2xl bg-blue-600 disabled:opacity-40"
