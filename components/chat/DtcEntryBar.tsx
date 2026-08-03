@@ -22,7 +22,8 @@ type Props = {
 
 /**
  * Shared fault-code / OBD screenshot / Connect OBD entry (Chat + Check Engine).
- * Connect OBD is shown when the user has an adapter or preference is unset.
+ * Connect OBD / BLE only when Settings → “I have an OBD-II adapter” is on.
+ * Enter code + screenshot always available (emphasized when BLE is hidden).
  * Does not modify CoachScenarioPlayer internals.
  */
 export default function DtcEntryBar({
@@ -116,7 +117,11 @@ export default function DtcEntryBar({
           type="button"
           disabled={disabled || busy}
           onClick={() => setModalOpen(true)}
-          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-cyan-500/50 hover:text-cyan-200 disabled:opacity-50 sm:flex-none sm:text-sm"
+          className={
+            showConnect
+              ? "inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-cyan-500/50 hover:text-cyan-200 disabled:opacity-50 sm:flex-none sm:text-sm"
+              : "inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-cyan-500/50 bg-cyan-500/15 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-500/25 disabled:opacity-50 sm:flex-none sm:text-sm"
+          }
         >
           <Binary className="h-3.5 w-3.5 text-cyan-400" />
           {t("dtc.enterCode")}
@@ -125,7 +130,11 @@ export default function DtcEntryBar({
           type="button"
           disabled={disabled || busy}
           onClick={pickObd}
-          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-600 bg-slate-900/60 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-cyan-500/40 hover:text-cyan-200 disabled:opacity-50 sm:flex-none sm:text-sm"
+          className={
+            showConnect
+              ? "inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-600 bg-slate-900/60 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-cyan-500/40 hover:text-cyan-200 disabled:opacity-50 sm:flex-none sm:text-sm"
+              : "inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:opacity-50 sm:flex-none sm:text-sm"
+          }
         >
           {busy ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />

@@ -34,14 +34,22 @@ export function parseObdAdapterPreference(row?: {
   };
 }
 
-/** Show Connect OBD entry when owned OR preference not yet set. */
+/**
+ * Show Connect OBD / BLE entry only when the user explicitly enabled
+ * “I have an OBD-II adapter”. Default / unset = hidden (still Enter code + screenshot).
+ */
 export function shouldShowObdConnectEntry(pref: ObdAdapterPreference): boolean {
-  return pref.hasObdAdapter || pref.preferenceUnset;
+  return pref.hasObdAdapter === true;
 }
 
 /** Emphasize device list / Connect steps only when explicitly owned. */
 export function shouldEmphasizeObdConnect(pref: ObdAdapterPreference): boolean {
-  return pref.hasObdAdapter && !pref.preferenceUnset;
+  return pref.hasObdAdapter === true && !pref.preferenceUnset;
+}
+
+/** Guard before any Web Bluetooth connect attempt. */
+export function canStartObdBleConnect(pref: ObdAdapterPreference): boolean {
+  return pref.hasObdAdapter === true;
 }
 
 /**

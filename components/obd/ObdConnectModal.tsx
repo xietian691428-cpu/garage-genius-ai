@@ -20,7 +20,10 @@ import { OBD_COMPATIBLE_DEVICES } from "@/lib/types/obd-session";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 import { useObdPreference } from "@/hooks/useObdPreference";
-import { shouldEmphasizeObdConnect } from "@/lib/obd-preference";
+import {
+  canStartObdBleConnect,
+  shouldEmphasizeObdConnect,
+} from "@/lib/obd-preference";
 
 type Props = {
   open: boolean;
@@ -113,6 +116,11 @@ export default function ObdConnectModal({
   };
 
   const connectAndRead = async () => {
+    if (!canStartObdBleConnect(pref)) {
+      setError(t("obd.bleBlockedByPref"));
+      setPhase("error");
+      return;
+    }
     setPhase("working");
     setError(null);
     try {
