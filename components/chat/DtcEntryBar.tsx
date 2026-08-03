@@ -9,6 +9,7 @@ import { compressImageDataUrl } from "@/lib/image";
 import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
 import { useObdPreference } from "@/hooks/useObdPreference";
 import { shouldShowObdConnectEntry } from "@/lib/obd-preference";
+import type { MileageUnit } from "@/lib/obd-mileage";
 
 type Props = {
   disabled?: boolean;
@@ -18,6 +19,9 @@ type Props = {
   onObdImage: (imageDataUrl: string) => void | Promise<void>;
   /** BLE OBD session → Chat diagnosis inject */
   onObdBleSession?: (snapshot: ObdSessionSnapshot) => void;
+  /** Current vehicle for OBD mileage write-back */
+  vehicleId?: string | null;
+  onMileageSynced?: (result: { mileage: number; unit: MileageUnit }) => void;
 };
 
 /**
@@ -32,6 +36,8 @@ export default function DtcEntryBar({
   onCodeSubmit,
   onObdImage,
   onObdBleSession,
+  vehicleId,
+  onMileageSynced,
 }: Props) {
   const { t } = useTranslation();
   const { pref } = useObdPreference();
@@ -92,6 +98,8 @@ export default function DtcEntryBar({
           open={bleOpen}
           onClose={() => setBleOpen(false)}
           onSessionReady={onObdBleSession}
+          vehicleId={vehicleId}
+          onMileageSynced={onMileageSynced}
         />
       ) : null}
       <input

@@ -80,6 +80,19 @@ export function useVehicles() {
     return saved;
   }, []);
 
+  /** Local UI merge after server already persisted (e.g. OBD mileage sync). */
+  const mergeVehicleLocal = useCallback(
+    (vehicleId: string, patch: Partial<VehicleInfo>) => {
+      setVehicles((prev) =>
+        prev.map((v) => (v.id === vehicleId ? { ...v, ...patch } : v)),
+      );
+      setCurrentVehicle((cur) =>
+        cur?.id === vehicleId ? { ...cur, ...patch } : cur,
+      );
+    },
+    [],
+  );
+
   const archiveVehicle = useCallback(async (vehicleId: string) => {
     await userVehiclesService.archive(vehicleId);
     const garage = await userVehiclesService.loadGarage();
@@ -105,6 +118,7 @@ export function useVehicles() {
     selectVehicle,
     addVehicle,
     updateVehicle,
+    mergeVehicleLocal,
     archiveVehicle,
     removeVehicle,
   };

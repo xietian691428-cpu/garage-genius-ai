@@ -182,7 +182,8 @@
     "prefSkip": "Skip for now",
     "iosPreferManual": "On this device, prefer Enter fault code or an OBD screenshot instead of live Bluetooth.",
     "noAdapterLiveHint": "Bluetooth OBD is off. Enable “I have an OBD-II adapter” in Settings to connect, or use Enter fault code / OBD screenshot.",
-    "bleBlockedByPref": "Turn on “I have an OBD-II adapter” in Settings before connecting Bluetooth OBD."
+    "bleBlockedByPref": "Turn on “I have an OBD-II adapter” in Settings before connecting Bluetooth OBD.",
+    "mileageUpdated": "Vehicle mileage updated to {{value}} {{unit}}"
   },
   "parts": {
     "searchOnAmazon": "Search on Amazon",

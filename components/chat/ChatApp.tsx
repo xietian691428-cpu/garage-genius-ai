@@ -67,6 +67,11 @@ interface Props {
   onVehicleChange: (vehicle: VehicleInfo) => void | Promise<void>;
   onAddVehicle: (vehicle: VehicleInfo) => Promise<VehicleInfo>;
   onUpdateVehicle?: (vehicle: VehicleInfo) => Promise<VehicleInfo>;
+  /** Local garage merge after server already wrote (OBD mileage sync). */
+  onMergeVehicleLocal?: (
+    vehicleId: string,
+    patch: Partial<VehicleInfo>,
+  ) => void;
   onArchiveVehicle?: (vehicle: VehicleInfo) => Promise<void>;
   onRemoveVehicle?: (vehicle: VehicleInfo) => Promise<void>;
 }
@@ -84,6 +89,7 @@ export default function ChatApp({
   onVehicleChange,
   onAddVehicle,
   onUpdateVehicle,
+  onMergeVehicleLocal,
   onArchiveVehicle,
   onRemoveVehicle,
 }: Props) {
@@ -820,6 +826,14 @@ export default function ChatApp({
           onFaultCode={handleFaultCode}
           onObdScreenshot={(img) => void handleObdScreenshot(img)}
           onObdBleSession={handleObdBleSession}
+          vehicleId={currentVehicle?.id}
+          onMileageSynced={(result) => {
+            if (!currentVehicle) return;
+            onMergeVehicleLocal?.(currentVehicle.id, {
+              mileage: result.mileage,
+              mileageUnit: result.unit,
+            });
+          }}
           onScanReceipt={() => setReceiptModalOpen(true)}
           isLoading={vehiclesLoading || !ready || !currentVehicle}
           isGenerating={isLoading}

@@ -66,6 +66,7 @@ function GarageAppInner() {
     selectVehicle,
     addVehicle,
     updateVehicle,
+    mergeVehicleLocal,
     archiveVehicle,
     removeVehicle,
   } = useVehicles();
@@ -191,6 +192,7 @@ function GarageAppInner() {
                   onVehicleChange={selectVehicle}
                   onAddVehicle={addVehicle}
                   onUpdateVehicle={updateVehicle}
+                  onMergeVehicleLocal={mergeVehicleLocal}
                 />
               )}
 
@@ -212,6 +214,7 @@ function GarageAppInner() {
                   onVehicleChange={selectVehicle}
                   onAddVehicle={addVehicle}
                   onUpdateVehicle={updateVehicle}
+                  onMergeVehicleLocal={mergeVehicleLocal}
                   onArchiveVehicle={async (v) => {
                     await archiveVehicle(v.id);
                   }}
@@ -231,6 +234,7 @@ function GarageAppInner() {
                     })
                   }
                   onGoToParts={() => setAppTab("parts")}
+                  onMergeVehicleLocal={mergeVehicleLocal}
                 />
               )}
 

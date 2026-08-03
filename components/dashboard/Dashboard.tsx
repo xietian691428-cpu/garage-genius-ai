@@ -111,6 +111,10 @@ interface Props {
   onVehicleChange: (vehicle: VehicleInfo) => void | Promise<void>;
   onAddVehicle?: (vehicle: VehicleInfo) => void | Promise<VehicleInfo>;
   onUpdateVehicle?: (vehicle: VehicleInfo) => void | Promise<VehicleInfo>;
+  onMergeVehicleLocal?: (
+    vehicleId: string,
+    patch: Partial<VehicleInfo>,
+  ) => void;
 }
 
 export default function Dashboard({
@@ -123,6 +127,7 @@ export default function Dashboard({
   onVehicleChange,
   onAddVehicle,
   onUpdateVehicle,
+  onMergeVehicleLocal,
 }: Props) {
   const { t } = useTranslation();
   const { isFree, features } = useSubscription();
@@ -1881,6 +1886,14 @@ export default function Dashboard({
         onSessionReady={applyLiveObdSession}
         onAskAi={onAskAI ? handleObdAskAi : undefined}
         askAiLabel={t("obd.diagnoseInChat")}
+        vehicleId={vehicle?.id}
+        onMileageSynced={(result) => {
+          if (!vehicle) return;
+          onMergeVehicleLocal?.(vehicle.id, {
+            mileage: result.mileage,
+            mileageUnit: result.unit,
+          });
+        }}
       />
 
       {selectedRegion && vehicle && !activeFocus && (

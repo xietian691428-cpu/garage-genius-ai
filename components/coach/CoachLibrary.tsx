@@ -55,6 +55,10 @@ type Props = {
     options?: { playbookSlug?: string; images?: string[] },
   ) => void;
   onGoToParts?: () => void;
+  onMergeVehicleLocal?: (
+    vehicleId: string,
+    patch: Partial<VehicleInfo>,
+  ) => void;
 };
 
 const FOCUS_ICON: Record<string, typeof BookOpen> = {
@@ -78,6 +82,7 @@ export default function CoachLibrary({
   currentVehicle,
   onAskAI,
   onGoToParts,
+  onMergeVehicleLocal,
 }: Props) {
   const { features, isFree, recordPhotoDiagnose } = useSubscription();
   const { t } = useTranslation();
@@ -313,6 +318,14 @@ export default function CoachLibrary({
             onCodeSubmit={runDtcToChat}
             onObdImage={(img) => void runObdScreenshotToChat(img)}
             onObdBleSession={runObdBleToChat}
+            vehicleId={currentVehicle?.id}
+            onMileageSynced={(result) => {
+              if (!currentVehicle) return;
+              onMergeVehicleLocal?.(currentVehicle.id, {
+                mileage: result.mileage,
+                mileageUnit: result.unit,
+              });
+            }}
           />
         ) : null}
         <div className="min-h-0 flex-1">

@@ -30,6 +30,7 @@ import DtcEntryBar from "@/components/chat/DtcEntryBar";
 import { compressImageDataUrl } from "@/lib/image";
 import { MAX_PHOTO_DIAGNOSE_IMAGES } from "@/lib/types/subscription";
 import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
+import type { MileageUnit } from "@/lib/obd-mileage";
 
 interface Props {
   onSend: (content: string, images?: string[]) => void;
@@ -39,6 +40,8 @@ interface Props {
   onObdScreenshot?: (imageDataUrl: string) => void | Promise<void>;
   /** BLE OBD connect → DTCs/sensors → diagnosis */
   onObdBleSession?: (snapshot: ObdSessionSnapshot) => void;
+  vehicleId?: string | null;
+  onMileageSynced?: (result: { mileage: number; unit: MileageUnit }) => void;
   /** Open receipt / invoice scan → confirm → maintenance history */
   onScanReceipt?: () => void;
   /** Composer disabled (no vehicle / not ready) */
@@ -94,6 +97,8 @@ export default function ChatInput({
   onFaultCode,
   onObdScreenshot,
   onObdBleSession,
+  vehicleId,
+  onMileageSynced,
   onScanReceipt,
   isLoading,
   isGenerating = false,
@@ -418,6 +423,8 @@ export default function ChatInput({
             await onObdScreenshot(img);
           }}
           onObdBleSession={onObdBleSession}
+          vehicleId={vehicleId}
+          onMileageSynced={onMileageSynced}
         />
       ) : null}
 

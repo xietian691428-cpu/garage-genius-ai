@@ -15,6 +15,8 @@ export interface VehicleInfo {
    */
   market?: VehicleMarketCode;
   mileage: number;
+  /** Preferred unit for mileage (miles | km). OBD A6 is converted on write-back. */
+  mileageUnit?: "miles" | "km";
   engine: string;
   transmission?: string;
   driveType?: string;

@@ -13,6 +13,11 @@ import {
   DEFAULT_VEHICLE_MARKET,
   normalizeVehicleMarket,
 } from "@/lib/types/vehicle-market";
+import {
+  mileageUnitFromMarket,
+  normalizeMileageUnit,
+  type MileageUnit,
+} from "@/lib/obd-mileage";
 
 const LOCAL_VEHICLES_KEY = "garageGenius_vehicles";
 const MIGRATED_KEY_PREFIX = "garageGenius_vehicles_migrated_";
@@ -26,6 +31,9 @@ export type UserVehicleRow = {
   model: string;
   submodel: string | null;
   mileage: number;
+  mileage_unit?: string | null;
+  mileage_updated_at?: string | null;
+  mileage_source?: string | null;
   engine: string;
   transmission: string | null;
   drive_type: string | null;
@@ -65,6 +73,10 @@ export function rowToVehicleInfo(row: UserVehicleRow): VehicleInfo {
     model: row.model,
     submodel: row.submodel ?? undefined,
     mileage: row.mileage ?? 0,
+    mileageUnit: normalizeMileageUnit(
+      row.mileage_unit,
+      mileageUnitFromMarket(row.market),
+    ),
     engine: row.engine || "Unknown",
     transmission: row.transmission ?? undefined,
     driveType: row.drive_type ?? undefined,
@@ -99,6 +111,10 @@ export function vehicleInfoToRow(
     model: vehicle.model,
     submodel: vehicle.submodel ?? null,
     mileage: Number(vehicle.mileage) || 0,
+    mileage_unit: normalizeMileageUnit(
+      vehicle.mileageUnit,
+      mileageUnitFromMarket(vehicle.market),
+    ) satisfies MileageUnit,
     engine: vehicle.engine || "Unknown",
     transmission: vehicle.transmission ?? null,
     drive_type: vehicle.driveType ?? null,
@@ -226,9 +242,21 @@ export const userVehiclesService = {
       .select("*")
       .single();
 
-    // Pre-migration 034: license_plate column may not exist yet.
+    // Pre-migration columns may not exist yet.
     if (error && /license_plate/i.test(error.message)) {
       delete insertPayload.license_plate;
+      const retry = await supabase
+        .from("user_vehicles")
+        .insert(insertPayload)
+        .select("*")
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
+    if (error && /mileage_unit|mileage_source|mileage_updated_at/i.test(error.message)) {
+      delete insertPayload.mileage_unit;
+      delete insertPayload.mileage_source;
+      delete insertPayload.mileage_updated_at;
       const retry = await supabase
         .from("user_vehicles")
         .insert(insertPayload)
@@ -265,6 +293,20 @@ export const userVehiclesService = {
 
     if (error && /license_plate/i.test(error.message)) {
       const { license_plate: _lp, ...rest } = fields as Record<string, unknown>;
+      const retry = await supabase
+        .from("user_vehicles")
+        .update(rest)
+        .eq("id", vehicle.id)
+        .select("*")
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
+    if (error && /mileage_unit|mileage_source|mileage_updated_at/i.test(error.message)) {
+      const {
+        mileage_unit: _u,
+        ...rest
+      } = fields as Record<string, unknown>;
       const retry = await supabase
         .from("user_vehicles")
         .update(rest)

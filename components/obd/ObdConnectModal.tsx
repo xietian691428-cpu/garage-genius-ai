@@ -24,6 +24,8 @@ import {
   canStartObdBleConnect,
   shouldEmphasizeObdConnect,
 } from "@/lib/obd-preference";
+import { syncObdMileageToVehicle } from "@/lib/obd-mileage-sync-client";
+import type { MileageUnit } from "@/lib/obd-mileage";
 
 type Props = {
   open: boolean;
@@ -46,6 +48,13 @@ type Props = {
    */
   onAskAi?: (snapshot: ObdSessionSnapshot) => void;
   askAiLabel?: string;
+  /** Current garage vehicle — required for OBD mileage write-back. */
+  vehicleId?: string | null;
+  /** Local garage refresh after mileage was written (new reading only). */
+  onMileageSynced?: (result: {
+    mileage: number;
+    unit: MileageUnit;
+  }) => void;
 };
 
 type Phase = "pref" | "guide" | "working" | "result" | "error";
@@ -61,6 +70,8 @@ export default function ObdConnectModal({
   autoNotifyOnReady = true,
   onAskAi,
   askAiLabel,
+  vehicleId,
+  onMileageSynced,
 }: Props) {
   const { t } = useTranslation();
   const { pref, loading: prefLoading, setHasObdAdapter } = useObdPreference();
@@ -69,7 +80,32 @@ export default function ObdConnectModal({
   const [snapshot, setSnapshot] = useState<ObdSessionSnapshot | null>(null);
   const [connectedName, setConnectedName] = useState<string | null>(null);
   const [prefBusy, setPrefBusy] = useState(false);
+  const [mileageToast, setMileageToast] = useState<string | null>(null);
   useBodyScrollLock(open);
+
+  useEffect(() => {
+    if (!mileageToast) return;
+    const id = window.setTimeout(() => setMileageToast(null), 3200);
+    return () => window.clearTimeout(id);
+  }, [mileageToast]);
+
+  const maybeSyncMileage = async (session: ObdSessionSnapshot) => {
+    if (!canStartObdBleConnect(pref)) return;
+    if (!vehicleId || session.odometerKm == null) return;
+    const result = await syncObdMileageToVehicle({
+      vehicleId,
+      odometerKm: session.odometerKm,
+    });
+    if (!result?.updated || result.mileage == null || !result.unit) return;
+    setMileageToast(
+      result.message ||
+        t("obd.mileageUpdated", {
+          value: result.mileage.toLocaleString(),
+          unit: result.unit === "km" ? "km" : "miles",
+        }),
+    );
+    onMileageSynced?.({ mileage: result.mileage, unit: result.unit });
+  };
 
   const support = getObdRuntimeSupport();
   const emphasize = shouldEmphasizeObdConnect(pref);
@@ -78,6 +114,7 @@ export default function ObdConnectModal({
     if (!open || prefLoading) return;
     setError(null);
     setSnapshot(null);
+    setMileageToast(null);
     const obd = getObdConnector();
     setConnectedName(obd.isConnected ? obd.deviceName : null);
     if (pref.preferenceUnset) {
@@ -148,6 +185,7 @@ export default function ObdConnectModal({
       }
       setSnapshot(session);
       setPhase("result");
+      void maybeSyncMileage(session);
       if (autoNotifyOnReady) {
         onSessionReady(session);
       }
@@ -336,6 +374,14 @@ export default function ObdConnectModal({
           {phase === "result" && snapshot ? (
             <div className="space-y-3">
               <p className="text-sm text-emerald-300">{snapshot.note}</p>
+              {mileageToast ? (
+                <p
+                  className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-xs font-medium text-cyan-100"
+                  role="status"
+                >
+                  {mileageToast}
+                </p>
+              ) : null}
               <p className="text-xs text-slate-400">
                 {onAskAi ? t("obd.dashboardSyncedHint") : t("obd.injectedHint")}
               </p>
