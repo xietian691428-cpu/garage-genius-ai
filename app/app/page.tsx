@@ -57,6 +57,9 @@ function GarageAppInner() {
   const [chatSeedPrompt, setChatSeedPrompt] = useState("");
   const [chatSeedImages, setChatSeedImages] = useState<string[]>([]);
   const [chatPlaybookSlug, setChatPlaybookSlug] = useState<string | null>(null);
+  const [coachPlaybookSlug, setCoachPlaybookSlug] = useState<string | null>(
+    null,
+  );
   const [focusCommand, setFocusCommand] = useState<FocusCommand | null>(null);
   const { showTrialEndedPrompt, dismissTrialEndedPrompt } = useSubscription();
   const {
@@ -193,6 +196,13 @@ function GarageAppInner() {
                   onAddVehicle={addVehicle}
                   onUpdateVehicle={updateVehicle}
                   onMergeVehicleLocal={mergeVehicleLocal}
+                  onOpenSettings={() => setAppTab("settings")}
+                  onOpenChat={() => setAppTab("chat")}
+                  onOpenHistory={() => setAppTab("history")}
+                  onOpenCoach={(slug) => {
+                    setCoachPlaybookSlug(slug ?? null);
+                    setAppTab("coach");
+                  }}
                 />
               )}
 
@@ -235,6 +245,8 @@ function GarageAppInner() {
                   }
                   onGoToParts={() => setAppTab("parts")}
                   onMergeVehicleLocal={mergeVehicleLocal}
+                  initialPlaybookSlug={coachPlaybookSlug}
+                  onInitialPlaybookConsumed={() => setCoachPlaybookSlug(null)}
                 />
               )}
 

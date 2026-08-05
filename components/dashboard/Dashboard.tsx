@@ -49,7 +49,6 @@ import {
 import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
 import {
   buildCodesAskPrompt,
-  buildReminders,
   computeHealthScore,
   estimateMarketBand,
   estimateMilesToService,
@@ -81,12 +80,6 @@ import {
   getAffiliateLinks,
   partQueryForDtc,
 } from "@/lib/affiliate-links";
-import {
-  isReminderSnoozed,
-  shouldRemindService,
-  snoozeReminder,
-  upcomingMaintenanceCopy,
-} from "@/lib/reminders";
 import { enableWebPushReminders, isWebPushSupported, syncWebPushIfGranted } from "@/lib/push-client";
 import {
   listReminderInbox,
@@ -99,9 +92,13 @@ import { exportAnnualHealthReportPdf } from "@/lib/export-annual-health-report";
 import { listRecommendedCoachPlaybooks } from "@/lib/coach-scenarios/catalog";
 import { maintenanceService } from "@/lib/maintenance-records";
 import UpgradeModal from "@/components/ui/UpgradeModal";
+import HomeHub from "@/components/home/HomeHub";
 
 interface Props {
-  onAskAI?: (prompt: string, options?: { images?: string[] }) => void;
+  onAskAI?: (
+    prompt: string,
+    options?: { images?: string[]; playbookSlug?: string },
+  ) => void;
   /** Focus Mode payload from Chat (AI <focus> / focus-data) */
   focusCommand?: FocusCommand | null;
   onFocusConsumed?: () => void;
@@ -115,6 +112,10 @@ interface Props {
     vehicleId: string,
     patch: Partial<VehicleInfo>,
   ) => void;
+  onOpenSettings?: () => void;
+  onOpenCoach?: (slug?: string) => void;
+  onOpenChat?: () => void;
+  onOpenHistory?: () => void;
 }
 
 export default function Dashboard({
@@ -128,6 +129,10 @@ export default function Dashboard({
   onAddVehicle,
   onUpdateVehicle,
   onMergeVehicleLocal,
+  onOpenSettings,
+  onOpenCoach,
+  onOpenChat,
+  onOpenHistory,
 }: Props) {
   const { t } = useTranslation();
   const { isFree, features } = useSubscription();
@@ -157,7 +162,6 @@ export default function Dashboard({
   const [obdNote, setObdNote] = useState<string | null>(null);
   const [liveSensors, setLiveSensors] = useState<ObdLiveSensors | null>(null);
   const [isRefreshingSensors, setIsRefreshingSensors] = useState(false);
-  const [reminderSnoozed, setReminderSnoozed] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [inbox, setInbox] = useState<ReminderInboxItem[]>([]);
   const [inboxLoading, setInboxLoading] = useState(false);
@@ -206,7 +210,6 @@ export default function Dashboard({
       setVitals(null);
       setVitalsHistory([]);
       setLiveSensors(null);
-      setReminderSnoozed(false);
       setInbox([]);
       return;
     }
@@ -214,7 +217,6 @@ export default function Dashboard({
     setVisionNote(null);
     setObdNote(null);
     setLiveSensors(null);
-    setReminderSnoozed(isReminderSnoozed(vehicle.id));
     void (async () => {
       try {
         const hydrated = await vehicleVitalsCloud.hydrateLocal(vehicle.id);
@@ -330,30 +332,6 @@ export default function Dashboard({
     () => (vehicle ? estimateMarketBand(vehicle) : "—"),
     [vehicle],
   );
-
-  const reminders = useMemo(() => {
-    if (!vehicle || !vitals || health == null) return [];
-    return buildReminders(vehicle, vitals, health);
-  }, [vehicle, vitals, health]);
-
-  const serviceDue = useMemo(
-    () => (vehicle ? shouldRemindService(vehicle) : false),
-    [vehicle],
-  );
-
-  const maintenanceCopy = useMemo(() => {
-    if (!vehicle) return null;
-    return upcomingMaintenanceCopy(vehicle);
-  }, [vehicle]);
-
-  const handleSetReminder = () => {
-    if (!vehicle) return;
-    snoozeReminder(vehicle.id, 7, "In-app snooze");
-    setReminderSnoozed(true);
-    alert(
-      "Reminder snoozed for 7 days on this device.\nEnable Push below for email / browser alerts when due.",
-    );
-  };
 
   const handleEnablePush = async () => {
     setPushBusy(true);
@@ -888,13 +866,6 @@ export default function Dashboard({
     vehicles.some((v) => normalizeVehicleMarket(v.market) === m.code),
   );
 
-  const vehiclesForSelect =
-    marketFilter === "ALL"
-      ? vehicles
-      : vehicles.filter(
-          (v) => normalizeVehicleMarket(v.market) === marketFilter,
-        );
-
   const canAdd =
     Boolean(onAddVehicle) && features.canAddVehicle(vehicles.length);
 
@@ -914,10 +885,25 @@ export default function Dashboard({
   return (
     <div className="relative flex-1 overflow-auto bg-[#0a0f1c] p-3 pb-[var(--content-pad-bottom)] sm:p-6 lg:p-8 lg:pb-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex flex-col gap-3 sm:mb-10 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+        <HomeHub
+          vehicles={vehicles}
+          vehicle={vehicle}
+          vehiclesLoading={vehiclesLoading}
+          vitals={vitals}
+          onVehicleChange={onVehicleChange}
+          onAskAI={onAskAI}
+          onOpenSettings={() => onOpenSettings?.()}
+          onOpenCoach={(slug) => onOpenCoach?.(slug)}
+          onOpenChat={() => onOpenChat?.()}
+          onOpenHistory={() => onOpenHistory?.()}
+          onPhotoDiagnose={handlePhotoDiagnosis}
+          onConnectObd={() => setShowObdModal(true)}
+        />
+
+        <div className="mb-6 mt-8 flex flex-col gap-3 border-t border-slate-800 pt-8 sm:mb-10 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div>
-            <h1 className="text-2xl font-bold sm:text-3xl lg:text-4xl">
-              Vehicle Dashboard
+            <h1 className="text-xl font-bold sm:text-2xl lg:text-3xl">
+              Inspect
             </h1>
             <p className="mt-1 text-sm text-slate-400 sm:text-base">
               {vehicleLabel} • Tap an area — instant checklist, AI only when you
@@ -946,34 +932,6 @@ export default function Dashboard({
                     </select>
                   </label>
                 )}
-                <label className="block text-sm text-slate-400">
-                  Active vehicle
-                  <select
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-base text-slate-100 outline-none focus:border-cyan-400"
-                    value={
-                      vehiclesForSelect.some((v) => v.id === vehicle?.id)
-                        ? (vehicle?.id ?? "")
-                        : ""
-                    }
-                    disabled={vehiclesLoading}
-                    onChange={(e) => {
-                      const next = vehicles.find(
-                        (v) => v.id === e.target.value,
-                      );
-                      if (next) void onVehicleChange(next);
-                    }}
-                  >
-                    {vehiclesForSelect.length === 0 && (
-                      <option value="">No vehicles in this market</option>
-                    )}
-                    {vehiclesForSelect.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.name} — {formatVehicleYmmMarket(v)}
-                        {v.vcdb?.source === "vcdb" ? " ✓ VCdb" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </label>
                 {onUpdateVehicle && vehicle && (
                   <button
                     type="button"
@@ -1688,114 +1646,23 @@ export default function Dashboard({
           </div>
         )}
 
-        {/* Upcoming Maintenance card */}
-        {vehicle && maintenanceCopy && !reminderSnoozed && (
-          <div
-            className={`mt-8 rounded-3xl border p-6 sm:p-8 ${
-              serviceDue
-                ? "border-amber-800 bg-amber-950"
-                : "border-slate-700 bg-[#111827]"
-            }`}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <h3
-                  className={`flex items-center gap-3 text-lg font-semibold sm:text-xl ${
-                    serviceDue ? "text-amber-400" : "text-white"
-                  }`}
-                >
-                  <Clock className="h-6 w-6 shrink-0" />
-                  Upcoming Maintenance
-                </h3>
-                <p
-                  className={`mt-2 text-sm sm:text-base ${
-                    serviceDue ? "text-amber-300" : "text-slate-400"
-                  }`}
-                >
-                  {maintenanceCopy.detail}
-                </p>
-                {reminders.length > 0 && (
-                  <ul
-                    className={`mt-3 space-y-1 text-sm ${
-                      serviceDue ? "text-amber-200/80" : "text-slate-400"
-                    }`}
-                  >
-                    {reminders.slice(0, 2).map((r) => (
-                      <li key={r}>• {r}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-2">
-                <button
-                  type="button"
-                  onClick={handleSetReminder}
-                  className={`text-sm hover:underline ${
-                    serviceDue
-                      ? "text-amber-400"
-                      : "text-cyan-400"
-                  }`}
-                >
-                  Snooze 7 days
-                </button>
-                {isWebPushSupported() && (
-                  <button
-                    type="button"
-                    onClick={() => void handleEnablePush()}
-                    disabled={pushBusy}
-                    className="text-xs text-emerald-400 hover:underline disabled:opacity-40"
-                  >
-                    {pushBusy ? "Enabling…" : "Enable Push"}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {onAskAI && (
+        {/* Push opt-in — predictive cards live in HomeHub above */}
+        {vehicle && isWebPushSupported() && (
+          <div className="mt-8 rounded-3xl border border-slate-800 bg-[#111827]/80 px-4 py-4 sm:px-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-slate-400">
+                Get due-date nudges on this device when maintenance is coming up.
+              </p>
               <button
                 type="button"
-                onClick={() =>
-                  onAskAI(
-                    `Help me plan upcoming maintenance for my ${vehicle.year} ${vehicle.make} ${vehicle.model} (${vehicle.market || "US"}). Current mileage: ${vehicle.mileage || "unknown"}. Last service: ${vehicle.lastMaintenance || "unknown"}.`,
-                  )
-                }
-                className={`mt-6 w-full rounded-2xl py-3 text-sm font-medium text-white transition ${
-                  serviceDue
-                    ? "bg-amber-600 hover:bg-amber-700"
-                    : "bg-cyan-600 hover:bg-cyan-500"
-                }`}
+                onClick={() => void handleEnablePush()}
+                disabled={pushBusy}
+                className="inline-flex min-h-[40px] items-center rounded-xl border border-emerald-500/40 px-3 text-xs font-medium text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-40"
               >
-                Ask AI Maintenance Plan
+                {pushBusy ? "Enabling…" : "Enable Push"}
               </button>
-            )}
-            <button
-              type="button"
-              onClick={handleExportReport}
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-600 py-2.5 text-sm text-slate-300 hover:border-cyan-500/40 hover:text-cyan-300"
-            >
-              <FileDown className="h-4 w-4" />
-              Export Snapshot (PDF)
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleAnnualHealthReport()}
-              disabled={annualBusy}
-              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-500/40 bg-cyan-500/10 py-2.5 text-sm font-medium text-cyan-200 hover:border-cyan-400/60 disabled:opacity-60"
-            >
-              <FileDown className="h-4 w-4" />
-              {annualBusy
-                ? "Building annual report…"
-                : features.annualHealthReport
-                  ? "Annual Health Report (PDF)"
-                  : "Annual Health Report (Pro)"}
-            </button>
+            </div>
           </div>
-        )}
-
-        {vehicle && reminderSnoozed && (
-          <p className="mt-6 text-center text-xs text-slate-500">
-            Maintenance reminder snoozed on this device for 7 days.
-          </p>
         )}
 
         {/* Notifications inbox — reminder_deliveries (Edge / cron / in_app) */}

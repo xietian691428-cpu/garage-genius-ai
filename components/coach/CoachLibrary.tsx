@@ -59,6 +59,9 @@ type Props = {
     vehicleId: string,
     patch: Partial<VehicleInfo>,
   ) => void;
+  /** Open a playbook immediately (e.g. from Home predictive “How to do it”) */
+  initialPlaybookSlug?: string | null;
+  onInitialPlaybookConsumed?: () => void;
 };
 
 const FOCUS_ICON: Record<string, typeof BookOpen> = {
@@ -83,6 +86,8 @@ export default function CoachLibrary({
   onAskAI,
   onGoToParts,
   onMergeVehicleLocal,
+  initialPlaybookSlug = null,
+  onInitialPlaybookConsumed,
 }: Props) {
   const { features, isFree, recordPhotoDiagnose } = useSubscription();
   const { t } = useTranslation();
@@ -160,6 +165,19 @@ export default function CoachLibrary({
       setStarting(false);
     }
   };
+
+  useEffect(() => {
+    if (!initialPlaybookSlug) return;
+    const playbook = getCoachPlaybook(initialPlaybookSlug);
+    if (!playbook) {
+      onInitialPlaybookConsumed?.();
+      return;
+    }
+    void openPlaybook(initialPlaybookSlug as CoachPlaybookSlug).finally(() => {
+      onInitialPlaybookConsumed?.();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- open once per slug
+  }, [initialPlaybookSlug]);
 
   const handleAnnualReport = async () => {
     if (!currentVehicle) {
