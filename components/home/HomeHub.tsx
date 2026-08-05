@@ -58,9 +58,6 @@ function unfinishedHintFromMessages(
       /\b(rough idle|check engine|misfire|noise|vibration|smell)\b/i,
     );
     if (rough) return rough[1];
-    if ((m.content || "").length > 40) {
-      return m.content.replace(/\s+/g, " ").slice(0, 40).trim();
-    }
   }
   return null;
 }
@@ -195,11 +192,8 @@ export default function HomeHub({
       vitals,
       predictive,
       unfinishedDiagnosisHint: unfinishedHint,
-      hasRecentShopReportDraft: recent.some((r) =>
-        r.label.startsWith("Shop Report"),
-      ),
     });
-  }, [vehicle, vitals, predictive, unfinishedHint, recent]);
+  }, [vehicle, vitals, predictive, unfinishedHint]);
 
   const shopMessages = useMemo(() => {
     const codes = vitals?.codes || [];

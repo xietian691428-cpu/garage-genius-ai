@@ -140,14 +140,12 @@ export function buildNextRecommendedAction(opts: {
   vitals: VehicleVitals | null;
   predictive: PredictiveMaintenanceCard[];
   unfinishedDiagnosisHint?: string | null;
-  hasRecentShopReportDraft?: boolean;
 }): NextActionModel {
   const {
     vehicle,
     vitals,
     predictive,
     unfinishedDiagnosisHint,
-    hasRecentShopReportDraft,
   } = opts;
   const codes = openCodes(vitals);
   const secondaryLabel = "See all recommendations";
@@ -189,7 +187,7 @@ export function buildNextRecommendedAction(opts: {
     };
   }
 
-  if (codes.length > 0 || hasRecentShopReportDraft) {
+  if (codes.length > 0) {
     const codeHint = codes[0]?.code || "your recent diagnosis";
     return {
       title: "Export Shop Report for your mechanic",

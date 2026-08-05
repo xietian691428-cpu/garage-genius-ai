@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import type { VehicleInfo } from "@/lib/types/chat";
 import type { MaintenanceRecord } from "@/lib/types/maintenance";
 import {
@@ -10,6 +10,10 @@ import {
   buildNextRecommendedAction,
 } from "@/lib/home-health";
 import type { VehicleVitals } from "@/lib/vehicle-vitals";
+import {
+  isPredictiveItemSnoozed,
+  snoozePredictiveItem,
+} from "@/lib/predictive-maintenance/snooze";
 
 const baseVehicle: VehicleInfo = {
   id: "v1",
@@ -35,6 +39,35 @@ function vitalsWithCodes(codes: { code: string; desc: string }[]): VehicleVitals
     updatedAt: new Date().toISOString(),
   };
 }
+
+describe("predictive snooze", () => {
+  const mem: Record<string, string> = {};
+  beforeEach(() => {
+    for (const k of Object.keys(mem)) delete mem[k];
+    const storage = {
+      getItem: (k: string) => mem[k] ?? null,
+      setItem: (k: string, v: string) => {
+        mem[k] = v;
+      },
+      removeItem: (k: string) => {
+        delete mem[k];
+      },
+    };
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      value: storage,
+    });
+  });
+
+  it("expires when either 30d or 1000mi threshold is met (whichever first)", () => {
+    snoozePredictiveItem("v1", "cabin_air_filter", 10000);
+    expect(isPredictiveItemSnoozed("v1", "cabin_air_filter", 10000)).toBe(true);
+    // mileage threshold hit first
+    expect(isPredictiveItemSnoozed("v1", "cabin_air_filter", 11000)).toBe(
+      false,
+    );
+  });
+});
 
 describe("predictive maintenance engine", () => {
   it("surfaces due-soon cabin filter near interval without history", () => {
@@ -127,12 +160,6 @@ describe("home health helpers", () => {
   });
 
   it("Looking good when no codes and no near-term items", () => {
-    const predictive = evaluatePredictiveMaintenance({
-      vehicle: { ...baseVehicle, mileage: 1000 },
-      ignoreSnooze: true,
-      maxItems: 3,
-    });
-    // At 1k mi, oil/rotation may still be upcoming within 5k — filter to none
     const snap = buildHealthSnapshot({
       vehicle: { ...baseVehicle, mileage: 1000 },
       vitals: vitalsWithCodes([]),
@@ -151,5 +178,14 @@ describe("home health helpers", () => {
     });
     expect(next.title).toMatch(/Finish your diagnosis/i);
     expect(next.primary.action).toBe("finish_diagnosis");
+  });
+
+  it("does not push Shop Report just because history exists", () => {
+    const next = buildNextRecommendedAction({
+      vehicle: baseVehicle,
+      vitals: vitalsWithCodes([]),
+      predictive: [],
+    });
+    expect(next.primary.action).toBe("describe_symptom");
   });
 });

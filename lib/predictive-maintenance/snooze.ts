@@ -24,10 +24,21 @@ function vehicleBucket(vehicleId: string, map: SnoozeMap): SnoozeMap {
   return out;
 }
 
-function readAll(): SnoozeMap {
-  if (typeof window === "undefined") return {};
+function getLocalStorage(): Storage | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const g = globalThis as typeof globalThis & { localStorage?: Storage; window?: Window };
+    const store = g.localStorage ?? g.window?.localStorage;
+    return store ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function readAll(): SnoozeMap {
+  const store = getLocalStorage();
+  if (!store) return {};
+  try {
+    const raw = store.getItem(STORAGE_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as SnoozeMap;
     return parsed && typeof parsed === "object" ? parsed : {};
@@ -37,9 +48,10 @@ function readAll(): SnoozeMap {
 }
 
 function writeAll(map: SnoozeMap) {
-  if (typeof window === "undefined") return;
+  const store = getLocalStorage();
+  if (!store) return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    store.setItem(STORAGE_KEY, JSON.stringify(map));
   } catch {
     /* quota */
   }
@@ -80,9 +92,8 @@ export function isPredictiveItemSnoozed(
   const milesActive =
     typeof entry.untilMileage === "number" &&
     currentMileage < entry.untilMileage;
-  // Snooze holds while EITHER clock OR mileage threshold has not yet passed
-  // (user asked to defer ~30d OR ~1k mi — treat as OR hold).
-  return timeActive || milesActive;
+  // Snooze ~30d OR ~1,000 mi — whichever comes first (hold while BOTH still active).
+  return timeActive && milesActive;
 }
 
 export function clearPredictiveSnooze(
