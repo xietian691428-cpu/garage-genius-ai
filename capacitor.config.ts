@@ -25,18 +25,23 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 1200,
+      // Keep short; JS also calls SplashScreen.hide() on login / AuthGate
+      launchShowDuration: 800,
       launchAutoHide: true,
-      launchFadeOutDuration: 300,
+      launchFadeOutDuration: 250,
       backgroundColor: "#0a0f1c",
       showSpinner: false,
       splashFullScreen: true,
       splashImmersive: true,
     },
+    Browser: {
+      // Used for OAuth on native so Apple/Google don't trap the WebView
+    },
   },
   ios: {
     scheme: "Garage Genius AI",
     contentInset: "automatic",
+    // Prefer scrolling over fixed insets so iPad keyboard doesn't trap forms
     // Custom URL scheme for OAuth / deep links (also register Universal Links).
     // Associated Domains configured in Xcode: applinks:garagegenius.cloud
   },

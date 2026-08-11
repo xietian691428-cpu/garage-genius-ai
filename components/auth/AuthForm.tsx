@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Car } from "lucide-react";
@@ -10,6 +10,8 @@ import {
   isAppleAuthEnabled,
   isGoogleAuthEnabled,
 } from "@/lib/auth-providers";
+import { hideNativeSplash } from "@/lib/native-splash";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 type Mode = "signin" | "signup";
 
@@ -73,10 +75,26 @@ export default function AuthForm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(oauthErrorParam);
   const [info, setInfo] = useState<string | null>(null);
+  /** Soft gate: never hide the form forever if session bootstrap stalls */
+  const [sessionWaitTimedOut, setSessionWaitTimedOut] = useState(false);
+  const submittingRef = useRef(false);
+
+  useEffect(() => {
+    void hideNativeSplash();
+  }, []);
 
   useEffect(() => {
     if (oauthErrorParam) setError(oauthErrorParam);
   }, [oauthErrorParam]);
+
+  useEffect(() => {
+    if (!authLoading) {
+      setSessionWaitTimedOut(false);
+      return;
+    }
+    const id = window.setTimeout(() => setSessionWaitTimedOut(true), 9000);
+    return () => window.clearTimeout(id);
+  }, [authLoading]);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -86,11 +104,18 @@ export default function AuthForm() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current || busy) return;
+    submittingRef.current = true;
     setError(null);
     setInfo(null);
     setBusy(true);
 
     try {
+      if (!isSupabaseConfigured()) {
+        throw new Error(
+          "Sign-in is temporarily unavailable. Please try again in a moment.",
+        );
+      }
       if (mode === "signup") {
         if (password.length < 8) {
           throw new Error("Password must be at least 8 characters.");
@@ -115,10 +140,13 @@ export default function AuthForm() {
       setError(err instanceof Error ? err.message : "Authentication failed.");
     } finally {
       setBusy(false);
+      submittingRef.current = false;
     }
   };
 
   const onResendVerify = async () => {
+    if (submittingRef.current || busy) return;
+    submittingRef.current = true;
     setError(null);
     setBusy(true);
     try {
@@ -130,15 +158,22 @@ export default function AuthForm() {
       );
     } finally {
       setBusy(false);
+      submittingRef.current = false;
     }
   };
 
   const onOAuth = async (provider: "apple" | "google") => {
+    if (submittingRef.current || busy) return;
+    submittingRef.current = true;
     setError(null);
     setBusy(true);
     try {
       await signInWithOAuth(provider, nextPath);
-      // Browser redirects to Apple / Google
+      // Web redirects; native opens Browser — keep a short busy state then unlock
+      window.setTimeout(() => {
+        setBusy(false);
+        submittingRef.current = false;
+      }, 1500);
     } catch (err) {
       setError(
         err instanceof Error
@@ -146,19 +181,29 @@ export default function AuthForm() {
           : `${provider === "apple" ? "Apple" : "Google"} sign-in is temporarily unavailable. Please use email instead.`,
       );
       setBusy(false);
+      submittingRef.current = false;
     }
   };
 
-  if (authLoading) {
+  // Only show a brief bootstrap spinner — never trap reviewers behind infinite Loading
+  if (authLoading && !sessionWaitTimedOut) {
     return (
-      <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-[#111827] p-8 text-center text-slate-400">
+      <div
+        data-testid="login-session-loading"
+        className="w-full max-w-md rounded-3xl border border-slate-800 bg-[#111827] p-8 text-center text-slate-400"
+        role="status"
+        aria-live="polite"
+      >
         Loading…
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-md space-y-5 rounded-3xl border border-slate-800 bg-[#111827] p-6 shadow-xl sm:p-8">
+    <div
+      data-testid="login-form"
+      className="w-full max-w-md space-y-5 rounded-3xl border border-slate-800 bg-[#111827] p-6 shadow-xl sm:p-8"
+    >
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500">
           <Car className="h-5 w-5 text-black" />
@@ -178,7 +223,6 @@ export default function AuthForm() {
         </p>
       </div>
 
-      {/* Apple first when enabled — App Store guideline if offering other 3P login */}
       {showOAuth && (
         <>
           <div className="space-y-2.5">
@@ -187,7 +231,7 @@ export default function AuthForm() {
                 type="button"
                 disabled={busy}
                 onClick={() => void onOAuth("apple")}
-                className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-black px-4 py-3.5 text-sm font-semibold text-white ring-1 ring-slate-600 transition hover:bg-zinc-900 disabled:opacity-60"
+                className="flex min-h-[48px] w-full items-center justify-center gap-2.5 rounded-2xl bg-black px-4 py-3.5 text-sm font-semibold text-white ring-1 ring-slate-600 transition hover:bg-zinc-900 disabled:opacity-60"
                 aria-label="Sign in with Apple"
               >
                 <AppleIcon className="h-5 w-5 shrink-0" />
@@ -199,7 +243,7 @@ export default function AuthForm() {
                 type="button"
                 disabled={busy}
                 onClick={() => void onOAuth("google")}
-                className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-slate-600 bg-white px-4 py-3.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:opacity-60"
+                className="flex min-h-[48px] w-full items-center justify-center gap-2.5 rounded-2xl border border-slate-600 bg-white px-4 py-3.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:opacity-60"
                 aria-label="Continue with Google"
               >
                 <GoogleIcon className="h-5 w-5 shrink-0" />
@@ -225,6 +269,8 @@ export default function AuthForm() {
             type="email"
             required
             autoComplete="email"
+            inputMode="email"
+            enterKeyHint="next"
             data-testid="login-email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -242,6 +288,7 @@ export default function AuthForm() {
             autoComplete={
               mode === "signin" ? "current-password" : "new-password"
             }
+            enterKeyHint="go"
             data-testid="login-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -266,7 +313,11 @@ export default function AuthForm() {
         )}
 
         {error && (
-          <p className="rounded-2xl bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <p
+            data-testid="login-error"
+            role="alert"
+            className="rounded-2xl bg-red-500/10 px-4 py-3 text-sm text-red-300"
+          >
             {error}
           </p>
         )}
@@ -278,7 +329,7 @@ export default function AuthForm() {
                 type="button"
                 disabled={busy}
                 onClick={() => void onResendVerify()}
-                className="text-xs font-semibold text-cyan-300 underline hover:text-cyan-200 disabled:opacity-60"
+                className="min-h-[44px] text-xs font-semibold text-cyan-300 underline hover:text-cyan-200 disabled:opacity-60"
               >
                 Resend verification email
               </button>
@@ -289,8 +340,9 @@ export default function AuthForm() {
         <button
           type="submit"
           disabled={busy}
+          aria-busy={busy}
           data-testid="login-submit"
-          className="w-full rounded-2xl bg-cyan-500 px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-cyan-400 disabled:opacity-60"
+          className="min-h-[48px] w-full rounded-2xl bg-cyan-500 px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-cyan-400 disabled:opacity-60"
         >
           {busy
             ? "Please wait…"
@@ -306,7 +358,7 @@ export default function AuthForm() {
             New here?{" "}
             <button
               type="button"
-              className="font-medium text-cyan-400 hover:underline"
+              className="min-h-[44px] font-medium text-cyan-400 hover:underline"
               onClick={() => {
                 setMode("signup");
                 setError(null);
@@ -321,7 +373,7 @@ export default function AuthForm() {
             Already have an account?{" "}
             <button
               type="button"
-              className="font-medium text-cyan-400 hover:underline"
+              className="min-h-[44px] font-medium text-cyan-400 hover:underline"
               onClick={() => {
                 setMode("signin");
                 setError(null);

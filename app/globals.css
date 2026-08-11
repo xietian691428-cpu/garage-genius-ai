@@ -44,6 +44,18 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Login must scroll on iPad landscape + software keyboard (App Store 2.1) */
+.login-page {
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 768px) and (max-height: 700px) {
+  .login-page {
+    align-items: flex-start !important;
+    padding-top: max(1rem, env(safe-area-inset-top)) !important;
+  }
+}
+
 /* App shell locks scroll; landing pages opt into .landing-root */
 .app-shell {
   height: 100dvh;

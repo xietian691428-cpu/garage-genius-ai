@@ -29,9 +29,10 @@ Capacitor / 自定义 scheme 上架后再加，例如：
 
 ```
 garagegenius://auth/callback
+https://garagegenius.cloud/auth/callback
 ```
 
-客户端已配置 `flowType: "pkce"` + `detectSessionInUrl: true`（见 `lib/supabase.ts`）。
+客户端已配置 `flowType: "pkce"` + explicit `localStorage` auth storage（见 `lib/supabase.ts`）。Native Capacitor 使用 `garagegenius://` redirect + `@capacitor/browser`，避免 WKWebView 内 OAuth 卡死。
 
 ---
 

@@ -1,4 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createAuthStorage } from "@/lib/auth-storage";
+import { isNativeCapacitor } from "@/lib/native-platform";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ?? "";
@@ -18,21 +20,31 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 /**
- * Browser Supabase client — used by web and future Capacitor iOS/Android shells.
- * Persist session in localStorage so store WebViews keep users signed in.
+ * Browser / Capacitor Supabase client.
+ * Explicit localStorage avoids WKWebView cookie/session stalls on iOS/iPadOS.
+ * On native shells, disable detectSessionInUrl — OAuth returns via deep link bridge.
  */
-export const supabase: SupabaseClient = createClient(
-  supabaseUrl || BUILD_PLACEHOLDER_URL,
-  supabaseAnonKey || BUILD_PLACEHOLDER_KEY,
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-      flowType: "pkce",
+function buildClient(): SupabaseClient {
+  const native =
+    typeof window !== "undefined" ? isNativeCapacitor() : false;
+
+  return createClient(
+    supabaseUrl || BUILD_PLACEHOLDER_URL,
+    supabaseAnonKey || BUILD_PLACEHOLDER_KEY,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: !native,
+        flowType: "pkce",
+        storage: createAuthStorage(),
+        storageKey: "garage-genius-auth",
+      },
     },
-  },
-);
+  );
+}
+
+export const supabase: SupabaseClient = buildClient();
 
 export function isSupabaseConfigured(): boolean {
   return Boolean(supabaseUrl && supabaseAnonKey);

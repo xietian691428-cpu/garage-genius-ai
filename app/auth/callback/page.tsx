@@ -5,10 +5,17 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { safeNextPath } from "@/lib/safe-next-path";
+import {
+  AUTH_SESSION_TIMEOUT_MS,
+  withTimeout,
+} from "@/lib/auth-timeout";
+import { hideNativeSplash } from "@/lib/native-splash";
+import { isNativeCapacitor } from "@/lib/native-platform";
 
 /**
  * OAuth / magic-link return URL (PKCE).
  * Handles: ?code=, provider ?error=, hash tokens, and detectSessionInUrl race.
+ * Always times out so reviewers never see a permanent hang.
  */
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -16,9 +23,19 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     let cancelled = false;
+    void hideNativeSplash();
 
     void (async () => {
       try {
+        if (isNativeCapacitor()) {
+          try {
+            const { Browser } = await import("@capacitor/browser");
+            await Browser.close();
+          } catch {
+            /* ignore */
+          }
+        }
+
         const url = new URL(window.location.href);
         const code = url.searchParams.get("code");
         const next = safeNextPath(url.searchParams.get("next"));
@@ -31,14 +48,29 @@ export default function AuthCallbackPage() {
         }
 
         if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          const { error } = await withTimeout(
+            supabase.auth.exchangeCodeForSession(code),
+            AUTH_SESSION_TIMEOUT_MS,
+            "Sign-in timed out. Please try again.",
+          );
           if (error) throw error;
         } else {
-          // Implicit / hash fragment — client may still be parsing the URL
-          let session = (await supabase.auth.getSession()).data.session;
+          let session = (
+            await withTimeout(
+              supabase.auth.getSession(),
+              AUTH_SESSION_TIMEOUT_MS,
+              "Sign-in timed out. Please try again.",
+            )
+          ).data.session;
           if (!session) {
             await new Promise((r) => setTimeout(r, 400));
-            session = (await supabase.auth.getSession()).data.session;
+            session = (
+              await withTimeout(
+                supabase.auth.getSession(),
+                AUTH_SESSION_TIMEOUT_MS,
+                "Sign-in timed out. Please try again.",
+              )
+            ).data.session;
           }
           if (!session) {
             throw new Error("No session found. Please try signing in again.");
@@ -46,7 +78,6 @@ export default function AuthCallbackPage() {
         }
 
         if (!cancelled) {
-          // Strip auth params from history before entering the app
           window.history.replaceState({}, "", next);
           router.replace(next);
         }
@@ -57,7 +88,7 @@ export default function AuthCallbackPage() {
           setMessage(text);
           const login = new URL("/login", window.location.origin);
           login.searchParams.set("error", text.slice(0, 180));
-          setTimeout(() => router.replace(login.pathname + login.search), 2200);
+          setTimeout(() => router.replace(login.pathname + login.search), 1800);
         }
       }
     })();
@@ -69,10 +100,14 @@ export default function AuthCallbackPage() {
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#0a0f1c] px-4 text-center text-slate-300">
-      <p className="rounded-2xl border border-slate-800 bg-[#111827] px-6 py-4 text-sm">
+      <p
+        data-testid="auth-callback-status"
+        className="rounded-2xl border border-slate-800 bg-[#111827] px-6 py-4 text-sm"
+        role="status"
+      >
         {message}
       </p>
-      <Link href="/login" className="text-xs text-slate-500 underline">
+      <Link href="/login" className="min-h-[44px] text-xs text-slate-500 underline">
         Back to sign in
       </Link>
     </div>

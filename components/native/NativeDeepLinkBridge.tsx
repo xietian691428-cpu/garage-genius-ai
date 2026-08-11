@@ -29,6 +29,14 @@ export default function NativeDeepLinkBridge() {
                 /\/+/g,
                 "/",
               );
+              void (async () => {
+                try {
+                  const { Browser } = await import("@capacitor/browser");
+                  await Browser.close();
+                } catch {
+                  /* ignore */
+                }
+              })();
               router.push(`${path}${parsed.search}${parsed.hash}`);
               return;
             }
@@ -37,6 +45,14 @@ export default function NativeDeepLinkBridge() {
               parsed.hostname === "garagegenius.cloud" ||
               parsed.hostname.endsWith(".garagegenius.cloud")
             ) {
+              void (async () => {
+                try {
+                  const { Browser } = await import("@capacitor/browser");
+                  await Browser.close();
+                } catch {
+                  /* ignore */
+                }
+              })();
               router.push(`${parsed.pathname}${parsed.search}${parsed.hash}`);
             }
           } catch {
