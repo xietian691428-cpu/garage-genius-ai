@@ -26,3 +26,6 @@ export function withTimeout<T>(
 export const AUTH_SESSION_TIMEOUT_MS = 8_000;
 export const AUTH_SIGNIN_TIMEOUT_MS = 20_000;
 export const AUTH_OAUTH_TIMEOUT_MS = 15_000;
+/** First-paint garage / profile fetches after sign-in */
+export const GARAGE_LOAD_TIMEOUT_MS = 15_000;
+export const PROFILE_LOAD_TIMEOUT_MS = 12_000;

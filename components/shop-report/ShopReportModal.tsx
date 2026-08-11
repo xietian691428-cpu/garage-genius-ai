@@ -212,14 +212,16 @@ export default function ShopReportModal({
 
   return (
     <div
-      className="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 p-4 sm:items-center"
+      className="fixed inset-0 z-[90] flex items-end justify-center overflow-y-auto bg-black/70 p-4 sm:items-start sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="shop-report-title"
       onClick={onClose}
+      data-testid="shop-report-modal"
     >
       <div
-        className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-3xl border border-slate-700 bg-[#111827] p-5 shadow-2xl sm:p-6"
+        className="my-auto max-h-[min(90dvh,100%)] w-full max-w-lg overflow-y-auto rounded-3xl border border-slate-700 bg-[#111827] p-5 shadow-2xl sm:p-6"
+        style={{ WebkitOverflowScrolling: "touch" }}
         onClick={(e) => e.stopPropagation()}
       >
         {toast && (
@@ -246,7 +248,7 @@ export default function ShopReportModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
+            className="min-h-[44px] min-w-[44px] rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
             aria-label="Close"
           >
             <X className="h-5 w-5" />
@@ -410,7 +412,7 @@ export default function ShopReportModal({
               data-testid="shop-report-generate"
               disabled={busy || !preview.hasEnoughData}
               onClick={() => void generate()}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400 disabled:opacity-50"
+              className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400 disabled:opacity-50"
             >
               <FileText className="h-4 w-4" />
               {busy ? "Generating…" : "Generate PDF"}

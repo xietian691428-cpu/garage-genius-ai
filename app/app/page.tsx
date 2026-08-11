@@ -66,6 +66,8 @@ function GarageAppInner() {
     vehicles,
     currentVehicle,
     loading: vehiclesLoading,
+    error: vehiclesError,
+    refresh: refreshVehicles,
     selectVehicle,
     addVehicle,
     updateVehicle,
@@ -73,6 +75,7 @@ function GarageAppInner() {
     archiveVehicle,
     removeVehicle,
   } = useVehicles();
+  const [garageErrorDismissed, setGarageErrorDismissed] = useState(false);
 
   // Mobile Safari: lift bottom chrome; native Capacitor keeps iOS-style bottom tabs.
   useBrowserChromeInset();
@@ -130,7 +133,13 @@ function GarageAppInner() {
   );
 
   const needsOnboarding =
-    !vehiclesLoading && vehicles.length === 0 && !currentVehicle;
+    !vehiclesLoading &&
+    (!vehiclesError || garageErrorDismissed) &&
+    vehicles.length === 0 &&
+    !currentVehicle;
+
+  const showGarageError =
+    !vehiclesLoading && Boolean(vehiclesError) && !garageErrorDismissed;
 
   return (
     <AuthGate>
@@ -142,16 +151,56 @@ function GarageAppInner() {
       <VerifyEmailBanner />
 
       {vehiclesLoading && (
-        <div className="flex min-h-dvh items-center justify-center bg-[#0a0f1c] text-slate-400">
-          Loading your garage…
+        <div
+          data-testid="garage-loading"
+          className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-[#0a0f1c] px-6 text-center text-slate-400"
+          role="status"
+        >
+          <p>Loading your garage…</p>
+          <p className="text-xs text-slate-600">
+            This usually takes a few seconds.
+          </p>
         </div>
       )}
 
-      {!vehiclesLoading && needsOnboarding && (
+      {showGarageError && (
+        <div
+          data-testid="garage-load-error"
+          className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#0a0f1c] px-6 text-center"
+          role="alert"
+        >
+          <p className="max-w-md text-sm text-amber-100">
+            {vehiclesError}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              data-testid="garage-retry"
+              onClick={() => {
+                setGarageErrorDismissed(false);
+                void refreshVehicles();
+              }}
+              className="min-h-[48px] rounded-2xl bg-cyan-500 px-5 text-sm font-semibold text-black hover:bg-cyan-400"
+            >
+              Try again
+            </button>
+            <button
+              type="button"
+              data-testid="garage-continue"
+              onClick={() => setGarageErrorDismissed(true)}
+              className="min-h-[48px] rounded-2xl border border-slate-600 px-5 text-sm font-medium text-slate-200 hover:border-cyan-500/40"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!vehiclesLoading && !showGarageError && needsOnboarding && (
         <OnboardingFlow onComplete={handleOnboardingComplete} />
       )}
 
-      {!vehiclesLoading && !needsOnboarding && (
+      {!vehiclesLoading && !showGarageError && !needsOnboarding && (
         <div className="app-shell flex overflow-hidden">
           <div className="hidden lg:block">
             <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />

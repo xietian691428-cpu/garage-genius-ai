@@ -21,6 +21,10 @@ import {
 } from "@/lib/subscription";
 import { applyQaUnlock, isQaUnlockEnabled } from "@/lib/qa-mode";
 import { PLAN_COOKIE } from "@/lib/subscription-guard";
+import {
+  PROFILE_LOAD_TIMEOUT_MS,
+  withTimeout,
+} from "@/lib/auth-timeout";
 
 function todayKey(): string {
   return new Date().toISOString().slice(0, 10);
@@ -91,18 +95,28 @@ export function useSubscription() {
     try {
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await withTimeout(
+        supabase.auth.getUser(),
+        PROFILE_LOAD_TIMEOUT_MS,
+        "Account check timed out.",
+      );
 
       if (!user) {
         setProfile(null);
         return;
       }
 
-      const { data: before } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
+      const { data: before } = await withTimeout(
+        Promise.resolve(
+          supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .maybeSingle(),
+        ),
+        PROFILE_LOAD_TIMEOUT_MS,
+        "Profile load timed out.",
+      );
 
       if (before && shouldPersistTrialExpiry(before as Profile)) {
         markTrialExpiredPromptPending(
@@ -110,20 +124,26 @@ export function useSubscription() {
         );
       }
 
-      const { data: synced, error: syncError } = await supabase.rpc(
-        "sync_my_trial_status",
-      );
-
       let next: Profile | null = null;
-      if (!syncError && synced) {
-        next = profileFromRow(synced as unknown as Record<string, unknown>);
-      } else {
-        if (syncError) {
-          console.warn(
-            "[useSubscription] sync_my_trial_status:",
-            syncError.message,
-          );
+      try {
+        const { data: synced, error: syncError } = await withTimeout(
+          Promise.resolve(supabase.rpc("sync_my_trial_status")),
+          PROFILE_LOAD_TIMEOUT_MS,
+          "Profile sync timed out.",
+        );
+        if (!syncError && synced) {
+          next = profileFromRow(synced as unknown as Record<string, unknown>);
+        } else {
+          if (syncError) {
+            console.warn(
+              "[useSubscription] sync_my_trial_status:",
+              syncError.message,
+            );
+          }
+          next = (before as Profile | null) ?? null;
         }
+      } catch (syncErr) {
+        console.warn("[useSubscription] sync timed out/failed", syncErr);
         next = (before as Profile | null) ?? null;
       }
 
@@ -132,6 +152,9 @@ export function useSubscription() {
       if (!isQaUnlockEnabled() && consumeTrialExpiredPrompt()) {
         setShowTrialEndedPrompt(true);
       }
+    } catch (err) {
+      console.warn("[useSubscription] refresh failed", err);
+      // Fail open — keep last profile / free defaults so Settings stays usable
     } finally {
       setLoading(false);
     }
@@ -145,7 +168,10 @@ export function useSubscription() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
-      void refresh();
+      // Defer — awaiting auth APIs inside the callback can deadlock WKWebView.
+      window.setTimeout(() => {
+        void refresh();
+      }, 0);
     });
 
     const timer = window.setInterval(() => setNowMs(Date.now()), 60_000);

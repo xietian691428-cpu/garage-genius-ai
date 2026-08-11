@@ -5,6 +5,11 @@ import { saveCurrentVehicleId } from "@/lib/chat-storage";
 import type { VehicleInfo } from "@/lib/types/chat";
 import { userVehiclesService } from "@/lib/user-vehicles";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  GARAGE_LOAD_TIMEOUT_MS,
+  TimeoutError,
+  withTimeout,
+} from "@/lib/auth-timeout";
 
 /**
  * Shared garage state: loads from Supabase user_vehicles,
@@ -24,18 +29,31 @@ export function useVehicles() {
       setVehicles([]);
       setCurrentVehicle(null);
       setLoading(false);
+      setError(null);
       return;
     }
 
     setLoading(true);
     setError(null);
     try {
-      const garage = await userVehiclesService.loadGarage();
+      const garage = await withTimeout(
+        userVehiclesService.loadGarage(),
+        GARAGE_LOAD_TIMEOUT_MS,
+        "Loading your garage timed out. Check your connection and try again.",
+      );
       setVehicles(garage.vehicles);
       setCurrentVehicle(garage.current);
     } catch (err) {
       console.error("[useVehicles]", err);
-      setError(err instanceof Error ? err.message : "Failed to load vehicles");
+      setVehicles([]);
+      setCurrentVehicle(null);
+      setError(
+        err instanceof TimeoutError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Failed to load vehicles",
+      );
     } finally {
       setLoading(false);
     }
@@ -58,7 +76,6 @@ export function useVehicles() {
 
   const addVehicle = useCallback(
     async (vehicle: VehicleInfo): Promise<VehicleInfo> => {
-      // Persist full config card (incl. VCdb) to Supabase
       const saved = await userVehiclesService.create(vehicle, {
         makeCurrent: true,
       });
@@ -80,7 +97,6 @@ export function useVehicles() {
     return saved;
   }, []);
 
-  /** Local UI merge after server already persisted (e.g. OBD mileage sync). */
   const mergeVehicleLocal = useCallback(
     (vehicleId: string, patch: Partial<VehicleInfo>) => {
       setVehicles((prev) =>
