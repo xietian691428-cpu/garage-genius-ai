@@ -5,7 +5,7 @@
 const STORAGE_PREFIX = "garageGenius_welcome_note_seen_";
 
 export const WELCOME_NOTE_FEEDBACK_MAILTO =
-  "mailto:support@garagegenius.cloud?subject=Garage%20Genius%20feedback&body=Hi%20team%2C%0A%0AHere%27s%20what%20I%27d%20love%20to%20see%20improved%3A%0A%0A";
+  "mailto:xietian691428@gmail.com?subject=Garage%20Genius%20feedback&body=Hi%20team%2C%0A%0AHere%27s%20what%20I%27d%20love%20to%20see%20improved%3A%0A%0A";
 
 export function welcomeNoteLocalKey(userId: string): string {
   return `${STORAGE_PREFIX}${userId}`;
