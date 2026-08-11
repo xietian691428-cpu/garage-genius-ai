@@ -26,6 +26,8 @@ import {
   assertCoachProductionReady,
   logAppModuleMount,
 } from "@/lib/bootstrap/app-modules";
+import WelcomeNoteModal from "@/components/welcome/WelcomeNoteModal";
+import { useWelcomeNote } from "@/hooks/useWelcomeNote";
 
 type AppTab = "dashboard" | "chat" | "coach" | "history" | "parts" | "settings";
 
@@ -141,11 +143,25 @@ function GarageAppInner() {
   const showGarageError =
     !vehiclesLoading && Boolean(vehiclesError) && !garageErrorDismissed;
 
+  const showMainShell =
+    !vehiclesLoading && !showGarageError && !needsOnboarding;
+
+  const trialModalOpen = showTrialEndedPrompt && !isQaUnlockEnabled();
+
+  const { open: welcomeNoteOpen, dismiss: dismissWelcomeNote } = useWelcomeNote({
+    // After first login lands on the real app shell — not login, loading, or onboarding
+    enabled: showMainShell && !trialModalOpen,
+  });
+
   return (
     <AuthGate>
       <TrialEndedModal
-        open={showTrialEndedPrompt && !isQaUnlockEnabled()}
+        open={trialModalOpen}
         onClose={dismissTrialEndedPrompt}
+      />
+      <WelcomeNoteModal
+        open={welcomeNoteOpen}
+        onDismiss={() => void dismissWelcomeNote()}
       />
       <QaModeBanner />
       <VerifyEmailBanner />
