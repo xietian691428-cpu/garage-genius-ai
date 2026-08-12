@@ -2,12 +2,18 @@
 
 import { useMemo, useState } from "react";
 import type { DashboardRegion } from "@/lib/types/dashboard";
+import type { VehicleInfo } from "@/lib/types/chat";
 import { focusPartToRegionId, type FocusCommand } from "@/lib/types/focus";
+import {
+  inferVehicleBodyClass,
+  vehicleBodyClassLabel,
+} from "@/lib/vehicle-body-class";
 import { VEHICLE_DIAGRAM_VB } from "@/lib/vehicle-diagram-geometry";
 import VehicleDiagramPhoto from "@/components/dashboard/VehicleDiagramPhoto";
 import FocusOverlay from "@/components/dashboard/FocusOverlay";
 
 type Props = {
+  vehicle?: VehicleInfo | null;
   regions: DashboardRegion[];
   selectedRegionId: string | null;
   activeFocus: FocusCommand | null;
@@ -27,6 +33,7 @@ function regionIndex(regions: DashboardRegion[], id: string): number {
  * side-profile photo + calibrated translucent zones + numbered anchors.
  */
 export default function VehicleSystemsDiagram({
+  vehicle,
   regions,
   selectedRegionId,
   activeFocus,
@@ -36,6 +43,7 @@ export default function VehicleSystemsDiagram({
   onRegionSelect,
 }: Props) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const bodyClass = inferVehicleBodyClass(vehicle);
 
   const focusRegionId = activeFocus
     ? focusPartToRegionId(activeFocus.part)
@@ -50,13 +58,22 @@ export default function VehicleSystemsDiagram({
   return (
     <div data-testid="vehicle-system-diagram" className="relative">
       <div className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-[#070b14] p-3 sm:p-5">
+        <p
+          className="mb-2 text-center text-[11px] font-medium uppercase tracking-wider text-slate-500"
+          data-testid="vehicle-diagram-body-class"
+        >
+          {vehicleBodyClassLabel(bodyClass)} silhouette
+        </p>
         <svg
           viewBox={`0 0 ${VEHICLE_DIAGRAM_VB.w} ${VEHICLE_DIAGRAM_VB.h}`}
           className="mx-auto h-auto w-full max-w-[760px]"
           role="img"
-          aria-label="Vehicle systems diagram"
+          aria-label={`${vehicleBodyClassLabel(bodyClass)} systems diagram`}
         >
-          <VehicleDiagramPhoto muted={Boolean(emphasizedId)} />
+          <VehicleDiagramPhoto
+            bodyClass={bodyClass}
+            muted={Boolean(emphasizedId)}
+          />
 
           {regions.map((region) => {
             const visible = isRegionVisible(region);
@@ -212,7 +229,11 @@ export default function VehicleSystemsDiagram({
         </svg>
 
         {focusRegion && (
-          <FocusOverlay region={focusRegion} active={Boolean(activeFocus)} />
+          <FocusOverlay
+            region={focusRegion}
+            active={Boolean(activeFocus)}
+            bodyClass={bodyClass}
+          />
         )}
       </div>
 

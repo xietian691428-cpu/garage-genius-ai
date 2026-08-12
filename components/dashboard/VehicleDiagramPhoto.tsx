@@ -1,12 +1,14 @@
 "use client";
 
 import { useId } from "react";
+import type { VehicleBodyClass } from "@/lib/vehicle-body-class";
 import {
-  VEHICLE_DIAGRAM_IMAGE_SRC,
   VEHICLE_DIAGRAM_VB,
+  vehicleDiagramImageSrc,
 } from "@/lib/vehicle-diagram-geometry";
 
 type Props = {
+  bodyClass?: VehicleBodyClass;
   /** Soften photo when a system is emphasized */
   muted?: boolean;
   className?: string;
@@ -14,11 +16,16 @@ type Props = {
 
 /**
  * Photoreal side-profile layer for the vehicle systems diagram.
- * Car faces LEFT — hotspots are calibrated in viewBox 760×507.
+ * Body class picks sedan / SUV / pickup / EV — not a specific brand.
  */
-export default function VehicleDiagramPhoto({ muted = false, className }: Props) {
+export default function VehicleDiagramPhoto({
+  bodyClass = "sedan",
+  muted = false,
+  className,
+}: Props) {
   const uid = useId().replace(/:/g, "");
   const vignetteId = `gg-photo-vignette-${uid}`;
+  const src = vehicleDiagramImageSrc(bodyClass);
 
   return (
     <g
@@ -33,7 +40,7 @@ export default function VehicleDiagramPhoto({ muted = false, className }: Props)
         </radialGradient>
       </defs>
       <image
-        href={VEHICLE_DIAGRAM_IMAGE_SRC}
+        href={src}
         x={0}
         y={0}
         width={VEHICLE_DIAGRAM_VB.w}

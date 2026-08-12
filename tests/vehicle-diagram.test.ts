@@ -2,13 +2,17 @@ import { describe, expect, it } from "vitest";
 import { DASHBOARD_REGIONS } from "@/lib/dashboard-regions";
 import {
   REGION_DIAGRAM_META,
-  VEHICLE_DIAGRAM_IMAGE_SRC,
+  VEHICLE_DIAGRAM_IMAGES,
   VEHICLE_DIAGRAM_VB,
+  vehicleDiagramImageSrc,
 } from "@/lib/vehicle-diagram-geometry";
 
 describe("vehicle diagram geometry", () => {
-  it("uses a photoreal diagram asset and matching viewBox", () => {
-    expect(VEHICLE_DIAGRAM_IMAGE_SRC).toMatch(/vehicle-side-profile/);
+  it("uses photoreal assets and matching viewBox", () => {
+    expect(vehicleDiagramImageSrc("sedan")).toMatch(/vehicle-side-sedan/);
+    expect(Object.keys(VEHICLE_DIAGRAM_IMAGES).sort()).toEqual(
+      ["ev", "pickup", "sedan", "suv"].sort(),
+    );
     expect(VEHICLE_DIAGRAM_VB.w).toBe(760);
     expect(VEHICLE_DIAGRAM_VB.h).toBe(507);
   });

@@ -1,13 +1,26 @@
 /**
- * Vehicle systems diagram geometry — photoreal side profile (viewBox 760×507).
- * Image: /images/vehicle-side-profile.jpg (car facing LEFT).
- * Keep Focus Overlay / Focus Panel in sync with these coordinates.
+ * Vehicle systems diagram geometry — photoreal side profiles (viewBox 760×507).
+ * Images face LEFT. Hotspot coordinates are shared across body classes
+ * (sedan / SUV / pickup / EV) with consistent framing.
  */
+
+import type { VehicleBodyClass } from "@/lib/vehicle-body-class";
 
 export const VEHICLE_DIAGRAM_VB = { w: 760, h: 507 } as const;
 
-/** Public asset for the diagram photo layer. */
-export const VEHICLE_DIAGRAM_IMAGE_SRC = "/images/vehicle-side-profile.jpg";
+/** @deprecated Prefer {@link vehicleDiagramImageSrc} — kept for older imports. */
+export const VEHICLE_DIAGRAM_IMAGE_SRC = "/images/vehicle-side-sedan.jpg";
+
+export const VEHICLE_DIAGRAM_IMAGES: Record<VehicleBodyClass, string> = {
+  sedan: "/images/vehicle-side-sedan.jpg",
+  suv: "/images/vehicle-side-suv.jpg",
+  pickup: "/images/vehicle-side-pickup.jpg",
+  ev: "/images/vehicle-side-ev.jpg",
+};
+
+export function vehicleDiagramImageSrc(bodyClass: VehicleBodyClass): string {
+  return VEHICLE_DIAGRAM_IMAGES[bodyClass] ?? VEHICLE_DIAGRAM_IMAGES.sedan;
+}
 
 /**
  * Legacy line silhouette — optional fallbacks only.

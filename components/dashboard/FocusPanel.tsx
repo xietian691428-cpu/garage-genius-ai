@@ -26,10 +26,12 @@ import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 import VehicleDiagramPhoto from "@/components/dashboard/VehicleDiagramPhoto";
 import { VEHICLE_DIAGRAM_VB } from "@/lib/vehicle-diagram-geometry";
+import type { VehicleBodyClass } from "@/lib/vehicle-body-class";
 
 type FocusPanelProps = {
   region: DashboardRegion;
   command: FocusCommand;
+  bodyClass?: VehicleBodyClass;
   onClose: () => void;
   onStartVoiceCoach?: () => void;
 };
@@ -37,6 +39,7 @@ type FocusPanelProps = {
 export default function FocusPanel({
   region,
   command: rawCommand,
+  bodyClass = "sedan",
   onClose,
   onStartVoiceCoach,
 }: FocusPanelProps) {
@@ -258,7 +261,7 @@ export default function FocusPanel({
               className="h-36 w-full sm:h-44"
               aria-hidden
             >
-              <VehicleDiagramPhoto muted />
+              <VehicleDiagramPhoto bodyClass={bodyClass} muted />
               <g
                 className="focus-hotspot-group"
                 style={{

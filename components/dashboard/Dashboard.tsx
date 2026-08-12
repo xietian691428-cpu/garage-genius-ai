@@ -31,6 +31,7 @@ import {
   type VehicleMarketCode,
 } from "@/lib/types/vehicle-market";
 import { getDashboardRegion } from "@/lib/dashboard-regions";
+import { inferVehicleBodyClass } from "@/lib/vehicle-body-class";
 import RegionDetailPanel from "./RegionDetailPanel";
 import FocusPanel from "./FocusPanel";
 import VehicleSystemsDiagram from "./VehicleSystemsDiagram";
@@ -1151,6 +1152,7 @@ export default function Dashboard({
 
           <div className="relative">
             <VehicleSystemsDiagram
+              vehicle={vehicle}
               regions={DASHBOARD_REGIONS}
               selectedRegionId={selectedRegion?.id ?? null}
               activeFocus={activeFocus}
@@ -1659,6 +1661,7 @@ export default function Dashboard({
         <FocusPanel
           region={focusRegion}
           command={activeFocus}
+          bodyClass={inferVehicleBodyClass(vehicle)}
           onClose={clearFocus}
         />
       )}

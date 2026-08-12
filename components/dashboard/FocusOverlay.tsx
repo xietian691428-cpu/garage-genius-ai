@@ -1,6 +1,7 @@
 "use client";
 
 import type { DashboardRegion } from "@/lib/types/dashboard";
+import type { VehicleBodyClass } from "@/lib/vehicle-body-class";
 import { VEHICLE_DIAGRAM_VB } from "@/lib/vehicle-diagram-geometry";
 import VehicleDiagramPhoto from "@/components/dashboard/VehicleDiagramPhoto";
 
@@ -8,13 +9,18 @@ type FocusOverlayProps = {
   region: DashboardRegion;
   /** When true, dims the map and pulses the focused zone */
   active: boolean;
+  bodyClass?: VehicleBodyClass;
 };
 
 /**
  * Semi-transparent mask over the vehicle map with a glowing cutout
  * on the focused region (photo-calibrated hotspots).
  */
-export default function FocusOverlay({ region, active }: FocusOverlayProps) {
+export default function FocusOverlay({
+  region,
+  active,
+  bodyClass = "sedan",
+}: FocusOverlayProps) {
   if (!active) return null;
 
   return (
@@ -43,7 +49,7 @@ export default function FocusOverlay({ region, active }: FocusOverlayProps) {
           </radialGradient>
         </defs>
 
-        <VehicleDiagramPhoto muted />
+        <VehicleDiagramPhoto bodyClass={bodyClass} muted />
 
         <circle
           className="focus-pulse-ring"
