@@ -14,6 +14,9 @@ interface Props {
   onUpdateVehicle?: (vehicle: VehicleInfo) => void | Promise<void>;
   onArchiveVehicle?: (vehicle: VehicleInfo) => void | Promise<void>;
   onRemoveVehicle?: (vehicle: VehicleInfo) => void | Promise<void>;
+  /** Mirror Dashboard / subscription gate — hide open when at plan limit. */
+  canAdd?: boolean;
+  maxVehicles?: number;
 }
 
 export default function VehicleManager({
@@ -24,9 +27,16 @@ export default function VehicleManager({
   onUpdateVehicle,
   onArchiveVehicle,
   onRemoveVehicle,
+  canAdd = true,
+  maxVehicles,
 }: Props) {
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<VehicleInfo | null>(null);
+
+  const limitLabel =
+    typeof maxVehicles === "number"
+      ? `Plan limit: ${maxVehicles} vehicle${maxVehicles === 1 ? "" : "s"}. Upgrade for more.`
+      : "Vehicle limit reached. Upgrade for more.";
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
@@ -42,20 +52,30 @@ export default function VehicleManager({
       </div>
 
       <div className="flex-1 p-4 sm:p-5 lg:p-6">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <h2 className="text-lg font-semibold">Vehicle profiles</h2>
             <p className="mt-0.5 text-xs text-slate-500">
               Active garage · injected into Coach Guides automatically
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm hover:bg-blue-500"
-          >
-            + Add Vehicle
-          </button>
+          {canAdd ? (
+            <button
+              type="button"
+              data-testid="add-vehicle-open"
+              onClick={() => setShowAdd(true)}
+              className="flex shrink-0 items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm hover:bg-blue-500"
+            >
+              + Add Vehicle
+            </button>
+          ) : (
+            <p
+              data-testid="add-vehicle-limit"
+              className="max-w-[11rem] shrink-0 text-right text-[11px] leading-snug text-slate-500"
+            >
+              {limitLabel}
+            </p>
+          )}
         </div>
 
         <VehicleList
@@ -81,7 +101,7 @@ export default function VehicleManager({
       </div>
 
       <AddVehicleModal
-        open={showAdd}
+        open={showAdd && canAdd}
         onClose={() => setShowAdd(false)}
         onAdd={onAddVehicle}
       />

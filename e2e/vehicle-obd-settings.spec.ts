@@ -25,7 +25,25 @@ test.describe("Vehicle + OBD settings P0", () => {
     }
 
     await page.goto("/app?tab=dashboard");
-    await page.getByTestId("add-vehicle-open").first().click();
+    const addOpen = page.getByTestId("add-vehicle-open").first();
+    const atLimit = page.getByTestId("add-vehicle-limit").first();
+    // Plan vehicle caps (e.g. Pro = 5) hide the dashboard add control — skip instead of timeout.
+    if (await atLimit.isVisible().catch(() => false)) {
+      test.skip(true, "Vehicle plan limit reached on this account");
+    }
+    if (!(await addOpen.isVisible().catch(() => false))) {
+      // Chat sidebar also exposes add-vehicle-open when under limit.
+      await page.goto("/app?tab=chat");
+      if (await page.getByTestId("add-vehicle-limit").first().isVisible().catch(() => false)) {
+        test.skip(true, "Vehicle plan limit reached on this account");
+      }
+      await expect(page.getByTestId("add-vehicle-open").first()).toBeVisible({
+        timeout: 15_000,
+      });
+      await page.getByTestId("add-vehicle-open").first().click();
+    } else {
+      await addOpen.click();
+    }
     await expect(page.getByTestId("add-vehicle-dialog")).toBeVisible();
 
     await page.getByTestId("vehicle-nickname").fill(FIXTURE.vehicle.nickname);

@@ -16,6 +16,21 @@ describe("insurance coverage rewrite", () => {
     expect(out).toMatch(/may affect coverage|depends on your policy/i);
   });
 
+  it("rewrites void / won't pay / guaranteed coverage claims", () => {
+    const samples = [
+      "This will void your insurance.",
+      "Insurance won't pay for this DIY repair.",
+      "This is insurance-approved and guaranteed coverage.",
+    ];
+    for (const sample of samples) {
+      const out = rewriteInsuranceCoverageClaims(sample);
+      expect(out.toLowerCase()).not.toMatch(
+        /void your insurance|won't pay|guaranteed coverage|insurance-approved/,
+      );
+      expect(out).toMatch(/may affect coverage|depends on your policy|check your policy/i);
+    }
+  });
+
   it("appends mod reminder when aftermarket mentioned", () => {
     const out = applyInsuranceSafetyGuards(
       "Consider an aftermarket intake for more airflow.",

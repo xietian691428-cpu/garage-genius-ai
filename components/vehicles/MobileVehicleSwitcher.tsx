@@ -15,6 +15,9 @@ interface Props {
   onVehicleChange: (vehicle: VehicleInfo) => void;
   onAddVehicle: (vehicle: VehicleInfo) => void;
   onUpdateVehicle?: (vehicle: VehicleInfo) => void | Promise<void>;
+  /** Mirror Dashboard / subscription gate. */
+  canAdd?: boolean;
+  maxVehicles?: number;
 }
 
 /**
@@ -29,6 +32,8 @@ export default function MobileVehicleSwitcher({
   onVehicleChange,
   onAddVehicle,
   onUpdateVehicle,
+  canAdd = true,
+  maxVehicles,
 }: Props) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editing, setEditing] = useState<VehicleInfo | null>(null);
@@ -49,6 +54,11 @@ export default function MobileVehicleSwitcher({
     setShowAddForm(false);
     onClose();
   };
+
+  const limitLabel =
+    typeof maxVehicles === "number"
+      ? `Plan limit: ${maxVehicles} vehicle${maxVehicles === 1 ? "" : "s"}. Upgrade for more.`
+      : "Vehicle limit reached. Upgrade for more.";
 
   return (
     <>
@@ -98,19 +108,29 @@ export default function MobileVehicleSwitcher({
           </div>
 
           <div className="shrink-0 border-t border-slate-800 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <button
-              type="button"
-              onClick={() => setShowAddForm(true)}
-              className="min-h-[48px] w-full rounded-2xl bg-blue-600 py-3.5 text-sm font-medium transition-colors hover:bg-blue-500 active:scale-[0.98]"
-            >
-              + Add Vehicle
-            </button>
+            {canAdd ? (
+              <button
+                type="button"
+                data-testid="add-vehicle-open"
+                onClick={() => setShowAddForm(true)}
+                className="min-h-[48px] w-full rounded-2xl bg-blue-600 py-3.5 text-sm font-medium transition-colors hover:bg-blue-500 active:scale-[0.98]"
+              >
+                + Add Vehicle
+              </button>
+            ) : (
+              <p
+                data-testid="add-vehicle-limit"
+                className="rounded-2xl border border-slate-700 bg-slate-900/60 px-3 py-3 text-center text-xs leading-relaxed text-slate-400"
+              >
+                {limitLabel}
+              </p>
+            )}
           </div>
         </div>
       </div>
 
       <AddVehicleModal
-        open={showAddForm}
+        open={showAddForm && canAdd}
         onClose={() => setShowAddForm(false)}
         onAdd={handleAdd}
       />

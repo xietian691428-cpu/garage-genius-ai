@@ -741,6 +741,8 @@ export default function ChatApp({
           currentVehicle={currentVehicle}
           onVehicleChange={(v) => void handleVehicleChange(v)}
           onAddVehicle={(v) => void handleAddVehicle(v)}
+          canAdd={features.canAddVehicle(vehicles.length)}
+          maxVehicles={features.maxVehicles}
           onUpdateVehicle={
             onUpdateVehicle
               ? (v) => void handleUpdateVehicle(v)
@@ -915,6 +917,8 @@ export default function ChatApp({
         currentVehicle={currentVehicle}
         onVehicleChange={(v) => void handleVehicleChange(v)}
         onAddVehicle={(v) => void handleAddVehicle(v)}
+        canAdd={features.canAddVehicle(vehicles.length)}
+        maxVehicles={features.maxVehicles}
         onUpdateVehicle={
           onUpdateVehicle
             ? (v) => void handleUpdateVehicle(v)
