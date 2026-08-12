@@ -2,8 +2,13 @@
 
 Step visuals in `*_production.json` reference paths like `/coach/<slug>/...`.
 
-Place GIF/MP4/WebP assets here so URLs resolve under `public/coach/`.
+Place **real photos** (WebP/JPEG) here — see `components/diy-visuals/STANDARDS.md`.
 
-If a file is missing, `CoachScenarioPlayer` falls back to a Shield placeholder — DIY copy, safety disclaimers, and `risk_confirm` still run.
+Rules:
 
-Optional for launch; recommended for polish.
+- One clear photo per step object/location; always provide accurate `alt` + `shot_description` in JSON
+- Prefer Class B/C photoreal stills over decorative illustrations
+- If a file is missing, `CoachStepVisual` shows an honest empty frame — DIY copy and safety still run
+- Never ship a stock image that contradicts the part name or step text
+
+Optional for launch; required for polish.

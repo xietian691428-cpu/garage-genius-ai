@@ -1078,7 +1078,7 @@ export default function Dashboard({
             <p className="mt-2 text-slate-400">
               {activeFocus
                 ? "AI Focus Mode — primary issue highlighted"
-                : "Tap a numbered area on the car or choose a system below"}
+                : "Numbers mark real locations on this vehicle type. Tap a number or choose a system below"}
             </p>
           </div>
 

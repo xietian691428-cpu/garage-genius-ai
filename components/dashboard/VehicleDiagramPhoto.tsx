@@ -15,8 +15,9 @@ type Props = {
 };
 
 /**
- * Photoreal side-profile layer for the vehicle systems diagram.
- * Body class picks sedan / SUV / pickup / EV — not a specific brand.
+ * Photoreal side-profile layer for the vehicle systems diagram (Class A — location).
+ * Body class picks sedan / SUV / pickup / EV / MPV / van / Tesla model — not trim-accurate.
+ * See `components/diy-visuals/STANDARDS.md`.
  */
 export default function VehicleDiagramPhoto({
   bodyClass = "sedan",

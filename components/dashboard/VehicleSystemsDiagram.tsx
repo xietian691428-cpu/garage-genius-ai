@@ -62,7 +62,7 @@ export default function VehicleSystemsDiagram({
           className="mb-2 text-center text-[11px] font-medium uppercase tracking-wider text-slate-500"
           data-testid="vehicle-diagram-body-class"
         >
-          {vehicleBodyClassLabel(bodyClass)} silhouette
+          {vehicleBodyClassLabel(bodyClass)} · location map
         </p>
         <svg
           viewBox={`0 0 ${VEHICLE_DIAGRAM_VB.w} ${VEHICLE_DIAGRAM_VB.h}`}
@@ -243,7 +243,7 @@ export default function VehicleSystemsDiagram({
       >
         {emphasized && isRegionVisible(emphasized)
           ? `${emphasized.name} — ${emphasized.description}`
-          : "Tap a numbered area on the car or choose a system below"}
+          : "Numbers mark real locations on this vehicle type. Tap a number or choose a system below."}
       </p>
 
       <div
