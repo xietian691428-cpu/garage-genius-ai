@@ -202,6 +202,8 @@ export async function assertAiTokenBudget(
   estimatedTokens: number,
 ): Promise<void> {
   if (isQaUnlockEnabled()) return;
+  const { isUnlimitedTokenUser } = await import("@/lib/test-token-bypass");
+  if (await isUnlimitedTokenUser(userId)) return;
 
   const needed = Math.max(1, Math.ceil(estimatedTokens));
   const ok = await tokenService.hasEnoughTokens(userId, needed);
@@ -229,8 +231,11 @@ export async function consumeAiTokens(
     metadata?: Record<string, unknown>;
   },
 ): Promise<void> {
-  if (isQaUnlockEnabled()) {
-    // Still record usage for admin visibility during QA unlock.
+  const { isUnlimitedTokenUser } = await import("@/lib/test-token-bypass");
+  const unlimitedTester = await isUnlimitedTokenUser(userId);
+
+  if (isQaUnlockEnabled() || unlimitedTester) {
+    // Still record usage for admin visibility during QA / tester unlock.
     if (options?.route) {
       const { logTokenUsage } = await import("@/lib/log-token-usage");
       await logTokenUsage({
@@ -242,7 +247,11 @@ export async function consumeAiTokens(
         totalTokens: Math.max(1, Math.ceil(actualTokens)),
         playbookSlug: options.playbookSlug,
         feature: options.feature,
-        metadata: { ...(options.metadata || {}), qa_unlock: true },
+        metadata: {
+          ...(options.metadata || {}),
+          ...(isQaUnlockEnabled() ? { qa_unlock: true } : {}),
+          ...(unlimitedTester ? { test_unlimited_tokens: true } : {}),
+        },
       });
     }
     return;

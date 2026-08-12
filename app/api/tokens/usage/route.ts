@@ -54,6 +54,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(qaTokenAvailabilityView(true));
     }
 
+    const { isUnlimitedTokenEmail } = await import("@/lib/test-token-bypass");
+    if (isUnlimitedTokenEmail(user.email)) {
+      return NextResponse.json({
+        ...qaTokenAvailabilityView(true),
+        testUnlimitedTokens: true,
+      });
+    }
+
     const availability = await tokenService.getAvailableTokens(user.id);
     const used = availability.usage.monthly_tokens_used;
     const limit = availability.includedMonthly;

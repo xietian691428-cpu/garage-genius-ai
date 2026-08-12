@@ -13,6 +13,7 @@ import {
   qaTokenAvailability,
   qaTokenPlan,
 } from "@/lib/qa-mode";
+import { isUnlimitedTokenUser } from "@/lib/test-token-bypass";
 import {
   TOKEN_PLAN_LIMITS,
   type TokenAvailability,
@@ -137,6 +138,7 @@ export const tokenService = {
    */
   async getAvailableTokens(userId: string): Promise<TokenAvailability> {
     if (isQaUnlockEnabled()) return qaTokenAvailability(userId);
+    if (await isUnlimitedTokenUser(userId)) return qaTokenAvailability(userId);
 
     const [plan, usage] = await Promise.all([
       this.getUserPlan(userId),
@@ -177,6 +179,7 @@ export const tokenService = {
     requiredTokens: number = 1000,
   ): Promise<boolean> {
     if (isQaUnlockEnabled()) return true;
+    if (await isUnlimitedTokenUser(userId)) return true;
     if (requiredTokens <= 0) return true;
     const availability = await this.getAvailableTokens(userId);
     return availability.remainingThisMonth >= requiredTokens;
@@ -189,6 +192,7 @@ export const tokenService = {
    */
   async consumeTokens(userId: string, tokens: number): Promise<TokenAvailability> {
     if (isQaUnlockEnabled()) return qaTokenAvailability(userId);
+    if (await isUnlimitedTokenUser(userId)) return qaTokenAvailability(userId);
     if (!Number.isFinite(tokens) || tokens <= 0) {
       return this.getAvailableTokens(userId);
     }
