@@ -19,6 +19,7 @@ import {
   defaultShopReportFileName,
   exportShopReportPdf,
 } from "@/lib/shop-report/export-pdf";
+import { formatAiHttpError } from "@/lib/format-ai-http-error";
 
 type Props = {
   open: boolean;
@@ -135,9 +136,17 @@ export default function ShopReportModal({
         payload?: ShopReportPayload;
         public_url?: string | null;
         error?: string;
+        code?: string;
       };
       if (!res.ok || !data.payload) {
-        throw new Error(data.error || "Could not generate report.");
+        throw new Error(
+          formatAiHttpError({
+            status: res.status,
+            code: data.code,
+            error: data.error,
+            fallback: "Could not generate report. Please try again.",
+          }),
+        );
       }
 
       const blob = exportShopReportPdf(data.payload);

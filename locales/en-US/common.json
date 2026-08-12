@@ -118,6 +118,7 @@
     "analyzingPhoto": "AI is analyzing your photo…",
     "tryStartingPoint": "Try a starting point",
     "requestFailed": "Request failed, please try again",
+    "rateLimited": "Too many requests. Please wait a moment and try again.",
     "retry": "Retry",
     "timeout": "AI request timed out. Please try again.",
     "emptyReply": "AI returned an empty reply. Please try again.",

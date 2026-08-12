@@ -18,13 +18,36 @@ import { TOKEN_PLAN_LIMITS } from "@/lib/types/tokens";
 
 export const QA_UNLOCK_ENV = "NEXT_PUBLIC_QA_UNLOCK";
 
-function isVercelProduction(): boolean {
-  return process.env.VERCEL_ENV === "production";
+/**
+ * Production deploy detection for server + client.
+ * `VERCEL_ENV` is server-only unless mirrored as `NEXT_PUBLIC_VERCEL_ENV`
+ * (see next.config.ts). Hostname belt-and-suspenders blocks prod even if
+ * NEXT_PUBLIC_QA_UNLOCK is mis-set.
+ */
+export function isProductionDeploy(): boolean {
+  const vercelEnv =
+    process.env.VERCEL_ENV?.trim() ||
+    process.env.NEXT_PUBLIC_VERCEL_ENV?.trim() ||
+    "";
+  if (vercelEnv === "production") return true;
+
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname.toLowerCase();
+    if (
+      host === "garagegenius.cloud" ||
+      host.endsWith(".garagegenius.cloud") ||
+      host === "www.garagegenius.cloud"
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export function isQaUnlockEnabled(): boolean {
   // Never unlock paid entitlements on production deploys.
-  if (isVercelProduction()) return false;
+  if (isProductionDeploy()) return false;
 
   const raw =
     process.env.NEXT_PUBLIC_QA_UNLOCK?.trim() ??

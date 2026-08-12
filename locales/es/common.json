@@ -118,6 +118,7 @@
     "analyzingPhoto": "La IA está analizando tu foto…",
     "tryStartingPoint": "Prueba un punto de partida",
     "requestFailed": "La solicitud falló, inténtalo de nuevo",
+    "rateLimited": "Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.",
     "retry": "Reintentar",
     "timeout": "La solicitud a la IA agotó el tiempo. Inténtalo de nuevo.",
     "emptyReply": "La IA devolvió una respuesta vacía. Inténtalo de nuevo.",

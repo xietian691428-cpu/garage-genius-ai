@@ -48,6 +48,7 @@ import { vehicleHasModifiedTag } from "@/lib/insurance-tips";
 import { MOD_CONTEXT_PATTERN } from "@/lib/insurance-safety-copy";
 import { INSURANCE_SAFETY_COPY } from "@/lib/insurance-safety-copy";
 import ShopReportModal from "@/components/shop-report/ShopReportModal";
+import { formatAiHttpError } from "@/lib/format-ai-http-error";
 import type { MaintenanceRecord } from "@/lib/types/maintenance";
 import {
   buildDtcDiagnosisPrompt,
@@ -479,7 +480,14 @@ export default function ChatApp({
       }
 
       if (!response.ok) {
-        throw new Error(data.error || t("ai.requestFailed"));
+        throw new Error(
+          formatAiHttpError({
+            status: response.status,
+            code: data.code,
+            error: data.error,
+            fallback: t("ai.requestFailed"),
+          }),
+        );
       }
 
       if (!data.content?.trim()) {
@@ -666,7 +674,14 @@ export default function ChatApp({
         throw new Error(t("ai.requestFailed"));
       }
       if (!res.ok) {
-        throw new Error(json.error || t("ai.requestFailed"));
+        throw new Error(
+          formatAiHttpError({
+            status: res.status,
+            code: (json as { code?: string }).code,
+            error: json.error,
+            fallback: t("ai.requestFailed"),
+          }),
+        );
       }
       const codesRaw = json.data?.codes ?? json.codes ?? [];
       const codes = codesRaw.map((c) => lookupDtc(c.code));
