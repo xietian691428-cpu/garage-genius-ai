@@ -1,9 +1,10 @@
 /**
  * Education-tone guards for Shop Report LLM output.
- * Softens imperative repair language before PDF / archive.
+ * Softens imperative repair language and insurance coverage claims.
  */
 
 import type { ShopReportFactor } from "@/lib/types/shop-report";
+import { applyInsuranceSafetyGuards } from "@/lib/insurance-coverage-rewrite";
 
 export function sanitizeShopReportFactors(
   raw:
@@ -18,15 +19,16 @@ export function sanitizeShopReportFactors(
   const out: ShopReportFactor[] = [];
   for (const f of raw || []) {
     const title = (f?.title || "").trim();
-    const explanation = (f?.explanation || "").trim();
+    let explanation = (f?.explanation || "").trim();
     const howToVerify = (f?.howToVerify || "").trim();
     if (!title || !explanation) continue;
-    const safeExpl = /replace\b|root cause is\b|you must\b/i.test(explanation)
-      ? `Common causes reported for this combination include considerations around ${title.toLowerCase()}. These are for professional verification only.`
-      : explanation;
+    if (/replace\b|root cause is\b|you must\b/i.test(explanation)) {
+      explanation = `Common causes reported for this combination include considerations around ${title.toLowerCase()}. These are for professional verification only.`;
+    }
+    explanation = applyInsuranceSafetyGuards(explanation);
     out.push({
       title,
-      explanation: safeExpl,
+      explanation,
       howToVerify:
         howToVerify ||
         "Verify with standard shop procedures and OEM guidance.",
@@ -44,7 +46,7 @@ export function sanitizeShopReportSteps(steps: string[]): string[] {
       if (/^replace\b/i.test(s)) {
         return `Inspect / verify condition related to: ${s.replace(/^replace\b/i, "").trim()}`;
       }
-      return s;
+      return applyInsuranceSafetyGuards(s);
     })
     .slice(0, 8);
 }

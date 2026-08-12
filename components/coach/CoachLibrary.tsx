@@ -47,6 +47,12 @@ import { exportAnnualHealthReportPdf } from "@/lib/export-annual-health-report";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import type { PlaybookQuota } from "@/lib/playbook-limits";
+import { safetyTierForPlaybook } from "@/lib/safety-tier";
+import { vehicleHasModifiedTag } from "@/lib/insurance-tips";
+import { useSafetyAdviceAck } from "@/hooks/useSafetyAdviceAck";
+import SafetyTierTip from "@/components/legal/SafetyTierTip";
+import SafetyAdviceAckModal from "@/components/legal/SafetyAdviceAckModal";
+import { MOD_CONTEXT_PATTERN } from "@/lib/insurance-safety-copy";
 
 type Props = {
   currentVehicle: VehicleInfo | null;
@@ -92,6 +98,9 @@ export default function CoachLibrary({
   const { features, isFree, recordPhotoDiagnose } = useSubscription();
   const { t } = useTranslation();
   const [activeSlug, setActiveSlug] = useState<CoachPlaybookSlug | null>(null);
+  const [pendingSlug, setPendingSlug] = useState<CoachPlaybookSlug | null>(
+    null,
+  );
   const [reportBusy, setReportBusy] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [upgradeReason, setUpgradeReason] =
@@ -103,6 +112,12 @@ export default function CoachLibrary({
     () => listRecommendedCoachPlaybooks(currentVehicle, { limit: 5 }),
     [currentVehicle],
   );
+  const {
+    showAckModal,
+    requestHighTierAccess,
+    acknowledge,
+    cancelPending,
+  } = useSafetyAdviceAck();
   const scenario = activeSlug ? getCoachPlaybook(activeSlug) : null;
 
   const vehicleCtx = toCoachVehicleContext(currentVehicle);
@@ -128,6 +143,13 @@ export default function CoachLibrary({
 
   const openPlaybook = async (slug: CoachPlaybookSlug) => {
     if (starting) return;
+    if (safetyTierForPlaybook(slug) === "high") {
+      const ok = requestHighTierAccess();
+      if (!ok) {
+        setPendingSlug(slug);
+        return;
+      }
+    }
     setStarting(true);
     try {
       const {
@@ -328,8 +350,29 @@ export default function CoachLibrary({
 
   if (scenario && activeSlug) {
     const showDtcEntry = activeSlug === "diagnosis_check_engine";
+    const tier = safetyTierForPlaybook(activeSlug);
+    const showModTip =
+      activeSlug === "maintenance_modified_car" ||
+      vehicleHasModifiedTag(currentVehicle) ||
+      MOD_CONTEXT_PATTERN.test(scenario.title || "");
     return (
       <div className="flex h-full min-h-0 flex-col">
+        <SafetyAdviceAckModal
+          open={showAckModal}
+          onContinue={() => {
+            void acknowledge().then(() => {
+              if (pendingSlug) {
+                const slug = pendingSlug;
+                setPendingSlug(null);
+                void openPlaybook(slug);
+              }
+            });
+          }}
+          onCancel={() => {
+            cancelPending();
+            setPendingSlug(null);
+          }}
+        />
         {showDtcEntry ? (
           <DtcEntryBar
             variant="coach"
@@ -346,12 +389,24 @@ export default function CoachLibrary({
             }}
           />
         ) : null}
-        <div className="min-h-0 flex-1">
-          {activeSlug === "maintenance_modified_car" ? (
-            <div className="border-b border-slate-800 bg-[#0a0f1c] px-3 py-2 sm:px-4">
+        <div className="border-b border-slate-800 bg-[#0a0f1c] px-3 py-2 sm:px-4">
+          {showModTip ? (
+            <div className="mb-2">
               <InsuranceModTip vehicle={currentVehicle} />
             </div>
           ) : null}
+          <SafetyTierTip
+            tier={tier}
+            mods={showModTip}
+            onExportShopReport={() =>
+              onAskAI(
+                "Help me prepare an educational Shop Report summary of what I observed in this coach guide for my technician. Verification only — not a final diagnosis.",
+                { playbookSlug: activeSlug || undefined },
+              )
+            }
+          />
+        </div>
+        <div className="min-h-0 flex-1">
           <CoachScenarioPlayer
             scenario={scenario}
             vehicle={vehicleCtx}
@@ -380,6 +435,22 @@ export default function CoachLibrary({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-[#0a0f1c] pb-[var(--content-pad-bottom)] lg:pb-0">
+      <SafetyAdviceAckModal
+        open={showAckModal}
+        onContinue={() => {
+          void acknowledge().then(() => {
+            if (pendingSlug) {
+              const slug = pendingSlug;
+              setPendingSlug(null);
+              void openPlaybook(slug);
+            }
+          });
+        }}
+        onCancel={() => {
+          cancelPending();
+          setPendingSlug(null);
+        }}
+      />
       <div className="mx-auto w-full max-w-3xl px-4 py-6">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-start gap-3">

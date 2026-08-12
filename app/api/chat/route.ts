@@ -8,6 +8,7 @@ import {
 } from "@/lib/deepseek";
 import { DISCLAIMER } from "@/lib/constants";
 import { ensureLegalDisclaimer } from "@/lib/legal-disclaimer";
+import { applyInsuranceSafetyGuards } from "@/lib/insurance-coverage-rewrite";
 import type { VehicleInfo } from "@/lib/types/chat";
 import { buildChatSystemPrompt } from "@/lib/chat-system-prompt";
 import { createSupabaseUserClient, createSupabaseAdmin } from "@/lib/supabase-admin";
@@ -47,9 +48,9 @@ import { parseObdAdapterPreference } from "@/lib/obd-preference";
 
 export const runtime = "nodejs";
 
-/** Ensure AI reply includes the liability disclaimer (hard product requirement). */
+/** Ensure AI reply includes liability disclaimer + insurance soft rewrite. */
 function ensureDisclaimer(content: string): string {
-  return ensureLegalDisclaimer(content);
+  return ensureLegalDisclaimer(applyInsuranceSafetyGuards(content));
 }
 
 function getAccessToken(req: NextRequest): string | null {

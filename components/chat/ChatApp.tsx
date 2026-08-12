@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { ChatMessage, VehicleInfo } from "@/lib/types/chat";
 import { createWelcomeMessage } from "@/lib/constants";
 import { saveCurrentVehicleId } from "@/lib/chat-storage";
@@ -38,6 +38,15 @@ import {
   formatFamiliarityForPrompt,
 } from "@/lib/vehicle-familiarity";
 import ReceiptConfirmModal from "@/components/history/ReceiptConfirmModal";
+import SafetyTierTip from "@/components/legal/SafetyTierTip";
+import {
+  combineSafetyTiers,
+  inferSafetyTierFromText,
+  safetyTierForPlaybook,
+} from "@/lib/safety-tier";
+import { vehicleHasModifiedTag } from "@/lib/insurance-tips";
+import { MOD_CONTEXT_PATTERN } from "@/lib/insurance-safety-copy";
+import { INSURANCE_SAFETY_COPY } from "@/lib/insurance-safety-copy";
 import ShopReportModal from "@/components/shop-report/ShopReportModal";
 import type { MaintenanceRecord } from "@/lib/types/maintenance";
 import {
@@ -117,6 +126,18 @@ export default function ChatApp({
   const messagesRef = useRef<ChatMessage[]>([]);
   const { refresh: refreshTokenUsage } = useTokenUsage();
   const { isFree, isPro, features } = useSubscription();
+  const sessionSafety = useMemo(() => {
+    const recent = messages
+      .slice(-6)
+      .map((m) => m.content || "")
+      .join("\n");
+    const fromText = inferSafetyTierFromText(recent);
+    const fromPlaybook = safetyTierForPlaybook(playbookSlugRef.current);
+    const tier = combineSafetyTiers(fromText, fromPlaybook);
+    const mods =
+      vehicleHasModifiedTag(currentVehicle) || MOD_CONTEXT_PATTERN.test(recent);
+    return { tier, mods };
+  }, [messages, currentVehicle]);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -821,6 +842,20 @@ export default function ChatApp({
                 {t("ai.retry")}
               </button>
             </div>
+          </div>
+        ) : null}
+        {(sessionSafety.tier !== "low" || sessionSafety.mods) &&
+        messages.some((m) => m.role === "assistant") ? (
+          <div className="shrink-0 border-t border-slate-800 px-3 py-2 sm:px-4">
+            <p className="mb-1.5 text-[11px] text-slate-500">
+              {INSURANCE_SAFETY_COPY.possibleFactorsOnly}{" "}
+              {INSURANCE_SAFETY_COPY.nextStepOptions}
+            </p>
+            <SafetyTierTip
+              tier={sessionSafety.tier}
+              mods={sessionSafety.mods}
+              onExportShopReport={() => setShopReportOpen(true)}
+            />
           </div>
         ) : null}
         <ChatInput

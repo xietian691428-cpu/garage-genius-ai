@@ -20,6 +20,7 @@ import ObdToolsSettings from "@/components/settings/ObdToolsSettings";
 import ShareAppCard from "@/components/settings/ShareAppCard";
 import ShopReportsPanel from "@/components/shop-report/ShopReportsPanel";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
+import InsuranceSafetySettings from "@/components/settings/InsuranceSafetySettings";
 import { supabase } from "@/lib/supabase";
 import type { VehicleInfo } from "@/lib/types/chat";
 
@@ -209,6 +210,8 @@ export default function SettingsPanel({
         <DiySkillSettings />
 
         <ObdToolsSettings />
+
+        <InsuranceSafetySettings />
 
         {onUpdateVehicle ? (
           <InsuranceProfileSettings
