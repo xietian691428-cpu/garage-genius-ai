@@ -25,15 +25,37 @@ test.describe("Vehicle + OBD settings P0", () => {
     }
 
     await page.goto("/app?tab=dashboard");
-    const addOpen = page.getByTestId("add-vehicle-open").first();
-    const atLimit = page.getByTestId("add-vehicle-limit").first();
-    // Plan vehicle caps (e.g. Pro = 5) hide the dashboard add control — skip instead of timeout.
-    if (await atLimit.isVisible().catch(() => false)) {
+    await expect(
+      page.getByText(/Vehicle Health|Inspect|HOME|Current vehicle|Garage/i).first(),
+    ).toBeVisible({ timeout: 45_000 });
+
+    const addOpen = page.getByTestId("add-vehicle-open");
+    const atLimit = page.getByTestId("add-vehicle-limit");
+
+    // Wait briefly for either add CTA or plan-limit note (Pro/Free caps).
+    await Promise.race([
+      addOpen.first().waitFor({ state: "visible", timeout: 20_000 }).catch(() => null),
+      atLimit.first().waitFor({ state: "visible", timeout: 20_000 }).catch(() => null),
+    ]);
+
+    if (await atLimit.first().isVisible().catch(() => false)) {
       test.skip(true, "Vehicle plan limit reached on this account");
     }
-    if (!(await addOpen.isVisible().catch(() => false))) {
-      // Chat sidebar also exposes add-vehicle-open when under limit.
+
+    if (!(await addOpen.first().isVisible().catch(() => false))) {
       await page.goto("/app?tab=chat");
+      await Promise.race([
+        page
+          .getByTestId("add-vehicle-open")
+          .first()
+          .waitFor({ state: "visible", timeout: 20_000 })
+          .catch(() => null),
+        page
+          .getByTestId("add-vehicle-limit")
+          .first()
+          .waitFor({ state: "visible", timeout: 20_000 })
+          .catch(() => null),
+      ]);
       if (await page.getByTestId("add-vehicle-limit").first().isVisible().catch(() => false)) {
         test.skip(true, "Vehicle plan limit reached on this account");
       }
@@ -42,7 +64,7 @@ test.describe("Vehicle + OBD settings P0", () => {
       });
       await page.getByTestId("add-vehicle-open").first().click();
     } else {
-      await addOpen.click();
+      await addOpen.first().click();
     }
     await expect(page.getByTestId("add-vehicle-dialog")).toBeVisible();
 
