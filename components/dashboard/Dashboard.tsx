@@ -1006,8 +1006,9 @@ export default function Dashboard({
                 data-testid="add-vehicle-limit"
                 className="max-w-[14rem] text-xs leading-snug text-slate-500"
               >
-                Plan limit: {features.maxVehicles} vehicle
-                {features.maxVehicles === 1 ? "" : "s"}. Upgrade for more.
+                {`Plan limit: ${features.maxVehicles} vehicle${
+                  features.maxVehicles === 1 ? "" : "s"
+                }. Upgrade for more.`}
               </p>
             ) : null}
             <div className="flex items-center gap-2 text-sm text-emerald-400">

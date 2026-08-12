@@ -94,6 +94,30 @@ describe("shop report generate helpers", () => {
     ).toBe(true);
   });
 
+  it("rejects very short symptom-only text", () => {
+    const preview = buildShopReportPreview({
+      vehicle,
+      messages: [{ role: "user", content: "noise" }],
+    });
+    expect(preview.hasEnoughData).toBe(false);
+    expect(preview.reasonIfEmpty).toMatch(/diagnosis|symptoms|fault code/i);
+  });
+
+  it("accepts longer symptom-only text without DTC", () => {
+    expect(
+      buildShopReportPreview({
+        vehicle,
+        messages: [
+          {
+            role: "user",
+            content:
+              "Loud grinding noise when braking from highway speeds after rain.",
+          },
+        ],
+      }).hasEnoughData,
+    ).toBe(true);
+  });
+
   it("tone guard softens Replace the sensor language", () => {
     const factors = sanitizeShopReportFactors([
       {
