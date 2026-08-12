@@ -67,14 +67,14 @@ export default function VehicleSystemsDiagram({
             const selected = selectedRegionId === region.id;
 
             const zoneOpacity = !visible
-              ? 0.03
+              ? 0.02
               : isEmphasized
-                ? 0.38
+                ? 0.34
                 : isOtherDimmed
-                  ? 0.03
+                  ? 0.02
                   : highlighted
-                    ? 0.18
-                    : 0.12;
+                    ? 0.14
+                    : 0.09;
 
             const markerOpacity = !visible ? 0.2 : isOtherDimmed ? 0.28 : 1;
 
@@ -104,15 +104,15 @@ export default function VehicleSystemsDiagram({
                   fill={region.color}
                   fillOpacity={zoneOpacity}
                   stroke={region.color}
-                  strokeWidth={isEmphasized ? 2 : 1}
+                  strokeWidth={isEmphasized ? 2.25 : 1.15}
                   strokeOpacity={
                     !visible
-                      ? 0.1
+                      ? 0.08
                       : isEmphasized
                         ? 0.95
                         : isOtherDimmed
-                          ? 0.15
-                          : 0.45
+                          ? 0.12
+                          : 0.4
                   }
                   style={{
                     transition:

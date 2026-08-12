@@ -10,7 +10,7 @@ export const VEHICLE_DIAGRAM_VB = { w: 760, h: 507 } as const;
 export const VEHICLE_DIAGRAM_IMAGE_SRC = "/images/vehicle-side-profile.jpg";
 
 /**
- * Legacy line silhouette — kept for optional fallbacks / non-photo contexts.
+ * Legacy line silhouette — optional fallbacks only.
  * Prefer the photo layer in VehicleSystemsDiagram.
  */
 export const VEHICLE_CAR_PATHS = {
@@ -19,14 +19,14 @@ export const VEHICLE_CAR_PATHS = {
     "M275 175 C330 160 400 155 470 162 C520 168 560 185 585 205 L565 245 C520 225 460 215 400 215 C350 215 305 222 280 235 Z",
   character: "M160 300 C280 285 420 280 560 295 C610 302 650 318 675 340",
   shadow: "M100 420 C250 445 510 445 670 420 C510 455 250 455 100 420 Z",
-  frontWheel: { cx: 175, cy: 400, r: 48 },
-  rearWheel: { cx: 590, cy: 400, r: 48 },
-  frontHub: { cx: 175, cy: 400, r: 18 },
-  rearHub: { cx: 590, cy: 400, r: 18 },
+  frontWheel: { cx: 178, cy: 398, r: 46 },
+  rearWheel: { cx: 588, cy: 398, r: 46 },
+  frontHub: { cx: 178, cy: 398, r: 16 },
+  rearHub: { cx: 588, cy: 398, r: 16 },
 } as const;
 
 export type RegionDiagramMeta = {
-  /** Compact zone path(s) — calibrated to the photo */
+  /** Compact zone path(s) — calibrated to the photo, minimal overlap */
   hitPath: string;
   center: { x: number; y: number };
   /** Outside-car callout anchor for leader label */
@@ -34,63 +34,63 @@ export type RegionDiagramMeta = {
 };
 
 /**
- * Anatomical zones for the LEFT-facing sedan photo (760×507).
- * Keys match DashboardRegion.id.
+ * Compact anatomical zones for the LEFT-facing sedan photo (760×507).
+ * Sized to read as “photo hotspots”, not overlapping blobs.
  */
 export const REGION_DIAGRAM_META: Record<string, RegionDiagramMeta> = {
-  /** 1 — Engine Bay: front hood / engine compartment */
+  /** 1 — Engine Bay: hood / engine compartment */
   engine: {
     hitPath:
-      "M115 215 C145 200 195 195 245 200 C275 205 290 225 280 250 C250 265 175 268 135 255 C110 245 105 225 115 215 Z",
-    center: { x: 200, y: 232 },
-    callout: { x: 200, y: 88 },
+      "M145 220 C175 208 230 208 265 220 C275 235 265 252 230 258 C185 260 145 248 145 220 Z",
+    center: { x: 205, y: 232 },
+    callout: { x: 205, y: 95 },
   },
-  /** 2 — Brake System: front wheel hub / rotor (primary), rear hub secondary */
+  /** 2 — Brake System: front rotor/hub (primary) + rear hub (secondary) */
   brakes: {
     hitPath:
-      "M145 365 C160 350 195 350 210 365 C220 385 205 410 175 415 C145 410 130 385 145 365 Z M560 365 C575 350 610 350 625 365 C635 385 620 410 590 415 C560 410 545 385 560 365 Z",
-    center: { x: 175, y: 385 },
+      "M158 372 C172 360 198 360 210 372 C218 388 205 408 178 412 C152 405 145 385 158 372 Z M568 372 C582 360 608 360 620 372 C628 388 615 408 588 412 C562 405 555 385 568 372 Z",
+    center: { x: 178, y: 388 },
     callout: { x: 95, y: 455 },
   },
-  /** 3 — Suspension: rear wheel-arch / strut area (primary), front arch secondary */
+  /** 3 — Suspension: rear wheel-arch (primary) + front arch (secondary) */
   suspension: {
     hitPath:
-      "M545 300 C570 285 625 285 645 305 C655 325 645 350 615 355 C575 355 535 335 545 300 Z M140 300 C165 285 210 285 225 305 C235 325 220 350 185 355 C150 350 125 330 140 300 Z",
-    center: { x: 595, y: 320 },
-    callout: { x: 700, y: 250 },
+      "M555 305 C575 292 620 295 635 315 C638 332 620 348 590 348 C560 340 545 322 555 305 Z M145 305 C165 292 205 295 218 315 C220 332 202 348 175 348 C148 340 135 322 145 305 Z",
+    center: { x: 595, y: 322 },
+    callout: { x: 705, y: 255 },
   },
-  /** 4 — Battery & Electrical: forward engine bay / front corner */
+  /** 4 — Battery & Electrical: forward bay / front corner */
   battery: {
     hitPath:
-      "M95 230 C120 215 155 218 170 240 C175 260 155 280 125 282 C100 275 85 250 95 230 Z",
-    center: { x: 132, y: 250 },
-    callout: { x: 55, y: 175 },
+      "M100 235 C120 222 148 225 158 245 C158 262 138 275 118 272 C100 262 92 248 100 235 Z",
+    center: { x: 128, y: 248 },
+    callout: { x: 52, y: 175 },
   },
-  /** 5 — Tires & Wheels: both wheel disks (marker on rear to separate from brakes) */
+  /** 5 — Tires: compact wheel disks (marker on rear to separate from brakes) */
   tires: {
     hitPath:
-      "M127 400a48 48 0 1 0 96 0a48 48 0 1 0-96 0M542 400a48 48 0 1 0 96 0a48 48 0 1 0-96 0",
-    center: { x: 590, y: 400 },
-    callout: { x: 590, y: 480 },
+      "M148 398a30 30 0 1 0 60 0a30 30 0 1 0-60 0M558 398a30 30 0 1 0 60 0a30 30 0 1 0-60 0",
+    center: { x: 588, y: 398 },
+    callout: { x: 588, y: 478 },
   },
-  /** 6 — HVAC / Climate: windshield base / firewall / cabin front */
+  /** 6 — HVAC: windshield base / firewall */
   hvac: {
     hitPath:
-      "M255 200 C295 185 360 185 405 200 C420 215 410 240 375 248 C320 252 270 245 255 225 Z",
+      "M268 205 C305 192 360 192 392 208 C400 222 388 240 350 245 C305 245 270 232 268 205 Z",
     center: { x: 330, y: 218 },
-    callout: { x: 400, y: 85 },
+    callout: { x: 400, y: 90 },
   },
   /** 7 — Transmission: mid underbody between axles */
   transmission: {
     hitPath:
-      "M300 330 C350 315 450 315 500 330 C515 350 500 375 445 382 C360 385 290 370 300 330 Z",
-    center: { x: 400, y: 350 },
-    callout: { x: 400, y: 470 },
+      "M325 335 C370 322 445 322 485 338 C495 352 480 370 430 375 C365 375 315 358 325 335 Z",
+    center: { x: 400, y: 348 },
+    callout: { x: 400, y: 468 },
   },
   /** 8 — Lights: headlight primary + taillight secondary */
   lights: {
     hitPath:
-      "M55 265 C80 250 115 255 125 280 C120 305 90 318 65 310 C45 295 45 275 55 265 Z M655 250 C685 240 720 250 728 275 C722 300 690 315 665 308 C645 290 645 265 655 250 Z",
+      "M62 272 C82 258 112 262 120 282 C115 300 90 310 70 302 C55 290 52 280 62 272 Z M662 255 C685 245 715 252 722 272 C715 292 688 302 668 295 C652 280 652 265 662 255 Z",
     center: { x: 90, y: 285 },
     callout: { x: 55, y: 360 },
   },
