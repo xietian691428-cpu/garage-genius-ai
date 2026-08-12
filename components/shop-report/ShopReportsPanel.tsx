@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Download,
   ExternalLink,
@@ -16,13 +17,23 @@ import {
   exportShopReportPdf,
 } from "@/lib/shop-report/export-pdf";
 
+type ShopReportQuotaState = {
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+  unlimited: boolean;
+  periodYm?: string;
+};
+
 type Props = {
   vehicle: VehicleInfo | null;
   loading?: boolean;
 };
 
 export default function ShopReportsPanel({ vehicle, loading }: Props) {
+  const { t } = useTranslation();
   const [reports, setReports] = useState<ShopReportListItem[]>([]);
+  const [quota, setQuota] = useState<ShopReportQuotaState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
@@ -30,6 +41,7 @@ export default function ShopReportsPanel({ vehicle, loading }: Props) {
   const load = useCallback(async () => {
     if (!vehicle?.id) {
       setReports([]);
+      setQuota(null);
       return;
     }
     setBusy(true);
@@ -39,30 +51,40 @@ export default function ShopReportsPanel({ vehicle, loading }: Props) {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        setError("Sign in to view shop reports.");
+        setError(t("shopReport.panelSignIn"));
         return;
       }
-      const res = await fetch(
-        `/api/shop-report/list?vehicleId=${encodeURIComponent(vehicle.id)}`,
-        {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        },
-      );
-      const data = (await res.json()) as {
+      const headers = { Authorization: `Bearer ${session.access_token}` };
+      const [listRes, quotaRes] = await Promise.all([
+        fetch(
+          `/api/shop-report/list?vehicleId=${encodeURIComponent(vehicle.id)}`,
+          { headers },
+        ),
+        fetch("/api/shop-report/quota", { headers }),
+      ]);
+      const data = (await listRes.json()) as {
         reports?: ShopReportListItem[];
         error?: string;
       };
-      if (!res.ok) {
-        throw new Error(data.error || "Could not load reports.");
+      if (!listRes.ok) {
+        throw new Error(data.error || t("shopReport.panelLoadFailed"));
       }
       setReports(data.reports || []);
+      if (quotaRes.ok) {
+        const quotaData = (await quotaRes.json()) as {
+          quota?: ShopReportQuotaState;
+        };
+        if (quotaData.quota) setQuota(quotaData.quota);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load reports.");
+      setError(
+        err instanceof Error ? err.message : t("shopReport.panelLoadFailed"),
+      );
       setReports([]);
     } finally {
       setBusy(false);
     }
-  }, [vehicle?.id]);
+  }, [vehicle?.id, t]);
 
   useEffect(() => {
     void load();
@@ -161,6 +183,17 @@ export default function ShopReportsPanel({ vehicle, loading }: Props) {
               {vehicle.year} {vehicle.make} {vehicle.model}
             </span>
           </p>
+          {quota?.unlimited ? (
+            <p className="mt-1 text-xs text-emerald-300/90">
+              {t("shopReport.panelUnlimited")}
+            </p>
+          ) : quota && !quota.unlimited && quota.remaining != null ? (
+            <p className="mt-1 text-xs text-slate-500">
+              {t("shopReport.panelRemaining", {
+                remaining: quota.remaining,
+              })}
+            </p>
+          ) : null}
         </div>
         <button
           type="button"

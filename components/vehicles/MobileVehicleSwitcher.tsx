@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { VehicleInfo } from "@/lib/types/chat";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
@@ -35,6 +36,7 @@ export default function MobileVehicleSwitcher({
   canAdd = true,
   maxVehicles,
 }: Props) {
+  const { t } = useTranslation();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editing, setEditing] = useState<VehicleInfo | null>(null);
 
@@ -57,8 +59,8 @@ export default function MobileVehicleSwitcher({
 
   const limitLabel =
     typeof maxVehicles === "number"
-      ? `Plan limit: ${maxVehicles} vehicle${maxVehicles === 1 ? "" : "s"}. Upgrade for more.`
-      : "Vehicle limit reached. Upgrade for more.";
+      ? t("vehicles.planLimit", { count: maxVehicles })
+      : t("vehicles.limitReached");
 
   return (
     <>

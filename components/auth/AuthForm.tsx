@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Car } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { safeNextPath, useAuth } from "@/hooks/useAuth";
 import {
   hasAnyOAuthProvider,
@@ -51,7 +52,21 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+function mapAuthError(
+  message: string,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
+  const m = message.toLowerCase();
+  if (/invalid login credentials|invalid email or password/i.test(m)) {
+    return t("auth.invalidCredentials");
+  }
+  if (/password.*8|at least 8/i.test(m)) return t("auth.passwordTooShort");
+  if (/do not match|don't match/i.test(m)) return t("auth.passwordMismatch");
+  return message || t("auth.authFailed");
+}
+
 export default function AuthForm() {
+  const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = safeNextPath(searchParams.get("next"));
@@ -112,22 +127,18 @@ export default function AuthForm() {
 
     try {
       if (!isSupabaseConfigured()) {
-        throw new Error(
-          "Sign-in is temporarily unavailable. Please try again in a moment.",
-        );
+        throw new Error(t("auth.unavailable"));
       }
       if (mode === "signup") {
         if (password.length < 8) {
-          throw new Error("Password must be at least 8 characters.");
+          throw new Error(t("auth.passwordTooShort"));
         }
         if (password !== confirm) {
-          throw new Error("Passwords do not match.");
+          throw new Error(t("auth.passwordMismatch"));
         }
         const { session, user } = await signUpWithEmail(email, password);
         if (!session || !user?.email_confirmed_at) {
-          setInfo(
-            "Account created. Check your email for a confirmation link, then sign in. Didn’t get it? Use Resend below — and check spam.",
-          );
+          setInfo(t("auth.signupCheckEmail"));
           setMode("signin");
         } else {
           router.replace(nextPath);
@@ -137,7 +148,8 @@ export default function AuthForm() {
         router.replace(nextPath);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Authentication failed.");
+      const raw = err instanceof Error ? err.message : t("auth.authFailed");
+      setError(mapAuthError(raw, t));
     } finally {
       setBusy(false);
       submittingRef.current = false;
@@ -151,10 +163,10 @@ export default function AuthForm() {
     setBusy(true);
     try {
       await resendVerificationEmail(email);
-      setInfo("Verification email resent. Check your inbox (and spam folder).");
+      setInfo(t("auth.verifyResentInfo"));
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Could not resend verification email.",
+        err instanceof Error ? err.message : t("auth.verifyResendFailed"),
       );
     } finally {
       setBusy(false);
@@ -169,7 +181,6 @@ export default function AuthForm() {
     setBusy(true);
     try {
       await signInWithOAuth(provider, nextPath);
-      // Web redirects; native opens Browser — keep a short busy state then unlock
       window.setTimeout(() => {
         setBusy(false);
         submittingRef.current = false;
@@ -178,14 +189,15 @@ export default function AuthForm() {
       setError(
         err instanceof Error
           ? err.message
-          : `${provider === "apple" ? "Apple" : "Google"} sign-in is temporarily unavailable. Please use email instead.`,
+          : t("auth.oauthUnavailable", {
+              provider: provider === "apple" ? "Apple" : "Google",
+            }),
       );
       setBusy(false);
       submittingRef.current = false;
     }
   };
 
-  // Only show a brief bootstrap spinner — never trap reviewers behind infinite Loading
   if (authLoading && !sessionWaitTimedOut) {
     return (
       <div
@@ -194,7 +206,7 @@ export default function AuthForm() {
         role="status"
         aria-live="polite"
       >
-        Loading…
+        {t("auth.loading")}
       </div>
     );
   }
@@ -209,18 +221,16 @@ export default function AuthForm() {
           <Car className="h-5 w-5 text-black" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white">Garage Genius</h1>
-          <p className="text-xs text-cyan-400">AI DIY Auto Assistant</p>
+          <h1 className="text-xl font-bold text-white">{t("auth.appName")}</h1>
+          <p className="text-xs text-cyan-400">{t("auth.tagline")}</p>
         </div>
       </div>
 
       <div>
         <h2 className="text-2xl font-bold text-white">
-          {mode === "signin" ? "Sign in" : "Create account"}
+          {mode === "signin" ? t("auth.signInTitle") : t("auth.createAccountTitle")}
         </h2>
-        <p className="mt-1 text-sm text-slate-400">
-          Sign in to save your vehicles, chat history, and subscriptions.
-        </p>
+        <p className="mt-1 text-sm text-slate-400">{t("auth.signInSubtitle")}</p>
       </div>
 
       {showOAuth && (
@@ -232,10 +242,10 @@ export default function AuthForm() {
                 disabled={busy}
                 onClick={() => void onOAuth("apple")}
                 className="flex min-h-[48px] w-full items-center justify-center gap-2.5 rounded-2xl bg-black px-4 py-3.5 text-sm font-semibold text-white ring-1 ring-slate-600 transition hover:bg-zinc-900 disabled:opacity-60"
-                aria-label="Sign in with Apple"
+                aria-label={t("auth.signInWithApple")}
               >
                 <AppleIcon className="h-5 w-5 shrink-0" />
-                Sign in with Apple
+                {t("auth.signInWithApple")}
               </button>
             )}
             {showGoogle && (
@@ -244,17 +254,17 @@ export default function AuthForm() {
                 disabled={busy}
                 onClick={() => void onOAuth("google")}
                 className="flex min-h-[48px] w-full items-center justify-center gap-2.5 rounded-2xl border border-slate-600 bg-white px-4 py-3.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:opacity-60"
-                aria-label="Continue with Google"
+                aria-label={t("auth.continueWithGoogle")}
               >
                 <GoogleIcon className="h-5 w-5 shrink-0" />
-                Continue with Google
+                {t("auth.continueWithGoogle")}
               </button>
             )}
           </div>
 
           <div className="flex items-center gap-3 text-xs text-slate-500">
             <div className="h-px flex-1 bg-slate-700" />
-            or email
+            {t("auth.orEmail")}
             <div className="h-px flex-1 bg-slate-700" />
           </div>
         </>
@@ -263,7 +273,7 @@ export default function AuthForm() {
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-3">
         <label className="block space-y-1.5">
           <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Email
+            {t("auth.email")}
           </span>
           <input
             type="email"
@@ -280,7 +290,7 @@ export default function AuthForm() {
 
         <label className="block space-y-1.5">
           <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Password
+            {t("auth.password")}
           </span>
           <input
             type="password"
@@ -299,7 +309,7 @@ export default function AuthForm() {
         {mode === "signup" && (
           <label className="block space-y-1.5">
             <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Confirm password
+              {t("auth.confirmPassword")}
             </span>
             <input
               type="password"
@@ -331,7 +341,7 @@ export default function AuthForm() {
                 onClick={() => void onResendVerify()}
                 className="min-h-[44px] text-xs font-semibold text-cyan-300 underline hover:text-cyan-200 disabled:opacity-60"
               >
-                Resend verification email
+                {t("auth.resendVerification")}
               </button>
             )}
           </div>
@@ -345,17 +355,17 @@ export default function AuthForm() {
           className="min-h-[48px] w-full rounded-2xl bg-cyan-500 px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-cyan-400 disabled:opacity-60"
         >
           {busy
-            ? "Please wait…"
+            ? t("auth.pleaseWait")
             : mode === "signin"
-              ? "Sign in with email"
-              : "Create account"}
+              ? t("auth.signInWithEmail")
+              : t("auth.createAccount")}
         </button>
       </form>
 
       <p className="text-center text-sm text-slate-400">
         {mode === "signin" ? (
           <>
-            New here?{" "}
+            {t("auth.newHere")}{" "}
             <button
               type="button"
               className="min-h-[44px] font-medium text-cyan-400 hover:underline"
@@ -365,12 +375,12 @@ export default function AuthForm() {
                 setInfo(null);
               }}
             >
-              Create an account
+              {t("auth.createAnAccount")}
             </button>
           </>
         ) : (
           <>
-            Already have an account?{" "}
+            {t("auth.alreadyHaveAccount")}{" "}
             <button
               type="button"
               className="min-h-[44px] font-medium text-cyan-400 hover:underline"
@@ -380,23 +390,22 @@ export default function AuthForm() {
                 setInfo(null);
               }}
             >
-              Sign in
+              {t("auth.signIn")}
             </button>
           </>
         )}
       </p>
 
       <p className="text-center text-[11px] leading-relaxed text-slate-500">
-        By continuing you agree to our{" "}
+        {t("auth.legalPrefix")}{" "}
         <Link href="/terms" className="text-slate-400 underline">
-          Terms
+          {t("auth.terms")}
         </Link>{" "}
-        and{" "}
+        {t("auth.and")}{" "}
         <Link href="/privacy" className="text-slate-400 underline">
-          Privacy Policy
+          {t("auth.privacy")}
         </Link>
-        . We may process repair chats and photos you upload for the features you
-        use and for account quota. We do not sell your data.
+        . {t("auth.legalSuffix")}
       </p>
     </div>
   );

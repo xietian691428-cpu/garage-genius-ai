@@ -8,6 +8,7 @@ import {
   consumeAiTokens,
   getBearerToken,
 } from "@/lib/ai-abuse";
+import { assertShopReportQuota } from "@/lib/shop-report-limits";
 import { callDeepSeekJson } from "@/lib/deepseek";
 import { createSupabaseAdmin, createSupabaseUserClient } from "@/lib/supabase-admin";
 import { getAppBaseUrl } from "@/lib/app-url";
@@ -100,6 +101,8 @@ export async function POST(req: NextRequest) {
     }
 
     await assertAiRateLimit(user.id, "chat");
+    // Plan shop-report cap (Free/Trial) before spending tokens / calling the model.
+    const reportQuota = await assertShopReportQuota(user.id);
 
     const body = (await req.json()) as ShopReportGenerateRequest;
     const vehicle = body.vehicle as VehicleInfo | undefined;
@@ -296,6 +299,19 @@ export async function POST(req: NextRequest) {
       public_token: archived ? publicToken : null,
       public_url: publicUrl,
       expires_at: archived ? expiresAt : null,
+      quota: {
+        limit: reportQuota.limit,
+        used: archived ? reportQuota.used + 1 : reportQuota.used,
+        remaining: reportQuota.unlimited
+          ? null
+          : Math.max(
+              0,
+              (reportQuota.limit ?? 0) -
+                (archived ? reportQuota.used + 1 : reportQuota.used),
+            ),
+        unlimited: reportQuota.unlimited,
+        periodYm: reportQuota.periodYm,
+      },
     });
   } catch (err) {
     const blocked = aiAbuseResponse(err);

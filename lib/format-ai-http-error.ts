@@ -15,14 +15,22 @@ export function formatAiHttpError(input: {
     input.status === 429 ||
     code.startsWith("rate_limit") ||
     code === "rate_limit";
+  const isReportLimit =
+    code === "report_limit_reached" || code === "report_limit";
 
   if (isRateLimit) {
     if (server) {
-      // Ensure a wait/retry cue even if upstream omitted it.
       if (/wait|try again|later|tomorrow/i.test(server)) return server;
       return `${server} Please wait a moment and try again.`;
     }
     return "Too many requests. Please wait a moment and try again.";
+  }
+
+  if (isReportLimit) {
+    return (
+      server ||
+      "Monthly shop report limit reached. Upgrade for unlimited reports, or wait until next month."
+    );
   }
 
   return server || input.fallback || "Request failed. Please try again.";

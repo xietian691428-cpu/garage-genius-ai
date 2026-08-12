@@ -41,6 +41,7 @@ const FROM_REASONS = new Set<UpgradeReason>([
   "photo",
   "tokens",
   "vehicles",
+  "shop_report",
   "generic",
 ]);
 

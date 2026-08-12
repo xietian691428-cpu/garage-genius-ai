@@ -353,11 +353,7 @@ export default function ChatApp({
 
   const handleAddVehicle = async (newVehicle: VehicleInfo) => {
     if (!features.canAddVehicle(vehicles.length)) {
-      alert(
-        `Your plan allows up to ${features.maxVehicles} vehicle${
-          features.maxVehicles === 1 ? "" : "s"
-        }. Upgrade for more.`,
-      );
+      alert(t("vehicles.planLimit", { count: features.maxVehicles }));
       return;
     }
 

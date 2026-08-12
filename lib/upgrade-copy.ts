@@ -13,6 +13,7 @@ export type UpgradeReason =
   | "photo"
   | "tokens"
   | "vehicles"
+  | "shop_report"
   | "generic";
 
 const PRO = PLAN_ENTITLEMENTS.pro;
@@ -100,6 +101,13 @@ export function upgradeCopy(reason: UpgradeReason): {
         title: "Vehicle limit reached",
         message:
           "Free includes 1 vehicle. Pro supports up to 5 so your whole garage stays covered.",
+        bullets: commonBullets,
+      };
+    case "shop_report":
+      return {
+        title: "Shop report limit reached",
+        message:
+          "Free includes 3 shop reports per month. Trial includes 30. Pro unlocks unlimited shop handoff reports.",
         bullets: commonBullets,
       };
     default:

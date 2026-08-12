@@ -213,63 +213,61 @@ export const userVehiclesService = {
 
   /**
    * Insert a vehicle with full VCdb config card.
-   * Client may pass a temp id — we always let Postgres generate uuid unless valid.
+   * Goes through POST /api/vehicles so plan maxVehicles is enforced server-side.
+   * Client may pass a temp id — API lets Postgres generate uuid unless valid.
    */
   async create(
     vehicle: VehicleInfo,
     options?: { makeCurrent?: boolean },
   ): Promise<VehicleInfo> {
     const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user) throw new Error("Sign in required to save vehicles");
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+    if (sessionError || !session?.access_token) {
+      throw new Error("Sign in required to save vehicles");
+    }
 
-    const makeCurrent = options?.makeCurrent ?? true;
-    const payload = vehicleInfoToRow(vehicle, user.id, {
-      isCurrent: makeCurrent,
+    const res = await fetch("/api/vehicles", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        vehicle,
+        makeCurrent: options?.makeCurrent ?? true,
+      }),
     });
 
-    // Drop client temp ids (Date.now strings) so Postgres assigns uuid
-    const insertPayload: Record<string, unknown> = { ...payload };
-    if (!isUuid(String(payload.id))) {
-      delete insertPayload.id;
+    let data: {
+      vehicle?: VehicleInfo;
+      error?: string;
+      code?: string;
+      maxVehicles?: number;
+    };
+    try {
+      data = (await res.json()) as typeof data;
+    } catch {
+      throw new Error("Could not save vehicle.");
     }
 
-    let { data, error } = await supabase
-      .from("user_vehicles")
-      .insert(insertPayload)
-      .select("*")
-      .single();
-
-    // Pre-migration columns may not exist yet.
-    if (error && /license_plate/i.test(error.message)) {
-      delete insertPayload.license_plate;
-      const retry = await supabase
-        .from("user_vehicles")
-        .insert(insertPayload)
-        .select("*")
-        .single();
-      data = retry.data;
-      error = retry.error;
-    }
-    if (error && /mileage_unit|mileage_source|mileage_updated_at/i.test(error.message)) {
-      delete insertPayload.mileage_unit;
-      delete insertPayload.mileage_source;
-      delete insertPayload.mileage_updated_at;
-      const retry = await supabase
-        .from("user_vehicles")
-        .insert(insertPayload)
-        .select("*")
-        .single();
-      data = retry.data;
-      error = retry.error;
+    if (!res.ok || !data.vehicle) {
+      const err = new Error(
+        data.error ||
+          (typeof data.maxVehicles === "number"
+            ? `Plan limit: ${data.maxVehicles} vehicle${
+                data.maxVehicles === 1 ? "" : "s"
+              }. Upgrade for more.`
+            : "Could not save vehicle."),
+      ) as Error & { code?: string; status?: number };
+      err.code = data.code;
+      err.status = res.status;
+      throw err;
     }
 
-    if (error) throw error;
-    const saved = rowToVehicleInfo(data as UserVehicleRow);
-    if (makeCurrent) saveCurrentVehicleId(saved.id);
-    // Keep a local mirror for offline / legacy readers
+    const saved = data.vehicle;
+    if (options?.makeCurrent !== false) saveCurrentVehicleId(saved.id);
     mirrorLocalList(await userVehiclesService.list());
     return saved;
   },

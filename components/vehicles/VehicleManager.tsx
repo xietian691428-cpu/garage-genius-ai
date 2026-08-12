@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { VehicleInfo } from "@/lib/types/chat";
 import VehiclePanel from "@/components/chat/VehiclePanel";
 import VehicleList from "./VehicleList";
@@ -30,13 +31,14 @@ export default function VehicleManager({
   canAdd = true,
   maxVehicles,
 }: Props) {
+  const { t } = useTranslation();
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<VehicleInfo | null>(null);
 
   const limitLabel =
     typeof maxVehicles === "number"
-      ? `Plan limit: ${maxVehicles} vehicle${maxVehicles === 1 ? "" : "s"}. Upgrade for more.`
-      : "Vehicle limit reached. Upgrade for more.";
+      ? t("vehicles.planLimit", { count: maxVehicles })
+      : t("vehicles.limitReached");
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">

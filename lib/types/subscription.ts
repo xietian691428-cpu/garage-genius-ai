@@ -65,10 +65,19 @@ export type PlanEntitlements = {
    * null / 0 = unlimited (Pro+).
    */
   playbookRunsPerMonth: number | null;
+  /**
+   * Shop handoff reports per UTC calendar month.
+   * null = unlimited (paid Pro / Heavy). Active Pro Trial uses
+   * {@link TRIAL_SHOP_REPORTS_PER_MONTH} instead of this field.
+   */
+  shopReportsPerMonth: number | null;
   prioritySupport: boolean;
   highlight?: string;
   features: string[];
 };
+
+/** Active signup/Stripe trial shop-report cap (UTC calendar month). */
+export const TRIAL_SHOP_REPORTS_PER_MONTH = 30;
 
 export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
   free: {
@@ -87,6 +96,7 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
     annualHealthReport: false,
     customProfileTags: false,
     playbookRunsPerMonth: 5,
+    shopReportsPerMonth: 3,
     prioritySupport: false,
     features: [
       "15k tokens / month",
@@ -94,6 +104,7 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
       "Dashboard + basic AI chat",
       "5 photo diagnoses / day",
       "5 coach playbook starts / 30 days",
+      "3 shop reports / calendar month",
       "Parts inventory (basic)",
       "Text + photo coaching",
       "Quick vehicle snapshot PDF",
@@ -115,6 +126,7 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
     annualHealthReport: true,
     customProfileTags: true,
     playbookRunsPerMonth: null,
+    shopReportsPerMonth: null,
     prioritySupport: false,
     highlight: "Most popular",
     features: [
@@ -122,6 +134,7 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
       "Up to 5 vehicles",
       "Unlimited photo diagnoses",
       "Unlimited coach playbooks",
+      "Unlimited shop reports",
       "Custom profile tags (Modified, Tow, Classic…)",
       "Voice coaching (mic + auto-read)",
       "Standard RAG knowledge depth",
@@ -146,6 +159,7 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
     annualHealthReport: true,
     customProfileTags: true,
     playbookRunsPerMonth: null,
+    shopReportsPerMonth: null,
     prioritySupport: true,
     highlight: "For power DIYers",
     features: [
@@ -153,6 +167,7 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
       "Up to 10 vehicles",
       "Unlimited photo diagnoses",
       "Unlimited coach playbooks",
+      "Unlimited shop reports",
       "Custom profile tags + deep RAG",
       "Unlimited-feel voice coaching",
       "Annual vehicle health report",

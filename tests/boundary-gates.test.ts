@@ -16,6 +16,9 @@ describe("subscription entitlements (catalog)", () => {
     expect(PLAN_ENTITLEMENTS.free.playbookRunsPerMonth).toBe(5);
     expect(PLAN_ENTITLEMENTS.pro.playbookRunsPerMonth).toBeNull();
     expect(PLAN_ENTITLEMENTS.pro_heavy.playbookRunsPerMonth).toBeNull();
+
+    expect(PLAN_ENTITLEMENTS.free.shopReportsPerMonth).toBe(3);
+    expect(PLAN_ENTITLEMENTS.pro.shopReportsPerMonth).toBeNull();
   });
 
   it("treats active trial as Pro (5 vehicles)", () => {

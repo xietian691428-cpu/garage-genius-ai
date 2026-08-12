@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { Check, Copy, Download, FileText, Link2, Share2, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { VehicleInfo } from "@/lib/types/chat";
@@ -20,6 +22,14 @@ import {
   exportShopReportPdf,
 } from "@/lib/shop-report/export-pdf";
 import { formatAiHttpError } from "@/lib/format-ai-http-error";
+
+type ShopReportQuotaState = {
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+  unlimited: boolean;
+  periodYm?: string;
+};
 
 type Props = {
   open: boolean;
@@ -43,17 +53,20 @@ export default function ShopReportModal({
   messages = [],
   coachContext,
 }: Props) {
+  const { t } = useTranslation();
   const [includeFullVin, setIncludeFullVin] = useState(false);
   const [includeImages, setIncludeImages] = useState(false);
   const [includeInventory, setIncludeInventory] = useState(false);
   const [ownerNotes, setOwnerNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [payload, setPayload] = useState<ShopReportPayload | null>(null);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [publicUrl, setPublicUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [quota, setQuota] = useState<ShopReportQuotaState | null>(null);
 
   const availableImages = useMemo(
     () => collectMessageImages(messages, 3),
@@ -76,6 +89,33 @@ export default function ShopReportModal({
     [vehicle, messages, coachContext],
   );
 
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+        const res = await fetch("/api/shop-report/quota", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const data = (await res.json()) as {
+          quota?: ShopReportQuotaState;
+        };
+        if (!cancelled && res.ok && data.quota) {
+          setQuota(data.quota);
+        }
+      } catch {
+        /* ignore quota fetch failures */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
   if (!open) return null;
 
   const options: ShopReportGenerateOptions = {
@@ -85,6 +125,11 @@ export default function ShopReportModal({
     ownerNotes,
   };
 
+  const quotaExhausted =
+    Boolean(quota) &&
+    !quota!.unlimited &&
+    quota!.remaining === 0;
+
   const showToast = (msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2200);
@@ -92,6 +137,7 @@ export default function ShopReportModal({
 
   const generate = async () => {
     setError(null);
+    setLimitReached(false);
     setBusy(true);
     setPayload(null);
     setPdfBlob(null);
@@ -108,7 +154,7 @@ export default function ShopReportModal({
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        throw new Error("Sign in to generate a shop report.");
+        throw new Error(t("shopReport.signInRequired"));
       }
 
       let images: string[] = [];
@@ -137,18 +183,25 @@ export default function ShopReportModal({
         public_url?: string | null;
         error?: string;
         code?: string;
+        quota?: ShopReportQuotaState;
       };
       if (!res.ok || !data.payload) {
+        const code = (data.code || "").toUpperCase();
+        if (code === "REPORT_LIMIT_REACHED") {
+          setLimitReached(true);
+          throw new Error(t("shopReport.limitReached"));
+        }
         throw new Error(
           formatAiHttpError({
             status: res.status,
             code: data.code,
             error: data.error,
-            fallback: "Could not generate report. Please try again.",
+            fallback: t("shopReport.generateFailed"),
           }),
         );
       }
 
+      if (data.quota) setQuota(data.quota);
       const blob = exportShopReportPdf(data.payload);
       setPayload(data.payload);
       setPdfBlob(blob);
@@ -157,7 +210,7 @@ export default function ShopReportModal({
       setError(
         err instanceof Error
           ? err.message
-          : "Shop report generation failed. Please retry.",
+          : t("shopReport.generateFailed"),
       );
     } finally {
       setBusy(false);
@@ -182,10 +235,10 @@ export default function ShopReportModal({
     try {
       await navigator.clipboard.writeText(publicUrl);
       setCopied(true);
-      showToast("Link copied — valid for 30 days");
+      showToast(t("shopReport.linkCopied"));
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      showToast("Could not copy link");
+      showToast(t("shopReport.copyFailed"));
     }
   };
 
@@ -242,23 +295,35 @@ export default function ShopReportModal({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-cyan-400/90">
-              Shop handoff
+              {t("shopReport.eyebrow")}
             </p>
             <h2
               id="shop-report-title"
               className="mt-1 text-lg font-semibold text-white"
             >
-              Generate Shop Report
+              {t("shopReport.title")}
             </h2>
             <p className="mt-1 text-xs text-slate-400">
-              Education summary for your technician — not a final diagnosis.
+              {t("shopReport.subtitle")}
             </p>
+            {quota?.unlimited ? (
+              <p className="mt-2 text-xs text-emerald-300/90">
+                {t("shopReport.unlimited")}
+              </p>
+            ) : quota && !quota.unlimited && quota.remaining != null ? (
+              <p className="mt-2 text-xs text-slate-400">
+                {t("shopReport.remainingThisMonth", {
+                  remaining: quota.remaining,
+                  limit: quota.limit,
+                })}
+              </p>
+            ) : null}
           </div>
           <button
             type="button"
             onClick={onClose}
             className="min-h-[44px] min-w-[44px] rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
-            aria-label="Close"
+            aria-label={t("shopReport.close")}
           >
             <X className="h-5 w-5" />
           </button>
@@ -293,9 +358,9 @@ export default function ShopReportModal({
                 onChange={(e) => setIncludeFullVin(e.target.checked)}
               />
               <span>
-                Include full VIN in PDF
+                {t("shopReport.includeFullVin")}
                 <span className="block text-xs text-slate-500">
-                  Default / share link show last 8 only.
+                  {t("shopReport.includeFullVinHint")}
                 </span>
               </span>
             </label>
@@ -309,11 +374,13 @@ export default function ShopReportModal({
                 disabled={availableImages.length === 0}
               />
               <span>
-                Include screenshots
+                {t("shopReport.includeScreenshots")}
                 <span className="block text-xs text-slate-500">
                   {availableImages.length === 0
-                    ? "No photos in this chat yet."
-                    : `Up to ${Math.min(3, availableImages.length)} image(s) on PDF page 2.`}
+                    ? t("shopReport.noPhotosYet")
+                    : t("shopReport.photosOnPdf", {
+                        count: Math.min(3, availableImages.length),
+                      })}
                 </span>
               </span>
             </label>
@@ -326,19 +393,21 @@ export default function ShopReportModal({
                 disabled
               />
               <span>
-                Include parts inventory
-                <span className="block text-xs">Coming later.</span>
+                {t("shopReport.includeInventory")}
+                <span className="block text-xs">
+                  {t("shopReport.comingLater")}
+                </span>
               </span>
             </label>
             <div>
               <label className="text-xs font-medium text-slate-400">
-                Owner notes (optional)
+                {t("shopReport.ownerNotes")}
               </label>
               <textarea
                 value={ownerNotes}
                 onChange={(e) => setOwnerNotes(e.target.value.slice(0, 500))}
                 rows={2}
-                placeholder="One sentence for the shop…"
+                placeholder={t("shopReport.ownerNotesPlaceholder")}
                 className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white placeholder:text-slate-600"
               />
             </div>
@@ -346,22 +415,45 @@ export default function ShopReportModal({
         )}
 
         {error && (
-          <p className="mt-3 text-sm text-rose-400" role="alert">
-            {error}
-          </p>
+          <div className="mt-3 space-y-2" role="alert">
+            <p className="text-sm text-rose-400">{error}</p>
+            {limitReached ? (
+              <Link
+                href="/pricing?from=shop_report"
+                className="inline-flex text-sm font-medium text-cyan-400 hover:underline"
+              >
+                {t("shopReport.upgradeCta")}
+              </Link>
+            ) : null}
+          </div>
         )}
+
+        {!error && quotaExhausted ? (
+          <div className="mt-3 space-y-2" role="alert">
+            <p className="text-sm text-rose-400">
+              {t("shopReport.limitReached")}
+            </p>
+            <Link
+              href="/pricing?from=shop_report"
+              className="inline-flex text-sm font-medium text-cyan-400 hover:underline"
+            >
+              {t("shopReport.upgradeCta")}
+            </Link>
+          </div>
+        ) : null}
 
         {busy && (
           <p className="mt-3 text-sm text-cyan-300">
-            Preparing professional summary…
+            {t("shopReport.preparing")}
           </p>
         )}
 
         {payload && pdfBlob && (
           <div className="mt-4 space-y-3">
             <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
-              Report #{payload.reportId} ready
-              {publicUrl ? " · 30-day share link available" : ""}.
+              {publicUrl
+                ? t("shopReport.readyWithLink", { id: payload.reportId })
+                : t("shopReport.ready", { id: payload.reportId })}
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <button
@@ -371,7 +463,7 @@ export default function ShopReportModal({
                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-black hover:bg-cyan-400"
               >
                 <Download className="h-4 w-4" />
-                Download PDF
+                {t("shopReport.downloadPdf")}
               </button>
               <button
                 type="button"
@@ -379,7 +471,7 @@ export default function ShopReportModal({
                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-600 px-4 py-3 text-sm font-semibold text-slate-100 hover:bg-slate-800"
               >
                 <Share2 className="h-4 w-4" />
-                Share
+                {t("shopReport.share")}
               </button>
             </div>
             <button
@@ -395,7 +487,7 @@ export default function ShopReportModal({
                 <Copy className="h-4 w-4" />
               )}
               <Link2 className="h-4 w-4" />
-              {copied ? "Copied" : "Copy Link"}
+              {copied ? t("shopReport.copied") : t("shopReport.copyLink")}
             </button>
             {publicUrl ? (
               <p className="break-all text-[11px] text-slate-500">{publicUrl}</p>
@@ -413,28 +505,28 @@ export default function ShopReportModal({
             onClick={onClose}
             className="rounded-xl px-4 py-2.5 text-sm text-slate-400 hover:text-white"
           >
-            Close
+            {t("shopReport.close")}
           </button>
           {!payload && (
             <button
               type="button"
               data-testid="shop-report-generate"
-              disabled={busy || !preview.hasEnoughData}
+              disabled={busy || !preview.hasEnoughData || quotaExhausted}
               onClick={() => void generate()}
               className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400 disabled:opacity-50"
             >
               <FileText className="h-4 w-4" />
-              {busy ? "Generating…" : "Generate PDF"}
+              {busy ? t("shopReport.generating") : t("shopReport.generatePdf")}
             </button>
           )}
           {payload && (
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || quotaExhausted}
               onClick={() => void generate()}
               className="rounded-xl border border-slate-600 px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-800"
             >
-              Regenerate
+              {t("shopReport.regenerate")}
             </button>
           )}
         </div>
