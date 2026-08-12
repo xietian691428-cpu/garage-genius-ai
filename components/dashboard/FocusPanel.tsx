@@ -24,7 +24,8 @@ import {
 } from "@/lib/browser-voice";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
-import VehicleCarSilhouette from "@/components/dashboard/VehicleCarSilhouette";
+import VehicleDiagramPhoto from "@/components/dashboard/VehicleDiagramPhoto";
+import { VEHICLE_DIAGRAM_VB } from "@/lib/vehicle-diagram-geometry";
 
 type FocusPanelProps = {
   region: DashboardRegion;
@@ -162,11 +163,17 @@ export default function FocusPanel({
     }
   };
 
-  const zoom = 2.35;
-  const vbW = 760 / zoom;
-  const vbH = 360 / zoom;
-  const vbX = Math.max(0, Math.min(760 - vbW, region.center.x - vbW / 2));
-  const vbY = Math.max(0, Math.min(360 - vbH, region.center.y - vbH / 2));
+  const zoom = 2.2;
+  const vbW = VEHICLE_DIAGRAM_VB.w / zoom;
+  const vbH = VEHICLE_DIAGRAM_VB.h / zoom;
+  const vbX = Math.max(
+    0,
+    Math.min(VEHICLE_DIAGRAM_VB.w - vbW, region.center.x - vbW / 2),
+  );
+  const vbY = Math.max(
+    0,
+    Math.min(VEHICLE_DIAGRAM_VB.h - vbH, region.center.y - vbH / 2),
+  );
 
   return (
     <div
@@ -251,7 +258,7 @@ export default function FocusPanel({
               className="h-36 w-full sm:h-44"
               aria-hidden
             >
-              <VehicleCarSilhouette muted />
+              <VehicleDiagramPhoto muted />
               <g
                 className="focus-hotspot-group"
                 style={{

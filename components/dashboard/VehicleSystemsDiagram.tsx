@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { DashboardRegion } from "@/lib/types/dashboard";
 import { focusPartToRegionId, type FocusCommand } from "@/lib/types/focus";
 import { VEHICLE_DIAGRAM_VB } from "@/lib/vehicle-diagram-geometry";
-import VehicleCarSilhouette from "@/components/dashboard/VehicleCarSilhouette";
+import VehicleDiagramPhoto from "@/components/dashboard/VehicleDiagramPhoto";
 import FocusOverlay from "@/components/dashboard/FocusOverlay";
 
 type Props = {
@@ -23,8 +23,8 @@ function regionIndex(regions: DashboardRegion[], id: string): number {
 }
 
 /**
- * Commercial-grade vehicle systems diagram:
- * refined silhouette + numbered anchors + leader labels (one system emphasized).
+ * Photoreal vehicle systems diagram:
+ * side-profile photo + calibrated translucent zones + numbered anchors.
  */
 export default function VehicleSystemsDiagram({
   regions,
@@ -56,7 +56,7 @@ export default function VehicleSystemsDiagram({
           role="img"
           aria-label="Vehicle systems diagram"
         >
-          <VehicleCarSilhouette muted={Boolean(emphasizedId)} />
+          <VehicleDiagramPhoto muted={Boolean(emphasizedId)} />
 
           {regions.map((region) => {
             const visible = isRegionVisible(region);
@@ -67,14 +67,14 @@ export default function VehicleSystemsDiagram({
             const selected = selectedRegionId === region.id;
 
             const zoneOpacity = !visible
-              ? 0.04
+              ? 0.03
               : isEmphasized
-                ? 0.28
+                ? 0.38
                 : isOtherDimmed
-                  ? 0.04
+                  ? 0.03
                   : highlighted
-                    ? 0.14
-                    : 0.08;
+                    ? 0.18
+                    : 0.12;
 
             const markerOpacity = !visible ? 0.2 : isOtherDimmed ? 0.28 : 1;
 
@@ -221,8 +221,8 @@ export default function VehicleSystemsDiagram({
         aria-live="polite"
       >
         {emphasized && isRegionVisible(emphasized)
-          ? emphasized.description
-          : "Select a system on the car or from the list below"}
+          ? `${emphasized.name} — ${emphasized.description}`
+          : "Tap a numbered area on the car or choose a system below"}
       </p>
 
       <div

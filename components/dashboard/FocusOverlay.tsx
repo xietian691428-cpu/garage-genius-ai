@@ -2,7 +2,7 @@
 
 import type { DashboardRegion } from "@/lib/types/dashboard";
 import { VEHICLE_DIAGRAM_VB } from "@/lib/vehicle-diagram-geometry";
-import VehicleCarSilhouette from "@/components/dashboard/VehicleCarSilhouette";
+import VehicleDiagramPhoto from "@/components/dashboard/VehicleDiagramPhoto";
 
 type FocusOverlayProps = {
   region: DashboardRegion;
@@ -11,8 +11,8 @@ type FocusOverlayProps = {
 };
 
 /**
- * Semi-transparent mask over the vehicle map with a glowing, pulsing,
- * slightly magnified cutout on the focused region.
+ * Semi-transparent mask over the vehicle map with a glowing cutout
+ * on the focused region (photo-calibrated hotspots).
  */
 export default function FocusOverlay({ region, active }: FocusOverlayProps) {
   if (!active) return null;
@@ -22,7 +22,7 @@ export default function FocusOverlay({ region, active }: FocusOverlayProps) {
       className="focus-overlay pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-2xl"
       aria-hidden
     >
-      <div className="focus-overlay-dim absolute inset-0 bg-[#020617]/78 backdrop-blur-[1.5px]" />
+      <div className="focus-overlay-dim absolute inset-0 bg-[#020617]/72 backdrop-blur-[1px]" />
 
       <svg
         className="absolute inset-0 h-full w-full"
@@ -38,12 +38,12 @@ export default function FocusOverlay({ region, active }: FocusOverlayProps) {
             </feMerge>
           </filter>
           <radialGradient id="focus-pulse" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={region.color} stopOpacity="0.45" />
+            <stop offset="0%" stopColor={region.color} stopOpacity="0.4" />
             <stop offset="100%" stopColor={region.color} stopOpacity="0" />
           </radialGradient>
         </defs>
 
-        <VehicleCarSilhouette muted />
+        <VehicleDiagramPhoto muted />
 
         <circle
           className="focus-pulse-ring"
