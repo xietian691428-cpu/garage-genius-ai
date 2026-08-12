@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -21,15 +21,22 @@ export function useSafetyAdviceAck() {
   const [acknowledged, setAcknowledged] = useState(true);
   const [loaded, setLoaded] = useState(false);
   const [pendingHigh, setPendingHigh] = useState(false);
+  /** Sync mirror so Continue → openPlaybook does not race React state flush. */
+  const acknowledgedRef = useRef(true);
+
+  const markAcknowledged = useCallback((done: boolean) => {
+    acknowledgedRef.current = done;
+    setAcknowledged(done);
+  }, []);
 
   useEffect(() => {
     if (authLoading || !user?.id) {
-      setAcknowledged(true);
+      markAcknowledged(true);
       setLoaded(!authLoading);
       return;
     }
     if (readSafetyAdviceAckLocal(user.id)) {
-      setAcknowledged(true);
+      markAcknowledged(true);
       setLoaded(true);
       return;
     }
@@ -58,14 +65,14 @@ export function useSafetyAdviceAck() {
               "[safety-ack] column missing — apply migration 037_profiles_safety_advice_ack.sql",
             );
           }
-          setAcknowledged(false);
+          markAcknowledged(false);
           return;
         }
         const done = data?.has_acknowledged_safety_advice === true;
         if (done) writeSafetyAdviceAckLocal(user.id);
-        setAcknowledged(done);
+        markAcknowledged(done);
       } catch {
-        if (!cancelled) setAcknowledged(false);
+        if (!cancelled) markAcknowledged(false);
       } finally {
         if (!cancelled) setLoaded(true);
       }
@@ -74,18 +81,18 @@ export function useSafetyAdviceAck() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user?.id]);
+  }, [authLoading, user?.id, markAcknowledged]);
 
   const requestHighTierAccess = useCallback(() => {
     if (!loaded) return false;
-    if (acknowledged) return true;
+    if (acknowledgedRef.current) return true;
     setPendingHigh(true);
     return false;
-  }, [loaded, acknowledged]);
+  }, [loaded]);
 
   const acknowledge = useCallback(async () => {
     setPendingHigh(false);
-    setAcknowledged(true);
+    markAcknowledged(true);
     const uid = user?.id;
     if (!uid) return;
     writeSafetyAdviceAckLocal(uid);
@@ -102,7 +109,7 @@ export function useSafetyAdviceAck() {
     } catch (err) {
       console.warn("[safety-ack] persist failed", err);
     }
-  }, [user?.id]);
+  }, [user?.id, markAcknowledged]);
 
   const cancelPending = useCallback(() => {
     setPendingHigh(false);
