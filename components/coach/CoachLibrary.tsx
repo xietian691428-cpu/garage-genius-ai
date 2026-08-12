@@ -421,12 +421,6 @@ export default function CoachLibrary({
                 { playbookSlug: activeSlug || undefined },
               )
             }
-            onLogMaintenance={(category) =>
-              onAskAI(
-                `Please help me log a ${category} service entry for my vehicle health file at ${currentVehicle?.mileage ?? "current"} miles.`,
-                { playbookSlug: activeSlug || undefined },
-              )
-            }
           />
         </div>
       </div>
