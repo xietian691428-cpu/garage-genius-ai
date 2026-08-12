@@ -119,60 +119,59 @@
   "visual_assets": [
     {
       "key": "hero_battery",
-      "type": "gif",
-      "src": "/coach/battery/hero_battery.gif",
-      "alt": "12V battery and multimeter loop",
-      "shot_description": "Soft pan across AGM + meter + gloves."
+      "type": "image",
+      "src": "/coach/battery/battery-in-engine-bay-ai.jpg",
+      "alt": "12V battery in engine bay (typical location)",
+      "shot_description": "AI-generated illustrative still. Red + / black − covers on a generic tray-mounted battery. Confirm layout against your vehicle."
     },
     {
       "key": "voltage_test_gif",
-      "type": "gif",
-      "src": "/coach/battery/voltage_test.gif",
-      "alt": "Multimeter on posts",
-      "shot_description": "Probes → ~12.6 rest / ~14.x charging (UI captions)."
+      "type": "image",
+      "src": "/coach/battery/battery-terminals-closeup-ai.jpg",
+      "alt": "Battery terminals close-up (+/−)",
+      "shot_description": "AI-generated illustrative still. Red cable / + and black cable / − must match the photo. Meter procedure stays in written steps — no invented voltages on the image."
     },
     {
       "key": "corrosion_clean",
-      "type": "gif",
-      "src": "/coach/battery/corrosion_clean.gif",
-      "alt": "Before/after terminal clean",
-      "shot_description": "Corrosion wipe loop."
+      "type": "image",
+      "src": "/coach/battery/terminal-corrosion-example-ai.jpg",
+      "alt": "Terminal corrosion example (illustrative)",
+      "shot_description": "AI-generated illustrative still of powdery white/green corrosion on posts. Cleaning steps stay in text."
     },
     {
       "key": "clamp_order_gif",
-      "type": "gif",
-      "src": "/coach/battery/clamp_order.gif",
-      "alt": "Neg first off, neg last on",
-      "shot_description": "Animated clamp order with +/− icons."
+      "type": "none",
+      "src": "",
+      "alt": "Clamp order — follow written steps only",
+      "shot_description": "Intentionally omitted: animated disconnect/reconnect order can be misread; negative-first-off / negative-last-on is in the checklist."
     },
     {
       "key": "diy_vs_shop_battery",
-      "type": "gif",
-      "src": "/coach/battery/diy_vs_shop.gif",
-      "alt": "DIY vs parts-store install",
-      "shot_description": "Crossfade driveway ↔ lot install."
+      "type": "none",
+      "src": "",
+      "alt": "DIY vs shop — no photo",
+      "shot_description": "Intentionally omitted decorative comparison art."
     },
     {
       "key": "hold_down_video",
-      "type": "video",
-      "src": "/coach/battery/install_holddown.mp4",
-      "poster": "/coach/battery/install_poster.webp",
-      "alt": "Hold-down and terminals",
-      "shot_description": "Seat → hold-down → terminals → protectant."
+      "type": "image",
+      "src": "/coach/battery/battery-hold-down-ai.jpg",
+      "alt": "Battery hold-down clamp (typical)",
+      "shot_description": "AI-generated illustrative still of a side hold-down bracket and J-bolt. Exact hardware varies by vehicle."
     },
     {
       "key": "hv_warning_illustration",
-      "type": "gif",
-      "src": "/coach/battery/hv_warning.gif",
-      "alt": "Stay off orange HV cables",
-      "shot_description": "12V highlight, orange HV crossed out."
+      "type": "none",
+      "src": "",
+      "alt": "HV cables — follow warning text",
+      "shot_description": "Intentionally omitted: fake HV cable art can mislead hybrid/EV owners. Stay off orange HV cables — see safety warning."
     },
     {
       "key": "celebrate_battery",
-      "type": "gif",
-      "src": "/coach/battery/celebrate.gif",
-      "alt": "Battery birthday logged",
-      "shot_description": "Calendar stamp + checkmark."
+      "type": "none",
+      "src": "",
+      "alt": "Completion — no photo",
+      "shot_description": "Intentionally omitted decorative celebration art."
     }
   ],
   "steps": [

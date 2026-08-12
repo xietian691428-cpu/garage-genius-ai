@@ -119,60 +119,59 @@
   "visual_assets": [
     {
       "key": "hero_brakes",
-      "type": "gif",
-      "src": "/coach/brakes/hero_brakes.gif",
-      "alt": "Pad and rotor soft loop",
-      "shot_description": "Gentle rotate of pad + rotor. Safety-orange accent. No crash imagery."
+      "type": "image",
+      "src": "/coach/brakes/brake-caliper-exterior-ai.jpg",
+      "alt": "Brake caliper exterior (illustrative)",
+      "shot_description": "AI-generated illustrative still of a floating caliper on a rotor. Identification only — not a jacking or removal guide."
     },
     {
       "key": "wheel_off_inspect",
-      "type": "gif",
-      "src": "/coach/brakes/wheel_off_inspect.gif",
-      "alt": "Wheel off pad thickness check",
-      "shot_description": "Flashlight on outer pad, ~3mm reference."
+      "type": "image",
+      "src": "/coach/brakes/brake-rotor-exterior-ai.jpg",
+      "alt": "Brake rotor exterior (illustrative)",
+      "shot_description": "AI-generated illustrative still of a ventilated rotor. Assumes the vehicle is already safely supported per written steps — photo does not show jacking."
     },
     {
       "key": "pad_thickness_chart",
-      "type": "gif",
-      "src": "/coach/brakes/pad_thickness.gif",
-      "alt": "Pad thickness zones animation",
-      "shot_description": ">4mm OK → 2–4mm plan → <2mm replace."
+      "type": "image",
+      "src": "/coach/brakes/brake-pad-shape-ai.jpg",
+      "alt": "Brake pad shape (illustrative)",
+      "shot_description": "AI-generated illustrative still of generic disc pads. Thickness go/no-go numbers stay in written checklist — not on the image."
     },
     {
       "key": "diy_vs_shop_brakes",
-      "type": "gif",
-      "src": "/coach/brakes/diy_vs_shop.gif",
-      "alt": "DIY vs shop brake bay",
-      "shot_description": "Crossfade DIY torque ↔ shop lathe."
+      "type": "none",
+      "src": "",
+      "alt": "DIY vs shop — no photo",
+      "shot_description": "Intentionally omitted decorative comparison art."
     },
     {
       "key": "caliper_piston_gif",
-      "type": "gif",
-      "src": "/coach/brakes/caliper_compress.gif",
-      "alt": "Compressing caliper piston",
-      "shot_description": "Slow compress; never pry on piston face."
+      "type": "none",
+      "src": "",
+      "alt": "Caliper piston — follow written steps",
+      "shot_description": "Intentionally omitted: compress/pry action shots can encourage unsafe technique. Use checklist + safety warning."
     },
     {
       "key": "torque_lugs_video",
-      "type": "video",
-      "src": "/coach/brakes/torque_lugs.mp4",
-      "poster": "/coach/brakes/torque_lugs_poster.webp",
-      "alt": "Star-pattern lug torque",
-      "shot_description": "Lower → star torque → pump pedal reminder."
+      "type": "image",
+      "src": "/coach/tires/wheel-lug-nut-area-ai.jpg",
+      "alt": "Wheel lug nut area (typical)",
+      "shot_description": "Shared illustrative still of lug nuts on a grounded wheel. Star-pattern torque values stay in text / door sticker — never invent ft-lb on the image."
     },
     {
       "key": "bed_in_illustration",
-      "type": "gif",
-      "src": "/coach/brakes/bed_in.gif",
-      "alt": "Bed-in stop cycles",
-      "shot_description": "Animated moderate stops — no panic stops."
+      "type": "none",
+      "src": "",
+      "alt": "Bed-in — follow written procedure",
+      "shot_description": "Intentionally omitted decorative stop-cycle art."
     },
     {
       "key": "symptom_help_gif",
-      "type": "gif",
-      "src": "/coach/brakes/symptom_triage.gif",
-      "alt": "Symptom triage animation",
-      "shot_description": "Icons: squeal / grind / soft pedal → paths."
+      "type": "none",
+      "src": "",
+      "alt": "Symptom triage — follow written steps",
+      "shot_description": "Intentionally omitted icon triage art. Soft pedal / ABS / leak paths stay in safety text."
     }
   ],
   "steps": [

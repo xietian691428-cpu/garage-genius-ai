@@ -125,60 +125,59 @@
   "visual_assets": [
     {
       "key": "hero_tires",
-      "type": "gif",
-      "src": "/coach/tires/hero_tires.gif",
-      "alt": "Gauge and tread tool by a tire",
-      "shot_description": "Soft loop: gauge needle settle + tread tool dip."
+      "type": "image",
+      "src": "/coach/tires/tire-pressure-valve-ai.jpg",
+      "alt": "Tire pressure valve stem (typical)",
+      "shot_description": "AI-generated illustrative still of a valve stem and cap on an alloy wheel. Target PSI comes from the door placard / manual — not this photo."
     },
     {
       "key": "placard_pressure",
-      "type": "gif",
-      "src": "/coach/tires/placard_pressure.gif",
-      "alt": "Door placard PSI highlight",
-      "shot_description": "Finger points at front/rear PSI on placard."
+      "type": "image",
+      "src": "/coach/tires/tire-pressure-valve-ai.jpg",
+      "alt": "Valve stem — check pressure here",
+      "shot_description": "AI-generated illustrative still. Door-placard PSI numbers intentionally not shown (would invent values). Read your placard, then fill at this valve."
     },
     {
       "key": "tread_penny_gif",
-      "type": "gif",
-      "src": "/coach/tires/tread_check.gif",
-      "alt": "Tread depth zones",
-      "shot_description": "Green/yellow/red depth zones; wear bar = replace."
+      "type": "image",
+      "src": "/coach/tires/tire-tread-wear-ai.jpg",
+      "alt": "Tread wear bars (illustrative)",
+      "shot_description": "AI-generated illustrative still highlighting tread grooves / wear-bar location. Depth limits stay in written checklist."
     },
     {
       "key": "wear_patterns",
-      "type": "gif",
-      "src": "/coach/tires/wear_patterns.gif",
-      "alt": "Wear pattern causes",
-      "shot_description": "Even / over / under / alignment icons animate."
+      "type": "image",
+      "src": "/coach/tires/tire-sidewall-markings-ai.jpg",
+      "alt": "Tire sidewall marking area (illustrative)",
+      "shot_description": "AI-generated illustrative still of the sidewall band where size/DOT info appears. Wear-cause diagnosis stays in text — do not treat this as your exact tire model."
     },
     {
       "key": "seasonal_swap",
-      "type": "video",
-      "src": "/coach/tires/seasonal_swap.mp4",
-      "poster": "/coach/tires/seasonal_swap_poster.webp",
-      "alt": "Seasonal wheel swap and torque",
-      "shot_description": "Mark positions → swap → star torque."
+      "type": "image",
+      "src": "/coach/tires/wheel-lug-nut-area-ai.jpg",
+      "alt": "Wheel lug nut area (typical)",
+      "shot_description": "AI-generated illustrative still of lug nuts on a grounded wheel. Torque values and jacking procedure stay in text — image is part ID only."
     },
     {
       "key": "diy_vs_shop_tires",
-      "type": "gif",
-      "src": "/coach/tires/diy_vs_shop.gif",
-      "alt": "DIY pressure vs shop mount",
-      "shot_description": "Crossfade driveway gauge ↔ shop changer."
+      "type": "none",
+      "src": "",
+      "alt": "DIY vs shop — no photo",
+      "shot_description": "Intentionally omitted decorative comparison art."
     },
     {
       "key": "storage_illustration",
-      "type": "gif",
-      "src": "/coach/tires/storage.gif",
-      "alt": "Off-season storage tips",
-      "shot_description": "Cool dry storage bags animation."
+      "type": "none",
+      "src": "",
+      "alt": "Storage tips — follow written steps",
+      "shot_description": "Intentionally omitted decorative storage art."
     },
     {
       "key": "damage_help_gif",
-      "type": "gif",
-      "src": "/coach/tires/damage_triage.gif",
-      "alt": "Bulge nail puncture triage",
-      "shot_description": "Icons: bulge / nail / wear bar → stop or continue."
+      "type": "none",
+      "src": "",
+      "alt": "Damage triage — follow written steps",
+      "shot_description": "Intentionally omitted: fake bulge/nail icons can understate risk. Use safety warning + checklist."
     }
   ],
   "steps": [

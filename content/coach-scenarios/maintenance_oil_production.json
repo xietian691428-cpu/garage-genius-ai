@@ -138,75 +138,73 @@
   "visual_assets": [
     {
       "key": "hero_oil_service",
-      "type": "gif",
-      "src": "/coach/oil/hero_oil_kit.gif",
-      "alt": "Oil jug, filter, and gloves looping gently",
-      "shot_description": "3s loop: soft pan across oil + filter kit. Warm garage light. No text."
+      "type": "image",
+      "src": "/coach/oil/oil-cap-on-engine-ai.jpg",
+      "alt": "Oil filler cap on engine (typical)",
+      "shot_description": "AI-generated illustrative still of a generic oil-cap with oil-can symbol. Confirm against your valve cover."
     },
     {
       "key": "mileage_check",
-      "type": "gif",
-      "src": "/coach/oil/mileage_due.gif",
-      "alt": "Odometer ticking toward oil due",
-      "shot_description": "Simple motion: mileage → oil can icon → checkmark window."
+      "type": "none",
+      "src": "",
+      "alt": "Mileage check — use your odometer / service log",
+      "shot_description": "Intentionally omitted: animated due-date art invents intervals. Follow manual / health file text."
     },
     {
       "key": "diy_vs_shop",
-      "type": "gif",
-      "src": "/coach/oil/diy_vs_shop.gif",
-      "alt": "Split DIY driveway vs quick-lube",
-      "shot_description": "2s crossfade DIY ↔ shop. Friendly, not gated."
+      "type": "none",
+      "src": "",
+      "alt": "DIY vs shop — no photo",
+      "shot_description": "Intentionally omitted decorative comparison art."
     },
     {
       "key": "parts_laydown",
-      "type": "gif",
-      "src": "/coach/oil/parts_check.gif",
-      "alt": "Parts checklist animation",
-      "shot_description": "Items pop in: oil, filter, washer, funnel."
+      "type": "image",
+      "src": "/coach/oil/oil-filter-example-ai.jpg",
+      "alt": "Spin-on oil filter example (illustrative)",
+      "shot_description": "AI-generated illustrative still of a generic canister oil filter. Cartridge/housing styles differ — match the filter your vehicle uses."
     },
     {
       "key": "safety_jack_stands",
-      "type": "gif",
-      "src": "/coach/oil/safety_jack_stands.gif",
-      "alt": "Jack stand placement loop",
-      "shot_description": "Jack → stand on pinch weld → shake test. Red X on jack-only."
+      "type": "none",
+      "src": "",
+      "alt": "Jack stands — follow checklist only",
+      "shot_description": "Intentionally omitted: wrong jack-point photos are more harmful than no photo. Use pinch-weld / stand checklist in text."
     },
     {
       "key": "drain_plug_video",
-      "type": "video",
-      "src": "/coach/oil/drain_plug.mp4",
-      "poster": "/coach/oil/drain_plug_poster.webp",
-      "alt": "Draining oil into pan",
-      "shot_description": "15–25s vertical: crack plug → hand finish → drain. Gloves on."
+      "type": "none",
+      "src": "",
+      "alt": "Drain plug — follow written steps",
+      "shot_description": "Intentionally omitted: underbody drain-plug location varies; unsafe framing risks. Procedure stays in text + safety warning."
     },
     {
       "key": "filter_swap_gif",
-      "type": "gif",
-      "src": "/coach/oil/filter_swap.gif",
-      "alt": "Filter remove and install",
-      "shot_description": "Remove → lube gasket → hand-tighten."
+      "type": "image",
+      "src": "/coach/oil/oil-filter-example-ai.jpg",
+      "alt": "Oil filter shape (spin-on example)",
+      "shot_description": "AI-generated illustrative still for part ID only. Install order and gasket oiling stay in written steps."
     },
     {
       "key": "refill_level",
-      "type": "video",
-      "src": "/coach/oil/refill_dipstick.mp4",
-      "poster": "/coach/oil/refill_poster.webp",
-      "alt": "Pour and dipstick check",
-      "shot_description": "Pour → idle → wipe stick → correct range."
+      "type": "image",
+      "src": "/coach/oil/oil-dipstick-location-ai.jpg",
+      "alt": "Oil dipstick (typical location)",
+      "shot_description": "AI-generated illustrative still: yellow dipstick handle near filler cap. Level marks / pour volume stay in text — not on the image."
     },
     {
       "key": "stuck_help_gif",
-      "type": "gif",
-      "src": "/coach/oil/stuck_plug_help.gif",
-      "alt": "Safe approach for a stuck drain plug",
-      "shot_description": "Penetrating oil → correct socket → stop before rounding."
+      "type": "none",
+      "src": "",
+      "alt": "Stuck plug — follow written help",
+      "shot_description": "Intentionally omitted: tool leverage shots can encourage rounding fasteners."
     },
     {
       "key": "celebrate_log",
-      "type": "gif",
-      "src": "/coach/oil/celebrate_log.gif",
-      "alt": "Health file checkmark celebration",
-      "shot_description": "Clipboard check + soft confetti (subtle)."
+      "type": "none",
+      "src": "",
+      "alt": "Completion — no photo",
+      "shot_description": "Intentionally omitted decorative celebration art."
     }
   ],
   "steps": [

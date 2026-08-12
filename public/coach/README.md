@@ -1,14 +1,19 @@
 # Coach scenario media
 
-Step visuals in `*_production.json` reference paths like `/coach/<slug>/...`.
+Production playbooks (`content/coach-scenarios/*_production.json`) reference paths under `/coach/<topic>/`.
 
-Place **real photos** (WebP/JPEG) here — see `components/diy-visuals/STANDARDS.md`.
+## Standards
+
+See `components/diy-visuals/STANDARDS.md` and attribution in [`SOURCES.md`](./SOURCES.md).
 
 Rules:
 
-- One clear photo per step object/location; always provide accurate `alt` + `shot_description` in JSON
-- Prefer Class B/C photoreal stills over decorative illustrations
-- If a file is missing, `CoachStepVisual` shows an honest empty frame — DIY copy and safety still run
-- Never ship a stock image that contradicts the part name or step text
+- Prefer **photoreal identification** stills (Class B / location) over decorative GIFs
+- Always ship accurate `alt` + `shot_description` in JSON
+- Mark AI / generic stills as **illustrative** in `alt` when misrecognition is possible
+- Never invent torque, PSI, or mileage on the image — those stay in playbook text
+- If a file is missing or `src` is empty (`type: "none"`), `CoachStepVisual` shows an honest empty frame
 
-Optional for launch; required for polish.
+## Current ship set (2026-08)
+
+Battery · Oil · Tires · Brakes identification stills (`*-ai.jpg`). Action-heavy or safety-critical steps intentionally use empty frames.
