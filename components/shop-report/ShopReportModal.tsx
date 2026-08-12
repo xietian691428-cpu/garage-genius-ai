@@ -197,6 +197,8 @@ export default function ShopReportModal({
             code: data.code,
             error: data.error,
             fallback: t("shopReport.generateFailed"),
+            rateLimitFallback: t("ai.rateLimited"),
+            reportLimitFallback: t("shopReport.limitReached"),
           }),
         );
       }

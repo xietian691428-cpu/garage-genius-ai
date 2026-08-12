@@ -330,6 +330,8 @@
     "close": "Close",
     "generatePdf": "Generate PDF",
     "generating": "Generating…",
+    "openCta": "Generate Shop Report",
+    "openShort": "Shop Report",
     "regenerate": "Regenerate",
     "signInRequired": "Sign in to generate a shop report.",
     "generateFailed": "Could not generate report. Please try again.",

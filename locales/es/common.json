@@ -330,6 +330,8 @@
     "close": "Cerrar",
     "generatePdf": "Generar PDF",
     "generating": "Generando…",
+    "openCta": "Generar informe",
+    "openShort": "Informe taller",
     "regenerate": "Regenerar",
     "signInRequired": "Inicia sesión para generar un informe de taller.",
     "generateFailed": "No se pudo generar el informe. Inténtalo de nuevo.",

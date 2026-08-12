@@ -8,6 +8,10 @@ export function formatAiHttpError(input: {
   code?: string | null;
   error?: string | null;
   fallback?: string;
+  /** Prefer i18n `ai.rateLimited` from callers. */
+  rateLimitFallback?: string;
+  /** Prefer i18n `shopReport.limitReached` from callers. */
+  reportLimitFallback?: string;
 }): string {
   const code = (input.code || "").toLowerCase();
   const server = (input.error || "").trim();
@@ -20,14 +24,22 @@ export function formatAiHttpError(input: {
 
   if (isRateLimit) {
     if (server) {
-      if (/wait|try again|later|tomorrow/i.test(server)) return server;
-      return `${server} Please wait a moment and try again.`;
+      if (/wait|try again|later|tomorrow|espera|inténtalo|momento/i.test(server))
+        return server;
+      const hint =
+        input.rateLimitFallback ||
+        "Please wait a moment and try again.";
+      return `${server} ${hint}`;
     }
-    return "Too many requests. Please wait a moment and try again.";
+    return (
+      input.rateLimitFallback ||
+      "Too many requests. Please wait a moment and try again."
+    );
   }
 
   if (isReportLimit) {
     return (
+      input.reportLimitFallback ||
       server ||
       "Monthly shop report limit reached. Upgrade for unlimited reports, or wait until next month."
     );

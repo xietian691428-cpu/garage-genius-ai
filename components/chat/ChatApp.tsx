@@ -482,6 +482,8 @@ export default function ChatApp({
             code: data.code,
             error: data.error,
             fallback: t("ai.requestFailed"),
+            rateLimitFallback: t("ai.rateLimited"),
+            reportLimitFallback: t("shopReport.limitReached"),
           }),
         );
       }
@@ -676,6 +678,8 @@ export default function ChatApp({
             code: (json as { code?: string }).code,
             error: json.error,
             fallback: t("ai.requestFailed"),
+            rateLimitFallback: t("ai.rateLimited"),
+            reportLimitFallback: t("shopReport.limitReached"),
           }),
         );
       }
@@ -788,7 +792,7 @@ export default function ChatApp({
                 data-testid="shop-report-open"
                 onClick={() => setShopReportOpen(true)}
                 className="inline-flex items-center gap-1 rounded-xl border border-slate-700 px-2 py-1.5 text-[11px] font-medium text-cyan-300 hover:bg-slate-800"
-                title="Generate Shop Report"
+                title={t("shopReport.openCta")}
               >
                 <FileText className="h-3.5 w-3.5" />
                 Shop
@@ -820,7 +824,7 @@ export default function ChatApp({
                 className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-slate-800"
               >
                 <FileText className="h-3.5 w-3.5" />
-                Generate Shop Report
+                {t("shopReport.openCta")}
               </button>
             )}
             {isFree && <UpgradeButton label="Upgrade to Pro" />}

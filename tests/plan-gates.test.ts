@@ -10,6 +10,10 @@ import {
   TRIAL_SHOP_REPORTS_PER_MONTH,
 } from "@/lib/types/subscription";
 import { formatAiHttpError } from "@/lib/format-ai-http-error";
+import {
+  isTrialWindowExpired,
+  resolveSubscription,
+} from "@/lib/subscription";
 
 describe("shop report monthly limits", () => {
   it("catalog defaults: Free 3, Pro/Heavy unlimited", () => {
@@ -45,6 +49,25 @@ describe("shop report monthly limits", () => {
         error: "",
       }),
     ).toMatch(/shop report limit/i);
+    expect(
+      formatAiHttpError({
+        status: 402,
+        code: "REPORT_LIMIT_REACHED",
+        error: "",
+        reportLimitFallback: "Alcanzaste el límite mensual de informes.",
+      }),
+    ).toMatch(/Alcanzaste/);
+  });
+
+  it("prefers i18n rate-limit fallback", () => {
+    expect(
+      formatAiHttpError({
+        status: 429,
+        code: "RATE_LIMIT",
+        error: "",
+        rateLimitFallback: "Demasiadas solicitudes. Espera un momento.",
+      }),
+    ).toMatch(/Demasiadas/);
   });
 });
 
@@ -53,5 +76,45 @@ describe("vehicle plan limits", () => {
     expect(maxVehiclesForTier("free")).toBe(1);
     expect(maxVehiclesForTier("pro")).toBe(5);
     expect(maxVehiclesForTier("pro_heavy")).toBe(10);
+  });
+});
+
+describe("trial expiry → free entitlements", () => {
+  it("future trial_ends_at keeps Pro Trial (5 cars, 30 reports)", () => {
+    const ends = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+    const r = resolveSubscription({
+      subscription_status: "trialing",
+      trial_ends_at: ends,
+    });
+    expect(isTrialWindowExpired({ subscription_status: "trialing", trial_ends_at: ends })).toBe(
+      false,
+    );
+    expect(r.isTrialing).toBe(true);
+    expect(r.isPro).toBe(true);
+    expect(r.isFree).toBe(false);
+    expect(r.entitlements.maxVehicles).toBe(5);
+    expect(shopReportLimitForPlan({ tier: r.tier, isTrialing: r.isTrialing })).toBe(30);
+  });
+
+  it("past trial_ends_at downgrades to Free (1 car, 3 reports)", () => {
+    const ends = new Date(Date.now() - 60_000).toISOString();
+    const profile = {
+      subscription_status: "trialing" as const,
+      trial_ends_at: ends,
+    };
+    expect(isTrialWindowExpired(profile)).toBe(true);
+    const r = resolveSubscription(profile);
+    expect(r.isTrialing).toBe(false);
+    expect(r.isTrialExpired).toBe(true);
+    expect(r.isFree).toBe(true);
+    expect(r.isPro).toBe(false);
+    expect(r.tier).toBe("free");
+    expect(r.status).toBe("free");
+    expect(r.label).toBe("Free");
+    expect(r.entitlements.maxVehicles).toBe(1);
+    expect(r.entitlements.shopReportsPerMonth).toBe(3);
+    expect(r.entitlements.voiceEnabled).toBe(false);
+    expect(r.entitlements.playbookRunsPerMonth).toBe(5);
+    expect(shopReportLimitForPlan({ tier: r.tier, isTrialing: r.isTrialing })).toBe(3);
   });
 });

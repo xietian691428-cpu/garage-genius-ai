@@ -3,6 +3,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ChatMessage, VehicleInfo, messageImages } from "@/lib/types/chat";
 import { stripTrailingLegalDisclaimer } from "@/lib/legal-disclaimer";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
@@ -48,6 +49,7 @@ export default function MessageBubble({
   onQuickPrompt,
   onGenerateShopReport,
 }: Props) {
+  const { t } = useTranslation();
   const isUser = message.role === "user";
   const displayContent = isUser
     ? message.content
@@ -132,10 +134,10 @@ export default function MessageBubble({
                 type="button"
                 onClick={onGenerateShopReport}
                 className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-cyan-300 transition hover:bg-slate-900"
-                title="Generate Shop Report"
+                title={t("shopReport.openCta")}
               >
                 <FileText className="h-3.5 w-3.5" />
-                Shop Report
+                {t("shopReport.openShort")}
               </button>
             )}
             <button
