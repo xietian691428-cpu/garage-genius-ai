@@ -1,6 +1,8 @@
 "use client";
 
 import type { DashboardRegion } from "@/lib/types/dashboard";
+import { VEHICLE_DIAGRAM_VB } from "@/lib/vehicle-diagram-geometry";
+import VehicleCarSilhouette from "@/components/dashboard/VehicleCarSilhouette";
 
 type FocusOverlayProps = {
   region: DashboardRegion;
@@ -24,36 +26,30 @@ export default function FocusOverlay({ region, active }: FocusOverlayProps) {
 
       <svg
         className="absolute inset-0 h-full w-full"
-        viewBox="0 0 760 360"
+        viewBox={`0 0 ${VEHICLE_DIAGRAM_VB.w} ${VEHICLE_DIAGRAM_VB.h}`}
         preserveAspectRatio="xMidYMid meet"
       >
         <defs>
           <filter id="focus-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="8" result="blur" />
+            <feGaussianBlur stdDeviation="6" result="blur" />
             <feMerge>
-              <feMergeNode in="blur" />
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
           <radialGradient id="focus-pulse" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={region.color} stopOpacity="0.65" />
+            <stop offset="0%" stopColor={region.color} stopOpacity="0.45" />
             <stop offset="100%" stopColor={region.color} stopOpacity="0" />
           </radialGradient>
         </defs>
+
+        <VehicleCarSilhouette muted />
 
         <circle
           className="focus-pulse-ring"
           cx={region.center.x}
           cy={region.center.y}
-          r="88"
-          fill="url(#focus-pulse)"
-        />
-        <circle
-          className="focus-pulse-ring focus-pulse-ring-delay"
-          cx={region.center.x}
-          cy={region.center.y}
-          r="88"
+          r="72"
           fill="url(#focus-pulse)"
         />
 
@@ -66,10 +62,10 @@ export default function FocusOverlay({ region, active }: FocusOverlayProps) {
           <path
             d={region.hitPath}
             fill={region.color}
-            fillOpacity={0.62}
+            fillOpacity={0.42}
             stroke="#fff"
-            strokeWidth={2.5}
-            strokeOpacity={0.85}
+            strokeWidth={2}
+            strokeOpacity={0.8}
             filter="url(#focus-glow)"
             className="focus-hotspot"
           />
@@ -77,7 +73,7 @@ export default function FocusOverlay({ region, active }: FocusOverlayProps) {
             d={region.hitPath}
             fill="none"
             stroke={region.color}
-            strokeWidth={5}
+            strokeWidth={3.5}
             strokeOpacity={0.9}
             className="focus-hotspot-stroke"
           />
@@ -89,17 +85,17 @@ export default function FocusOverlay({ region, active }: FocusOverlayProps) {
           textAnchor="middle"
           dominantBaseline="middle"
           fill="#fff"
-          fontSize="16"
-          fontWeight="800"
+          fontSize="14"
+          fontWeight="700"
           className="focus-label"
-          style={{ paintOrder: "stroke", stroke: "#020617", strokeWidth: 4 }}
+          style={{ paintOrder: "stroke", stroke: "#020617", strokeWidth: 3 }}
         >
           {region.shortLabel}
         </text>
       </svg>
 
       <div className="absolute left-3 top-3 flex items-center gap-2 sm:left-4 sm:top-4">
-        <span className="rounded-full border border-cyan-400/50 bg-cyan-500/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-cyan-200 shadow-[0_0_20px_rgba(34,211,238,0.35)]">
+        <span className="rounded-full border border-cyan-400/40 bg-cyan-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-cyan-200">
           Focus Mode
         </span>
         <span

@@ -32,8 +32,8 @@ import {
 } from "@/lib/types/vehicle-market";
 import { getDashboardRegion } from "@/lib/dashboard-regions";
 import RegionDetailPanel from "./RegionDetailPanel";
-import FocusOverlay from "./FocusOverlay";
 import FocusPanel from "./FocusPanel";
+import VehicleSystemsDiagram from "./VehicleSystemsDiagram";
 import UpgradeButton from "@/components/ui/UpgradeButton";
 import { useSubscription } from "@/hooks/useSubscription";
 import { focusPartToRegionId } from "@/lib/types/focus";
@@ -149,7 +149,6 @@ export default function Dashboard({
   const [selectedRegion, setSelectedRegion] = useState<DashboardRegion | null>(
     null,
   );
-  const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [symptoms, setSymptoms] = useState("");
   const [inspection, setInspection] = useState<RegionInspection | null>(null);
@@ -683,7 +682,6 @@ export default function Dashboard({
     setSelectedRegion(null);
     setInspection(null);
     setActiveFocus(focusCommand);
-    setHoveredRegion(focusCommand.part);
   }, [focusCommand]);
 
   const focusRegion = activeFocus
@@ -692,7 +690,6 @@ export default function Dashboard({
 
   const clearFocus = () => {
     setActiveFocus(null);
-    setHoveredRegion(null);
     onFocusConsumed?.();
   };
 
@@ -1074,13 +1071,13 @@ export default function Dashboard({
         {/* Interactive map — large tap regions */}
         <div className="relative mb-10 overflow-hidden rounded-3xl border border-slate-700 bg-[#111827] p-4 sm:p-10">
           <div className="mb-6 text-center sm:mb-8">
-            <h2 className="text-2xl font-semibold sm:text-3xl">
-              Interactive Vehicle Map
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              Vehicle Systems
             </h2>
             <p className="mt-2 text-slate-400">
               {activeFocus
                 ? "AI Focus Mode — primary issue highlighted"
-                : "Tap a zone for instant checklist + AI · OBD / Photo / manual shortcuts fill the status cards"}
+                : "Hover or tap a system · numbered markers match the list below"}
             </p>
           </div>
 
@@ -1152,154 +1149,16 @@ export default function Dashboard({
             </p>
           )}
 
-          <div className="relative flex justify-center overflow-hidden rounded-2xl bg-[#0a0f1c]/60 p-2 sm:p-6">
-            <svg
-              width="760"
-              height="360"
-              viewBox="0 0 760 360"
-              className="w-full max-w-[760px] drop-shadow-2xl"
-              aria-label="Interactive vehicle map"
-            >
-              {/* Car body */}
-              <path
-                d="M130 175 Q210 95 390 90 Q610 100 650 175 Q700 220 650 270 Q390 305 130 265 Z"
-                fill="#1e2937"
-                stroke="#67e8f9"
-                strokeWidth="20"
-              />
-              <path
-                d="M250 145 Q360 125 510 150"
-                fill="none"
-                stroke="#67e8f9"
-                strokeWidth="16"
-                opacity="0.35"
-              />
-              <circle
-                cx="255"
-                cy="255"
-                r="48"
-                fill="#0f172a"
-                stroke="#67e8f9"
-                strokeWidth="14"
-              />
-              <circle
-                cx="535"
-                cy="255"
-                r="48"
-                fill="#0f172a"
-                stroke="#67e8f9"
-                strokeWidth="14"
-              />
-
-              {/* Large clickable zones */}
-              {DASHBOARD_REGIONS.map((region) => {
-                const visible = isRegionVisible(region);
-                const highlighted = isRegionHighlighted(region);
-                const hovered = hoveredRegion === region.id;
-                const focusRegionId = activeFocus
-                  ? focusPartToRegionId(activeFocus.part)
-                  : null;
-                const active =
-                  selectedRegion?.id === region.id ||
-                  focusRegionId === region.id;
-                const focused = focusRegionId === region.id;
-
-                return (
-                  <g
-                    key={region.id}
-                    className={`${visible ? "cursor-pointer" : "pointer-events-none"} ${focused ? "focus-hotspot-group" : ""}`}
-                    style={
-                      focused
-                        ? {
-                            transformOrigin: `${region.center.x}px ${region.center.y}px`,
-                          }
-                        : undefined
-                    }
-                    onClick={() => visible && handleRegionClick(region)}
-                    onMouseEnter={() => setHoveredRegion(region.id)}
-                    onMouseLeave={() =>
-                      setHoveredRegion(focusRegionId ?? null)
-                    }
-                    role="button"
-                    tabIndex={visible ? 0 : -1}
-                    aria-label={region.name}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        if (visible) handleRegionClick(region);
-                      }
-                    }}
-                  >
-                    <path
-                      d={region.hitPath}
-                      fill={region.color}
-                      fillOpacity={
-                        !visible
-                          ? 0.05
-                          : focused
-                            ? 0.55
-                            : active || hovered
-                              ? 0.45
-                              : highlighted
-                                ? 0.35
-                                : 0.22
-                      }
-                      stroke={region.color}
-                      strokeWidth={focused ? 4 : active || hovered ? 3 : 1.5}
-                      strokeOpacity={visible ? 0.9 : 0.2}
-                      className={`transition-all duration-300 ${focused ? "focus-hotspot" : ""}`}
-                    />
-                    <text
-                      x={region.center.x}
-                      y={region.center.y}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fill="white"
-                      fontSize="13"
-                      fontWeight="700"
-                      opacity={visible ? 1 : 0.25}
-                      className="pointer-events-none select-none"
-                    >
-                      {region.shortLabel}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-
-            {focusRegion && (
-              <FocusOverlay region={focusRegion} active={Boolean(activeFocus)} />
-            )}
-          </div>
-
-          <div className="mt-4 flex justify-start gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:mt-6 sm:flex-wrap sm:justify-center sm:overflow-visible [&::-webkit-scrollbar]:hidden">
-            {DASHBOARD_REGIONS.map((region) => (
-              <button
-                key={`legend-${region.id}`}
-                type="button"
-                onClick={() => handleRegionClick(region)}
-                className="flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm"
-                style={{
-                  backgroundColor:
-                    focusPartToRegionId(activeFocus?.part ?? "") === region.id ||
-                    selectedRegion?.id === region.id
-                      ? region.color
-                      : `${region.color}22`,
-                  color:
-                    focusPartToRegionId(activeFocus?.part ?? "") === region.id ||
-                    selectedRegion?.id === region.id
-                      ? "#000"
-                      : region.color,
-                  border: `1px solid ${region.color}55`,
-                }}
-              >
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: region.color }}
-                />
-                {region.name}
-              </button>
-            ))}
+          <div className="relative">
+            <VehicleSystemsDiagram
+              regions={DASHBOARD_REGIONS}
+              selectedRegionId={selectedRegion?.id ?? null}
+              activeFocus={activeFocus}
+              focusRegion={focusRegion}
+              isRegionVisible={isRegionVisible}
+              isRegionHighlighted={isRegionHighlighted}
+              onRegionSelect={handleRegionClick}
+            />
           </div>
         </div>
 

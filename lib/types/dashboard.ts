@@ -72,6 +72,8 @@ export interface DashboardRegion {
   /** SVG path in viewBox 760×360 for large tap target */
   hitPath: string;
   center: { x: number; y: number };
+  /** Leader-line label position (outside the car silhouette) */
+  callout?: { x: number; y: number };
   /** 即时展示的检查清单（区域级，非零件目录） */
   quickChecklist: string[];
   /** 可点选的症状快捷标签，引导用户描述后再调 AI */

@@ -24,6 +24,7 @@ import {
 } from "@/lib/browser-voice";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
+import VehicleCarSilhouette from "@/components/dashboard/VehicleCarSilhouette";
 
 type FocusPanelProps = {
   region: DashboardRegion;
@@ -250,12 +251,7 @@ export default function FocusPanel({
               className="h-36 w-full sm:h-44"
               aria-hidden
             >
-              <path
-                d="M130 175 Q210 95 390 90 Q610 100 650 175 Q700 220 650 270 Q390 305 130 265 Z"
-                fill="#1e2937"
-                stroke="#334155"
-                strokeWidth="12"
-              />
+              <VehicleCarSilhouette muted />
               <g
                 className="focus-hotspot-group"
                 style={{
@@ -265,9 +261,9 @@ export default function FocusPanel({
                 <path
                   d={region.hitPath}
                   fill={region.color}
-                  fillOpacity={0.55}
+                  fillOpacity={0.45}
                   stroke={region.color}
-                  strokeWidth={3}
+                  strokeWidth={2.5}
                   className="focus-hotspot"
                 />
               </g>
