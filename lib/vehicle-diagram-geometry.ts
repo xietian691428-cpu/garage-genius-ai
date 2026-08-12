@@ -1,7 +1,7 @@
 /**
  * Vehicle systems diagram geometry — photoreal side profiles (viewBox 760×507).
  * Images face LEFT. Hotspot coordinates are shared across body classes
- * (sedan / SUV / pickup / EV) with consistent framing.
+ * with consistent framing (generic + Tesla model photos).
  */
 
 import type { VehicleBodyClass } from "@/lib/vehicle-body-class";
@@ -16,6 +16,13 @@ export const VEHICLE_DIAGRAM_IMAGES: Record<VehicleBodyClass, string> = {
   suv: "/images/vehicle-side-suv.jpg",
   pickup: "/images/vehicle-side-pickup.jpg",
   ev: "/images/vehicle-side-ev.jpg",
+  mpv: "/images/vehicle-side-mpv.jpg",
+  van: "/images/vehicle-side-van.jpg",
+  tesla_model_3: "/images/vehicle-side-tesla-model-3.jpg",
+  tesla_model_y: "/images/vehicle-side-tesla-model-y.jpg",
+  tesla_model_s: "/images/vehicle-side-tesla-model-s.jpg",
+  tesla_model_x: "/images/vehicle-side-tesla-model-x.jpg",
+  tesla_cybertruck: "/images/vehicle-side-tesla-cybertruck.jpg",
 };
 
 export function vehicleDiagramImageSrc(bodyClass: VehicleBodyClass): string {

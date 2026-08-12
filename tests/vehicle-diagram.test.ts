@@ -11,7 +11,19 @@ describe("vehicle diagram geometry", () => {
   it("uses photoreal assets and matching viewBox", () => {
     expect(vehicleDiagramImageSrc("sedan")).toMatch(/vehicle-side-sedan/);
     expect(Object.keys(VEHICLE_DIAGRAM_IMAGES).sort()).toEqual(
-      ["ev", "pickup", "sedan", "suv"].sort(),
+      [
+        "ev",
+        "mpv",
+        "pickup",
+        "sedan",
+        "suv",
+        "tesla_cybertruck",
+        "tesla_model_3",
+        "tesla_model_s",
+        "tesla_model_x",
+        "tesla_model_y",
+        "van",
+      ].sort(),
     );
     expect(VEHICLE_DIAGRAM_VB.w).toBe(760);
     expect(VEHICLE_DIAGRAM_VB.h).toBe(507);

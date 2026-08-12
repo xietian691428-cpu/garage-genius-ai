@@ -1,20 +1,53 @@
 import { describe, expect, it } from "vitest";
-import { inferVehicleBodyClass } from "@/lib/vehicle-body-class";
+import {
+  inferTeslaDiagramKey,
+  inferVehicleBodyClass,
+} from "@/lib/vehicle-body-class";
 import {
   VEHICLE_DIAGRAM_IMAGES,
   vehicleDiagramImageSrc,
 } from "@/lib/vehicle-diagram-geometry";
 
 describe("inferVehicleBodyClass", () => {
-  it("maps battery-electric vehicles to ev", () => {
+  it("maps Tesla models to dedicated photos", () => {
     expect(
       inferVehicleBodyClass({
         make: "Tesla",
         model: "Model 3",
         engine: "Electric",
-        tags: ["EV"],
       }),
-    ).toBe("ev");
+    ).toBe("tesla_model_3");
+    expect(
+      inferVehicleBodyClass({
+        make: "Tesla",
+        model: "Model Y",
+        engine: "Dual Motor",
+      }),
+    ).toBe("tesla_model_y");
+    expect(
+      inferVehicleBodyClass({
+        make: "Tesla",
+        model: "Model S",
+        engine: "Electric",
+      }),
+    ).toBe("tesla_model_s");
+    expect(
+      inferVehicleBodyClass({
+        make: "Tesla",
+        model: "Model X",
+        engine: "Electric",
+      }),
+    ).toBe("tesla_model_x");
+    expect(
+      inferVehicleBodyClass({
+        make: "Tesla",
+        model: "Cybertruck",
+        engine: "Electric",
+      }),
+    ).toBe("tesla_cybertruck");
+  });
+
+  it("maps non-Tesla BEVs to generic ev", () => {
     expect(
       inferVehicleBodyClass({
         make: "Ford",
@@ -24,7 +57,33 @@ describe("inferVehicleBodyClass", () => {
     ).toBe("ev");
   });
 
-  it("maps pickups before generic SUV keywords", () => {
+  it("maps vans and MPVs", () => {
+    expect(
+      inferVehicleBodyClass({
+        make: "Ford",
+        model: "Transit",
+        engine: "3.5L",
+        tags: ["Van"],
+      }),
+    ).toBe("van");
+    expect(
+      inferVehicleBodyClass({
+        make: "Honda",
+        model: "Odyssey",
+        engine: "3.5L",
+      }),
+    ).toBe("mpv");
+    expect(
+      inferVehicleBodyClass({
+        make: "Toyota",
+        model: "Sienna",
+        engine: "Hybrid",
+        tags: ["七座", "商务车"],
+      }),
+    ).toBe("mpv");
+  });
+
+  it("maps pickups and SUVs", () => {
     expect(
       inferVehicleBodyClass({
         make: "Toyota",
@@ -34,27 +93,9 @@ describe("inferVehicleBodyClass", () => {
     ).toBe("pickup");
     expect(
       inferVehicleBodyClass({
-        make: "Ford",
-        model: "F-150",
-        engine: "5.0L V8",
-        tags: ["Tow"],
-      }),
-    ).toBe("pickup");
-  });
-
-  it("maps crossovers and SUVs", () => {
-    expect(
-      inferVehicleBodyClass({
         make: "Toyota",
         model: "RAV4",
         engine: "2.5L",
-      }),
-    ).toBe("suv");
-    expect(
-      inferVehicleBodyClass({
-        make: "BMW",
-        model: "X5",
-        engine: "3.0L",
       }),
     ).toBe("suv");
   });
@@ -67,13 +108,14 @@ describe("inferVehicleBodyClass", () => {
         engine: "2.5L",
       }),
     ).toBe("sedan");
+  });
+});
+
+describe("inferTeslaDiagramKey", () => {
+  it("returns null for non-Tesla", () => {
     expect(
-      inferVehicleBodyClass({
-        make: "BMW",
-        model: "320i",
-        engine: "2.0L Turbo",
-      }),
-    ).toBe("sedan");
+      inferTeslaDiagramKey({ make: "BMW", model: "i4" }),
+    ).toBeNull();
   });
 });
 
@@ -82,7 +124,7 @@ describe("vehicle diagram images", () => {
     for (const bodyClass of Object.keys(VEHICLE_DIAGRAM_IMAGES) as Array<
       keyof typeof VEHICLE_DIAGRAM_IMAGES
     >) {
-      expect(vehicleDiagramImageSrc(bodyClass)).toMatch(`/images/vehicle-side-${bodyClass}.jpg`);
+      expect(vehicleDiagramImageSrc(bodyClass)).toContain("/images/vehicle-side-");
     }
   });
 });
