@@ -53,6 +53,21 @@ export function canStartObdBleConnect(pref: ObdAdapterPreference): boolean {
 }
 
 /**
+ * Dashboard “Refresh Sensors” when there is no live session:
+ * adapter ON → same BLE modal as Chat Connect; OFF → Settings, never the connect sheet.
+ */
+export type ObdRefreshSensorsAction = "read" | "open_connect" | "open_settings";
+
+export function refreshSensorsAction(input: {
+  hasObdAdapter: boolean;
+  isConnected: boolean;
+}): ObdRefreshSensorsAction {
+  if (input.isConnected) return "read";
+  if (input.hasObdAdapter) return "open_connect";
+  return "open_settings";
+}
+
+/**
  * Inject into chat system prompt. Prefer fault-code / screenshot language
  * when the user does not have an adapter.
  */

@@ -11,7 +11,9 @@ export async function openShopReportModal(page: Page): Promise<void> {
   await expect(visible.first()).toBeVisible({ timeout: 30_000 });
   await visible.first().click();
   await expect(
-    page.getByRole("heading", { name: /Generate Shop Report/i }),
+    page.getByRole("heading", {
+      name: /Generate Shop Report|Generar informe para el taller/i,
+    }),
   ).toBeVisible({ timeout: 15_000 });
 }
 

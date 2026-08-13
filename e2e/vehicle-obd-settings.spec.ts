@@ -116,4 +116,37 @@ test.describe("Vehicle + OBD settings P0", () => {
     await page.goto("/app?tab=settings");
     await setObdAdapterToggle(page, false);
   });
+
+  test("Dashboard Refresh Sensors follows OBD adapter toggle", async ({
+    page,
+  }) => {
+    await page.goto("/app?tab=settings");
+    await setObdAdapterToggle(page, false);
+
+    await page.goto("/app?tab=dashboard");
+    const refresh = page.getByTestId("dashboard-refresh-sensors");
+    await expect(refresh).toBeVisible({ timeout: 45_000 });
+    await expect(refresh).toHaveAttribute("data-obd-action", "settings");
+    await refresh.click();
+    await expect(page.getByTestId("settings-obd-toggle")).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(
+      page.getByRole("heading", { name: /Connect Bluetooth OBD/i }),
+    ).toHaveCount(0);
+
+    await setObdAdapterToggle(page, true);
+    await page.goto("/app?tab=dashboard");
+    const refreshOn = page.getByTestId("dashboard-refresh-sensors");
+    await expect(refreshOn).toBeVisible({ timeout: 45_000 });
+    await expect(refreshOn).toHaveAttribute("data-obd-action", "connect");
+    await refreshOn.click();
+    await expect(
+      page.getByRole("heading", { name: /Connect Bluetooth OBD/i }),
+    ).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: /cancel|close/i }).first().click();
+
+    await page.goto("/app?tab=settings");
+    await setObdAdapterToggle(page, false);
+  });
 });

@@ -3,6 +3,7 @@ import {
   parseObdAdapterPreference,
   shouldShowObdConnectEntry,
   canStartObdBleConnect,
+  refreshSensorsAction,
 } from "@/lib/obd-preference";
 
 describe("has_obd_adapter preference", () => {
@@ -32,5 +33,20 @@ describe("has_obd_adapter preference", () => {
     });
     expect(pref.preferenceUnset).toBe(false);
     expect(shouldShowObdConnectEntry(pref)).toBe(false);
+  });
+
+  it("Refresh Sensors: OFF → Settings; ON → Connect modal; live session → read", () => {
+    expect(
+      refreshSensorsAction({ hasObdAdapter: false, isConnected: false }),
+    ).toBe("open_settings");
+    expect(
+      refreshSensorsAction({ hasObdAdapter: true, isConnected: false }),
+    ).toBe("open_connect");
+    expect(
+      refreshSensorsAction({ hasObdAdapter: false, isConnected: true }),
+    ).toBe("read");
+    expect(
+      refreshSensorsAction({ hasObdAdapter: true, isConnected: true }),
+    ).toBe("read");
   });
 });

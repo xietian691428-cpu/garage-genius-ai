@@ -43,7 +43,10 @@ import CameraCapture from "@/components/chat/CameraCapture";
 import ObdConnectModal from "@/components/obd/ObdConnectModal";
 import { useTranslation } from "react-i18next";
 import { useObdPreference } from "@/hooks/useObdPreference";
-import { shouldShowObdConnectEntry } from "@/lib/obd-preference";
+import {
+  refreshSensorsAction,
+  shouldShowObdConnectEntry,
+} from "@/lib/obd-preference";
 import {
   buildObdBleDiagnosisPrompt,
 } from "@/lib/dtc";
@@ -406,7 +409,15 @@ export default function Dashboard({
 
   const handleRefreshSensors = async () => {
     const obd = getObdConnector();
-    if (!obd.isConnected) {
+    const action = refreshSensorsAction({
+      hasObdAdapter: showObdConnectEntry,
+      isConnected: obd.isConnected,
+    });
+    if (action === "open_settings") {
+      onOpenSettings?.();
+      return;
+    }
+    if (action === "open_connect") {
       setShowObdModal(true);
       return;
     }
@@ -1502,11 +1513,19 @@ export default function Dashboard({
             )}
             <button
               type="button"
+              data-testid="dashboard-refresh-sensors"
+              data-obd-action={
+                showObdConnectEntry ? "connect" : "settings"
+              }
               onClick={() => void handleRefreshSensors()}
               disabled={isRefreshingSensors || showObdModal}
               className="mt-6 text-sm font-medium text-cyan-400 hover:text-cyan-300 disabled:opacity-40"
             >
-              {isRefreshingSensors ? "Reading…" : "Refresh Sensors"}
+              {isRefreshingSensors
+                ? t("obd.refreshSensorsReading")
+                : showObdConnectEntry
+                  ? t("obd.refreshSensors")
+                  : t("obd.enableAdapterCta")}
             </button>
           </div>
         )}

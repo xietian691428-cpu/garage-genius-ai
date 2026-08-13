@@ -183,6 +183,9 @@
     "prefSkip": "Omitir por ahora",
     "iosPreferManual": "En este dispositivo, preferimos Introducir código o una captura OBD en lugar de Bluetooth en vivo.",
     "noAdapterLiveHint": "Bluetooth OBD está desactivado. Activa “Tengo un adaptador OBD-II” en Ajustes para conectar, o usa Introducir código / captura OBD.",
+    "refreshSensors": "Actualizar sensores",
+    "refreshSensorsReading": "Leyendo…",
+    "enableAdapterCta": "Activar OBD en Ajustes",
     "bleBlockedByPref": "Activa “Tengo un adaptador OBD-II” en Ajustes antes de conectar Bluetooth OBD.",
     "mileageUpdated": "Kilometraje del vehículo actualizado a {{value}} {{unit}}"
   },

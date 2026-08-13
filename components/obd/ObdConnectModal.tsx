@@ -428,7 +428,9 @@ export default function ObdConnectModal({
           ) : null}
         </div>
 
-        {phase !== "pref" ? (
+        {phase !== "pref" &&
+        !prefLoading &&
+        canStartObdBleConnect(pref) ? (
           <div className="flex shrink-0 flex-wrap gap-2 border-t border-slate-800 px-4 py-3">
             {connectedName ? (
               <button

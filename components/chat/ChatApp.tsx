@@ -581,6 +581,7 @@ export default function ChatApp({
   };
 
   const handleSend = async (content: string, images?: string[]) => {
+    if (isLoading) return;
     if (!currentVehicle) {
       alert("Add a vehicle to your garage before chatting.");
       return;
