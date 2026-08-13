@@ -139,11 +139,7 @@ function useTokenUsageState(): TokenUsageApi {
 
 export function TokenUsageProvider({ children }: { children: ReactNode }) {
   const value = useTokenUsageState();
-  return (
-    <TokenUsageContext.Provider value={value}>
-      {children}
-    </TokenUsageContext.Provider>
-  );
+  return <TokenUsageContext value={value}>{children}</TokenUsageContext>;
 }
 
 export function useTokenUsage(): TokenUsageApi {
