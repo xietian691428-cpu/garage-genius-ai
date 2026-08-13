@@ -33,7 +33,9 @@ interface Props {
 
 function TokenStrip() {
   const { usage, isExhausted, isNearLimit } = useTokenUsage();
-  const pct = Math.min(100, Math.max(0, usage.percentage));
+  const barWidth = usage.unlimited
+    ? 100
+    : Math.min(100, Math.max(0, usage.percentLeft));
   const barColor = isExhausted
     ? "bg-red-400"
     : isNearLimit
@@ -46,14 +48,14 @@ function TokenStrip() {
       <div className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-800">
         <div
           className={`h-full transition-all ${barColor}`}
-          style={{ width: `${pct}%` }}
+          style={{ width: `${barWidth}%` }}
         />
       </div>
       <Link
         href="/recharge"
         className="shrink-0 text-[10px] font-medium text-cyan-400"
       >
-        {isExhausted ? "Recharge" : `${Math.round(100 - pct)}% left`}
+        {isExhausted ? "Recharge" : usage.unlimited ? "Unlimited" : `${Math.round(usage.percentLeft)}% left`}
       </Link>
     </div>
   );

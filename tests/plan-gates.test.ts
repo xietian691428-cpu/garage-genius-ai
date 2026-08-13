@@ -133,4 +133,25 @@ describe("trial expiry → free entitlements", () => {
     expect(r.entitlements.maxVehicles).toBe(5);
     expect(shopReportLimitForPlan({ tier: r.tier, isTrialing: r.isTrialing })).toBe(30);
   });
+
+  it("past_due and canceled resolve to Free entitlements", () => {
+    const pastDue = resolveSubscription({
+      subscription_status: "past_due",
+      trial_ends_at: new Date(Date.now() + 86_400_000).toISOString(),
+    });
+    expect(pastDue.tier).toBe("free");
+    expect(pastDue.isFree).toBe(true);
+    expect(pastDue.isPro).toBe(false);
+    expect(pastDue.label).toBe("Past due");
+    expect(pastDue.entitlements.maxVehicles).toBe(1);
+    expect(shopReportLimitForPlan({ tier: pastDue.tier, isTrialing: pastDue.isTrialing })).toBe(3);
+
+    const canceled = resolveSubscription({
+      subscription_status: "canceled",
+    });
+    expect(canceled.tier).toBe("free");
+    expect(canceled.isFree).toBe(true);
+    expect(canceled.label).toBe("Free");
+    expect(canceled.entitlements.shopReportsPerMonth).toBe(3);
+  });
 });

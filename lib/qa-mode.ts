@@ -105,6 +105,8 @@ export function qaTokenAvailabilityView(signedIn: boolean) {
     bonusRemaining: 9_999_999,
     remainingThisMonth: 9_999_999,
     percentage: 0,
+    percentLeft: 100,
+    unlimited: true,
     qaUnlock: true,
   };
 }

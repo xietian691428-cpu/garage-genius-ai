@@ -24,7 +24,7 @@ import {
   aiAbuseResponse,
   assertAiRateLimit,
   assertAiTokenBudget,
-  consumeAiTokens,
+  consumeAiTokensBestEffort,
   requireVerifiedAiUser,
 } from "@/lib/ai-abuse";
 import { aiUpstreamResponse } from "@/lib/ai-errors";
@@ -140,7 +140,7 @@ function normalizeInspection(
 export async function POST(request: NextRequest) {
   try {
     const user = await requireVerifiedAiUser(request);
-    await assertAiRateLimit(user.id, "inspect");
+    await assertAiRateLimit(user.id, "inspect", user.email);
 
     const body = await request.json();
     const { regionId, symptoms, currentVehicle, allowGeneral } = body as {
@@ -254,16 +254,22 @@ export async function POST(request: NextRequest) {
       AI_ROUTE_TOKEN_FLOOR.inspect,
       estimateTokensFromMessages(messages),
     );
-    await assertAiTokenBudget(user.id, estimated);
+    await assertAiTokenBudget(user.id, estimated, user.email);
 
     const { content: reply, usage } = await callDeepSeekJson(messages, 1200);
-    await consumeAiTokens(user.id, Math.max(1, usage.total_tokens), {
-      route: "inspect",
-      model: "deepseek-chat",
-      promptTokens: usage.prompt_tokens,
-      completionTokens: usage.completion_tokens,
-      metadata: { region: region.name },
-    });
+    await consumeAiTokensBestEffort(
+      user.id,
+      Math.max(1, usage.total_tokens),
+      {
+        route: "inspect",
+        model: "deepseek-chat",
+        promptTokens: usage.prompt_tokens,
+        completionTokens: usage.completion_tokens,
+        email: user.email,
+        metadata: { region: region.name },
+      },
+      "[/api/dashboard/inspect]",
+    );
 
     const parsed = JSON.parse(reply) as RegionInspection;
     let inspection = normalizeInspection(

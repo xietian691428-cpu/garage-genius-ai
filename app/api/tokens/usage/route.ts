@@ -3,11 +3,12 @@ import {
   createSupabaseUserClient,
 } from "@/lib/supabase-admin";
 import { tokenService } from "@/lib/token-service";
-import { TOKEN_PLAN_LIMITS } from "@/lib/types/tokens";
+import { TOKEN_PLAN_LIMITS, tokenPercentUsed } from "@/lib/types/tokens";
 import {
   isQaUnlockEnabled,
   qaTokenAvailabilityView,
 } from "@/lib/qa-mode";
+import { isUnlimitedTokenUser } from "@/lib/test-token-bypass";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,6 +38,8 @@ export async function GET(req: NextRequest) {
         bonusRemaining: 0,
         remainingThisMonth: free.includedMonthly,
         percentage: 0,
+        percentLeft: 100,
+        unlimited: false,
       });
     }
 
@@ -54,21 +57,22 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(qaTokenAvailabilityView(true));
     }
 
-    const { isUnlimitedTokenEmail } = await import("@/lib/test-token-bypass");
-    if (isUnlimitedTokenEmail(user.email)) {
+    if (await isUnlimitedTokenUser(user.id, user.email)) {
       return NextResponse.json({
         ...qaTokenAvailabilityView(true),
         testUnlimitedTokens: true,
+        unlimited: true,
+        percentLeft: 100,
       });
     }
 
-    const availability = await tokenService.getAvailableTokens(user.id);
+    const availability = await tokenService.getAvailableTokens(
+      user.id,
+      user.email,
+    );
     const used = availability.usage.monthly_tokens_used;
     const limit = availability.includedMonthly;
-    const percentage = Math.min(
-      Math.floor((used / Math.max(limit, 1)) * 100),
-      100,
-    );
+    const percentage = tokenPercentUsed(used, limit);
 
     return NextResponse.json({
       signedIn: true,
@@ -81,6 +85,8 @@ export async function GET(req: NextRequest) {
       bonusRemaining: availability.bonusRemaining,
       remainingThisMonth: availability.remainingThisMonth,
       percentage,
+      percentLeft: Math.max(0, 100 - percentage),
+      unlimited: false,
     });
   } catch (err) {
     console.error("[/api/tokens/usage]", err);

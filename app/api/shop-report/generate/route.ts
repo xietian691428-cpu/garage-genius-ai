@@ -5,7 +5,7 @@ import {
   assertAiTokenBudget,
   assertEmailVerified,
   aiAbuseResponse,
-  consumeAiTokens,
+  consumeAiTokensBestEffort,
   getBearerToken,
 } from "@/lib/ai-abuse";
 import { assertShopReportQuota } from "@/lib/shop-report-limits";
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
       throw err;
     }
 
-    await assertAiRateLimit(user.id, "chat");
+    await assertAiRateLimit(user.id, "chat", user.email);
     // Plan shop-report cap (Free/Trial) before spending tokens / calling the model.
     const reportQuota = await assertShopReportQuota(user.id);
 
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await assertAiTokenBudget(user.id, 800);
+    await assertAiTokenBudget(user.id, 800, user.email);
 
     const codes = collectCodesFromMessages(messages);
     const transcript = truncateTranscript(messages);
@@ -169,14 +169,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    try {
-      await consumeAiTokens(user.id, Math.max(1, llm.usage.total_tokens), {
+    await consumeAiTokensBestEffort(
+      user.id,
+      Math.max(1, llm.usage.total_tokens),
+      {
         route: "other",
         model: "deepseek-chat",
         promptTokens: llm.usage.prompt_tokens,
         completionTokens: llm.usage.completion_tokens,
         playbookSlug: body.coachContext?.scenarioSlug ?? null,
         feature: "shop_report_generated",
+        email: user.email,
         metadata: {
           event: "shop_report_generated",
           source: body.source === "coach" ? "coach" : "chat",
@@ -184,19 +187,9 @@ export async function POST(req: NextRequest) {
           codeCount: codes.length,
           imageCount: images.length,
         },
-      });
-    } catch (consumeError) {
-      return NextResponse.json(
-        {
-          error:
-            consumeError instanceof Error
-              ? consumeError.message
-              : "Not enough tokens to generate a shop report.",
-          code: "token_limit",
-        },
-        { status: 402 },
-      );
-    }
+      },
+      "[shop-report]",
+    );
 
     const reportId = createShopReportId();
     const includeFullVin = Boolean(body.options?.includeFullVin);

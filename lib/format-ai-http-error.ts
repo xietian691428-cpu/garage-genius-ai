@@ -21,6 +21,9 @@ export function formatAiHttpError(input: {
     code === "rate_limit";
   const isReportLimit =
     code === "report_limit_reached" || code === "report_limit";
+  const isTokenLimit =
+    input.status === 402 &&
+    (code === "insufficient_tokens" || code === "token_limit");
 
   if (isRateLimit) {
     if (server) {
@@ -42,6 +45,14 @@ export function formatAiHttpError(input: {
       input.reportLimitFallback ||
       server ||
       "Monthly shop report limit reached. Upgrade for unlimited reports, or wait until next month."
+    );
+  }
+
+  if (isTokenLimit) {
+    return (
+      server ||
+      input.fallback ||
+      "Insufficient tokens this month. Top up or upgrade, or wait until next month."
     );
   }
 

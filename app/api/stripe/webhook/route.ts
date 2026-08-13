@@ -91,14 +91,24 @@ async function syncSubscriptionToProfile(
       ).toISOString()
     : null;
 
-  const { error } = await admin.from("profiles").upsert({
-    id: supabaseUserId,
+  const patch = {
     stripe_customer_id: customerId,
     stripe_subscription_id: subscription.id,
     subscription_status: status,
     trial_ends_at: trialEnd,
     current_period_end: periodEnd,
-  });
+  };
+
+  const { data: existing } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("id", supabaseUserId)
+    .maybeSingle();
+
+  // Update existing rows so a missing email column is never clobbered to null.
+  const { error } = existing
+    ? await admin.from("profiles").update(patch).eq("id", supabaseUserId)
+    : await admin.from("profiles").insert({ id: supabaseUserId, ...patch });
 
   if (error) {
     console.error("Webhook profile upsert failed:", error.message);

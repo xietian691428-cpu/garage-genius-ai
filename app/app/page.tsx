@@ -18,6 +18,7 @@ import { useVehicles } from "@/hooks/useVehicles";
 import { useBrowserChromeInset } from "@/hooks/useBrowserChromeInset";
 import QaModeBanner from "@/components/qa/QaModeBanner";
 import VerifyEmailBanner from "@/components/auth/VerifyEmailBanner";
+import { TokenUsageProvider } from "@/hooks/useTokenUsage";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
 import { isNativeCapacitor } from "@/lib/native-platform";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
@@ -155,6 +156,7 @@ function GarageAppInner() {
 
   return (
     <AuthGate>
+      <TokenUsageProvider>
       <TrialEndedModal
         open={trialModalOpen}
         onClose={dismissTrialEndedPrompt}
@@ -351,6 +353,7 @@ function GarageAppInner() {
           </div>
         </div>
       )}
+      </TokenUsageProvider>
     </AuthGate>
   );
 }

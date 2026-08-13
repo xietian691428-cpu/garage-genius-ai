@@ -12,7 +12,7 @@ import {
   aiAbuseResponse,
   assertAiRateLimit,
   assertAiTokenBudget,
-  consumeAiTokens,
+  consumeAiTokensBestEffort,
   requireVerifiedAiUser,
 } from "@/lib/ai-abuse";
 import { aiUpstreamResponse } from "@/lib/ai-errors";
@@ -114,7 +114,7 @@ function normalizeAnalysis(
 export async function POST(req: NextRequest) {
   try {
     const user = await requireVerifiedAiUser(req);
-    await assertAiRateLimit(user.id, "vision");
+    await assertAiRateLimit(user.id, "vision", user.email);
 
     const body = await req.json();
     const imageRaw =
@@ -197,16 +197,22 @@ Rules:
       AI_ROUTE_TOKEN_FLOOR.vision,
       estimateTokensFromMessages(messages),
     );
-    await assertAiTokenBudget(user.id, estimated);
+    await assertAiTokenBudget(user.id, estimated, user.email);
 
     // Uses deepseek-vl → deepseek-chat Vision path (not a fictional "deepseek-vision" id)
     const { content, usage } = await callDeepSeekVisionJson(messages, 900);
-    await consumeAiTokens(user.id, Math.max(1, usage.total_tokens), {
-      route: "vision",
-      model: "deepseek-vl",
-      promptTokens: usage.prompt_tokens,
-      completionTokens: usage.completion_tokens,
-    });
+    await consumeAiTokensBestEffort(
+      user.id,
+      Math.max(1, usage.total_tokens),
+      {
+        route: "vision",
+        model: "deepseek-vl",
+        promptTokens: usage.prompt_tokens,
+        completionTokens: usage.completion_tokens,
+        email: user.email,
+      },
+      "[/api/vision/analyze-vehicle]",
+    );
 
     const parsed = normalizeAnalysis(extractJsonObject(content));
 

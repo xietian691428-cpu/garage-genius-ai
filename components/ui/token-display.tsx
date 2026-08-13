@@ -18,13 +18,14 @@ export default function TokenDisplay() {
     : isNearLimit
       ? "bg-amber-400"
       : "bg-cyan-400";
+  const barWidth = usage.unlimited ? 100 : loading ? 0 : usage.percentLeft;
 
   return (
     <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4 text-sm">
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="text-slate-400">Monthly Tokens</span>
         <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-cyan-300">
-          {planLabel}
+          {usage.unlimited ? "Test unlimited" : planLabel}
         </span>
       </div>
 
@@ -32,9 +33,11 @@ export default function TokenDisplay() {
         <span>
           {loading
             ? "…"
-            : `${usage.used.toLocaleString()} / ${usage.limit.toLocaleString()}`}
+            : usage.unlimited
+              ? "Unlimited"
+              : `${usage.used.toLocaleString()} / ${usage.limit.toLocaleString()}`}
         </span>
-        {usage.bonusRemaining > 0 && (
+        {!usage.unlimited && usage.bonusRemaining > 0 && (
           <span className="text-xs font-normal text-emerald-400">
             +{usage.bonusRemaining.toLocaleString()} top-up
           </span>
@@ -44,11 +47,15 @@ export default function TokenDisplay() {
       <div className="h-1.5 overflow-hidden rounded-full bg-slate-800">
         <div
           className={`h-full transition-all ${barColor}`}
-          style={{ width: `${loading ? 0 : usage.percentage}%` }}
+          style={{ width: `${barWidth}%` }}
         />
       </div>
 
-      {isExhausted ? (
+      {usage.unlimited ? (
+        <p className="mt-2 text-xs text-slate-500">
+          Internal test account — AI quota is not deducted.
+        </p>
+      ) : isExhausted ? (
         <p className="mt-2 text-xs text-red-300">
           Monthly quota used up.{" "}
           <Link href="/recharge" className="underline hover:text-red-200">

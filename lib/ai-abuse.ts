@@ -12,6 +12,10 @@ import type { User } from "@supabase/supabase-js";
 import { createSupabaseAdmin, createSupabaseUserClient } from "@/lib/supabase-admin";
 import { tokenService } from "@/lib/token-service";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
+import {
+  isUnlimitedTokenUser,
+  shouldBypassAiMetering,
+} from "@/lib/test-token-bypass";
 import type { TokenPlan } from "@/lib/types/tokens";
 import {
   isEmailVerificationRequired,
@@ -127,8 +131,10 @@ export async function requireVerifiedAiUser(req: NextRequest): Promise<User> {
 export async function assertAiRateLimit(
   userId: string,
   route: AiRouteName,
+  email?: string | null,
 ): Promise<void> {
-  if (isQaUnlockEnabled()) return;
+  if (shouldBypassAiMetering({ email, qaUnlock: isQaUnlockEnabled() })) return;
+  if (await isUnlimitedTokenUser(userId, email)) return;
 
   const plan = await tokenService.getUserPlan(userId);
   const limits = resolveRateLimits(plan);
@@ -200,15 +206,15 @@ export async function assertAiRateLimit(
 export async function assertAiTokenBudget(
   userId: string,
   estimatedTokens: number,
+  email?: string | null,
 ): Promise<void> {
-  if (isQaUnlockEnabled()) return;
-  const { isUnlimitedTokenUser } = await import("@/lib/test-token-bypass");
-  if (await isUnlimitedTokenUser(userId)) return;
+  if (shouldBypassAiMetering({ email, qaUnlock: isQaUnlockEnabled() })) return;
+  if (await isUnlimitedTokenUser(userId, email)) return;
 
   const needed = Math.max(1, Math.ceil(estimatedTokens));
-  const ok = await tokenService.hasEnoughTokens(userId, needed);
+  const ok = await tokenService.hasEnoughTokens(userId, needed, email);
   if (!ok) {
-    const availability = await tokenService.getAvailableTokens(userId);
+    const availability = await tokenService.getAvailableTokens(userId, email);
     throw new AiAbuseError(
       `Insufficient tokens. Remaining this month: ${availability.remainingThisMonth}. Plan: ${availability.plan}.`,
       402,
@@ -229,10 +235,13 @@ export async function consumeAiTokens(
     playbookSlug?: string | null;
     feature?: string | null;
     metadata?: Record<string, unknown>;
+    email?: string | null;
   },
 ): Promise<void> {
-  const { isUnlimitedTokenUser } = await import("@/lib/test-token-bypass");
-  const unlimitedTester = await isUnlimitedTokenUser(userId);
+  const unlimitedTester = await isUnlimitedTokenUser(
+    userId,
+    options?.email,
+  );
 
   if (isQaUnlockEnabled() || unlimitedTester) {
     // Still record usage for admin visibility during QA / tester unlock.
@@ -258,7 +267,7 @@ export async function consumeAiTokens(
   }
 
   const used = Math.max(1, Math.ceil(actualTokens));
-  await tokenService.consumeTokens(userId, used);
+  await tokenService.consumeTokens(userId, used, options?.email);
 
   // Best-effort: stamp last log row with tokens_used
   try {
@@ -293,6 +302,23 @@ export async function consumeAiTokens(
       feature: options.feature,
       metadata: options.metadata,
     });
+  }
+}
+
+/**
+ * Deduct after a successful LLM call without turning a billing glitch into a 402.
+ * Failed requests never reach here (pre-check is assertAiTokenBudget).
+ */
+export async function consumeAiTokensBestEffort(
+  userId: string,
+  actualTokens: number,
+  options?: Parameters<typeof consumeAiTokens>[2],
+  logLabel = "[ai-abuse]",
+): Promise<void> {
+  try {
+    await consumeAiTokens(userId, actualTokens, options);
+  } catch (err) {
+    console.error(`${logLabel} consumeTokens failed:`, err);
   }
 }
 

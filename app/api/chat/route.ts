@@ -19,7 +19,7 @@ import {
   assertAiRateLimit,
   assertAiTokenBudget,
   assertEmailVerified,
-  consumeAiTokens,
+  consumeAiTokensBestEffort,
   getBearerToken,
 } from "@/lib/ai-abuse";
 import { aiUpstreamResponse } from "@/lib/ai-errors";
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Anti-abuse: per-user hourly/daily request caps (before RAG / DeepSeek)
-    await assertAiRateLimit(user.id, "chat");
+    await assertAiRateLimit(user.id, "chat", user.email);
 
     const lastUserMessage = [...messages]
       .reverse()
@@ -335,7 +335,7 @@ export async function POST(request: NextRequest) {
       AI_ROUTE_TOKEN_FLOOR.chat,
       estimateTokensFromMessages(fullMessages),
     );
-    await assertAiTokenBudget(user.id, estimatedTokens);
+    await assertAiTokenBudget(user.id, estimatedTokens, user.email);
 
     const { content: reply, usage } = await callDeepSeek(fullMessages);
     const actualTokensUsed = Math.max(1, usage.total_tokens);
@@ -344,31 +344,23 @@ export async function POST(request: NextRequest) {
       (typeof coachSlug === "string" && coachSlug.trim()) ||
       null;
 
-    try {
-      await consumeAiTokens(user.id, actualTokensUsed, {
+    await consumeAiTokensBestEffort(
+      user.id,
+      actualTokensUsed,
+      {
         route: "chat",
         model: "deepseek-chat",
         promptTokens: usage.prompt_tokens,
         completionTokens: usage.completion_tokens,
         playbookSlug: resolvedPlaybook,
+        email: user.email,
         metadata: {
           make: currentVehicle.make,
           model: currentVehicle.model,
         },
-      });
-    } catch (consumeError) {
-      console.error("[/api/chat] consumeTokens failed:", consumeError);
-      return Response.json(
-        {
-          error:
-            consumeError instanceof Error
-              ? consumeError.message
-              : "Token billing failed after AI reply. Please recharge or try again.",
-          code: "TOKEN_CONSUME_FAILED",
-        },
-        { status: 402 },
-      );
-    }
+      },
+      "[/api/chat]",
+    );
 
     const finalContent = ensureDisclaimer(
       applyAffiliatePartsToReply(reply, prioritized, currentVehicle),

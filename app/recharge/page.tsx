@@ -10,6 +10,7 @@ import {
 } from "@/lib/billing-errors";
 import { TOKEN_RECHARGE_PACKS } from "@/lib/types/tokens";
 import TokenDisplay from "@/components/ui/token-display";
+import { TokenUsageProvider } from "@/hooks/useTokenUsage";
 
 export default function RechargePage() {
   const [loading, setLoading] = useState<string | null>(null);
@@ -40,6 +41,7 @@ export default function RechargePage() {
   };
 
   return (
+    <TokenUsageProvider>
     <div className="min-h-dvh bg-[#0a0f1c] text-slate-200">
       <div className="mx-auto max-w-2xl px-4 py-10 sm:px-8">
         <Link
@@ -121,5 +123,6 @@ export default function RechargePage() {
         </p>
       </div>
     </div>
+    </TokenUsageProvider>
   );
 }

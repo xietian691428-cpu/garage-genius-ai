@@ -148,7 +148,10 @@ export default function ChatInput({
   }, [draftValue, onDraftConsumed]);
 
   const tokensExhausted =
-    !isQaUnlockEnabled() && usage.signedIn && usage.remainingThisMonth <= 0;
+    !usage.unlimited &&
+    !isQaUnlockEnabled() &&
+    usage.signedIn &&
+    usage.remainingThisMonth <= 0;
 
   useEffect(() => {
     onSendRef.current = onSend;

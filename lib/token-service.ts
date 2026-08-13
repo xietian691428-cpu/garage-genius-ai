@@ -31,11 +31,17 @@ function emptyUsage(userId: string): UserTokenUsage {
   };
 }
 
-function needsMonthlyReset(resetDateIso: string): boolean {
-  const resetAt = new Date(resetDateIso).getTime();
-  if (Number.isNaN(resetAt)) return true;
-  const monthMs = 30 * 24 * 60 * 60 * 1000;
-  return Date.now() - resetAt >= monthMs;
+/** True when `monthly_reset_date` is in a previous UTC calendar month. */
+export function needsUtcMonthReset(
+  resetDateIso: string,
+  now = new Date(),
+): boolean {
+  const resetAt = new Date(resetDateIso);
+  if (Number.isNaN(resetAt.getTime())) return true;
+  return (
+    resetAt.getUTCFullYear() !== now.getUTCFullYear() ||
+    resetAt.getUTCMonth() !== now.getUTCMonth()
+  );
 }
 
 /**
@@ -54,7 +60,7 @@ function computeAvailability(
   usage: UserTokenUsage,
 ): TokenAvailability {
   const limits = TOKEN_PLAN_LIMITS[plan];
-  const resetNeeded = needsMonthlyReset(usage.monthly_reset_date);
+  const resetNeeded = needsUtcMonthReset(usage.monthly_reset_date);
   const monthlyUsed = resetNeeded ? 0 : usage.monthly_tokens_used;
   const bonusRemaining = Math.max(0, usage.bonus_tokens_remaining);
   const includedRemaining = Math.max(0, limits.includedMonthly - monthlyUsed);
@@ -136,11 +142,16 @@ export const tokenService = {
 
   /**
    * Get usage + remaining budget for this user/plan.
-   * Applies soft monthly reset when monthly_reset_date is ≥ 30 days old.
+   * Applies a UTC calendar-month reset when monthly_reset_date is in a prior month.
    */
-  async getAvailableTokens(userId: string): Promise<TokenAvailability> {
+  async getAvailableTokens(
+    userId: string,
+    email?: string | null,
+  ): Promise<TokenAvailability> {
     if (isQaUnlockEnabled()) return qaTokenAvailability(userId);
-    if (await isUnlimitedTokenUser(userId)) return qaTokenAvailability(userId);
+    if (await isUnlimitedTokenUser(userId, email)) {
+      return qaTokenAvailability(userId);
+    }
 
     const [plan, usage] = await Promise.all([
       this.getUserPlan(userId),
@@ -148,7 +159,7 @@ export const tokenService = {
     ]);
 
     let working = usage;
-    if (needsMonthlyReset(usage.monthly_reset_date)) {
+    if (needsUtcMonthReset(usage.monthly_reset_date)) {
       working = await this.resetMonthlyUsage(userId);
     }
 
@@ -179,11 +190,12 @@ export const tokenService = {
   async hasEnoughTokens(
     userId: string,
     requiredTokens: number = 1000,
+    email?: string | null,
   ): Promise<boolean> {
     if (isQaUnlockEnabled()) return true;
-    if (await isUnlimitedTokenUser(userId)) return true;
+    if (await isUnlimitedTokenUser(userId, email)) return true;
     if (requiredTokens <= 0) return true;
-    const availability = await this.getAvailableTokens(userId);
+    const availability = await this.getAvailableTokens(userId, email);
     return availability.remainingThisMonth >= requiredTokens;
   },
 
@@ -192,15 +204,21 @@ export const tokenService = {
    * Order: included monthly quota → bonus top-ups.
    * Enforces plan hard caps from PROJECT.md.
    */
-  async consumeTokens(userId: string, tokens: number): Promise<TokenAvailability> {
+  async consumeTokens(
+    userId: string,
+    tokens: number,
+    email?: string | null,
+  ): Promise<TokenAvailability> {
     if (isQaUnlockEnabled()) return qaTokenAvailability(userId);
-    if (await isUnlimitedTokenUser(userId)) return qaTokenAvailability(userId);
+    if (await isUnlimitedTokenUser(userId, email)) {
+      return qaTokenAvailability(userId);
+    }
     if (!Number.isFinite(tokens) || tokens <= 0) {
-      return this.getAvailableTokens(userId);
+      return this.getAvailableTokens(userId, email);
     }
 
     const rounded = Math.ceil(tokens);
-    const availability = await this.getAvailableTokens(userId);
+    const availability = await this.getAvailableTokens(userId, email);
 
     if (availability.remainingThisMonth < rounded) {
       throw new Error(

@@ -90,6 +90,19 @@ export function findRechargePack(
   );
 }
 
+export function tokenPercentUsed(used: number, includedMonthly: number): number {
+  return Math.min(100, Math.floor((used / Math.max(includedMonthly, 1)) * 100));
+}
+
+export function tokenPercentLeft(input: {
+  unlimited?: boolean;
+  used: number;
+  includedMonthly: number;
+}): number {
+  if (input.unlimited) return 100;
+  return Math.max(0, 100 - tokenPercentUsed(input.used, input.includedMonthly));
+}
+
 export type TokenAvailability = {
   plan: TokenPlan;
   usage: UserTokenUsage;

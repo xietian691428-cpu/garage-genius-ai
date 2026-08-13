@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { supabase } from "@/lib/supabase";
 import type { TokenPlan } from "@/lib/types/tokens";
 
@@ -15,6 +23,8 @@ export type TokenUsageView = {
   bonusRemaining: number;
   remainingThisMonth: number;
   percentage: number;
+  percentLeft: number;
+  unlimited: boolean;
 };
 
 const DEFAULT_VIEW: TokenUsageView = {
@@ -28,9 +38,22 @@ const DEFAULT_VIEW: TokenUsageView = {
   bonusRemaining: 0,
   remainingThisMonth: 15_000,
   percentage: 0,
+  percentLeft: 100,
+  unlimited: false,
 };
 
-export function useTokenUsage() {
+type TokenUsageApi = {
+  usage: TokenUsageView;
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+  isNearLimit: boolean;
+  isExhausted: boolean;
+};
+
+const TokenUsageContext = createContext<TokenUsageApi | null>(null);
+
+function useTokenUsageState(): TokenUsageApi {
   const [usage, setUsage] = useState<TokenUsageView>(DEFAULT_VIEW);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,11 +72,26 @@ export function useTokenUsage() {
       }
 
       const res = await fetch("/api/tokens/usage", { headers });
-      const data = (await res.json()) as TokenUsageView & { error?: string };
+      const data = (await res.json()) as TokenUsageView & {
+        error?: string;
+        testUnlimitedTokens?: boolean;
+        qaUnlock?: boolean;
+      };
 
       if (!res.ok) {
         throw new Error(data.error ?? "Failed to load token usage");
       }
+
+      const unlimited = Boolean(
+        data.unlimited || data.testUnlimitedTokens || data.qaUnlock,
+      );
+      const percentage = data.percentage ?? 0;
+      const percentLeft =
+        typeof data.percentLeft === "number"
+          ? data.percentLeft
+          : unlimited
+            ? 100
+            : Math.max(0, 100 - percentage);
 
       setUsage({
         signedIn: Boolean(data.signedIn),
@@ -65,7 +103,9 @@ export function useTokenUsage() {
         includedRemaining: data.includedRemaining ?? 0,
         bonusRemaining: data.bonusRemaining ?? 0,
         remainingThisMonth: data.remainingThisMonth ?? 0,
-        percentage: data.percentage ?? 0,
+        percentage,
+        percentLeft,
+        unlimited,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load tokens");
@@ -87,8 +127,29 @@ export function useTokenUsage() {
     return () => subscription.unsubscribe();
   }, [refresh]);
 
-  const isNearLimit = usage.percentage >= 80;
-  const isExhausted = usage.remainingThisMonth <= 0;
+  const isNearLimit = !usage.unlimited && usage.percentage >= 80;
+  const isExhausted =
+    !usage.unlimited && usage.signedIn && usage.remainingThisMonth <= 0;
 
-  return { usage, loading, error, refresh, isNearLimit, isExhausted };
+  return useMemo(
+    () => ({ usage, loading, error, refresh, isNearLimit, isExhausted }),
+    [usage, loading, error, refresh, isNearLimit, isExhausted],
+  );
+}
+
+export function TokenUsageProvider({ children }: { children: ReactNode }) {
+  const value = useTokenUsageState();
+  return (
+    <TokenUsageContext.Provider value={value}>
+      {children}
+    </TokenUsageContext.Provider>
+  );
+}
+
+export function useTokenUsage(): TokenUsageApi {
+  const ctx = useContext(TokenUsageContext);
+  if (!ctx) {
+    throw new Error("useTokenUsage must be used within TokenUsageProvider");
+  }
+  return ctx;
 }

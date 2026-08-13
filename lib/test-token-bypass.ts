@@ -39,8 +39,25 @@ export function isUnlimitedTokenEmail(email?: string | null): boolean {
   return getUnlimitedTokenEmails().has(email.trim().toLowerCase());
 }
 
+/**
+ * Sync gate used by Chat / vision / usage UI.
+ * Prefer the signed-in JWT email so a missing `profiles.email` cannot
+ * show “100% left” while the API still bills the real quota.
+ */
+export function shouldBypassAiMetering(input: {
+  email?: string | null;
+  qaUnlock?: boolean;
+}): boolean {
+  if (input.qaUnlock) return true;
+  return isUnlimitedTokenEmail(input.email);
+}
+
 /** Resolve profile/auth email for a user id (service role). */
-export async function isUnlimitedTokenUser(userId: string): Promise<boolean> {
+export async function isUnlimitedTokenUser(
+  userId: string,
+  emailHint?: string | null,
+): Promise<boolean> {
+  if (isUnlimitedTokenEmail(emailHint)) return true;
   if (!userId) return false;
   const admin = createSupabaseAdmin();
   const { data } = await admin
