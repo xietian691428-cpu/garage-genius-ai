@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getUnlimitedTokenEmails,
+  isLongLivedQaTrialEmail,
   isUnlimitedTokenEmail,
 } from "@/lib/test-token-bypass";
 
@@ -15,5 +16,11 @@ describe("test-token-bypass", () => {
     expect(isUnlimitedTokenEmail("random@example.com")).toBe(false);
     expect(isUnlimitedTokenEmail(null)).toBe(false);
     expect(isUnlimitedTokenEmail("")).toBe(false);
+  });
+
+  it("holds Pro Trial only for the primary QA email", () => {
+    expect(isLongLivedQaTrialEmail("18565006079@163.com")).toBe(true);
+    expect(isLongLivedQaTrialEmail("18565006079@163.COM")).toBe(true);
+    expect(isLongLivedQaTrialEmail("random@example.com")).toBe(false);
   });
 });

@@ -11,6 +11,7 @@ import {
   type SubscriptionStatus,
   type SubscriptionTier,
 } from "@/lib/types/subscription";
+import { isLongLivedQaTrialEmail } from "@/lib/qa-test-account";
 
 /** Signup + Stripe Checkout trial length (days). */
 export const TRIAL_DAYS = 14;
@@ -47,6 +48,7 @@ type ProfileLike = {
   subscription_status?: string | null;
   trial_ends_at?: string | null;
   stripe_subscription_id?: string | null;
+  email?: string | null;
 } | null;
 
 function asStatus(raw: string | null | undefined): SubscriptionStatus {
@@ -75,6 +77,7 @@ export function parseTrialEndsAt(
 /** True when DB says trialing and the clock has run out (and no paid sub id). */
 export function isTrialWindowExpired(profile: ProfileLike): boolean {
   if (!profile) return false;
+  if (isLongLivedQaTrialEmail(profile.email)) return false;
   const status = asStatus(profile.subscription_status);
   if (status !== "trialing") return false;
   if (profile.stripe_subscription_id) return false;
@@ -93,11 +96,13 @@ export function shouldPersistTrialExpiry(profile: ProfileLike): boolean {
 export function resolveTier(
   status: SubscriptionStatus | string | null | undefined,
   trialEndsAt?: string | null,
+  email?: string | null,
 ): SubscriptionTier {
   const s = asStatus(status ?? "free");
   if (s === "pro_heavy") return "pro_heavy";
   if (s === "pro" || s === "active") return "pro";
   if (s === "trialing") {
+    if (isLongLivedQaTrialEmail(email)) return "pro";
     const ends = parseTrialEndsAt(trialEndsAt);
     if (!ends) return "pro";
     return ends.getTime() > Date.now() ? "pro" : "free";
@@ -119,12 +124,14 @@ export function resolveSubscription(profile: ProfileLike): ResolvedSubscription 
   const tier = resolveTier(
     trialExpired ? "free" : rawStatus,
     profile?.trial_ends_at,
+    profile?.email,
   );
 
+  const holdQaTrial = isLongLivedQaTrialEmail(profile?.email);
   const isTrialing =
     !trialExpired &&
     rawStatus === "trialing" &&
-    Boolean(trialEndsAt && trialEndsAt.getTime() > Date.now());
+    (holdQaTrial || Boolean(trialEndsAt && trialEndsAt.getTime() > Date.now()));
 
   const isPaidPro =
     (rawStatus === "pro" || rawStatus === "active" || rawStatus === "pro_heavy") &&

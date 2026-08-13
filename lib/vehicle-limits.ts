@@ -50,7 +50,7 @@ export async function getVehicleQuota(userId: string): Promise<VehicleQuota> {
       ? Promise.resolve({ data: null })
       : admin
           .from("profiles")
-          .select("subscription_status, trial_ends_at, stripe_subscription_id")
+          .select("email, subscription_status, trial_ends_at, stripe_subscription_id")
           .eq("id", userId)
           .maybeSingle(),
     admin

@@ -117,4 +117,20 @@ describe("trial expiry → free entitlements", () => {
     expect(r.entitlements.playbookRunsPerMonth).toBe(5);
     expect(shopReportLimitForPlan({ tier: r.tier, isTrialing: r.isTrialing })).toBe(3);
   });
+
+  it("primary QA email keeps Pro Trial even when trial_ends_at is past", () => {
+    const ends = new Date(Date.now() - 60_000).toISOString();
+    const profile = {
+      email: "18565006079@163.com",
+      subscription_status: "trialing" as const,
+      trial_ends_at: ends,
+    };
+    expect(isTrialWindowExpired(profile)).toBe(false);
+    const r = resolveSubscription(profile);
+    expect(r.isTrialing).toBe(true);
+    expect(r.isFree).toBe(false);
+    expect(r.isPro).toBe(true);
+    expect(r.entitlements.maxVehicles).toBe(5);
+    expect(shopReportLimitForPlan({ tier: r.tier, isTrialing: r.isTrialing })).toBe(30);
+  });
 });

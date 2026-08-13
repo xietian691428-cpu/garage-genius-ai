@@ -44,8 +44,9 @@ function needsMonthlyReset(resetDateIso: string): boolean {
 export function planFromSubscriptionStatus(
   status: SubscriptionStatus | string | null | undefined,
   trialEndsAt?: string | null,
+  email?: string | null,
 ): TokenPlan {
-  return resolveTier(status, trialEndsAt);
+  return resolveTier(status, trialEndsAt, email);
 }
 
 function computeAvailability(
@@ -91,13 +92,14 @@ export const tokenService = {
     const admin = createSupabaseAdmin();
     const { data } = await admin
       .from("profiles")
-      .select("subscription_status, trial_ends_at")
+      .select("email, subscription_status, trial_ends_at")
       .eq("id", userId)
       .maybeSingle();
 
     return planFromSubscriptionStatus(
       data?.subscription_status,
       data?.trial_ends_at,
+      data?.email,
     );
   },
 

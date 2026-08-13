@@ -51,7 +51,7 @@ export async function resolveUserEntitlements(userId: string): Promise<{
   const { data } = await admin
     .from("profiles")
     .select(
-      "subscription_status, trial_ends_at, stripe_subscription_id, created_at",
+      "email, subscription_status, trial_ends_at, stripe_subscription_id, created_at",
     )
     .eq("id", userId)
     .maybeSingle();

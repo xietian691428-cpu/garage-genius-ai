@@ -82,7 +82,7 @@ export async function getShopReportQuota(
   const admin = createSupabaseAdmin();
   const { data: profile } = await admin
     .from("profiles")
-    .select("subscription_status, trial_ends_at, stripe_subscription_id")
+    .select("email, subscription_status, trial_ends_at, stripe_subscription_id")
     .eq("id", userId)
     .maybeSingle();
 
