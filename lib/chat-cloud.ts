@@ -52,6 +52,33 @@ function rowToMessage(row: ChatMessageRow): ChatMessage {
   };
 }
 
+export function hasPersistedChatTurns(
+  messages: ChatMessage[] | null | undefined,
+): boolean {
+  return Boolean(messages?.some((m) => m.id !== "welcome"));
+}
+
+/** Pick cloud vs local cache so a WebView wipe or a failed fetch cannot blank history. */
+export function resolveLoadedChat(input: {
+  cloud: ChatMessage[] | null;
+  local: ChatMessage[] | null;
+  cloudFailed: boolean;
+  welcome: ChatMessage;
+}): { messages: ChatMessage[]; skipPersist: boolean; source: "cloud" | "local" | "welcome" } {
+  if (!input.cloudFailed && hasPersistedChatTurns(input.cloud)) {
+    return { messages: input.cloud as ChatMessage[], skipPersist: true, source: "cloud" };
+  }
+  if (hasPersistedChatTurns(input.local)) {
+    return {
+      messages: input.local as ChatMessage[],
+      // Mirror cache → cloud (save is a no-op / retry if the network is still down).
+      skipPersist: false,
+      source: "local",
+    };
+  }
+  return { messages: [input.welcome], skipPersist: true, source: "welcome" };
+}
+
 function trimForPlan(messages: ChatMessage[], isPro: boolean): ChatMessage[] {
   const limit = chatHistoryLimit(isPro);
   return messages.slice(-limit);

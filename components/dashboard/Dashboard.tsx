@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -176,6 +176,10 @@ export default function Dashboard({
   const [showAnnualUpgrade, setShowAnnualUpgrade] = useState(false);
   const [manualDesc, setManualDesc] = useState("");
   const [vitalsHistory, setVitalsHistory] = useState<VehicleVitalsRow[]>([]);
+  const pendingManualVitalsRef = useRef<VehicleVitals | null>(null);
+  const vitalsCloudSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const loadVitalsHistory = useCallback(async (vehicleId: string) => {
     const rows = await vehicleVitalsCloud.listRecent(vehicleId, 5);
@@ -234,6 +238,10 @@ export default function Dashboard({
     })();
     return () => {
       cancelled = true;
+      if (vitalsCloudSyncTimerRef.current) {
+        clearTimeout(vitalsCloudSyncTimerRef.current);
+        vitalsCloudSyncTimerRef.current = null;
+      }
     };
   }, [vehicle?.id, loadVitalsHistory, loadInbox]);
 
@@ -312,8 +320,30 @@ export default function Dashboard({
       };
       setVitals(stamped);
       saveVehicleVitals(stamped);
+      if (!vehicle) return;
+      pendingManualVitalsRef.current = stamped;
+      if (vitalsCloudSyncTimerRef.current) {
+        clearTimeout(vitalsCloudSyncTimerRef.current);
+      }
+      const vehicleId = vehicle.id;
+      const snapshotVehicle = vehicle;
+      vitalsCloudSyncTimerRef.current = setTimeout(() => {
+        const latest = pendingManualVitalsRef.current;
+        if (!latest) return;
+        void vehicleVitalsCloud
+          .insertSnapshot({
+            vehicle: snapshotVehicle,
+            fluids: latest.fluids,
+            codes: latest.codes,
+            healthScore: computeHealthScore(snapshotVehicle, latest),
+            source: "manual",
+          })
+          .then(() => {
+            void loadVitalsHistory(vehicleId);
+          });
+      }, 1600);
     },
-    [vehicle],
+    [vehicle, loadVitalsHistory],
   );
 
   const health = useMemo(() => {

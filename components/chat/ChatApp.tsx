@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { ChatMessage, VehicleInfo } from "@/lib/types/chat";
 import { createWelcomeMessage } from "@/lib/constants";
-import { saveCurrentVehicleId } from "@/lib/chat-storage";
-import { chatCloudService } from "@/lib/chat-cloud";
+import { loadChatMessages, saveCurrentVehicleId } from "@/lib/chat-storage";
+import { chatCloudService, resolveLoadedChat } from "@/lib/chat-cloud";
 import { FREE_CHAT_MESSAGE_LIMIT } from "@/lib/history-limits";
 import { formatVehicleYmmMarket } from "@/lib/types/vehicle-market";
 import VehicleManager from "../vehicles/VehicleManager";
@@ -187,20 +187,27 @@ export default function ChatApp({
     void (async () => {
       setReady(false);
       skipNextPersistRef.current = true;
+      let cloud: ChatMessage[] | null = null;
+      let cloudFailed = false;
       try {
-        const cloud = await chatCloudService.load(vehicleId, { isPro });
-        if (cancelled || loadGenRef.current !== gen) return;
-        setMessages(cloud ?? [createWelcomeMessage()]);
+        cloud = await chatCloudService.load(vehicleId, { isPro });
       } catch (err) {
-        console.warn("[ChatApp] cloud load failed, welcome only:", err);
-        if (cancelled || loadGenRef.current !== gen) return;
-        setMessages([createWelcomeMessage()]);
-      } finally {
-        if (!cancelled && loadGenRef.current === gen) {
-          loadedKeyRef.current = loadKey;
-          setAutoSpeak(loadAutoSpeakPreference(true));
-          setReady(true);
-        }
+        cloudFailed = true;
+        console.warn("[ChatApp] cloud load failed, using local cache:", err);
+      }
+      if (cancelled || loadGenRef.current !== gen) return;
+      const resolved = resolveLoadedChat({
+        cloud,
+        local: loadChatMessages(vehicleId),
+        cloudFailed,
+        welcome: createWelcomeMessage(),
+      });
+      skipNextPersistRef.current = resolved.skipPersist;
+      setMessages(resolved.messages);
+      if (!cancelled && loadGenRef.current === gen) {
+        loadedKeyRef.current = loadKey;
+        setAutoSpeak(loadAutoSpeakPreference(true));
+        setReady(true);
       }
     })();
 

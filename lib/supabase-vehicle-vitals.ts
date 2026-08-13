@@ -9,6 +9,7 @@ import {
   levelFromValue,
   loadVehicleVitals,
   saveVehicleVitals,
+  shouldKeepLocalVitals,
   type DiagnosticCode,
   type FluidKey,
   type FluidStatus,
@@ -296,6 +297,18 @@ export const vehicleVitalsCloud = {
       }))
       .reverse()
       .slice(-30);
+
+    if (shouldKeepLocalVitals(localFallback, rows[0].snapshot_at)) {
+      const merged: VehicleVitals = {
+        ...localFallback,
+        healthHistory:
+          localFallback.healthHistory.length >= healthHistory.length
+            ? localFallback.healthHistory
+            : healthHistory,
+      };
+      saveVehicleVitals(merged);
+      return merged;
+    }
 
     const next = this.snapshotToLocal(vehicleId, rows[0], healthHistory);
     saveVehicleVitals(next);

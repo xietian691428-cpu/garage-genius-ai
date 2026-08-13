@@ -1,6 +1,7 @@
 /**
  * Per-vehicle dashboard vitals — fluids, DTCs, health history.
- * Persisted in localStorage (per vehicle). Ready to sync to cloud later.
+ * localStorage is a cache; Dashboard also mirrors edits to `vehicle_vitals`
+ * so iOS/Android WebView wipes do not drop the last saved snapshot.
  */
 
 import type { VehicleInfo } from "@/lib/types/chat";
@@ -94,6 +95,30 @@ export function loadVehicleVitals(vehicleId: string): VehicleVitals {
   } catch {
     return createEmptyVitals(vehicleId);
   }
+}
+
+/** True when the cache holds user-entered fluids, codes, or scores (not a blank template). */
+export function vitalsHasUserContent(vitals: VehicleVitals): boolean {
+  if (vitals.codes.length > 0) return true;
+  if (vitals.healthHistory.length > 0) return true;
+  return vitals.fluids.some(
+    (f) => f.value.trim() !== "" && f.value !== "Not checked",
+  );
+}
+
+/**
+ * Keep unsynced local edits when they are newer than the cloud snapshot.
+ * Empty templates after a WebView wipe must NOT win — their `updatedAt` is "now".
+ */
+export function shouldKeepLocalVitals(
+  local: VehicleVitals,
+  cloudSnapshotAt: string,
+): boolean {
+  if (!vitalsHasUserContent(local)) return false;
+  const cloudAt = Date.parse(cloudSnapshotAt);
+  const localAt = Date.parse(local.updatedAt || "");
+  if (!Number.isFinite(cloudAt) || !Number.isFinite(localAt)) return false;
+  return localAt > cloudAt;
 }
 
 export function saveVehicleVitals(vitals: VehicleVitals): void {
