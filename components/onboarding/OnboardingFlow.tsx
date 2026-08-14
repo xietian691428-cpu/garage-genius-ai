@@ -69,7 +69,7 @@ const FEATURES = [
   {
     icon: MessageSquare,
     title: "Hands-free AI coach",
-    body: "Ask questions while you work. Pro adds mic + spoken replies under the car.",
+    body: "Ask questions while you work. Voice coaching is available on accounts that include it.",
   },
   {
     icon: Package,

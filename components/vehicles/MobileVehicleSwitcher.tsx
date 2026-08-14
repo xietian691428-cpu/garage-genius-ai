@@ -7,6 +7,7 @@ import { VehicleInfo } from "@/lib/types/chat";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import VehicleList from "./VehicleList";
 import AddVehicleModal from "./AddVehicleModal";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 
 interface Props {
   open: boolean;
@@ -59,8 +60,17 @@ export default function MobileVehicleSwitcher({
 
   const limitLabel =
     typeof maxVehicles === "number"
-      ? t("vehicles.planLimit", { count: maxVehicles })
-      : t("vehicles.limitReached");
+      ? t(
+          hideStorePurchaseUi()
+            ? "vehicles.planLimitStore"
+            : "vehicles.planLimit",
+          { count: maxVehicles },
+        )
+      : t(
+          hideStorePurchaseUi()
+            ? "vehicles.limitReachedStore"
+            : "vehicles.limitReached",
+        );
 
   return (
     <>

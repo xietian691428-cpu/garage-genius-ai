@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import LegalDocLayout from "@/components/legal/LegalDocLayout";
+import SubscriptionsTermsList from "@/components/legal/SubscriptionsTermsList";
 
 export const metadata: Metadata = {
   title: "Terms of Service — Garage Genius AI",
@@ -77,28 +78,7 @@ export default function TermsPage() {
         <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
           5. Subscriptions &amp; billing
         </h2>
-        <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>
-            New accounts receive a limited Pro trial as described in-app / on
-            Pricing (typically 14 days, no card required to start).
-          </li>
-          <li>
-            Paid plans renew until cancelled. Manage or cancel via Stripe
-            Customer Portal (Settings → Manage billing) or applicable store
-            billing if you subscribed through an app store.
-          </li>
-          <li>
-            Token packs and plan limits are described on Pricing / Recharge.
-            Fees are generally non-refundable except where required by law or
-            our refund policy / support process.
-          </li>
-          <li>
-            Deleting your account cancels access immediately; we attempt to stop
-            recurring Stripe subscriptions tied to the account, but you should
-            also confirm cancellation in the Customer Portal or store if a
-            charge continues.
-          </li>
-        </ul>
+        <SubscriptionsTermsList />
       </section>
 
       <section>

@@ -11,8 +11,14 @@ import {
 import { TOKEN_RECHARGE_PACKS } from "@/lib/types/tokens";
 import TokenDisplay from "@/components/ui/token-display";
 import { TokenUsageProvider } from "@/hooks/useTokenUsage";
+import {
+  hideStorePurchaseUi,
+  NATIVE_NO_IAP_MESSAGE,
+  NATIVE_WEBSITE_MANAGE_HINT,
+} from "@/lib/native-platform";
 
 export default function RechargePage() {
+  const storeSafe = hideStorePurchaseUi();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -53,11 +59,12 @@ export default function RechargePage() {
         </Link>
 
         <h1 className="text-3xl font-bold text-white sm:text-4xl">
-          Buy More Tokens
+          {storeSafe ? "AI quota" : "Buy More Tokens"}
         </h1>
         <p className="mt-2 text-sm text-slate-400">
-          Top up when your monthly included quota runs out. Pricing follows
-          PROJECT.md (~$0.06–$0.08 per 1k with volume packs).
+          {storeSafe
+            ? NATIVE_NO_IAP_MESSAGE
+            : "Top up when your monthly included quota runs out. Pricing follows PROJECT.md (~$0.06–$0.08 per 1k with volume packs)."}
         </p>
 
         <div className="mt-6">
@@ -75,6 +82,7 @@ export default function RechargePage() {
           </p>
         )}
 
+        {!storeSafe && (
         <div className="mt-8 grid gap-4">
           {TOKEN_RECHARGE_PACKS.map((option) => {
             const per1k = (option.priceUsd / (option.tokens / 1000)).toFixed(3);
@@ -116,10 +124,17 @@ export default function RechargePage() {
             );
           })}
         </div>
+        )}
 
         <p className="mt-8 text-center text-xs text-slate-500">
+          {storeSafe
+            ? NATIVE_WEBSITE_MANAGE_HINT
+            : (
+              <>
           Payments are processed by Stripe. Tokens are credited after{" "}
           <code className="text-slate-400">checkout.session.completed</code>.
+              </>
+            )}
         </p>
       </div>
     </div>

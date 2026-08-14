@@ -305,7 +305,9 @@
   },
   "vehicles": {
     "planLimit": "Plan limit: {{count}} vehicle(s). Upgrade for more.",
+    "planLimitStore": "Plan limit: {{count}} vehicle(s).",
     "limitReached": "Vehicle limit reached. Upgrade for more.",
+    "limitReachedStore": "Vehicle limit reached.",
     "couldNotSave": "Could not save vehicle."
   },
   "shopReport": {
@@ -341,6 +343,7 @@
     "remainingThisMonth": "{{remaining}} of {{limit}} shop reports left this month (UTC).",
     "unlimited": "Unlimited shop reports on your plan.",
     "limitReached": "Monthly shop report limit reached. Upgrade for unlimited reports, or wait until next month.",
+    "limitReachedStore": "Monthly shop report limit reached. Try again next month.",
     "upgradeCta": "Upgrade for unlimited",
     "quotaUnavailable": "Could not verify shop report quota.",
     "panelSignIn": "Sign in to view shop reports.",

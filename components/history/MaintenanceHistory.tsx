@@ -9,6 +9,7 @@ import { maintenanceService } from "@/lib/maintenance-records";
 import { FREE_MAINTENANCE_PREVIEW } from "@/lib/history-limits";
 import { useSubscription } from "@/hooks/useSubscription";
 import UpgradeModal from "@/components/ui/UpgradeModal";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 import ReceiptConfirmModal from "@/components/history/ReceiptConfirmModal";
 import {
   computeVehicleFamiliarity,
@@ -193,18 +194,22 @@ export default function MaintenanceHistory({
 
       {isFree && (
         <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          Free plan shows the latest {FREE_MAINTENANCE_PREVIEW} records
-          {truncated ? ` (${total} total on file)` : ""}. Upgrade to Pro for full
-          history and multi-vehicle filtering — cancel anytime.
-          <div className="mt-2">
-            <button
-              type="button"
-              onClick={() => setShowUpgrade(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-500 px-3 py-1.5 text-xs font-semibold text-black hover:bg-cyan-400"
-            >
-              Upgrade to Pro
-            </button>
-          </div>
+          This account shows the latest {FREE_MAINTENANCE_PREVIEW} records
+          {truncated ? ` (${total} total on file)` : ""}.
+          {hideStorePurchaseUi()
+            ? " Full history isn’t included with the current account."
+            : " Upgrade to Pro for full history and multi-vehicle filtering — cancel anytime."}
+          {!hideStorePurchaseUi() && (
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => setShowUpgrade(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-500 px-3 py-1.5 text-xs font-semibold text-black hover:bg-cyan-400"
+              >
+                Upgrade to Pro
+              </button>
+            </div>
+          )}
         </div>
       )}
 

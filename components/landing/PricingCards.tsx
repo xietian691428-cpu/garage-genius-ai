@@ -16,8 +16,9 @@ import {
   toUserFacingBillingError,
 } from "@/lib/billing-errors";
 import {
-  getBillingMode,
-  nativeUpgradeBlockedMessage,
+  hideStorePurchaseUi,
+  NATIVE_NO_IAP_MESSAGE,
+  NATIVE_WEBSITE_MANAGE_HINT,
 } from "@/lib/native-platform";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
@@ -84,7 +85,7 @@ export default function PricingCards({
   );
   const [busyPlan, setBusyPlan] = useState<PaidPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const nativeIapRequired = getBillingMode() === "native_iap_required";
+  const storeSafe = hideStorePurchaseUi();
 
   const yearlySavings = useMemo(() => {
     const pro = PLAN_ENTITLEMENTS.pro;
@@ -108,8 +109,7 @@ export default function PricingCards({
       return;
     }
 
-    if (nativeIapRequired) {
-      setError(nativeUpgradeBlockedMessage());
+    if (storeSafe) {
       return;
     }
 
@@ -142,9 +142,6 @@ export default function PricingCards({
       if (tier === "free" && user) return "Open garage";
       return user ? "Continue free" : "Start free";
     }
-    if (nativeIapRequired) {
-      return "Available on web";
-    }
     if (planTier === "pro" && isTrialing) return "Keep Pro after trial";
     if (planTier === "pro" && isPro && !isHeavy) return "Manage billing";
     if (planTier === "pro_heavy" && isHeavy) return "Manage billing";
@@ -153,20 +150,31 @@ export default function PricingCards({
     return planTier === "pro_heavy" ? "Upgrade to Heavy" : "Start Pro";
   };
 
+  if (storeSafe) {
+    return (
+      <div className={className}>
+        <div className="rounded-3xl border border-slate-700 bg-[#111827] px-5 py-6">
+          <p className="text-sm font-semibold text-white">Account plans</p>
+          <p className="mt-2 text-sm leading-relaxed text-slate-400">
+            {NATIVE_NO_IAP_MESSAGE}
+          </p>
+          <p className="mt-3 text-xs leading-relaxed text-slate-500">
+            {NATIVE_WEBSITE_MANAGE_HINT}
+          </p>
+          <Link
+            href={appHref}
+            className="mt-5 inline-flex rounded-2xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400"
+          >
+            {user ? "Open garage" : "Sign in"}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={className}>
       <TrialStatusBanner resolved={resolved} loading={subLoading} className="mb-6" />
-
-      {nativeIapRequired && (
-        <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-          <p className="text-sm font-semibold text-amber-200">
-            Store app billing
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-slate-400">
-            {nativeUpgradeBlockedMessage()}
-          </p>
-        </div>
-      )}
 
       {contextCopy && (
         <div className="mb-6 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3">

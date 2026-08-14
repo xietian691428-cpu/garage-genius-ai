@@ -258,7 +258,7 @@ export const userVehiclesService = {
           (typeof data.maxVehicles === "number"
             ? `Plan limit: ${data.maxVehicles} vehicle${
                 data.maxVehicles === 1 ? "" : "s"
-              }. Upgrade for more.`
+              }.`
             : "Could not save vehicle."),
       ) as Error & { code?: string; status?: number };
       err.code = data.code;

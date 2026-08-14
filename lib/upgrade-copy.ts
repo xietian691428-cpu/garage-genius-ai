@@ -119,3 +119,89 @@ export function upgradeCopy(reason: UpgradeReason): {
       };
   }
 }
+
+/** Store-shell paywall copy — no trial, no prices, no purchase CTA. */
+export function nativeAccountLimitsCopy(reason: UpgradeReason): {
+  title: string;
+  message: string;
+  bullets: string[];
+} {
+  const bullets = [
+    "Included features stay available on your current account",
+    "This app does not sell subscriptions",
+    "No trial signup or paid upgrade in the app",
+  ];
+  const title = "Account limits";
+  switch (reason) {
+    case "playbook":
+      return {
+        title,
+        message:
+          "You’ve used the included coach guide starts for this period. Additional guides are not sold in this app.",
+        bullets,
+      };
+    case "annual":
+      return {
+        title,
+        message:
+          "The annual vehicle health PDF isn’t included with your current account.",
+        bullets,
+      };
+    case "history":
+      return {
+        title,
+        message:
+          "Full maintenance history isn’t included with your current account. A short preview stays available.",
+        bullets,
+      };
+    case "tags":
+      return {
+        title,
+        message:
+          "Custom profile tags aren’t included with your current account.",
+        bullets,
+      };
+    case "voice":
+      return {
+        title,
+        message:
+          "Voice coaching isn’t included with your current account. Text chat stays available.",
+        bullets,
+      };
+    case "photo":
+      return {
+        title,
+        message:
+          "You’ve reached today’s photo-diagnose limit for this account.",
+        bullets,
+      };
+    case "tokens":
+      return {
+        title,
+        message:
+          "This account’s monthly AI quota is used up. Extra quota is not sold in this app.",
+        bullets,
+      };
+    case "vehicles":
+      return {
+        title,
+        message:
+          "This account has reached its vehicle limit. Existing vehicles stay readable.",
+        bullets,
+      };
+    case "shop_report":
+      return {
+        title,
+        message:
+          "This account has reached its monthly shop-report limit. Try again next month.",
+        bullets,
+      };
+    default:
+      return {
+        title,
+        message:
+          "This feature isn’t included with your current account. The app does not offer trial signup or paid upgrades.",
+        bullets,
+      };
+  }
+}

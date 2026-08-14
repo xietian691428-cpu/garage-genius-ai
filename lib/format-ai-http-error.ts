@@ -44,7 +44,7 @@ export function formatAiHttpError(input: {
     return (
       input.reportLimitFallback ||
       server ||
-      "Monthly shop report limit reached. Upgrade for unlimited reports, or wait until next month."
+      "Monthly shop report limit reached. Try again next month."
     );
   }
 
@@ -52,7 +52,7 @@ export function formatAiHttpError(input: {
     return (
       server ||
       input.fallback ||
-      "Insufficient tokens this month. Top up or upgrade, or wait until next month."
+      "Insufficient tokens this month. Try again next month."
     );
   }
 

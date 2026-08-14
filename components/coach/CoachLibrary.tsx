@@ -48,6 +48,7 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import type { PlaybookQuota } from "@/lib/playbook-limits";
 import { safetyTierForPlaybook } from "@/lib/safety-tier";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 import { vehicleHasModifiedTag } from "@/lib/insurance-tips";
 import { useSafetyAdviceAck } from "@/hooks/useSafetyAdviceAck";
 import SafetyTierTip from "@/components/legal/SafetyTierTip";
@@ -561,13 +562,14 @@ export default function CoachLibrary({
         {isFree && (
           <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-700 bg-slate-900/50 px-4 py-3">
             <p className="text-xs text-slate-400">
-              Free includes {quota?.limit ?? 5} playbook starts every 30 days
-              from signup
+              This account includes {quota?.limit ?? 5} playbook starts every 30
+              days from signup
               {quota && !quota.unlimited
                 ? ` · ${quota.remaining ?? 0} remaining this period`
                 : ""}
-              . Upgrade for unlimited guides, custom tags, and annual health
-              report — cancel anytime.
+              {hideStorePurchaseUi()
+                ? "."
+                : ". Upgrade for unlimited guides, custom tags, and annual health report — cancel anytime."}
             </p>
             <UpgradeButton size="sm" label="Upgrade to Pro" />
           </div>

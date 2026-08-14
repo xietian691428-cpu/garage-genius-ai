@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTokenUsage } from "@/hooks/useTokenUsage";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 
 const PLAN_LABEL: Record<string, string> = {
   free: "Free",
@@ -51,31 +52,43 @@ export default function TokenDisplay() {
         />
       </div>
 
-      {usage.unlimited ? (
+          {usage.unlimited ? (
         <p className="mt-2 text-xs text-slate-500">
           Internal test account — AI quota is not deducted.
         </p>
       ) : isExhausted ? (
         <p className="mt-2 text-xs text-red-300">
-          Monthly quota used up.{" "}
-          <Link href="/recharge" className="underline hover:text-red-200">
-            Buy more tokens
-          </Link>
+          Monthly quota used up.
+          {!hideStorePurchaseUi() && (
+            <>
+              {" "}
+              <Link href="/recharge" className="underline hover:text-red-200">
+                Buy more tokens
+              </Link>
+            </>
+          )}
         </p>
       ) : isNearLimit ? (
         <p className="mt-2 text-xs text-amber-400">
-          Running low —{" "}
-          <Link href="/recharge" className="underline hover:text-amber-300">
-            top up
-          </Link>{" "}
-          or upgrade.
+          Running low
+          {!hideStorePurchaseUi() && (
+            <>
+              {" "}
+              —{" "}
+              <Link href="/recharge" className="underline hover:text-amber-300">
+                top up
+              </Link>{" "}
+              or upgrade.
+            </>
+          )}
+          .
         </p>
       ) : !usage.signedIn ? (
         <p className="mt-2 text-xs text-slate-500">
           Sign in to track usage across devices. Free plan includes{" "}
           {usage.limit.toLocaleString()} tokens / month.
         </p>
-      ) : (
+      ) : hideStorePurchaseUi() ? null : (
         <p className="mt-2 text-xs text-slate-500">
           <Link href="/recharge" className="text-cyan-400 hover:underline">
             Buy more tokens

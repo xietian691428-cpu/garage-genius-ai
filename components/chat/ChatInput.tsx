@@ -25,6 +25,7 @@ import UpgradeModal, {
   type UpgradeReason,
 } from "@/components/ui/UpgradeModal";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 import CameraCapture from "@/components/chat/CameraCapture";
 import DtcEntryBar from "@/components/chat/DtcEntryBar";
 import { compressImageDataUrl } from "@/lib/image";
@@ -506,17 +507,20 @@ export default function ChatInput({
 
       {isFree && tokensExhausted && (
         <p className="mb-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs text-amber-200">
-          Free tokens exhausted.{" "}
-          <button
-            type="button"
-            className="font-semibold underline"
-            onClick={() =>
-              showUpgrade("tokens")
-            }
-          >
-            Upgrade
-          </button>{" "}
-          to keep chatting.
+          Monthly AI quota used up.
+          {!hideStorePurchaseUi() && (
+            <>
+              {" "}
+              <button
+                type="button"
+                className="font-semibold underline"
+                onClick={() => showUpgrade("tokens")}
+              >
+                Upgrade
+              </button>{" "}
+              to keep chatting.
+            </>
+          )}
         </p>
       )}
 
@@ -554,7 +558,7 @@ export default function ChatInput({
               isListening
                 ? "Listening… speak now (text appears for review)"
                 : tokensExhausted && isFree
-                  ? "Token quota used — upgrade to continue…"
+                  ? "Token quota used — try again next month…"
                   : images.length > 0
                     ? "Optional note about these photos…"
                     : "Ask about your car… (Enter send · Shift+Enter newline)"

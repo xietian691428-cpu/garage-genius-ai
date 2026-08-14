@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useTokenUsage } from "@/hooks/useTokenUsage";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 
 const TABS = [
   { id: "dashboard", label: "Home", icon: Home },
@@ -33,6 +34,7 @@ interface Props {
 
 function TokenStrip() {
   const { usage, isExhausted, isNearLimit } = useTokenUsage();
+  const storeSafe = hideStorePurchaseUi();
   const barWidth = usage.unlimited
     ? 100
     : Math.min(100, Math.max(0, usage.percentLeft));
@@ -41,6 +43,13 @@ function TokenStrip() {
     : isNearLimit
       ? "bg-amber-400"
       : "bg-cyan-400";
+  const label = isExhausted
+    ? storeSafe
+      ? "Quota used"
+      : "Recharge"
+    : usage.unlimited
+      ? "Unlimited"
+      : `${Math.round(usage.percentLeft)}% left`;
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -51,12 +60,18 @@ function TokenStrip() {
           style={{ width: `${barWidth}%` }}
         />
       </div>
-      <Link
-        href="/recharge"
-        className="shrink-0 text-[10px] font-medium text-cyan-400"
-      >
-        {isExhausted ? "Recharge" : usage.unlimited ? "Unlimited" : `${Math.round(usage.percentLeft)}% left`}
-      </Link>
+      {storeSafe ? (
+        <span className="shrink-0 text-[10px] font-medium text-slate-400">
+          {label}
+        </span>
+      ) : (
+        <Link
+          href="/recharge"
+          className="shrink-0 text-[10px] font-medium text-cyan-400"
+        >
+          {label}
+        </Link>
+      )}
     </div>
   );
 }

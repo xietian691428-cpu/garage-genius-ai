@@ -6,6 +6,7 @@ import { VehicleInfo } from "@/lib/types/chat";
 import VehiclePanel from "@/components/chat/VehiclePanel";
 import VehicleList from "./VehicleList";
 import AddVehicleModal from "./AddVehicleModal";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 
 interface Props {
   vehicles: VehicleInfo[];
@@ -37,8 +38,17 @@ export default function VehicleManager({
 
   const limitLabel =
     typeof maxVehicles === "number"
-      ? t("vehicles.planLimit", { count: maxVehicles })
-      : t("vehicles.limitReached");
+      ? t(
+          hideStorePurchaseUi()
+            ? "vehicles.planLimitStore"
+            : "vehicles.planLimit",
+          { count: maxVehicles },
+        )
+      : t(
+          hideStorePurchaseUi()
+            ? "vehicles.limitReachedStore"
+            : "vehicles.limitReached",
+        );
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">

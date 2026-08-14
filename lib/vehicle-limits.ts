@@ -21,7 +21,7 @@ export class VehicleLimitError extends Error {
 
   constructor(maxVehicles: number, currentCount: number) {
     super(
-      `Plan limit: ${maxVehicles} vehicle${maxVehicles === 1 ? "" : "s"}. Upgrade for more.`,
+      `Plan limit: ${maxVehicles} vehicle${maxVehicles === 1 ? "" : "s"}.`,
     );
     this.name = "VehicleLimitError";
     this.maxVehicles = maxVehicles;

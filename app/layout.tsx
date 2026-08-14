@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(getAppBaseUrl()),
   title: "Garage Genius AI — DIY Auto Repair Coach",
   description:
-    "AI diagnosis, vehicle dashboard, parts recommendations, and Pro / trial voice coaching for US & EU DIY car owners. Free to start with a 14-day Pro trial.",
+    "AI diagnosis, vehicle dashboard, parts recommendations, and voice coaching for US & EU DIY car owners.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "48x48" },

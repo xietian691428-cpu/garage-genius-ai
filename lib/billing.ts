@@ -30,11 +30,9 @@ async function authHeaders(): Promise<HeadersInit> {
   };
 }
 
-function assertWebStripeAllowed(action: string): void {
+function assertWebStripeAllowed(_action: string): void {
   if (getBillingMode() === "web_stripe") return;
-  throw new Error(
-    `${nativeUpgradeBlockedMessage()} (${action} is unavailable in the store app until In-App Purchase is enabled.)`,
-  );
+  throw new Error(nativeUpgradeBlockedMessage());
 }
 
 export async function startCheckout(

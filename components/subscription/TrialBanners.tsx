@@ -7,6 +7,7 @@ import {
   formatTrialEndDate,
   type ResolvedSubscription,
 } from "@/lib/subscription";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 
 type TrialStatusBannerProps = {
   resolved: ResolvedSubscription;
@@ -14,12 +15,13 @@ type TrialStatusBannerProps = {
   className?: string;
 };
 
-/** Active trial countdown — for Pricing and account surfaces. */
+/** Active trial countdown — web Pricing / account only. Hidden in store shells. */
 export function TrialStatusBanner({
   resolved,
   loading,
   className = "",
 }: TrialStatusBannerProps) {
+  if (hideStorePurchaseUi()) return null;
   if (loading || !resolved.isTrialing) return null;
 
   const countdown = formatTrialCountdown(resolved);
@@ -59,8 +61,9 @@ type TrialEndedModalProps = {
   onClose: () => void;
 };
 
-/** Friendly upgrade prompt after trial auto-downgrades to Free. */
+/** Friendly upgrade prompt after trial auto-downgrades to Free. Hidden in store shells. */
 export function TrialEndedModal({ open, onClose }: TrialEndedModalProps) {
+  if (hideStorePurchaseUi()) return null;
   if (!open) return null;
 
   return (

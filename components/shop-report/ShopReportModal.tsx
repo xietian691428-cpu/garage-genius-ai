@@ -22,6 +22,10 @@ import {
   exportShopReportPdf,
 } from "@/lib/shop-report/export-pdf";
 import { formatAiHttpError } from "@/lib/format-ai-http-error";
+import {
+  hideStorePurchaseUi,
+  NATIVE_ACCOUNT_LIMITS_TITLE,
+} from "@/lib/native-platform";
 
 type ShopReportQuotaState = {
   limit: number | null;
@@ -189,7 +193,13 @@ export default function ShopReportModal({
         const code = (data.code || "").toUpperCase();
         if (code === "REPORT_LIMIT_REACHED") {
           setLimitReached(true);
-          throw new Error(t("shopReport.limitReached"));
+          throw new Error(
+            t(
+              hideStorePurchaseUi()
+                ? "shopReport.limitReachedStore"
+                : "shopReport.limitReached",
+            ),
+          );
         }
         throw new Error(
           formatAiHttpError({
@@ -198,7 +208,11 @@ export default function ShopReportModal({
             error: data.error,
             fallback: t("shopReport.generateFailed"),
             rateLimitFallback: t("ai.rateLimited"),
-            reportLimitFallback: t("shopReport.limitReached"),
+            reportLimitFallback: t(
+              hideStorePurchaseUi()
+                ? "shopReport.limitReachedStore"
+                : "shopReport.limitReached",
+            ),
           }),
         );
       }
@@ -420,12 +434,19 @@ export default function ShopReportModal({
           <div className="mt-3 space-y-2" role="alert">
             <p className="text-sm text-rose-400">{error}</p>
             {limitReached ? (
-              <Link
-                href="/pricing?from=shop_report"
-                className="inline-flex text-sm font-medium text-cyan-400 hover:underline"
-              >
-                {t("shopReport.upgradeCta")}
-              </Link>
+              hideStorePurchaseUi() ? (
+                <p className="text-sm text-slate-400">
+                  {NATIVE_ACCOUNT_LIMITS_TITLE}. This app does not sell extra
+                  reports.
+                </p>
+              ) : (
+                <Link
+                  href="/pricing?from=shop_report"
+                  className="inline-flex text-sm font-medium text-cyan-400 hover:underline"
+                >
+                  {t("shopReport.upgradeCta")}
+                </Link>
+              )
             ) : null}
           </div>
         )}
@@ -433,14 +454,23 @@ export default function ShopReportModal({
         {!error && quotaExhausted ? (
           <div className="mt-3 space-y-2" role="alert">
             <p className="text-sm text-rose-400">
-              {t("shopReport.limitReached")}
+              {hideStorePurchaseUi()
+                ? t("shopReport.limitReachedStore")
+                : t("shopReport.limitReached")}
             </p>
-            <Link
-              href="/pricing?from=shop_report"
-              className="inline-flex text-sm font-medium text-cyan-400 hover:underline"
-            >
-              {t("shopReport.upgradeCta")}
-            </Link>
+            {hideStorePurchaseUi() ? (
+              <p className="text-sm text-slate-400">
+                {NATIVE_ACCOUNT_LIMITS_TITLE}. Extra reports are not sold in this
+                app.
+              </p>
+            ) : (
+              <Link
+                href="/pricing?from=shop_report"
+                className="inline-flex text-sm font-medium text-cyan-400 hover:underline"
+              >
+                {t("shopReport.upgradeCta")}
+              </Link>
+            )}
           </div>
         ) : null}
 

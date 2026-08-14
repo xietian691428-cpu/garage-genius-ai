@@ -42,6 +42,7 @@ import AddVehicleModal from "@/components/vehicles/AddVehicleModal";
 import CameraCapture from "@/components/chat/CameraCapture";
 import ObdConnectModal from "@/components/obd/ObdConnectModal";
 import { useTranslation } from "react-i18next";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 import { useObdPreference } from "@/hooks/useObdPreference";
 import {
   refreshSensorsAction,
@@ -911,7 +912,14 @@ export default function Dashboard({
   const handleAddVehicle = async (next: VehicleInfo) => {
     if (!onAddVehicle) return;
     if (!features.canAddVehicle(vehicles.length)) {
-      alert(t("vehicles.planLimit", { count: features.maxVehicles }));
+      alert(
+        t(
+          hideStorePurchaseUi()
+            ? "vehicles.planLimitStore"
+            : "vehicles.planLimit",
+          { count: features.maxVehicles },
+        ),
+      );
       return;
     }
     await onAddVehicle(next);
@@ -1020,7 +1028,9 @@ export default function Dashboard({
                     ? "Building…"
                     : features.annualHealthReport
                       ? "Annual Health Report"
-                      : "Annual Report (Pro)"}
+                      : hideStorePurchaseUi()
+                        ? "Annual Report"
+                        : "Annual Report (Pro)"}
                 </button>
               </>
             )}
@@ -1041,7 +1051,12 @@ export default function Dashboard({
                 data-testid="add-vehicle-limit"
                 className="max-w-[14rem] text-xs leading-snug text-slate-500"
               >
-                {t("vehicles.planLimit", { count: features.maxVehicles })}
+                {t(
+                  hideStorePurchaseUi()
+                    ? "vehicles.planLimitStore"
+                    : "vehicles.planLimit",
+                  { count: features.maxVehicles },
+                )}
               </p>
             ) : null}
             <div className="flex items-center gap-2 text-sm text-emerald-400">

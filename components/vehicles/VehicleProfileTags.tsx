@@ -1,6 +1,7 @@
 "use client";
 
 import { Lock } from "lucide-react";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 
 /** Preset garage tags used for Coach personalization (Pro). */
 export const PROFILE_TAG_OPTIONS = [
@@ -54,7 +55,9 @@ export default function VehicleProfileTags({
       {(hint || !canEdit) && (
         <p className="mb-2 text-[11px] text-slate-500">
           {hint ||
-            "Upgrade to Pro to personalize Coach Guides with Modified, Tow, Classic, and more."}
+            (hideStorePurchaseUi()
+              ? "Custom tags aren’t included with the current account."
+              : "Upgrade to Pro to personalize Coach Guides with Modified, Tow, Classic, and more.")}
         </p>
       )}
       <div className="flex flex-wrap gap-2">

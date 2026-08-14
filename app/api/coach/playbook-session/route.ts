@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Free plan includes 5 coach playbook starts every 30 days from signup. Upgrade to Pro for unlimited guides.",
+            "Free plan includes 5 coach playbook starts every 30 days from signup.",
           code: "playbook_limit",
           reason: "playbook",
           quota: result.quota,

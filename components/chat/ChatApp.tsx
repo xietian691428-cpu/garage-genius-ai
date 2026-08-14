@@ -29,6 +29,7 @@ import type { FocusCommand } from "@/lib/types/focus";
 import type { RagKnowledgeHit } from "@/lib/types/rag";
 import { maintenanceService } from "@/lib/maintenance-records";
 import { useTranslation } from "react-i18next";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 import {
   formatMaintenanceHistoryForPrompt,
   trimMessagesForApi,
@@ -360,7 +361,14 @@ export default function ChatApp({
 
   const handleAddVehicle = async (newVehicle: VehicleInfo) => {
     if (!features.canAddVehicle(vehicles.length)) {
-      alert(t("vehicles.planLimit", { count: features.maxVehicles }));
+      alert(
+        t(
+          hideStorePurchaseUi()
+            ? "vehicles.planLimitStore"
+            : "vehicles.planLimit",
+          { count: features.maxVehicles },
+        ),
+      );
       return;
     }
 
@@ -490,7 +498,11 @@ export default function ChatApp({
             error: data.error,
             fallback: t("ai.requestFailed"),
             rateLimitFallback: t("ai.rateLimited"),
-            reportLimitFallback: t("shopReport.limitReached"),
+            reportLimitFallback: t(
+              hideStorePurchaseUi()
+                ? "shopReport.limitReachedStore"
+                : "shopReport.limitReached",
+            ),
           }),
         );
       }
@@ -687,7 +699,11 @@ export default function ChatApp({
             error: json.error,
             fallback: t("ai.requestFailed"),
             rateLimitFallback: t("ai.rateLimited"),
-            reportLimitFallback: t("shopReport.limitReached"),
+            reportLimitFallback: t(
+              hideStorePurchaseUi()
+                ? "shopReport.limitReachedStore"
+                : "shopReport.limitReached",
+            ),
           }),
         );
       }

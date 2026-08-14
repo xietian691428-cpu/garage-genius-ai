@@ -7,8 +7,14 @@ import PricingCards from "@/components/landing/PricingCards";
 import { useSubscription } from "@/hooks/useSubscription";
 import { TrialEndedModal } from "@/components/subscription/TrialBanners";
 import { TRIAL_DAYS } from "@/lib/subscription";
+import {
+  hideStorePurchaseUi,
+  NATIVE_NO_IAP_MESSAGE,
+  NATIVE_WEBSITE_MANAGE_HINT,
+} from "@/lib/native-platform";
 
 export default function PricingPage() {
+  const storeSafe = hideStorePurchaseUi();
   const {
     isTrialing,
     trialCountdown,
@@ -45,14 +51,19 @@ export default function PricingPage() {
             Garage Genius AI
           </p>
           <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight text-white sm:text-5xl">
-            Simple plans for DIY repair
+            {storeSafe ? "Account plans" : "Simple plans for DIY repair"}
           </h1>
           <p className="mt-3 text-base text-slate-400 sm:text-lg">
-            Every new account gets a {TRIAL_DAYS}-day Pro Trial. Free covers
-            basics; Pro unlocks voice, custom tags, annual reports, and higher
-            limits. Cancel anytime.
+            {storeSafe
+              ? NATIVE_NO_IAP_MESSAGE
+              : `Every new account gets a ${TRIAL_DAYS}-day Pro Trial. Free covers basics; Pro unlocks voice, custom tags, annual reports, and higher limits. Cancel anytime.`}
           </p>
-          {isTrialing && trialCountdown && (
+          {storeSafe && (
+            <p className="mt-3 text-sm text-slate-500">
+              {NATIVE_WEBSITE_MANAGE_HINT}
+            </p>
+          )}
+          {!storeSafe && isTrialing && trialCountdown && (
             <p className="mt-4 text-sm font-medium text-cyan-300">
               {trialCountdown}
             </p>

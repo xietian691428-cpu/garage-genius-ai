@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import PricingCards from "@/components/landing/PricingCards";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 
 const FEATURES = [
   {
@@ -60,8 +61,16 @@ const TRIAL_COPY =
 
 export default function LandingPage() {
   const { isAuthenticated, loading } = useAuth();
+  const storeSafe = hideStorePurchaseUi();
   const primaryHref = isAuthenticated ? "/app" : "/login?next=/app";
-  const primaryLabel = isAuthenticated ? "Open garage" : "Start free";
+  const primaryLabel = isAuthenticated
+    ? "Open garage"
+    : storeSafe
+      ? "Create account"
+      : "Start free";
+  const heroKicker = storeSafe
+    ? "Free to start · Sign in to use your account"
+    : TRIAL_COPY;
 
   return (
     <div className="landing-root">
@@ -85,12 +94,14 @@ export default function LandingPage() {
           >
             Features
           </a>
-          <a
-            href="#pricing"
-            className="hidden text-sm text-slate-400 transition hover:text-white sm:inline"
-          >
-            Pricing
-          </a>
+          {!storeSafe && (
+            <a
+              href="#pricing"
+              className="hidden text-sm text-slate-400 transition hover:text-white sm:inline"
+            >
+              Pricing
+            </a>
+          )}
           {!loading && isAuthenticated ? (
             <Link href="/app" className="landing-nav-cta">
               Open garage
@@ -104,7 +115,7 @@ export default function LandingPage() {
                 Sign in
               </Link>
               <Link href={primaryHref} className="landing-nav-cta">
-                Start free
+                {primaryLabel}
               </Link>
             </>
           )}
@@ -133,7 +144,7 @@ export default function LandingPage() {
               See how it works
             </a>
           </div>
-          <p className="landing-hero-note">{TRIAL_COPY}</p>
+          <p className="landing-hero-note">{heroKicker}</p>
         </div>
 
         <div className="landing-hero-visual" aria-hidden>
@@ -192,8 +203,9 @@ export default function LandingPage() {
             Everything you need before you turn a bolt
           </h2>
           <p>
-            Instant value on open — dashboard, diagnosis, parts, and Pro / trial
-            voice — so you feel confident under the hood.
+            Instant value on open — dashboard, diagnosis, parts, and
+            {storeSafe ? " optional voice coaching" : " Pro / trial voice"}{" "}
+            — so you feel confident under the hood.
           </p>
         </div>
 
@@ -213,7 +225,11 @@ export default function LandingPage() {
                   <h3 className="font-[family-name:var(--font-display)]">
                     {feature.title}
                   </h3>
-                  <p>{feature.body}</p>
+                  <p>
+                    {storeSafe && feature.id === "voice"
+                      ? "Optional mic + auto-read on accounts that include voice coaching. Built for under-the-car DIY, not desk chat."
+                      : feature.body}
+                  </p>
                 </div>
               </article>
             );
@@ -245,6 +261,7 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {!storeSafe && (
       <section id="pricing" className="landing-section">
         <div className="landing-section-head">
           <h2 className="font-[family-name:var(--font-display)]">
@@ -263,6 +280,7 @@ export default function LandingPage() {
           <PricingCards trialHref="/login?next=/app" appHref="/app" />
         </Suspense>
       </section>
+      )}
 
       <section className="landing-final-cta">
         <h2 className="font-[family-name:var(--font-display)]">

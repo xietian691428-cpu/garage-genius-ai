@@ -305,7 +305,9 @@
   },
   "vehicles": {
     "planLimit": "Límite del plan: {{count}} vehículo(s). Mejora para más.",
+    "planLimitStore": "Límite del plan: {{count}} vehículo(s).",
     "limitReached": "Límite de vehículos alcanzado. Mejora para más.",
+    "limitReachedStore": "Límite de vehículos alcanzado.",
     "couldNotSave": "No se pudo guardar el vehículo."
   },
   "shopReport": {
@@ -341,6 +343,7 @@
     "remainingThisMonth": "Quedan {{remaining}} de {{limit}} informes este mes (UTC).",
     "unlimited": "Informes de taller ilimitados en tu plan.",
     "limitReached": "Alcanzaste el límite mensual de informes. Mejora para ilimitados, o espera al próximo mes.",
+    "limitReachedStore": "Alcanzaste el límite mensual de informes. Inténtalo el mes que viene.",
     "upgradeCta": "Mejorar a ilimitado",
     "quotaUnavailable": "No se pudo verificar la cuota de informes.",
     "panelSignIn": "Inicia sesión para ver informes de taller.",

@@ -23,6 +23,12 @@ import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 import InsuranceSafetySettings from "@/components/settings/InsuranceSafetySettings";
 import { supabase } from "@/lib/supabase";
 import type { VehicleInfo } from "@/lib/types/chat";
+import {
+  hideStorePurchaseUi,
+  nativePlanDisplayLabel,
+  NATIVE_NO_IAP_MESSAGE,
+  NATIVE_WEBSITE_MANAGE_HINT,
+} from "@/lib/native-platform";
 
 type Props = {
   currentVehicle?: VehicleInfo | null;
@@ -106,9 +112,13 @@ export default function SettingsPanel({
     }
   };
 
+  const storeSafe = hideStorePurchaseUi();
   const planLabel = subLoading
     ? "…"
-    : resolved.label + (status && !isTrialing ? ` (${status})` : "");
+    : nativePlanDisplayLabel({
+        label: resolved.label + (status && !isTrialing ? ` (${status})` : ""),
+        isTrialing,
+      });
 
   if (showBillingHelp) {
     return (
@@ -232,11 +242,17 @@ export default function SettingsPanel({
           </h2>
           <p className="mt-2 text-lg font-medium text-white">{planLabel}</p>
           <p className="mt-1 text-sm text-slate-400">
-            {isTrialing
-              ? "Enjoy full Pro features during your trial. Subscribe before it ends to keep voice coaching and higher limits."
-              : "Free includes limited monthly tokens. Pro unlocks voice coaching, more vehicles, and higher RAG depth. Heavy adds deep RAG and higher caps."}
+            {storeSafe
+              ? NATIVE_NO_IAP_MESSAGE
+              : isTrialing
+                ? "Enjoy full Pro features during your trial. Subscribe before it ends to keep voice coaching and higher limits."
+                : "Free includes limited monthly tokens. Pro unlocks voice coaching, more vehicles, and higher RAG depth. Heavy adds deep RAG and higher caps."}
           </p>
-          {!isPro || isTrialing ? (
+          {storeSafe ? (
+            <p className="mt-4 text-xs leading-relaxed text-slate-500">
+              {NATIVE_WEBSITE_MANAGE_HINT}
+            </p>
+          ) : !isPro || isTrialing ? (
             <Link
               href="/pricing"
               className="mt-4 block w-full rounded-2xl bg-cyan-500 px-4 py-3 text-center text-sm font-semibold text-black hover:bg-cyan-400"
@@ -253,14 +269,16 @@ export default function SettingsPanel({
               {busy ? "Opening…" : "Manage billing"}
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => setShowBillingHelp(true)}
-            className="mt-2 w-full rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm font-medium text-cyan-200 hover:border-cyan-400/50"
-          >
-            Billing help coach
-          </button>
-          {tier === "pro" && !isTrialing && (
+          {!storeSafe && (
+            <button
+              type="button"
+              onClick={() => setShowBillingHelp(true)}
+              className="mt-2 w-full rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm font-medium text-cyan-200 hover:border-cyan-400/50"
+            >
+              Billing help coach
+            </button>
+          )}
+          {!storeSafe && tier === "pro" && !isTrialing && (
             <Link
               href="/pricing"
               className="mt-2 block text-center text-xs text-cyan-400 hover:underline"
@@ -272,12 +290,14 @@ export default function SettingsPanel({
 
         <TokenDisplay />
 
-        <Link
-          href="/recharge"
-          className="block rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-center text-sm font-medium text-cyan-300 transition hover:border-cyan-500/50"
-        >
-          Buy more tokens
-        </Link>
+        {!storeSafe && (
+          <Link
+            href="/recharge"
+            className="block rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-center text-sm font-medium text-cyan-300 transition hover:border-cyan-500/50"
+          >
+            Buy more tokens
+          </Link>
+        )}
 
         <ShareAppCard />
 

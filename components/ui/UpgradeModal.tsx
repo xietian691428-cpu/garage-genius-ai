@@ -6,11 +6,12 @@ import { Check, Sparkles, X } from "lucide-react";
 import { startCheckout } from "@/lib/billing";
 import { toUserFacingBillingError } from "@/lib/billing-errors";
 import {
-  getBillingMode,
-  nativeUpgradeBlockedMessage,
+  hideStorePurchaseUi,
+  NATIVE_WEBSITE_MANAGE_HINT,
 } from "@/lib/native-platform";
 import { PLAN_ENTITLEMENTS } from "@/lib/types/subscription";
 import {
+  nativeAccountLimitsCopy,
   upgradeCopy,
   yearlySavingsUsd,
   type UpgradeReason,
@@ -38,11 +39,11 @@ export default function UpgradeModal({
 }: UpgradeModalProps) {
   const [busy, setBusy] = useState<"yearly" | "monthly" | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const nativeIapRequired = getBillingMode() === "native_iap_required";
+  const storeSafe = hideStorePurchaseUi();
 
   if (!open) return null;
 
-  const copy = upgradeCopy(reason);
+  const copy = storeSafe ? nativeAccountLimitsCopy(reason) : upgradeCopy(reason);
   const heading = title ?? copy.title;
   const body = message ?? copy.message;
   const pro = PLAN_ENTITLEMENTS.pro;
@@ -51,10 +52,7 @@ export default function UpgradeModal({
 
   const checkout = async (interval: "yearly" | "monthly") => {
     setError(null);
-    if (nativeIapRequired) {
-      setError(nativeUpgradeBlockedMessage());
-      return;
-    }
+    if (storeSafe) return;
     setBusy(interval);
     try {
       await startCheckout({ plan: "pro", interval });
@@ -98,9 +96,11 @@ export default function UpgradeModal({
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-400">{body}</p>
 
-          <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300">
-            Save ${saveYr}/yr on annual · Cancel anytime
-          </div>
+          {!storeSafe && (
+            <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300">
+              Save ${saveYr}/yr on annual · Cancel anytime
+            </div>
+          )}
         </div>
 
         <div className="px-6 py-5">
@@ -123,9 +123,9 @@ export default function UpgradeModal({
           )}
 
           <div className="mt-5 flex flex-col gap-2">
-            {nativeIapRequired ? (
-              <p className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs leading-relaxed text-amber-100/90">
-                {nativeUpgradeBlockedMessage()}
+            {storeSafe ? (
+              <p className="rounded-2xl border border-slate-600 bg-slate-900/80 px-4 py-3 text-xs leading-relaxed text-slate-300">
+                {NATIVE_WEBSITE_MANAGE_HINT}
               </p>
             ) : (
               <>
@@ -154,32 +154,32 @@ export default function UpgradeModal({
                     ? "Opening checkout…"
                     : `Monthly — $${pro.priceMonthly}/mo`}
                 </button>
+                <Link
+                  href={pricingHref}
+                  className="text-center text-xs text-slate-500 underline-offset-2 hover:text-slate-300 hover:underline"
+                  onClick={onClose}
+                >
+                  Compare all plans
+                </Link>
               </>
             )}
-            <Link
-              href={pricingHref}
-              className="text-center text-xs text-slate-500 underline-offset-2 hover:text-slate-300 hover:underline"
-              onClick={onClose}
-            >
-              Compare all plans
-            </Link>
           </div>
 
-          <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-500">
-            {nativeIapRequired
-              ? "Subscriptions on web use Stripe; native IAP coming later."
-              : "Cancel anytime in billing portal."}
-            {!nativeIapRequired && TRIAL_DAYS > 0
-              ? ` Eligible accounts may include a ${TRIAL_DAYS}-day trial at checkout.`
-              : ""}
-          </p>
+          {!storeSafe && (
+            <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-500">
+              Cancel anytime in billing portal.
+              {TRIAL_DAYS > 0
+                ? ` Eligible accounts may include a ${TRIAL_DAYS}-day trial at checkout.`
+                : ""}
+            </p>
+          )}
 
           <button
             type="button"
             onClick={onClose}
             className="mt-3 w-full py-2 text-sm text-slate-500 hover:text-slate-300"
           >
-            Not now
+            {storeSafe ? "OK" : "Not now"}
           </button>
         </div>
       </div>

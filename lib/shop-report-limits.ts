@@ -138,9 +138,7 @@ export async function assertShopReportQuota(userId: string): Promise<ShopReportQ
   if (quota.unlimited) return quota;
   if ((quota.remaining ?? 0) <= 0) {
     throw new AiAbuseError(
-      `Monthly shop report limit reached (${quota.limit} for ${
-        quota.isTrialing ? "Pro Trial" : quota.tier
-      } in ${quota.periodYm} UTC). Upgrade for unlimited reports, or wait until next month.`,
+      `Monthly shop report limit reached (${quota.limit} for this account in ${quota.periodYm} UTC). Try again next month.`,
       402,
       REPORT_LIMIT_CODE,
     );

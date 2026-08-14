@@ -88,7 +88,7 @@ export async function requireProUser(req: NextRequest): Promise<{
   const { tier, isPro, entitlements } = await resolveUserEntitlements(user.id);
   if (!isPro) {
     throw new PaywallError(
-      "This feature requires Pro. Upgrade to unlock maintenance history, unlimited coach playbooks, and annual health reports.",
+      "This feature isn’t included with the current account.",
       "pro_required",
       "generic",
     );

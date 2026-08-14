@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 
 type UpgradeButtonProps = {
   /** Compact for headers; default is medium */
@@ -11,13 +12,14 @@ type UpgradeButtonProps = {
   label?: string;
 };
 
-/** Navigates to /pricing — Stripe checkout happens there after plan pick. */
+/** Navigates to /pricing — Stripe checkout happens there after plan pick. Hidden in store shells. */
 export default function UpgradeButton({
   size = "md",
   className = "",
   label = "Upgrade",
 }: UpgradeButtonProps) {
   if (isQaUnlockEnabled()) return null;
+  if (hideStorePurchaseUi()) return null;
 
   const sizeClass =
     size === "sm"

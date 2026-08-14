@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             error: error.message.replace(/^.*VEHICLE_LIMIT_REACHED:\s*/i, "") ||
-              "Plan vehicle limit reached. Upgrade for more.",
+              "Plan vehicle limit reached.",
             code: "VEHICLE_LIMIT_REACHED",
           },
           { status: 403 },
