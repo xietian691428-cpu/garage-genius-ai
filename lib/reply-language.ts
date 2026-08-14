@@ -54,10 +54,6 @@ export function detectReplyLanguageHint(
   return "en";
 }
 
-/** Canonical ZH disclaimer (Chat AI append fallback; UI i18n stays en/es). */
-export const LEGAL_DISCLAIMER_ZH =
-  "这仅为一般性参考指引。请务必以车辆官方用户手册为准，或咨询合格技师。因 DIY 操作或依赖本信息而导致的任何损坏、伤害或费用，Garage Genius AI 概不负责。";
-
 export function disclaimerForReplyLanguage(
   hint: ReplyLanguageHint,
 ): string {
