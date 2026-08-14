@@ -46,8 +46,56 @@ export function isNativeIos(): boolean {
 /** Appended in capacitor.config.ts so SSR can tell store WebViews from Mobile Safari. */
 export const NATIVE_UA_TOKEN = "GarageGeniusNative";
 
+/** Set by the native shell client so subsequent SSR requests stay store-safe. */
+export const NATIVE_STORE_SHELL_COOKIE = "gg_store_shell";
+
+/** Landing CTA / kicker when hideStorePurchaseUi() is on (no trial / Start free). */
+export const NATIVE_LANDING_CTA = "Create account";
+export const NATIVE_LANDING_KICKER =
+  "Free to start · Sign in to save your vehicles and chat history";
+
 export function userAgentLooksNative(ua: string | null | undefined): boolean {
   return Boolean(ua && ua.includes(NATIVE_UA_TOKEN));
+}
+
+/**
+ * Capacitor / in-app WKWebView often omits Mobile Safari's Version/ + Safari/
+ * tokens. Treat those as store shell for SSR so Landing never paints trial CTAs
+ * before JS hydrates — without breaking real Mobile Safari marketing.
+ */
+export function userAgentLooksLikeIosAppWebView(
+  ua: string | null | undefined,
+): boolean {
+  if (!ua) return false;
+  if (userAgentLooksNative(ua)) return true;
+  if (!/iPhone|iPad|iPod/i.test(ua)) return false;
+  if (/Version\//i.test(ua) && /Safari\//i.test(ua)) return false;
+  return /AppleWebKit/i.test(ua);
+}
+
+export function storeShellCookieIsSet(
+  value: string | null | undefined,
+): boolean {
+  return value === "1";
+}
+
+/** Server request looks like Capacitor / store shell (UA token, cookie, or WKWebView). */
+export function requestLooksStoreShell(input: {
+  userAgent?: string | null;
+  storeShellCookie?: string | null;
+}): boolean {
+  return (
+    userAgentLooksNative(input.userAgent) ||
+    userAgentLooksLikeIosAppWebView(input.userAgent) ||
+    storeShellCookieIsSet(input.storeShellCookie)
+  );
+}
+
+function clientStoreShellCookiePresent(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie
+    .split(";")
+    .some((part) => part.trim() === `${NATIVE_STORE_SHELL_COOKIE}=1`);
 }
 
 /**
@@ -56,9 +104,11 @@ export function userAgentLooksNative(ua: string | null | undefined): boolean {
  */
 export function hideStorePurchaseUi(): boolean {
   if (isNativeCapacitor()) return true;
-  if (typeof navigator !== "undefined" && userAgentLooksNative(navigator.userAgent)) {
-    return true;
+  if (typeof navigator !== "undefined") {
+    if (userAgentLooksNative(navigator.userAgent)) return true;
+    if (userAgentLooksLikeIosAppWebView(navigator.userAgent)) return true;
   }
+  if (clientStoreShellCookiePresent()) return true;
   return false;
 }
 

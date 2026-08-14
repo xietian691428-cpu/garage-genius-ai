@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import LegalDocLayout from "@/components/legal/LegalDocLayout";
 import SubscriptionsTermsList from "@/components/legal/SubscriptionsTermsList";
-import { userAgentLooksNative } from "@/lib/native-platform";
+import { readForceStoreSafe } from "@/lib/store-shell-request";
 
 export const metadata: Metadata = {
   title: "Terms of Service — Garage Genius AI",
@@ -11,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function TermsPage() {
-  const storeSafe = userAgentLooksNative((await headers()).get("user-agent"));
+  const storeSafe = await readForceStoreSafe();
   return (
     <LegalDocLayout title="Terms of Service" updated="July 30, 2026">
       <section>

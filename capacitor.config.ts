@@ -13,7 +13,11 @@ const config: CapacitorConfig = {
   webDir: "native-shell/www",
   server: {
     // Production Web app. Override at build time if needed.
-    url: process.env.CAPACITOR_SERVER_URL || "https://garagegenius.cloud",
+    // Native shell opens login (not marketing landing) so App Store review
+    // never screenshots "Start free" / "14-day Pro trial" on first paint.
+    url:
+      process.env.CAPACITOR_SERVER_URL ||
+      "https://garagegenius.cloud/login?next=/app",
     cleartext: false,
     allowNavigation: [
       "garagegenius.cloud",

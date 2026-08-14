@@ -4,6 +4,8 @@ import {
   NATIVE_ACCOUNT_LIMITS_BODY,
   NATIVE_ACCOUNT_LIMITS_TITLE,
   NATIVE_DELETE_ACCOUNT_BODY,
+  NATIVE_LANDING_CTA,
+  NATIVE_LANDING_KICKER,
   NATIVE_NO_IAP_MESSAGE,
   NATIVE_PRIVACY_BILLING,
   NATIVE_PRIVACY_CHOICES,
@@ -12,6 +14,7 @@ import {
   NATIVE_TERMS_BILLING_BULLETS,
   NATIVE_TERMS_BILLING_HEADING,
   NATIVE_WEBSITE_MANAGE_HINT,
+  requestLooksStoreShell,
   storeSafePlanLabel,
   userAgentLooksNative,
 } from "@/lib/native-platform";
@@ -34,6 +37,8 @@ describe("iOS store-visible copy has no trial/upgrade/subscription words", () =>
       ["NATIVE_ACCOUNT_LIMITS_TITLE", NATIVE_ACCOUNT_LIMITS_TITLE],
       ["NATIVE_ACCOUNT_LIMITS_BODY", NATIVE_ACCOUNT_LIMITS_BODY],
       ["NATIVE_WEBSITE_MANAGE_HINT", NATIVE_WEBSITE_MANAGE_HINT],
+      ["NATIVE_LANDING_CTA", NATIVE_LANDING_CTA],
+      ["NATIVE_LANDING_KICKER", NATIVE_LANDING_KICKER],
       ["NATIVE_DELETE_ACCOUNT_BODY", NATIVE_DELETE_ACCOUNT_BODY],
       ["NATIVE_TERMS_BILLING_HEADING", NATIVE_TERMS_BILLING_HEADING],
       ["NATIVE_PRIVACY_BILLING", NATIVE_PRIVACY_BILLING],
@@ -119,9 +124,31 @@ describe("iOS store-visible copy has no trial/upgrade/subscription words", () =>
       ),
     ).toBe(false);
     expect(
-      userAgentLooksNative(
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 GarageGeniusNative",
-      ),
+      requestLooksStoreShell({
+        userAgent:
+          "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+      }),
+    ).toBe(false);
+    expect(
+      requestLooksStoreShell({
+        userAgent:
+          "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+      }),
     ).toBe(true);
+    expect(
+      requestLooksStoreShell({
+        userAgent:
+          "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 GarageGeniusNative",
+      }),
+    ).toBe(true);
+    expect(
+      requestLooksStoreShell({
+        userAgent:
+          "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15",
+        storeShellCookie: "1",
+      }),
+    ).toBe(true);
+    expect(NATIVE_LANDING_KICKER).toContain("Sign in to save");
+    expect(NATIVE_LANDING_KICKER).not.toMatch(/14-day|trial|Start free/i);
   });
 });

@@ -3,6 +3,7 @@ import { Syne, DM_Sans } from "next/font/google";
 import "./globals.css";
 import I18nProvider from "@/components/i18n/I18nProvider";
 import NativeDeepLinkBridge from "@/components/native/NativeDeepLinkBridge";
+import StoreShellMarker from "@/components/native/StoreShellMarker";
 import { getAppBaseUrl } from "@/lib/app-url";
 
 const display = Syne({
@@ -60,6 +61,7 @@ export default function RootLayout({
       <body className="min-h-full bg-[#0a0f1c] font-[family-name:var(--font-sans)] text-slate-200 antialiased">
         <I18nProvider>
           <NativeDeepLinkBridge />
+          <StoreShellMarker />
           {children}
         </I18nProvider>
       </body>

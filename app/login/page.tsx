@@ -1,8 +1,7 @@
-import { headers } from "next/headers";
 import LoginClient from "./LoginClient";
-import { userAgentLooksNative } from "@/lib/native-platform";
+import { readForceStoreSafe } from "@/lib/store-shell-request";
 
 export default async function LoginPage() {
-  const forceStoreSafe = userAgentLooksNative((await headers()).get("user-agent"));
+  const forceStoreSafe = await readForceStoreSafe();
   return <LoginClient forceStoreSafe={forceStoreSafe} />;
 }

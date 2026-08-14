@@ -12,7 +12,11 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import PricingCards from "@/components/landing/PricingCards";
-import { hideStorePurchaseUi } from "@/lib/native-platform";
+import {
+  hideStorePurchaseUi,
+  NATIVE_LANDING_CTA,
+  NATIVE_LANDING_KICKER,
+} from "@/lib/native-platform";
 
 const FEATURES = [
   {
@@ -70,11 +74,9 @@ export default function LandingPage({
   const primaryLabel = isAuthenticated
     ? "Open garage"
     : storeSafe
-      ? "Create account"
+      ? NATIVE_LANDING_CTA
       : "Start free";
-  const heroKicker = storeSafe
-    ? "Free to start · Sign in to use your account"
-    : TRIAL_COPY;
+  const heroKicker = storeSafe ? NATIVE_LANDING_KICKER : TRIAL_COPY;
 
   return (
     <div className="landing-root">

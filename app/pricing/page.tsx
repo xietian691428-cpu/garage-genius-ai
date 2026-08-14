@@ -1,8 +1,7 @@
-import { headers } from "next/headers";
 import PricingPageClient from "./PricingPageClient";
-import { userAgentLooksNative } from "@/lib/native-platform";
+import { readForceStoreSafe } from "@/lib/store-shell-request";
 
 export default async function PricingPage() {
-  const forceStoreSafe = userAgentLooksNative((await headers()).get("user-agent"));
+  const forceStoreSafe = await readForceStoreSafe();
   return <PricingPageClient forceStoreSafe={forceStoreSafe} />;
 }

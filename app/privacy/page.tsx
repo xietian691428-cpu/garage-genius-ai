@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import LegalDocLayout from "@/components/legal/LegalDocLayout";
 import StoreSafeText from "@/components/legal/StoreSafeText";
 import {
@@ -7,8 +6,8 @@ import {
   NATIVE_PRIVACY_CHOICES,
   NATIVE_PRIVACY_PUSH,
   NATIVE_PRIVACY_USE,
-  userAgentLooksNative,
 } from "@/lib/native-platform";
+import { readForceStoreSafe } from "@/lib/store-shell-request";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Garage Genius AI",
@@ -17,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default async function PrivacyPage() {
-  const storeSafe = userAgentLooksNative((await headers()).get("user-agent"));
+  const storeSafe = await readForceStoreSafe();
   return (
     <LegalDocLayout title="Privacy Policy" updated="July 30, 2026">
       <section>
