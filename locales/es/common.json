@@ -59,12 +59,14 @@
     "shareHint": "¿Te gusta Garage Genius? Compártelo con otros aficionados al DIY — abre la hoja de compartir del dispositivo (Mensajes, WhatsApp, redes y más).",
     "shareTitle": "Garage Genius AI",
     "shareText": "Prueba Garage Genius AI — un coach DIY de reparación automotriz para diagnóstico, piezas y reparaciones más seguras en casa.",
+    "shareTextStore": "Descubre Garage Genius AI — un coach DIY de reparación automotriz para diagnóstico, piezas y reparaciones más seguras en casa.",
     "shareCta": "Compartir Garage Genius",
     "shareCopyCta": "Copiar enlace para compartir",
     "shareCopyLink": "Copiar enlace",
     "shareCopied": "Enlace copiado",
     "shareDone": "¡Gracias por compartir!",
-    "shareError": "No se pudo compartir ahora. Prueba a copiar el enlace."
+    "shareError": "No se pudo compartir ahora. Prueba a copiar el enlace.",
+    "shareErrorStore": "No se pudo compartir ahora. Copia el enlace."
   },
   "legal": {
     "disclaimerTitle": "Aviso de seguridad importante",
@@ -261,6 +263,7 @@
   "auth": {
     "verifyTitle": "Verifica tu correo para desbloquear funciones principales",
     "verifyBody": "Enviamos un enlace de confirmación a {{email}}. Chat, Coach, mejoras y eliminación de cuenta permanecen bloqueados hasta que confirmes.",
+    "verifyBodyStore": "Enviamos un enlace de confirmación a {{email}}. Chat, Coach y eliminación de cuenta permanecen bloqueados hasta que confirmes.",
     "verifyResend": "Reenviar correo",
     "verifyResent": "Correo de verificación enviado. Revisa bandeja de entrada y spam.",
     "verifyResendFailed": "No se pudo reenviar el correo de verificación.",
@@ -274,6 +277,7 @@
     "signInTitle": "Iniciar sesión",
     "createAccountTitle": "Crear cuenta",
     "signInSubtitle": "Inicia sesión para guardar vehículos, historial de chat y suscripciones.",
+    "signInSubtitleStore": "Inicia sesión para guardar vehículos e historial de chat.",
     "signInWithApple": "Iniciar sesión con Apple",
     "continueWithGoogle": "Continuar con Google",
     "orEmail": "o correo",

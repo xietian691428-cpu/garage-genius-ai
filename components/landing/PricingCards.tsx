@@ -53,6 +53,7 @@ export type PricingCardsProps = {
   appHref?: string;
   className?: string;
   footnote?: boolean;
+  forceStoreSafe?: boolean;
 };
 
 export default function PricingCards({
@@ -60,6 +61,7 @@ export default function PricingCards({
   appHref = "/app",
   className = "",
   footnote = true,
+  forceStoreSafe = false,
 }: PricingCardsProps) {
   const searchParams = useSearchParams();
   const fromRaw = searchParams.get("from") || "";
@@ -85,7 +87,7 @@ export default function PricingCards({
   );
   const [busyPlan, setBusyPlan] = useState<PaidPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const storeSafe = hideStorePurchaseUi();
+  const storeSafe = forceStoreSafe || hideStorePurchaseUi();
 
   const yearlySavings = useMemo(() => {
     const pro = PLAN_ENTITLEMENTS.pro;

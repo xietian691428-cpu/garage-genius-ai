@@ -59,9 +59,13 @@ const SCENARIOS = [
 const TRIAL_COPY =
   "Free to start · 14-day Pro trial on signup (no card required) · Cancel anytime";
 
-export default function LandingPage() {
+export default function LandingPage({
+  forceStoreSafe = false,
+}: {
+  forceStoreSafe?: boolean;
+}) {
   const { isAuthenticated, loading } = useAuth();
-  const storeSafe = hideStorePurchaseUi();
+  const storeSafe = forceStoreSafe || hideStorePurchaseUi();
   const primaryHref = isAuthenticated ? "/app" : "/login?next=/app";
   const primaryLabel = isAuthenticated
     ? "Open garage"

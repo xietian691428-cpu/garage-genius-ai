@@ -128,8 +128,8 @@ export function nativeAccountLimitsCopy(reason: UpgradeReason): {
 } {
   const bullets = [
     "Included features stay available on your current account",
-    "This app does not sell subscriptions",
-    "No trial signup or paid upgrade in the app",
+    "Purchases are not available in this app",
+    "Plan changes are handled on our website",
   ];
   const title = "Account limits";
   switch (reason) {
@@ -200,7 +200,7 @@ export function nativeAccountLimitsCopy(reason: UpgradeReason): {
       return {
         title,
         message:
-          "This feature isn’t included with your current account. The app does not offer trial signup or paid upgrades.",
+          "This feature isn’t included with your current account. Purchases are not available in this app.",
         bullets,
       };
   }

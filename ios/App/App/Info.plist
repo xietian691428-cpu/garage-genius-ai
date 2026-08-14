@@ -45,7 +45,7 @@
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Garage Genius may save annotated repair photos you choose to keep in your library.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Garage Genius uses the microphone for hands-free voice coaching while your hands are busy under the hood (Pro / trial).</string>
+	<string>Garage Genius uses the microphone for hands-free voice coaching while your hands are busy under the hood.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Bluetooth is reserved for future native OBD adapters. On iOS today, use Enter fault code or an OBD screenshot instead of live Bluetooth OBD.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>

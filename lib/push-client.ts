@@ -87,7 +87,7 @@ export async function enableWebPushReminders(
   if (!res.ok) {
     return {
       ok: false,
-      message: payload.error || "Could not save push subscription.",
+      message: payload.error || "Could not save push reminders.",
     };
   }
 

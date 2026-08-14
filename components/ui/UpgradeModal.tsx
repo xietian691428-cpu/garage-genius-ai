@@ -67,7 +67,7 @@ export default function UpgradeModal({
       className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-4 sm:items-center"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="upgrade-modal-title"
+      aria-labelledby="account-limits-modal-title"
       onClick={onClose}
     >
       <div
@@ -89,7 +89,7 @@ export default function UpgradeModal({
           </div>
 
           <h2
-            id="upgrade-modal-title"
+            id="account-limits-modal-title"
             className="mt-4 pr-8 text-xl font-semibold text-white"
           >
             {heading}

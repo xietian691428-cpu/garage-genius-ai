@@ -59,12 +59,14 @@
     "shareHint": "Like Garage Genius? Share the app with fellow DIY drivers — opens your device share sheet (Messages, WhatsApp, socials, and more).",
     "shareTitle": "Garage Genius AI",
     "shareText": "Check out Garage Genius AI — a DIY auto-repair coach for diagnosis, parts, and safer driveway fixes.",
+    "shareTextStore": "Check out Garage Genius AI — a DIY auto-repair coach for diagnosis, parts, and safer driveway fixes.",
     "shareCta": "Share Garage Genius",
     "shareCopyCta": "Copy link to share",
     "shareCopyLink": "Copy link",
     "shareCopied": "Link copied",
     "shareDone": "Thanks for sharing!",
-    "shareError": "Couldn’t share right now. Try copying the link instead."
+    "shareError": "Couldn’t share right now. Try copying the link instead.",
+    "shareErrorStore": "Couldn’t share right now. Copy the link instead."
   },
   "legal": {
     "disclaimerTitle": "Important safety notice",
@@ -261,6 +263,7 @@
   "auth": {
     "verifyTitle": "Verify your email to unlock core features",
     "verifyBody": "We sent a confirmation link to {{email}}. Chat, Coach, upgrades, and account deletion stay locked until you confirm.",
+    "verifyBodyStore": "We sent a confirmation link to {{email}}. Chat, Coach, and account deletion stay locked until you confirm.",
     "verifyResend": "Resend email",
     "verifyResent": "Verification email sent. Check inbox and spam.",
     "verifyResendFailed": "Could not resend verification email.",
@@ -274,6 +277,7 @@
     "signInTitle": "Sign in",
     "createAccountTitle": "Create account",
     "signInSubtitle": "Sign in to save your vehicles, chat history, and subscriptions.",
+    "signInSubtitleStore": "Sign in to save your vehicles and chat history.",
     "signInWithApple": "Sign in with Apple",
     "continueWithGoogle": "Continue with Google",
     "orEmail": "or email",

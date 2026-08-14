@@ -1,5 +1,14 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import LegalDocLayout from "@/components/legal/LegalDocLayout";
+import StoreSafeText from "@/components/legal/StoreSafeText";
+import {
+  NATIVE_PRIVACY_BILLING,
+  NATIVE_PRIVACY_CHOICES,
+  NATIVE_PRIVACY_PUSH,
+  NATIVE_PRIVACY_USE,
+  userAgentLooksNative,
+} from "@/lib/native-platform";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Garage Genius AI",
@@ -7,7 +16,8 @@ export const metadata: Metadata = {
     "How Garage Genius AI collects, uses, and protects account, vehicle, photo, and repair-chat data.",
 };
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const storeSafe = userAgentLooksNative((await headers()).get("user-agent"));
   return (
     <LegalDocLayout title="Privacy Policy" updated="July 30, 2026">
       <section>
@@ -59,13 +69,20 @@ export default function PrivacyPage() {
             to those records) so the feature can work across sessions.
           </li>
           <li>
-            <strong className="text-slate-200">Billing:</strong> Stripe customer
-            / subscription IDs and status (card details are handled by Stripe,
-            not stored on our servers).
+            <strong className="text-slate-200">Billing:</strong>{" "}
+            <StoreSafeText
+              forceStoreSafe={storeSafe}
+              store={NATIVE_PRIVACY_BILLING}
+              web="Stripe customer / subscription IDs and status (card details are handled by Stripe, not stored on our servers)."
+            />
           </li>
           <li>
-            <strong className="text-slate-200">Optional push:</strong> web-push
-            subscription endpoint if you enable maintenance reminders.
+            <strong className="text-slate-200">Optional push:</strong>{" "}
+            <StoreSafeText
+              forceStoreSafe={storeSafe}
+              store={NATIVE_PRIVACY_PUSH}
+              web="web-push subscription endpoint if you enable maintenance reminders."
+            />
           </li>
         </ul>
         <p className="mt-3">
@@ -91,7 +108,13 @@ export default function PrivacyPage() {
             symptoms, DTCs, shop invoice line items) and return guidance.
           </li>
           <li>Enforce Free / Pro limits and prevent abuse.</li>
-          <li>Process subscriptions, invoices, and support requests.</li>
+          <li>
+            <StoreSafeText
+              forceStoreSafe={storeSafe}
+              store={NATIVE_PRIVACY_USE}
+              web="Process subscriptions, invoices, and support requests."
+            />
+          </li>
           <li>
             Improve safety copy and product quality (including aggregated or
             de-identified signals such as coach step feedback where practical).
@@ -148,9 +171,12 @@ export default function PrivacyPage() {
           7. Your choices
         </h2>
         <p className="mt-2">
-          You can sign out, cancel a subscription via Stripe Customer Portal
-          (or the applicable app store), disable push reminders, limit what
-          vehicle or photo data you enter, and delete your account. For EU / UK
+          <StoreSafeText
+            forceStoreSafe={storeSafe}
+            store={NATIVE_PRIVACY_CHOICES}
+            web="You can sign out, cancel a subscription via Stripe Customer Portal (or the applicable app store), disable push reminders, limit what vehicle or photo data you enter, and delete your account."
+          />{" "}
+          For EU / UK
           users, you may have rights of access, correction, erasure, and
           objection under applicable law — contact{" "}
           <a

@@ -436,8 +436,8 @@ export default function ShopReportModal({
             {limitReached ? (
               hideStorePurchaseUi() ? (
                 <p className="text-sm text-slate-400">
-                  {NATIVE_ACCOUNT_LIMITS_TITLE}. This app does not sell extra
-                  reports.
+                {NATIVE_ACCOUNT_LIMITS_TITLE}. Extra reports are not sold in this
+                app.
                 </p>
               ) : (
                 <Link

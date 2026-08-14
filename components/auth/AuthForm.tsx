@@ -13,6 +13,7 @@ import {
 } from "@/lib/auth-providers";
 import { hideNativeSplash } from "@/lib/native-splash";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 
 type Mode = "signin" | "signup";
 
@@ -65,7 +66,11 @@ function mapAuthError(
   return message || t("auth.authFailed");
 }
 
-export default function AuthForm() {
+export default function AuthForm({
+  forceStoreSafe = false,
+}: {
+  forceStoreSafe?: boolean;
+}) {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -230,7 +235,13 @@ export default function AuthForm() {
         <h2 className="text-2xl font-bold text-white">
           {mode === "signin" ? t("auth.signInTitle") : t("auth.createAccountTitle")}
         </h2>
-        <p className="mt-1 text-sm text-slate-400">{t("auth.signInSubtitle")}</p>
+        <p className="mt-1 text-sm text-slate-400">
+          {t(
+            forceStoreSafe || hideStorePurchaseUi()
+              ? "auth.signInSubtitleStore"
+              : "auth.signInSubtitle",
+          )}
+        </p>
       </div>
 
       {showOAuth && (

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Mail } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 
 /**
  * Persistent banner when the signed-in user has not confirmed email yet.
@@ -63,7 +64,12 @@ export default function VerifyEmailBanner() {
           <div>
             <p className="font-medium text-amber-100">{t("auth.verifyTitle")}</p>
             <p className="mt-0.5 text-xs text-amber-100/80">
-              {t("auth.verifyBody", { email: user.email ?? "" })}
+              {t(
+                hideStorePurchaseUi()
+                  ? "auth.verifyBodyStore"
+                  : "auth.verifyBody",
+                { email: user.email ?? "" },
+              )}
             </p>
             {message && (
               <p className="mt-1 text-xs text-cyan-200">{message}</p>

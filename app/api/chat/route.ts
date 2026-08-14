@@ -426,7 +426,7 @@ export async function POST(request: NextRequest) {
     return Response.json(
       {
         error: isQuota
-          ? "Token quota exceeded. Please upgrade or recharge."
+          ? "Monthly AI quota is used up."
           : isInsufficientBalance
             ? "AI service is temporarily unavailable. Please try again later or contact support."
             : "AI service is temporarily unavailable. Please try again.",

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Check, Copy, Share2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { hideStorePurchaseUi } from "@/lib/native-platform";
 
 /** Canonical share landing — marketing / install URL. */
 export const APP_SHARE_URL = "https://garagegenius.cloud";
@@ -24,7 +25,9 @@ export default function ShareAppCard() {
   }, []);
 
   const title = t("settings.shareTitle");
-  const text = t("settings.shareText");
+  const text = t(
+    hideStorePurchaseUi() ? "settings.shareTextStore" : "settings.shareText",
+  );
 
   async function shareNative() {
     setStatus("idle");
@@ -133,7 +136,13 @@ export default function ShareAppCard() {
       </div>
 
       {status === "error" ? (
-        <p className="mt-2 text-xs text-rose-300">{t("settings.shareError")}</p>
+        <p className="mt-2 text-xs text-rose-300">
+          {t(
+            hideStorePurchaseUi()
+              ? "settings.shareErrorStore"
+              : "settings.shareError",
+          )}
+        </p>
       ) : null}
 
       <p className="mt-3 truncate text-[11px] text-slate-500">{APP_SHARE_URL}</p>

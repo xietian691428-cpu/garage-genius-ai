@@ -41,6 +41,7 @@ const config: CapacitorConfig = {
   ios: {
     scheme: "Garage Genius AI",
     contentInset: "automatic",
+    appendUserAgent: "GarageGeniusNative",
     // Prefer scrolling over fixed insets so iPad keyboard doesn't trap forms
     // Custom URL scheme for OAuth / deep links (also register Universal Links).
     // Associated Domains configured in Xcode: applinks:garagegenius.cloud
@@ -48,6 +49,7 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: false,
     backgroundColor: "#0a0f1c",
+    appendUserAgent: "GarageGeniusNative",
   },
 };
 

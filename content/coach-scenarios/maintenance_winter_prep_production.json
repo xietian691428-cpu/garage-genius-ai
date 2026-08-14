@@ -557,7 +557,7 @@
       "id": "tires_help",
       "title": "Winter tire decision",
       "coach_encourage": "Buying grip before the storm is peak adulthood. Look at you — about 63% complete. Keep going.",
-      "personalize": "Tire upgrade path for your {{make}} at {{mileage}} miles before {{next_service}} miles.",
+      "personalize": "Tire replacement options for your {{make}} at {{mileage}} miles before {{next_service}} miles.",
       "description": "Shop mount/balance for new winters. Photo tread if you want a coach call. Don't mix mismatched winter/summer sizes against the placard.",
       "visual_type": "gif",
       "visual_asset_key": "diy_vs_winter_shop",

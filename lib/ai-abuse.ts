@@ -178,7 +178,7 @@ export async function assertAiRateLimit(
 
   if ((dayRes.count ?? 0) >= limits.perDay) {
     throw new AiAbuseError(
-      `Daily AI request limit reached (${limits.perDay} for ${plan}). Try again tomorrow or upgrade.`,
+      `Daily AI request limit reached (${limits.perDay} for ${plan}). Try again tomorrow.`,
       429,
       "rate_limit_day",
     );

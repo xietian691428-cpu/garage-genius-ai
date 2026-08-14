@@ -26,6 +26,7 @@ import type { VehicleInfo } from "@/lib/types/chat";
 import {
   hideStorePurchaseUi,
   nativePlanDisplayLabel,
+  NATIVE_DELETE_ACCOUNT_BODY,
   NATIVE_NO_IAP_MESSAGE,
   NATIVE_WEBSITE_MANAGE_HINT,
 } from "@/lib/native-platform";
@@ -153,7 +154,12 @@ export default function SettingsPanel({
             <div className="mt-4 rounded-2xl border border-amber-700/40 bg-amber-950/30 px-3 py-3 text-sm text-amber-100">
               <p className="font-medium">{t("auth.verifyTitle")}</p>
               <p className="mt-1 text-xs text-amber-100/80">
-                {t("auth.verifyBody", { email: user?.email ?? "" })}
+                {t(
+                  hideStorePurchaseUi()
+                    ? "auth.verifyBodyStore"
+                    : "auth.verifyBody",
+                  { email: user?.email ?? "" },
+                )}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
@@ -238,7 +244,7 @@ export default function SettingsPanel({
 
         <section className="rounded-3xl border border-slate-800 bg-[#111827] p-5">
           <h2 className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Subscription
+            {storeSafe ? "Plan" : "Subscription"}
           </h2>
           <p className="mt-2 text-lg font-medium text-white">{planLabel}</p>
           <p className="mt-1 text-sm text-slate-400">
@@ -322,10 +328,9 @@ export default function SettingsPanel({
             Delete account
           </h2>
           <p className="mt-2 text-sm text-slate-400">
-            Permanently deletes your Garage Genius account, vehicles, chats,
-            maintenance history, and inventory we store for you. This cannot be
-            undone. Active Stripe subscriptions are cancelled when possible —
-            also confirm in Manage billing if a charge continues.
+            {storeSafe
+              ? NATIVE_DELETE_ACCOUNT_BODY
+              : "Permanently deletes your Garage Genius account, vehicles, chats, maintenance history, and inventory we store for you. This cannot be undone. Active Stripe subscriptions are cancelled when possible — also confirm in Manage billing if a charge continues."}
           </p>
           {!deleteOpen ? (
             <button
