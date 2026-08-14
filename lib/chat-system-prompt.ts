@@ -3,6 +3,7 @@ import { DISCLAIMER } from "@/lib/constants";
 import type { DeepSeekMessage } from "@/lib/deepseek";
 import type { VehicleInfo } from "@/lib/types/chat";
 import { GARAGE_GENIUS_SYSTEM_PROMPT } from "@/lib/prompts/garage-genius";
+import { REPLY_LANGUAGE_PROMPT } from "@/lib/reply-language";
 import {
   fitmentSearchString,
   formatVehicleConfigCard,
@@ -131,6 +132,8 @@ export function buildChatSystemPrompt(
     role: "system",
     content: `${GARAGE_GENIUS_SYSTEM_PROMPT}
 
+${REPLY_LANGUAGE_PROMPT}
+
 ${skillBlock}
 
 ${obdPrefBlock}
@@ -156,8 +159,8 @@ Coach + fitment rules (this turn):
 - When maintenance history is present, reference relevant past jobs (date / mileage / parts) before suggesting repeats.
 - For diagnosis / planning replies, follow **Problem → Top 3 causes → Checks → Solution path** from the Repair loop section.
 - Use Coach Mode structure for diagnosis / planning; use Live Repair Mode when the user is mid-job.
-- Always respond in English — even if the user writes in another language.
-- Focus Mode <focus-data> message and steps must be US English only (never Chinese from RAG).
+- Reply language follows the user's latest message (see Reply language section) — Settings UI locale does not override it.
+- Focus Mode: <focus> part ids stay English; user-visible <focus-data> strings match the reply language.
 - Strictly match this exact vehicle fitment: ${fitment}.
 - Specifications must follow **${market}** region manuals and regulations (see Market / Region Context).
 - Respect the vehicle's Market / country version — do not mix USDM / EUDM / UKDM specs.
@@ -172,7 +175,7 @@ ${ragSection}
   - Tell the owner to compare sellers and verify fitment before buying.
   - If OEM number is uncertain, explicitly say: "I recommend verifying with your VIN".
   - Never recommend parts for a drivetrain/engine the config card does not list.
-- End every reply with this disclaimer exactly: "${DISCLAIMER}".
+- End every reply with a full liability disclaimer in the **same language as the reply** (example EN text if the reply is English: "${DISCLAIMER}").
 ${visionNote}
 
 Output Format when parts are needed (still wrap inside Coach Mode prose):

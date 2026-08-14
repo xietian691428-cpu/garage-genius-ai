@@ -16,7 +16,7 @@ const FOCUS_TAG_REGEX = /<focus>\s*([a-z0-9_\-\s]+)\s*<\/focus>/i;
 const FOCUS_DATA_REGEX = /<focus-data>\s*([\s\S]*?)\s*<\/focus-data>/i;
 const FOCUS_JSON_FENCE_REGEX = /```(?:focus-json|json)\s*\n([\s\S]*?)\n```/i;
 
-/** Fixed EN checklist when Focus has no safe English steps after sanitization. */
+/** Fixed EN checklist when Focus has no safe steps after sanitization. */
 export const FOCUS_ENGLISH_FALLBACK_CHECKLIST: string[] = [
   "Confirm the vehicle is safe to inspect (parked, brake set, cool if needed).",
   "Visually check the highlighted area for leaks, damage, loose connectors, or wear.",
@@ -27,6 +27,24 @@ export const FOCUS_ENGLISH_FALLBACK_CHECKLIST: string[] = [
 
 export { containsCjkText };
 
+/** Trim user-facing Focus strings; allow multilingual (incl. CJK) coaching copy. */
+function userFacingString(value?: string | null): string | undefined {
+  if (!value?.trim()) return undefined;
+  return value.trim();
+}
+
+function userFacingStrings(values?: string[]): string[] | undefined {
+  if (!values?.length) return undefined;
+  const list = values
+    .map((s) => userFacingString(s))
+    .filter((s): s is string => Boolean(s));
+  return list.length > 0 ? list : undefined;
+}
+
+/**
+ * Drop CJK strings when building Focus from English-only RAG hits.
+ * Chat model <focus-data> uses {@link userFacingString} instead.
+ */
 function englishOnlyString(
   value?: string | null,
   logPath?: string,
@@ -56,36 +74,21 @@ function englishOnlyStrings(
   return list.length > 0 ? list : undefined;
 }
 
-/** Drop CJK strings from a Focus payload; keep part / English fields. */
+/** Normalize a Focus payload; keep part ids; allow multilingual user-facing fields. */
 export function sanitizeFocusCommand(
   command: FocusCommand | null,
-  path = "focus.sanitizeFocusCommand",
+  _path = "focus.sanitizeFocusCommand",
 ): FocusCommand | null {
   if (!command) return null;
-
-  const hadCjk =
-    containsCjkText(command.message) ||
-    containsCjkText(command.action) ||
-    (command.steps || []).some((s) => containsCjkText(s)) ||
-    (command.tools || []).some((s) => containsCjkText(s)) ||
-    (command.safetyNotes || []).some((s) => containsCjkText(s));
-
-  if (hadCjk) {
-    logCjkRagLeakage({
-      path,
-      reason: "focus.field",
-      title: command.message || command.action || command.part,
-    });
-  }
 
   return {
     type: "focus",
     part: command.part,
-    message: englishOnlyString(command.message),
-    action: englishOnlyString(command.action),
-    steps: englishOnlyStrings(command.steps),
-    tools: englishOnlyStrings(command.tools),
-    safetyNotes: englishOnlyStrings(command.safetyNotes),
+    message: userFacingString(command.message),
+    action: userFacingString(command.action),
+    steps: userFacingStrings(command.steps),
+    tools: userFacingStrings(command.tools),
+    safetyNotes: userFacingStrings(command.safetyNotes),
   };
 }
 
@@ -208,15 +211,15 @@ function parseFocusObject(raw: unknown): FocusCommand | null {
   return {
     type: "focus",
     part,
-    message: englishOnlyString(
+    message: userFacingString(
       typeof obj.message === "string" ? obj.message.trim() : undefined,
     ),
-    action: englishOnlyString(
+    action: userFacingString(
       typeof obj.action === "string" ? obj.action.trim() : undefined,
     ),
-    steps: englishOnlyStrings(asStringArray(obj.steps)),
-    tools: englishOnlyStrings(asStringArray(obj.tools)),
-    safetyNotes: englishOnlyStrings(
+    steps: userFacingStrings(asStringArray(obj.steps)),
+    tools: userFacingStrings(asStringArray(obj.tools)),
+    safetyNotes: userFacingStrings(
       asStringArray(obj.safetyNotes) ?? asStringArray(obj.safety),
     ),
   };

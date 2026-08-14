@@ -6,11 +6,14 @@ import {
   trimDeepSeekConversation,
   type DeepSeekMessage,
 } from "@/lib/deepseek";
-import { DISCLAIMER } from "@/lib/constants";
 import { ensureLegalDisclaimer } from "@/lib/legal-disclaimer";
 import { applyInsuranceSafetyGuards } from "@/lib/insurance-coverage-rewrite";
 import type { VehicleInfo } from "@/lib/types/chat";
 import { buildChatSystemPrompt } from "@/lib/chat-system-prompt";
+import {
+  detectReplyLanguageHint,
+  latestUserPlainText,
+} from "@/lib/reply-language";
 import { createSupabaseUserClient, createSupabaseAdmin } from "@/lib/supabase-admin";
 import { tokenService } from "@/lib/token-service";
 import {
@@ -49,8 +52,9 @@ import { parseObdAdapterPreference } from "@/lib/obd-preference";
 export const runtime = "nodejs";
 
 /** Ensure AI reply includes liability disclaimer + insurance soft rewrite. */
-function ensureDisclaimer(content: string): string {
-  return ensureLegalDisclaimer(applyInsuranceSafetyGuards(content));
+function ensureDisclaimer(content: string, userPlainText?: string): string {
+  const hint = detectReplyLanguageHint(userPlainText);
+  return ensureLegalDisclaimer(applyInsuranceSafetyGuards(content), hint);
 }
 
 function getAccessToken(req: NextRequest): string | null {
@@ -364,6 +368,9 @@ export async function POST(request: NextRequest) {
 
     const finalContent = ensureDisclaimer(
       applyAffiliatePartsToReply(reply, prioritized, currentVehicle),
+      typeof content === "string" && content.trim()
+        ? content
+        : latestUserPlainText(fullMessages),
     );
     const suggestedFocus = resolveFocusCommand(finalContent, ragHits);
 

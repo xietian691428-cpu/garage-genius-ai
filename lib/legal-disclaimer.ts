@@ -16,6 +16,10 @@ export const LEGAL_DISCLAIMER_EN =
 export const LEGAL_DISCLAIMER_ES =
   "Esta es solo una orientación general. Consulte siempre el manual oficial del propietario de su vehículo o a un técnico cualificado. Garage Genius AI no se responsabiliza de ningún daño, lesión o costo derivado de acciones DIY o de confiar en esta información.";
 
+/** Canonical ZH disclaimer (Chat AI append fallback; UI i18n stays en/es). */
+export const LEGAL_DISCLAIMER_ZH =
+  "这仅为一般性参考指引。请务必以车辆官方用户手册为准，或咨询合格技师。因 DIY 操作或依赖本信息而导致的任何损坏、伤害或费用，Garage Genius AI 概不负责。";
+
 /** Substring used by ensureDisclaimer / strip helpers (stable across revisions). */
 export const LEGAL_DISCLAIMER_MARKER =
   "Garage Genius AI is not responsible for any damage, injury, or costs";
@@ -27,12 +31,13 @@ export const LEGAL_FIND_SHOP_EN = "Find a nearby shop";
 
 /** Soft-language rules injected into AI system prompts. */
 export const LEGAL_SOFT_LANGUAGE_PROMPT = `
-## Legal / safety language (required)
+## Legal / safety language (required — every reply language)
 - Never claim a guaranteed fix or a single definite root cause.
-- Prefer: "possible cause", "recommended check", "general guidance", "may indicate".
-- Forbidden phrasing: "guaranteed to fix", "this will definitely fix", "this is definitely the cause", "100% certain", "must be X".
+- Prefer: "possible cause", "recommended check", "general guidance", "may indicate" (or the equivalent soft phrasing in the reply language).
+- Forbidden phrasing (and close translations): "guaranteed to fix", "this will definitely fix", "this is definitely the cause", "100% certain", "must be X", "Replace X now" as a root-cause order, Chinese equivalents like "一定是…", "保证修好", "马上更换…" as definitive commands.
 - Always leave room for OEM manual verification and a qualified technician.
 - Remind the owner that DIY carries risk of damage, injury, or extra cost.
+- Never assert that an insurer will or will not cover a claim.
 `.trim();
 
 /** Canonical EN insurance disclaimer (mirrored in i18n `legal.insurance.disclaimer`). */
@@ -135,6 +140,8 @@ const KNOWN_DISCLAIMER_FRAGMENTS = [
   "This app isn't liable for DIY damage",
   "This app is not responsible for damage from DIY work",
   "Garage Genius AI no se responsabiliza",
+  "Garage Genius AI 概不负责",
+  "这仅为一般性参考指引",
 ];
 
 /** True if content already ends with (or contains) a liability disclaimer. */
@@ -142,10 +149,19 @@ export function contentHasLegalDisclaimer(content: string): boolean {
   return KNOWN_DISCLAIMER_FRAGMENTS.some((f) => content.includes(f));
 }
 
-/** Append canonical EN disclaimer when missing. */
-export function ensureLegalDisclaimer(content: string): string {
+/** Append a liability disclaimer when missing (language follows optional hint). */
+export function ensureLegalDisclaimer(
+  content: string,
+  replyLanguage: "zh" | "es" | "en" = "en",
+): string {
   if (contentHasLegalDisclaimer(content)) return content;
-  return `${content.trim()}\n\n${LEGAL_DISCLAIMER_EN}`;
+  const disclaimer =
+    replyLanguage === "zh"
+      ? LEGAL_DISCLAIMER_ZH
+      : replyLanguage === "es"
+        ? LEGAL_DISCLAIMER_ES
+        : LEGAL_DISCLAIMER_EN;
+  return `${content.trim()}\n\n${disclaimer}`;
 }
 
 /** Remove trailing disclaimer block so UI can show a single footer. */
