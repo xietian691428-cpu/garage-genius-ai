@@ -34,6 +34,8 @@ interface Props {
   /** Edit mode — when set, form loads this vehicle */
   initialVehicle?: VehicleInfo | null;
   onSave?: (vehicle: VehicleInfo) => void | Promise<void>;
+  /** Prefill from chat gate (e.g. "Corolla" mention not in garage). */
+  seedHint?: { make?: string; model?: string; label?: string } | null;
 }
 
 function defaultPicker(): VehicleConfigPickerValue {
@@ -71,6 +73,7 @@ export default function AddVehicleModal({
   onAdd,
   initialVehicle,
   onSave,
+  seedHint = null,
 }: Props) {
   const isEdit = Boolean(initialVehicle);
   const { features } = useSubscription();
@@ -123,11 +126,18 @@ export default function AddVehicleModal({
         initialVehicle.mileage > 0 ? String(initialVehicle.mileage) : "",
       );
     } else {
-      setName("My Main Car");
+      const hintMake = seedHint?.make?.trim() || "";
+      const hintModel = seedHint?.model?.trim() || "";
+      const hintLabel = seedHint?.label?.trim() || "";
+      setName(
+        hintLabel
+          ? hintLabel
+          : [hintMake, hintModel].filter(Boolean).join(" ") || "My Main Car",
+      );
       setMarket(loadPreferredMarket());
       setPicker(defaultPicker());
-      setManualMake("");
-      setManualModel("");
+      setManualMake(hintMake);
+      setManualModel(hintModel);
       setManualEngine("");
       setProfileTags([]);
       setCountryRegion("");
@@ -139,7 +149,7 @@ export default function AddVehicleModal({
     }
     setSaveError(null);
     setSaving(false);
-  }, [open, initialVehicle]);
+  }, [open, initialVehicle, seedHint]);
 
   if (!open) return null;
 

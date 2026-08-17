@@ -125,7 +125,22 @@
     "timeout": "AI request timed out. Please try again.",
     "emptyReply": "AI returned an empty reply. Please try again.",
     "stopped": "_Generation stopped._ You can continue or retry.",
-    "signInRequired": "Please sign in to use AI chat."
+    "signInRequired": "Please sign in to use AI chat.",
+    "garageOnly": "AI coaching only works for vehicles already in your garage. \"{{mention}}\" is not in your garage — add that vehicle first, or ask about one of your saved vehicles.",
+    "switchConfirm": "Your question looks like it’s about {{mention}} ({{vehicle}}), not the currently selected {{current}}. Switch to that vehicle’s chat and ask there? Your question will not be saved on the current vehicle.",
+    "switchConfirmYes": "Switch & ask",
+    "switchConfirmNo": "Cancel",
+    "ambiguousGarage": "Your question mentions {{mention}}, which matches more than one garage vehicle. Select the exact vehicle below — AI will not guess.",
+    "sessionTitle": "Chat · {{vehicle}}",
+    "gateEmptyGarage": "Add a vehicle to your garage before using AI, OBD, or Shop Report. Coaching is limited to vehicles you save.",
+    "gateNoVehicle": "Select a vehicle from your garage to continue. Chat history, OBD, and Shop Report all use the selected vehicle.",
+    "gateNotInGarageAdd": "\"{{mention}}\" isn’t in your garage yet. AI only coaches vehicles you’ve added. Add it now, then we’ll ask on that vehicle’s chat.",
+    "gateNotInGarageLimit": "\"{{mention}}\" isn’t in your garage, and you’ve reached your plan limit ({{count}} vehicle(s)). Upgrade for more slots, or remove/archive a vehicle first.",
+    "gateNotInGarageLimitStore": "\"{{mention}}\" isn’t in your garage, and this account has reached its vehicle limit ({{count}}). Remove or archive a vehicle before adding another.",
+    "gateAddVehicle": "Add vehicle",
+    "gateUpgrade": "Upgrade for more vehicles",
+    "gateManageGarage": "Manage garage",
+    "gatePickVehicle": "Pick vehicle"
   },
   "dtc": {
     "enterCode": "Enter fault code",

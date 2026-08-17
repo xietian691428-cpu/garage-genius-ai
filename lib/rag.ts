@@ -5,7 +5,6 @@
  *   3) Legacy match_documents / JS keyword fallback as last resort
  */
 
-import OpenAI from "openai";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { supabase as browserSupabase } from "@/lib/supabase";
 import type { RagKnowledgeHit } from "@/lib/types/rag";
@@ -22,12 +21,17 @@ import {
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const DEEPSEEK_EMBEDDING_URL = "https://api.deepseek.com/v1/embeddings";
-const DEEPSEEK_EMBEDDING_MODEL = "deepseek-embedding-v1";
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const OPENAI_EMBEDDING_MODEL =
-  process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small";
+const DEEPSEEK_EMBEDDING_MODEL =
+  process.env.DEEPSEEK_EMBEDDING_MODEL || "deepseek-embedding-v1";
+/** Keep embedding probe short — chat must not stall on a broken embed endpoint. */
+const DEEPSEEK_EMBEDDING_TIMEOUT_MS = 4_000;
 
-const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
+/**
+ * Process-local circuit: after DeepSeek embeddings fail (e.g. HTTP 404),
+ * skip further embed calls for this warm instance and use FTS-only RAG.
+ * OpenAI is intentionally not used — product path is DeepSeek-only.
+ */
+let deepseekEmbeddingDisabledUntil = 0;
 
 export type VehicleFilter = {
   make: string;
@@ -284,49 +288,70 @@ export const ragService = {
   async generateEmbedding(text: string): Promise<number[]> {
     const input = text.slice(0, 8000);
 
-    if (DEEPSEEK_API_KEY) {
-      try {
-        const response = await fetch(DEEPSEEK_EMBEDDING_URL, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: DEEPSEEK_EMBEDDING_MODEL,
-            input,
-          }),
-        });
-
-        if (response.ok) {
-          const data = (await response.json()) as {
-            data: Array<{ embedding: number[] }>;
-          };
-          const embedding = data.data[0]?.embedding;
-          if (embedding?.length) return embedding;
-        } else {
-          console.warn(
-            "[rag] DeepSeek embedding HTTP",
-            response.status,
-            await response.text().catch(() => ""),
-          );
-        }
-      } catch (err) {
-        console.warn("[rag] DeepSeek embedding error:", err);
-      }
+    if (!DEEPSEEK_API_KEY) {
+      throw new Error(
+        "Embedding provider unavailable: configure DEEPSEEK_API_KEY (FTS still works).",
+      );
     }
 
-    if (openai) {
-      const response = await openai.embeddings.create({
-        model: OPENAI_EMBEDDING_MODEL,
-        input,
-      });
-      return response.data[0].embedding;
+    if (Date.now() < deepseekEmbeddingDisabledUntil) {
+      throw new Error(
+        "DeepSeek embeddings temporarily disabled after prior failure (using FTS).",
+      );
     }
 
-    throw new Error(
-      "Embedding provider unavailable: configure DEEPSEEK_API_KEY or OPENAI_API_KEY.",
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => controller.abort(),
+      DEEPSEEK_EMBEDDING_TIMEOUT_MS,
     );
+
+    try {
+      const response = await fetch(DEEPSEEK_EMBEDDING_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: DEEPSEEK_EMBEDDING_MODEL,
+          input,
+        }),
+      });
+
+      if (response.ok) {
+        const data = (await response.json()) as {
+          data: Array<{ embedding: number[] }>;
+        };
+        const embedding = data.data[0]?.embedding;
+        if (embedding?.length) return embedding;
+        throw new Error("DeepSeek embedding response missing vector");
+      }
+
+      const body = await response.text().catch(() => "");
+      console.warn("[rag] DeepSeek embedding HTTP", response.status, body);
+      // 404 / 4xx: model or endpoint unavailable — cool down so chat stays fast
+      if (response.status >= 400) {
+        deepseekEmbeddingDisabledUntil = Date.now() + 30 * 60_000;
+      }
+      throw new Error(`DeepSeek embedding HTTP ${response.status}`);
+    } catch (err) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "name" in err &&
+        (err as { name?: string }).name === "AbortError"
+      ) {
+        deepseekEmbeddingDisabledUntil = Date.now() + 10 * 60_000;
+        throw new Error(
+          `DeepSeek embedding timed out after ${DEEPSEEK_EMBEDDING_TIMEOUT_MS}ms`,
+        );
+      }
+      throw err instanceof Error ? err : new Error(String(err));
+    } finally {
+      clearTimeout(timer);
+    }
   },
 
   /**

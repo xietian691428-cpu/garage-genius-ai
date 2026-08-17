@@ -50,6 +50,8 @@ import { normalizeDiySkill } from "@/lib/diy-skill";
 import { parseObdAdapterPreference } from "@/lib/obd-preference";
 
 export const runtime = "nodejs";
+/** Allow RAG + DeepSeek within Vercel serverless limits (no OpenAI fallback). */
+export const maxDuration = 60;
 
 /** Ensure AI reply includes liability disclaimer + insurance soft rewrite. */
 function ensureDisclaimer(content: string, userPlainText?: string): string {

@@ -60,6 +60,21 @@ import {
 } from "@/lib/dtc";
 import type { ObdVisionAnalysis } from "@/lib/types/dtc";
 import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
+import {
+  formatVehicleShort,
+} from "@/lib/garage-vehicle-match";
+import {
+  resolveChatVehicleGate,
+} from "@/lib/chat-vehicle-gate";
+import {
+  classifyChatFetchError,
+  formatChatClientError,
+  type ChatClientError,
+} from "@/lib/chat-request-error";
+import AddVehicleModal from "@/components/vehicles/AddVehicleModal";
+import UpgradeModal, {
+  type UpgradeReason,
+} from "@/components/ui/UpgradeModal";
 import { FileText } from "lucide-react";
 
 interface Props {
@@ -115,7 +130,37 @@ export default function ChatApp({
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [shopReportOpen, setShopReportOpen] = useState(false);
   const [maintenanceTick, setMaintenanceTick] = useState(0);
-  const [requestError, setRequestError] = useState<string | null>(null);
+  const [requestError, setRequestError] = useState<ChatClientError | null>(
+    null,
+  );
+  const [pendingGarageSwitch, setPendingGarageSwitch] = useState<{
+    content: string;
+    images: string[];
+    vehicle: VehicleInfo;
+    mentionLabel: string;
+  } | null>(null);
+  const [gateBanner, setGateBanner] = useState<{
+    code: Exclude<
+      import("@/lib/chat-vehicle-gate").ChatGateCode,
+      "ok" | "switch_confirm"
+    >;
+    message: string;
+    mentionLabel?: string;
+    candidates?: VehicleInfo[];
+    makeHint?: string;
+    modelHint?: string;
+    pendingContent?: string;
+    pendingImages?: string[];
+  } | null>(null);
+  const [addVehicleOpen, setAddVehicleOpen] = useState(false);
+  const [addVehicleSeed, setAddVehicleSeed] = useState<{
+    make?: string;
+    model?: string;
+    label?: string;
+  } | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [upgradeReason, setUpgradeReason] =
+    useState<UpgradeReason>("vehicles");
   const seedSentRef = useRef<string | null>(null);
   const lastSpokenIdRef = useRef<string | null>(null);
   const shouldSpeakNextAssistantRef = useRef(false);
@@ -125,6 +170,14 @@ export default function ChatApp({
   const playbookSlugRef = useRef<string | null>(playbookSlug ?? null);
   const abortRef = useRef<AbortController | null>(null);
   const stoppedByUserRef = useRef(false);
+  /** One-shot vehicle for API after user confirms a garage switch. */
+  const chatVehicleOverrideRef = useRef<VehicleInfo | null>(null);
+  /** After vehicle switch/add, send only once the new vehicle's history is loaded. */
+  const pendingSendAfterLoadRef = useRef<{
+    vehicleId: string;
+    content: string;
+    images: string[];
+  } | null>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
   const { refresh: refreshTokenUsage } = useTokenUsage();
   const { isFree, isPro, features } = useSubscription();
@@ -217,6 +270,29 @@ export default function ChatApp({
     };
   }, [vehiclesLoading, currentVehicle, isPro]);
 
+  // Flush queued question only after the *target* vehicle's history is ready
+  useEffect(() => {
+    if (!ready || !currentVehicle || isLoading) return;
+    const pending = pendingSendAfterLoadRef.current;
+    if (!pending || pending.vehicleId !== currentVehicle.id) return;
+    pendingSendAfterLoadRef.current = null;
+    const { content, images } = pending;
+    void (async () => {
+      const photoList = images.filter(Boolean).slice(0, 4);
+      const userMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content,
+        image: photoList[0],
+        images: photoList.length ? photoList : undefined,
+        timestamp: new Date(),
+      };
+      const nextMessages = [...messagesRef.current, userMessage];
+      setMessages(nextMessages);
+      await runChatRequest(nextMessages, photoList);
+    })();
+  }, [ready, currentVehicle?.id, isLoading]);
+
   useEffect(() => {
     if (!ready || !autoSpeak || isLoading) return;
     if (!shouldSpeakNextAssistantRef.current) return;
@@ -268,6 +344,30 @@ export default function ChatApp({
       cancelled = true;
     };
   }, [currentVehicle?.id, isPro, vehiclesLoading, maintenanceTick]);
+
+  // Empty garage / no selection — persistent guide (shared current-vehicle state)
+  useEffect(() => {
+    if (vehiclesLoading) return;
+    if (!vehicles.length) {
+      setGateBanner({
+        code: "empty_garage",
+        message: t("ai.gateEmptyGarage"),
+      });
+      return;
+    }
+    if (!currentVehicle) {
+      setGateBanner({
+        code: "no_vehicle_selected",
+        message: t("ai.gateNoVehicle"),
+      });
+      return;
+    }
+    setGateBanner((prev) =>
+      prev?.code === "empty_garage" || prev?.code === "no_vehicle_selected"
+        ? null
+        : prev,
+    );
+  }, [vehiclesLoading, vehicles.length, currentVehicle, t]);
 
   const refreshMaintenanceContext = () => {
     setMaintenanceTick((n) => n + 1);
@@ -351,6 +451,12 @@ export default function ChatApp({
   };
 
   const handleVehicleChange = async (vehicle: VehicleInfo) => {
+    if (
+      pendingSendAfterLoadRef.current &&
+      pendingSendAfterLoadRef.current.vehicleId !== vehicle.id
+    ) {
+      pendingSendAfterLoadRef.current = null;
+    }
     if (currentVehicle) {
       await persistNow(currentVehicle.id, messages);
     }
@@ -414,7 +520,11 @@ export default function ChatApp({
     nextMessages: ChatMessage[],
     photoList: string[],
   ) => {
-    if (!currentVehicle) {
+    const activeVehicle =
+      chatVehicleOverrideRef.current || currentVehicle;
+    chatVehicleOverrideRef.current = null;
+
+    if (!activeVehicle) {
       alert("Add a vehicle to your garage before chatting.");
       return;
     }
@@ -466,7 +576,7 @@ export default function ChatApp({
           }),
           images: imagePayloads,
           image: imagePayloads[0],
-          currentVehicle,
+          currentVehicle: activeVehicle,
           playbookSlug: playbookSlugRef.current || undefined,
           maintenanceSummary: maintenanceSummary || undefined,
         }),
@@ -546,7 +656,7 @@ export default function ChatApp({
           ]);
         } else {
           const msg = t("ai.timeout");
-          setRequestError(msg);
+          setRequestError({ code: "timeout", message: msg });
           setMessages((prev) => [
             ...prev,
             {
@@ -559,9 +669,12 @@ export default function ChatApp({
         }
         return;
       }
+      const classified = classifyChatFetchError(err);
       const message =
-        err instanceof Error ? err.message : t("ai.requestFailed");
-      setRequestError(message);
+        classified.code === "unknown" || classified.code === "upstream"
+          ? classified.message || t("ai.requestFailed")
+          : formatChatClientError(classified);
+      setRequestError({ ...classified, message });
       setMessages((prev) => [
         ...prev,
         {
@@ -599,15 +712,29 @@ export default function ChatApp({
     });
   };
 
-  const handleSend = async (content: string, images?: string[]) => {
+  const sendToAi = async (
+    content: string,
+    images?: string[],
+    vehicleOverride?: VehicleInfo | null,
+  ) => {
     if (isLoading) return;
-    if (!currentVehicle) {
-      alert("Add a vehicle to your garage before chatting.");
+    const active = vehicleOverride || currentVehicle;
+    if (!active) {
+      setGateBanner({
+        code: "no_vehicle_selected",
+        message: t("ai.gateNoVehicle"),
+      });
       return;
     }
 
     const photoList = (images ?? []).filter(Boolean).slice(0, 4);
     const finalContent = expandDtcIfNeeded(content.trim());
+    if (!finalContent && photoList.length === 0) return;
+
+    if (vehicleOverride) {
+      chatVehicleOverrideRef.current = vehicleOverride;
+    }
+
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
@@ -620,6 +747,191 @@ export default function ChatApp({
     const nextMessages = [...messagesRef.current, userMessage];
     setMessages(nextMessages);
     await runChatRequest(nextMessages, photoList);
+  };
+
+  /**
+   * Switch to target vehicle without appending the pending question to the old thread.
+   * Question is queued until the new vehicle's history finishes loading.
+   */
+  const queueSendAfterVehicleSwitch = async (
+    target: VehicleInfo,
+    content: string,
+    images: string[],
+  ) => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    stoppedByUserRef.current = false;
+    setIsLoading(false);
+
+    if (currentVehicle) {
+      await persistNow(currentVehicle.id, messagesRef.current);
+    }
+
+    pendingSendAfterLoadRef.current = {
+      vehicleId: target.id,
+      content,
+      images,
+    };
+    // Force reload even if somehow same key
+    loadedKeyRef.current = null;
+    await onVehicleChange(target);
+    saveCurrentVehicleId(target.id);
+  };
+
+  const handleSend = async (content: string, images?: string[]) => {
+    if (isLoading) return;
+
+    const photoList = (images ?? []).filter(Boolean).slice(0, 4);
+    const finalContent = expandDtcIfNeeded(content.trim());
+    if (!finalContent && photoList.length === 0) return;
+
+    setGateBanner(null);
+    setPendingGarageSwitch(null);
+    setRequestError(null);
+
+    const gate = resolveChatVehicleGate({
+      text: finalContent,
+      garage: vehicles,
+      current: currentVehicle,
+      canAddVehicle: features.canAddVehicle(vehicles.length),
+      maxVehicles: features.maxVehicles,
+    });
+
+    if (gate.code === "empty_garage") {
+      setGateBanner({
+        code: "empty_garage",
+        message: t("ai.gateEmptyGarage"),
+        pendingContent: finalContent,
+        pendingImages: photoList,
+      });
+      return;
+    }
+
+    if (gate.code === "no_vehicle_selected") {
+      setGateBanner({
+        code: "no_vehicle_selected",
+        message: t("ai.gateNoVehicle"),
+        pendingContent: finalContent,
+        pendingImages: photoList,
+      });
+      setShowVehicleSwitcher(true);
+      return;
+    }
+
+    if (gate.code === "not_in_garage_can_add") {
+      setGateBanner({
+        code: "not_in_garage_can_add",
+        message: t("ai.gateNotInGarageAdd", { mention: gate.mentionLabel }),
+        mentionLabel: gate.mentionLabel,
+        makeHint: gate.makeHint,
+        modelHint: gate.modelHint,
+        pendingContent: finalContent,
+        pendingImages: photoList,
+      });
+      return;
+    }
+
+    if (gate.code === "not_in_garage_limit") {
+      setGateBanner({
+        code: "not_in_garage_limit",
+        message: t(
+          hideStorePurchaseUi()
+            ? "ai.gateNotInGarageLimitStore"
+            : "ai.gateNotInGarageLimit",
+          { mention: gate.mentionLabel, count: gate.maxVehicles },
+        ),
+        mentionLabel: gate.mentionLabel,
+        pendingContent: finalContent,
+        pendingImages: photoList,
+      });
+      return;
+    }
+
+    if (gate.code === "ambiguous") {
+      setGateBanner({
+        code: "ambiguous",
+        message: t("ai.ambiguousGarage", { mention: gate.mentionLabel }),
+        mentionLabel: gate.mentionLabel,
+        candidates: gate.candidates,
+        pendingContent: finalContent,
+        pendingImages: photoList,
+      });
+      return;
+    }
+
+    if (gate.code === "switch_confirm") {
+      setPendingGarageSwitch({
+        content: finalContent,
+        images: photoList,
+        vehicle: gate.vehicle,
+        mentionLabel: gate.mentionLabel,
+      });
+      return;
+    }
+
+    await sendToAi(finalContent, photoList, gate.vehicle);
+  };
+
+  const confirmGarageSwitchAndSend = async () => {
+    const pending = pendingGarageSwitch;
+    if (!pending) return;
+    setPendingGarageSwitch(null);
+    await queueSendAfterVehicleSwitch(
+      pending.vehicle,
+      pending.content,
+      pending.images,
+    );
+  };
+
+  const selectAmbiguousVehicleAndSend = async (vehicle: VehicleInfo) => {
+    const banner = gateBanner;
+    if (!banner?.pendingContent) return;
+    const content = banner.pendingContent;
+    const images = banner.pendingImages ?? [];
+    setGateBanner(null);
+    await queueSendAfterVehicleSwitch(vehicle, content, images);
+  };
+
+  const openAddFromGate = () => {
+    const banner = gateBanner;
+    setAddVehicleSeed({
+      make: banner?.makeHint,
+      model: banner?.modelHint,
+      label: banner?.mentionLabel,
+    });
+    setAddVehicleOpen(true);
+  };
+
+  const handleAddVehicleFromGate = async (newVehicle: VehicleInfo) => {
+    const pendingContent = gateBanner?.pendingContent;
+    const pendingImages = gateBanner?.pendingImages ?? [];
+    setGateBanner(null);
+    setAddVehicleOpen(false);
+    setAddVehicleSeed(null);
+
+    if (currentVehicle) {
+      await persistNow(currentVehicle.id, messagesRef.current);
+    }
+
+    try {
+      const saved = await onAddVehicle(newVehicle);
+      if (pendingContent) {
+        pendingSendAfterLoadRef.current = {
+          vehicleId: saved.id,
+          content: pendingContent,
+          images: pendingImages,
+        };
+        loadedKeyRef.current = null;
+      }
+      saveCurrentVehicleId(saved.id);
+    } catch (err) {
+      console.error("[ChatApp] add vehicle from gate failed:", err);
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Could not save vehicle to your garage. Please try again.",
+      );
+    }
   };
 
   const handleFaultCode = (code: string) => {
@@ -736,7 +1048,7 @@ export default function ChatApp({
     } catch (err) {
       const message =
         err instanceof Error ? err.message : t("ai.requestFailed");
-      setRequestError(message);
+      setRequestError({ code: "upstream", message });
       setMessages((prev) => [
         ...prev,
         {
@@ -827,16 +1139,29 @@ export default function ChatApp({
         </div>
 
         <div className="hidden items-center justify-between border-b border-slate-800 bg-[#111827] px-4 py-3 lg:flex">
-          <div className="text-sm text-slate-400">
-            {vehiclesLoading
-              ? "Loading garage…"
-              : currentVehicle
-                ? formatVehicleYmmMarket(currentVehicle)
-                : "No vehicle yet — add one from the sidebar"}
-            {isFree && currentVehicle && (
-              <span className="ml-2 text-xs text-slate-500">
-                · Free keeps last {FREE_CHAT_MESSAGE_LIMIT} messages in cloud
-              </span>
+          <div className="min-w-0 text-sm text-slate-400">
+            {vehiclesLoading ? (
+              "Loading garage…"
+            ) : currentVehicle ? (
+              <>
+                <span className="font-medium text-slate-200">
+                  {t("ai.sessionTitle", {
+                    vehicle: formatVehicleYmmMarket(currentVehicle),
+                  })}
+                </span>
+                {currentVehicle.name ? (
+                  <span className="ml-2 text-xs text-slate-500">
+                    · {currentVehicle.name}
+                  </span>
+                ) : null}
+                {isFree ? (
+                  <span className="ml-2 text-xs text-slate-500">
+                    · Free keeps last {FREE_CHAT_MESSAGE_LIMIT} messages in cloud
+                  </span>
+                ) : null}
+              </>
+            ) : (
+              t("ai.gateNoVehicle")
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -866,11 +1191,116 @@ export default function ChatApp({
           onQuickPrompt={handleQuickPrompt}
           onGenerateShopReport={() => setShopReportOpen(true)}
         />
+        {gateBanner ? (
+          <div className="shrink-0 border-t border-amber-800/50 bg-amber-950/45 px-4 py-3">
+            <div className="mx-auto flex max-w-3xl flex-col gap-2">
+              <p className="text-sm text-amber-50">{gateBanner.message}</p>
+              {gateBanner.code === "ambiguous" && gateBanner.candidates?.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {gateBanner.candidates.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => void selectAmbiguousVehicleAndSend(v)}
+                      className="rounded-xl border border-cyan-700/60 bg-slate-900 px-3 py-1.5 text-sm text-cyan-100 hover:bg-slate-800"
+                    >
+                      {formatVehicleShort(v)}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                {(gateBanner.code === "empty_garage" ||
+                  gateBanner.code === "not_in_garage_can_add") && (
+                  <button
+                    type="button"
+                    onClick={openAddFromGate}
+                    className="rounded-xl bg-cyan-500 px-3 py-1.5 text-sm font-semibold text-black hover:bg-cyan-400"
+                  >
+                    {t("ai.gateAddVehicle")}
+                  </button>
+                )}
+                {gateBanner.code === "not_in_garage_limit" && (
+                  <>
+                    {!hideStorePurchaseUi() ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUpgradeReason("vehicles");
+                          setUpgradeOpen(true);
+                        }}
+                        className="rounded-xl bg-cyan-500 px-3 py-1.5 text-sm font-semibold text-black hover:bg-cyan-400"
+                      >
+                        {t("ai.gateUpgrade")}
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => setShowVehicleSwitcher(true)}
+                      className="rounded-xl border border-slate-600 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-800"
+                    >
+                      {t("ai.gateManageGarage")}
+                    </button>
+                  </>
+                )}
+                {(gateBanner.code === "no_vehicle_selected" ||
+                  gateBanner.code === "ambiguous") && (
+                  <button
+                    type="button"
+                    onClick={() => setShowVehicleSwitcher(true)}
+                    className="rounded-xl border border-slate-600 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-800"
+                  >
+                    {t("ai.gatePickVehicle")}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setGateBanner(null)}
+                  className="rounded-xl border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800"
+                >
+                  {t("ai.switchConfirmNo")}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {pendingGarageSwitch && currentVehicle ? (
+          <div className="shrink-0 border-t border-cyan-800/50 bg-cyan-950/50 px-4 py-3">
+            <div className="mx-auto flex max-w-3xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-cyan-50">
+                {t("ai.switchConfirm", {
+                  mention: pendingGarageSwitch.mentionLabel,
+                  vehicle: formatVehicleShort(pendingGarageSwitch.vehicle),
+                  current: formatVehicleShort(currentVehicle),
+                })}
+              </p>
+              <div className="flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPendingGarageSwitch(null)}
+                  className="rounded-xl border border-slate-600 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-800"
+                >
+                  {t("ai.switchConfirmNo")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void confirmGarageSwitchAndSend()}
+                  className="rounded-xl bg-cyan-500 px-3 py-1.5 text-sm font-semibold text-black hover:bg-cyan-400"
+                >
+                  {t("ai.switchConfirmYes")}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
         {requestError && !isLoading ? (
           <div className="shrink-0 border-t border-amber-800/40 bg-amber-950/40 px-4 py-2.5">
             <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-amber-100">
-                {t("ai.requestFailed")}: {requestError}
+                <span className="mr-2 rounded bg-amber-900/80 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-200">
+                  {requestError.code}
+                </span>
+                {requestError.message}
               </p>
               <button
                 type="button"
@@ -913,7 +1343,7 @@ export default function ChatApp({
             });
           }}
           onScanReceipt={() => setReceiptModalOpen(true)}
-          isLoading={vehiclesLoading || !ready || !currentVehicle}
+          isLoading={vehiclesLoading || !ready}
           isGenerating={isLoading}
           autoSpeak={autoSpeak}
           onAutoSpeakChange={setAutoSpeak}
@@ -963,6 +1393,22 @@ export default function ChatApp({
             ? (v) => void handleUpdateVehicle(v)
             : undefined
         }
+      />
+
+      <AddVehicleModal
+        open={addVehicleOpen}
+        onClose={() => {
+          setAddVehicleOpen(false);
+          setAddVehicleSeed(null);
+        }}
+        seedHint={addVehicleSeed}
+        onAdd={(v) => void handleAddVehicleFromGate(v)}
+      />
+
+      <UpgradeModal
+        open={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        reason={upgradeReason}
       />
     </div>
   );

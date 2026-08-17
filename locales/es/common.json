@@ -125,7 +125,22 @@
     "timeout": "La solicitud a la IA agotó el tiempo. Inténtalo de nuevo.",
     "emptyReply": "La IA devolvió una respuesta vacía. Inténtalo de nuevo.",
     "stopped": "_Generación detenida._ Puedes continuar o reintentar.",
-    "signInRequired": "Inicia sesión para usar el chat con IA."
+    "signInRequired": "Inicia sesión para usar el chat con IA.",
+    "garageOnly": "La IA solo funciona con vehículos que ya están en tu garaje. \"{{mention}}\" no está en tu garaje: añade ese vehículo primero o pregunta por uno de tus vehículos guardados.",
+    "switchConfirm": "Tu pregunta parece referirse a {{mention}} ({{vehicle}}), no al vehículo seleccionado {{current}}. ¿Cambiar al chat de ese vehículo y preguntar allí? Tu pregunta no se guardará en el vehículo actual.",
+    "switchConfirmYes": "Cambiar y preguntar",
+    "switchConfirmNo": "Cancelar",
+    "ambiguousGarage": "Tu pregunta menciona {{mention}}, que coincide con más de un vehículo del garaje. Selecciona el vehículo exacto abajo — la IA no adivinará.",
+    "sessionTitle": "Chat · {{vehicle}}",
+    "gateEmptyGarage": "Añade un vehículo a tu garaje antes de usar la IA, OBD o el informe de taller. Solo se atienden vehículos guardados.",
+    "gateNoVehicle": "Selecciona un vehículo de tu garaje para continuar. El historial del chat, OBD y el informe de taller usan el vehículo seleccionado.",
+    "gateNotInGarageAdd": "\"{{mention}}\" aún no está en tu garaje. La IA solo ayuda con vehículos que hayas añadido. Añádelo ahora y preguntaremos en el chat de ese vehículo.",
+    "gateNotInGarageLimit": "\"{{mention}}\" no está en tu garaje y has alcanzado el límite del plan ({{count}} vehículo(s)). Mejora el plan o elimina/archiva un vehículo primero.",
+    "gateNotInGarageLimitStore": "\"{{mention}}\" no está en tu garaje y esta cuenta alcanzó el límite de vehículos ({{count}}). Elimina o archiva un vehículo antes de añadir otro.",
+    "gateAddVehicle": "Añadir vehículo",
+    "gateUpgrade": "Mejorar plan",
+    "gateManageGarage": "Gestionar garaje",
+    "gatePickVehicle": "Elegir vehículo"
   },
   "dtc": {
     "enterCode": "Introducir código de fallo",
