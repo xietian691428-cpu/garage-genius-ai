@@ -29,6 +29,7 @@ import {
 } from "@/lib/bootstrap/app-modules";
 import WelcomeNoteModal from "@/components/welcome/WelcomeNoteModal";
 import { useWelcomeNote } from "@/hooks/useWelcomeNote";
+import { AiConsentProvider } from "@/components/legal/AiConsentProvider";
 
 type AppTab = "dashboard" | "chat" | "coach" | "history" | "parts" | "settings";
 
@@ -157,6 +158,7 @@ function GarageAppInner() {
   return (
     <AuthGate>
       <TokenUsageProvider>
+        <AiConsentProvider>
       <TrialEndedModal
         open={trialModalOpen}
         onClose={dismissTrialEndedPrompt}
@@ -353,6 +355,7 @@ function GarageAppInner() {
           </div>
         </div>
       )}
+        </AiConsentProvider>
       </TokenUsageProvider>
     </AuthGate>
   );

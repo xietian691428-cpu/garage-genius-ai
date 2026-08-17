@@ -124,6 +124,45 @@ export async function requireVerifiedAiUser(req: NextRequest): Promise<User> {
 }
 
 /**
+ * Guideline 5.1.1 — block DeepSeek until the user consents in-app.
+ * Missing column (pre-migration) fails open with a warning so deploys aren't bricked.
+ */
+export async function assertAiProviderConsent(userId: string): Promise<void> {
+  const admin = createSupabaseAdmin();
+  const { data, error } = await admin
+    .from("profiles")
+    .select("has_acknowledged_ai_consent")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    if (
+      /has_acknowledged_ai_consent|does not exist|schema cache/i.test(
+        error.message,
+      )
+    ) {
+      console.warn(
+        "[ai-consent] column missing — apply migration 050_apple_iap_and_ai_consent.sql",
+      );
+      return;
+    }
+    throw new AiAbuseError(
+      "Could not verify AI consent. Please try again.",
+      503,
+      "ai_consent_unavailable",
+    );
+  }
+
+  if (data?.has_acknowledged_ai_consent !== true) {
+    throw new AiAbuseError(
+      "Please agree to DeepSeek AI processing before using this feature.",
+      403,
+      "ai_consent_required",
+    );
+  }
+}
+
+/**
  * Count recent AI requests and reject if over plan/env caps.
  * Always inserts a log row when allowed (call before DeepSeek).
  * Fail-closed: DB errors reject the request.
@@ -133,6 +172,8 @@ export async function assertAiRateLimit(
   route: AiRouteName,
   email?: string | null,
 ): Promise<void> {
+  await assertAiProviderConsent(userId);
+
   if (shouldBypassAiMetering({ email, qaUnlock: isQaUnlockEnabled() })) return;
   if (await isUnlimitedTokenUser(userId, email)) return;
 

@@ -6,26 +6,32 @@ import { Check, Sparkles, X } from "lucide-react";
 import { startCheckout } from "@/lib/billing";
 import { toUserFacingBillingError } from "@/lib/billing-errors";
 import {
-  hideStorePurchaseUi,
+  canUseNativeIap,
+  canUseStripeCheckout,
+  getBillingMode,
+  NATIVE_NO_IAP_MESSAGE,
   NATIVE_WEBSITE_MANAGE_HINT,
 } from "@/lib/native-platform";
+import {
+  openWebManageSubscriptionInSystemBrowser,
+  purchaseApplePlan,
+  restoreApplePurchases,
+} from "@/lib/native-iap";
 import { PLAN_ENTITLEMENTS } from "@/lib/types/subscription";
 import {
-  nativeAccountLimitsCopy,
   upgradeCopy,
   yearlySavingsUsd,
   type UpgradeReason,
 } from "@/lib/upgrade-copy";
 import { TRIAL_DAYS } from "@/lib/subscription";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export type { UpgradeReason };
 
 type UpgradeModalProps = {
   open: boolean;
   onClose: () => void;
-  /** Contextual paywall reason — drives copy + pricing CTA */
   reason?: UpgradeReason;
-  /** Optional overrides */
   title?: string;
   message?: string;
 };
@@ -37,25 +43,36 @@ export default function UpgradeModal({
   title,
   message,
 }: UpgradeModalProps) {
-  const [busy, setBusy] = useState<"yearly" | "monthly" | null>(null);
+  const [busy, setBusy] = useState<
+    "yearly" | "monthly" | "restore" | "heavy_m" | "heavy_y" | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
-  const storeSafe = hideStorePurchaseUi();
+  const { refresh } = useSubscription();
+  const mode = getBillingMode();
+  const iap = canUseNativeIap();
+  const stripe = canUseStripeCheckout();
 
   if (!open) return null;
 
-  const copy = storeSafe ? nativeAccountLimitsCopy(reason) : upgradeCopy(reason);
-  const heading = title ?? copy.title;
-  const body = message ?? copy.message;
+  const copy = upgradeCopy(reason);
+  const heading = title ?? (iap ? "Upgrade with Apple" : copy.title);
+  const body =
+    message ??
+    (iap
+      ? `${copy.message} Purchases use Apple In-App Purchase and sync to your Garage Genius account.`
+      : copy.message);
   const pro = PLAN_ENTITLEMENTS.pro;
+  const heavy = PLAN_ENTITLEMENTS.pro_heavy;
   const saveYr = yearlySavingsUsd("pro");
   const pricingHref = `/pricing?from=${encodeURIComponent(reason)}`;
 
-  const checkout = async (interval: "yearly" | "monthly") => {
+  const run = async (fn: () => Promise<void>, key: typeof busy) => {
     setError(null);
-    if (storeSafe) return;
-    setBusy(interval);
+    setBusy(key);
     try {
-      await startCheckout({ plan: "pro", interval });
+      await fn();
+      await refresh?.();
+      onClose();
     } catch (err) {
       setError(toUserFacingBillingError(err));
       setBusy(null);
@@ -96,7 +113,7 @@ export default function UpgradeModal({
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-400">{body}</p>
 
-          {!storeSafe && (
+          {(iap || stripe) && (
             <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300">
               Save ${saveYr}/yr on annual · Cancel anytime
             </div>
@@ -123,16 +140,109 @@ export default function UpgradeModal({
           )}
 
           <div className="mt-5 flex flex-col gap-2">
-            {storeSafe ? (
+            {mode === "native_blocked" ? (
               <p className="rounded-2xl border border-slate-600 bg-slate-900/80 px-4 py-3 text-xs leading-relaxed text-slate-300">
-                {NATIVE_WEBSITE_MANAGE_HINT}
+                {NATIVE_NO_IAP_MESSAGE}
               </p>
+            ) : iap ? (
+              <>
+                <button
+                  type="button"
+                  data-testid="iap-pro-yearly"
+                  disabled={busy !== null}
+                  onClick={() =>
+                    void run(
+                      () => purchaseApplePlan({ plan: "pro", interval: "yearly" }),
+                      "yearly",
+                    )
+                  }
+                  className="flex min-h-[48px] w-full touch-manipulation flex-col items-center justify-center rounded-2xl bg-cyan-500 px-4 py-3 text-black hover:bg-cyan-400 disabled:opacity-60"
+                >
+                  <span className="text-sm font-semibold">
+                    {busy === "yearly"
+                      ? "Purchasing…"
+                      : `Subscribe Pro annual — $${pro.priceYearly}/yr`}
+                  </span>
+                  <span className="text-[11px] font-medium text-black/70">
+                    Apple In-App Purchase · Best value
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  data-testid="iap-pro-monthly"
+                  disabled={busy !== null}
+                  onClick={() =>
+                    void run(
+                      () =>
+                        purchaseApplePlan({ plan: "pro", interval: "monthly" }),
+                      "monthly",
+                    )
+                  }
+                  className="flex min-h-[44px] w-full touch-manipulation items-center justify-center rounded-2xl border border-slate-600 px-4 py-2.5 text-sm text-slate-200 hover:border-slate-400 disabled:opacity-60"
+                >
+                  {busy === "monthly"
+                    ? "Purchasing…"
+                    : `Subscribe Pro monthly — $${pro.priceMonthly}/mo`}
+                </button>
+                <button
+                  type="button"
+                  data-testid="iap-heavy-yearly"
+                  disabled={busy !== null}
+                  onClick={() =>
+                    void run(
+                      () =>
+                        purchaseApplePlan({
+                          plan: "pro_heavy",
+                          interval: "yearly",
+                        }),
+                      "heavy_y",
+                    )
+                  }
+                  className="flex min-h-[44px] w-full touch-manipulation items-center justify-center rounded-2xl border border-cyan-500/40 px-4 py-2.5 text-sm text-cyan-200 hover:bg-cyan-500/10 disabled:opacity-60"
+                >
+                  {busy === "heavy_y"
+                    ? "Purchasing…"
+                    : `Subscribe Heavy annual — $${heavy.priceYearly}/yr`}
+                </button>
+                <button
+                  type="button"
+                  data-testid="iap-restore"
+                  disabled={busy !== null}
+                  onClick={() =>
+                    void run(async () => {
+                      const { synced } = await restoreApplePurchases();
+                      if (synced === 0) {
+                        throw new Error(
+                          "No active Apple subscriptions found for this Apple ID.",
+                        );
+                      }
+                    }, "restore")
+                  }
+                  className="flex min-h-[44px] w-full touch-manipulation items-center justify-center rounded-2xl px-4 py-2.5 text-sm text-slate-400 hover:text-slate-200 disabled:opacity-60"
+                >
+                  {busy === "restore" ? "Restoring…" : "Restore purchases"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    void openWebManageSubscriptionInSystemBrowser()
+                  }
+                  className="text-center text-[11px] text-slate-500 underline-offset-2 hover:text-slate-300 hover:underline"
+                >
+                  {NATIVE_WEBSITE_MANAGE_HINT}
+                </button>
+              </>
             ) : (
               <>
                 <button
                   type="button"
                   disabled={busy !== null}
-                  onClick={() => void checkout("yearly")}
+                  onClick={() =>
+                    void run(
+                      () => startCheckout({ plan: "pro", interval: "yearly" }),
+                      "yearly",
+                    )
+                  }
                   className="flex min-h-[48px] w-full touch-manipulation flex-col items-center justify-center rounded-2xl bg-cyan-500 px-4 py-3 text-black hover:bg-cyan-400 disabled:opacity-60"
                 >
                   <span className="text-sm font-semibold">
@@ -147,7 +257,12 @@ export default function UpgradeModal({
                 <button
                   type="button"
                   disabled={busy !== null}
-                  onClick={() => void checkout("monthly")}
+                  onClick={() =>
+                    void run(
+                      () => startCheckout({ plan: "pro", interval: "monthly" }),
+                      "monthly",
+                    )
+                  }
                   className="flex min-h-[44px] w-full touch-manipulation items-center justify-center rounded-2xl border border-slate-600 px-4 py-2.5 text-sm text-slate-200 hover:border-slate-400 disabled:opacity-60"
                 >
                   {busy === "monthly"
@@ -165,12 +280,19 @@ export default function UpgradeModal({
             )}
           </div>
 
-          {!storeSafe && (
+          {stripe && (
             <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-500">
               Cancel anytime in billing portal.
               {TRIAL_DAYS > 0
                 ? ` Eligible accounts may include a ${TRIAL_DAYS}-day trial at checkout.`
                 : ""}
+            </p>
+          )}
+          {iap && (
+            <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-500">
+              Payment is charged to your Apple ID. Manage or cancel in Settings →
+              Apple ID → Subscriptions. Prices shown are list prices; StoreKit
+              shows the localized App Store price at purchase.
             </p>
           )}
 
@@ -179,7 +301,7 @@ export default function UpgradeModal({
             onClick={onClose}
             className="mt-3 min-h-[44px] w-full touch-manipulation py-2 text-sm text-slate-500 hover:text-slate-300"
           >
-            {storeSafe ? "OK" : "Not now"}
+            Not now
           </button>
         </div>
       </div>

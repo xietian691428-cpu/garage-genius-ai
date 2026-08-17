@@ -24,12 +24,19 @@ import InsuranceSafetySettings from "@/components/settings/InsuranceSafetySettin
 import { supabase } from "@/lib/supabase";
 import type { VehicleInfo } from "@/lib/types/chat";
 import {
+  canUseNativeIap,
+  getBillingMode,
   hideStorePurchaseUi,
   nativePlanDisplayLabel,
   NATIVE_DELETE_ACCOUNT_BODY,
   NATIVE_NO_IAP_MESSAGE,
   NATIVE_WEBSITE_MANAGE_HINT,
 } from "@/lib/native-platform";
+import {
+  openAppleManageSubscriptions,
+  openWebManageSubscriptionInSystemBrowser,
+  restoreApplePurchases,
+} from "@/lib/native-iap";
 
 type Props = {
   currentVehicle?: VehicleInfo | null;
@@ -52,18 +59,27 @@ export default function SettingsPanel({
     status,
     resolved,
     loading: subLoading,
+    refresh,
   } = useSubscription();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showBillingHelp, setShowBillingHelp] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const iap = canUseNativeIap();
+  const billingMode = getBillingMode();
+  const storeSafe = hideStorePurchaseUi();
 
   const handleManageBilling = async () => {
     setBusy(true);
     setError(null);
     try {
-      await openBillingPortal();
+      if (iap) {
+        await openAppleManageSubscriptions();
+        setBusy(false);
+      } else {
+        await openBillingPortal();
+      }
     } catch (err) {
       setError(toUserFacingBillingError(err, BILLING_PORTAL_UNAVAILABLE));
       setBusy(false);
@@ -113,7 +129,6 @@ export default function SettingsPanel({
     }
   };
 
-  const storeSafe = hideStorePurchaseUi();
   const planLabel = subLoading
     ? "…"
     : nativePlanDisplayLabel({
@@ -244,20 +259,72 @@ export default function SettingsPanel({
 
         <section className="rounded-3xl border border-slate-800 bg-[#111827] p-5">
           <h2 className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            {storeSafe ? "Plan" : "Subscription"}
+            Subscription
           </h2>
           <p className="mt-2 text-lg font-medium text-white">{planLabel}</p>
           <p className="mt-1 text-sm text-slate-400">
-            {storeSafe
+            {billingMode === "native_blocked"
               ? NATIVE_NO_IAP_MESSAGE
-              : isTrialing
-                ? "Enjoy full Pro features during your trial. Subscribe before it ends to keep voice coaching and higher limits."
-                : "Free includes limited monthly tokens. Pro unlocks voice coaching, more vehicles, and higher RAG depth. Heavy adds deep RAG and higher caps."}
+              : iap
+                ? "Pro and Pro Heavy unlock via Apple In-App Purchase. Entitlements sync to this signed-in account after verification."
+                : isTrialing
+                  ? "Enjoy full Pro features during your trial. Subscribe before it ends to keep voice coaching and higher limits."
+                  : "Free includes limited monthly tokens. Pro unlocks voice coaching, more vehicles, and higher RAG depth. Heavy adds deep RAG and higher caps."}
           </p>
-          {storeSafe ? (
+          {billingMode === "native_blocked" ? (
             <p className="mt-4 text-xs leading-relaxed text-slate-500">
               {NATIVE_WEBSITE_MANAGE_HINT}
             </p>
+          ) : iap ? (
+            <div className="mt-4 flex flex-col gap-2">
+              <Link
+                href="/pricing"
+                className="block w-full rounded-2xl bg-cyan-500 px-4 py-3 text-center text-sm font-semibold text-black hover:bg-cyan-400"
+              >
+                View plans & subscribe
+              </Link>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void handleManageBilling()}
+                className="w-full rounded-2xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-200 hover:border-cyan-500/40 disabled:opacity-60"
+              >
+                {busy ? "Opening…" : "Manage Apple subscription"}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  void (async () => {
+                    setBusy(true);
+                    setError(null);
+                    try {
+                      const { synced } = await restoreApplePurchases();
+                      await refresh();
+                      if (synced === 0) {
+                        setError(
+                          "No active Apple subscriptions found for this Apple ID.",
+                        );
+                      }
+                    } catch (err) {
+                      setError(toUserFacingBillingError(err));
+                    } finally {
+                      setBusy(false);
+                    }
+                  })();
+                }}
+                className="w-full rounded-2xl border border-slate-700 px-4 py-3 text-sm text-slate-300 hover:border-slate-500 disabled:opacity-60"
+              >
+                Restore purchases
+              </button>
+              <button
+                type="button"
+                onClick={() => void openWebManageSubscriptionInSystemBrowser()}
+                className="text-center text-xs text-slate-500 underline-offset-2 hover:text-slate-300 hover:underline"
+              >
+                {NATIVE_WEBSITE_MANAGE_HINT}
+              </button>
+            </div>
           ) : !isPro || isTrialing ? (
             <Link
               href="/pricing"
@@ -275,7 +342,7 @@ export default function SettingsPanel({
               {busy ? "Opening…" : "Manage billing"}
             </button>
           )}
-          {!storeSafe && (
+          {!storeSafe && !iap && (
             <button
               type="button"
               onClick={() => setShowBillingHelp(true)}
@@ -284,7 +351,7 @@ export default function SettingsPanel({
               Billing help coach
             </button>
           )}
-          {!storeSafe && tier === "pro" && !isTrialing && (
+          {!storeSafe && !iap && tier === "pro" && !isTrialing && (
             <Link
               href="/pricing"
               className="mt-2 block text-center text-xs text-cyan-400 hover:underline"
@@ -296,7 +363,7 @@ export default function SettingsPanel({
 
         <TokenDisplay />
 
-        {!storeSafe && (
+        {!storeSafe && !iap && (
           <Link
             href="/recharge"
             className="block rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-center text-sm font-medium text-cyan-300 transition hover:border-cyan-500/50"

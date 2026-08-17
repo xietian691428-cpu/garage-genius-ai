@@ -43,6 +43,7 @@ import CameraCapture from "@/components/chat/CameraCapture";
 import ObdConnectModal from "@/components/obd/ObdConnectModal";
 import { useTranslation } from "react-i18next";
 import { hideStorePurchaseUi } from "@/lib/native-platform";
+import { useAiConsentGate } from "@/components/legal/AiConsentProvider";
 import { useObdPreference } from "@/hooks/useObdPreference";
 import {
   refreshSensorsAction,
@@ -140,6 +141,7 @@ export default function Dashboard({
   onOpenHistory,
 }: Props) {
   const { t } = useTranslation();
+  const { ensureConsent } = useAiConsentGate();
   const { isFree, features } = useSubscription();
   const { pref: obdPref } = useObdPreference();
   const showObdConnectEntry = shouldShowObdConnectEntry(obdPref);
@@ -586,6 +588,7 @@ export default function Dashboard({
    */
   const handlePhotoCapture = async (imageBase64: string) => {
     if (!vehicle) return;
+    if (!(await ensureConsent())) return;
     const base = vitals ?? loadVehicleVitals(vehicle.id);
     setShowCamera(false);
     setIsAnalyzingPhoto(true);
@@ -766,6 +769,8 @@ export default function Dashboard({
         }
       }
 
+      if (!(await ensureConsent())) return;
+
       setLoading(true);
       setError(null);
       if (forceRefresh) {
@@ -820,7 +825,7 @@ export default function Dashboard({
         setLoading(false);
       }
     },
-    [],
+    [ensureConsent],
   );
 
   const handleRegionClick = (region: DashboardRegion) => {

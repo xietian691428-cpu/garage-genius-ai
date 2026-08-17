@@ -79,6 +79,7 @@ import UpgradeModal, {
   type UpgradeReason,
 } from "@/components/ui/UpgradeModal";
 import { FileText } from "lucide-react";
+import { useAiConsentGate } from "@/components/legal/AiConsentProvider";
 
 /** Shared touch-friendly CTA for gate / switch banners (≥44px). */
 const GATE_CTA =
@@ -130,6 +131,7 @@ export default function ChatApp({
   onRemoveVehicle,
 }: Props) {
   const { t, i18n } = useTranslation();
+  const { ensureConsent } = useAiConsentGate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showVehicleSwitcher, setShowVehicleSwitcher] = useState(false);
@@ -802,6 +804,8 @@ export default function ChatApp({
     const finalContent = expandDtcIfNeeded(content.trim());
     if (!finalContent && photoList.length === 0) return;
 
+    if (!(await ensureConsent())) return;
+
     setGateBanner(null);
     setPendingGarageSwitch(null);
     setRequestError(null);
@@ -993,6 +997,7 @@ export default function ChatApp({
       alert("Add a vehicle to your garage before chatting.");
       return;
     }
+    if (!(await ensureConsent())) return;
     const {
       data: { session },
     } = await supabase.auth.getSession();

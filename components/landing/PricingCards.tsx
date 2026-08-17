@@ -10,16 +10,24 @@ import {
   type PaidPlan,
   type SubscriptionTier,
 } from "@/lib/types/subscription";
+import {
+  canUseNativeIap,
+  getBillingMode,
+  isStoreShellClient,
+  NATIVE_NO_IAP_MESSAGE,
+  NATIVE_WEBSITE_MANAGE_HINT,
+} from "@/lib/native-platform";
+import {
+  openAppleManageSubscriptions,
+  openWebManageSubscriptionInSystemBrowser,
+  purchaseApplePlan,
+  restoreApplePurchases,
+} from "@/lib/native-iap";
 import { startCheckout, openBillingPortal } from "@/lib/billing";
 import {
   BILLING_PORTAL_UNAVAILABLE,
   toUserFacingBillingError,
 } from "@/lib/billing-errors";
-import {
-  hideStorePurchaseUi,
-  NATIVE_NO_IAP_MESSAGE,
-  NATIVE_WEBSITE_MANAGE_HINT,
-} from "@/lib/native-platform";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { TrialStatusBanner } from "@/components/subscription/TrialBanners";
@@ -80,14 +88,19 @@ export default function PricingCards({
     isTrialing,
     resolved,
     loading: subLoading,
+    refresh,
   } = useSubscription();
   // Contextual upgrade paths default to yearly (best value)
   const [interval, setInterval] = useState<BillingInterval>(
     fromReason ? "yearly" : "monthly",
   );
   const [busyPlan, setBusyPlan] = useState<PaidPlan | null>(null);
+  const [busyRestore, setBusyRestore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const storeSafe = forceStoreSafe || hideStorePurchaseUi();
+  const billingMode = getBillingMode();
+  const iap = canUseNativeIap();
+  const storeShell = forceStoreSafe || isStoreShellClient();
+  const blocked = billingMode === "native_blocked";
 
   const yearlySavings = useMemo(() => {
     const pro = PLAN_ENTITLEMENTS.pro;
@@ -111,7 +124,8 @@ export default function PricingCards({
       return;
     }
 
-    if (storeSafe) {
+    if (blocked) {
+      setError(NATIVE_NO_IAP_MESSAGE);
       return;
     }
 
@@ -121,7 +135,11 @@ export default function PricingCards({
     ) {
       try {
         setBusyPlan(planTier);
-        await openBillingPortal();
+        if (iap) {
+          await openAppleManageSubscriptions();
+        } else {
+          await openBillingPortal();
+        }
       } catch (err) {
         setError(toUserFacingBillingError(err, BILLING_PORTAL_UNAVAILABLE));
         setBusyPlan(null);
@@ -131,7 +149,15 @@ export default function PricingCards({
 
     try {
       setBusyPlan(planTier);
-      await startCheckout({ plan: planTier, interval });
+      if (iap) {
+        await purchaseApplePlan({
+          plan: planTier as PaidPlan,
+          interval,
+        });
+        await refresh();
+      } else {
+        await startCheckout({ plan: planTier as PaidPlan, interval });
+      }
     } catch (err) {
       setError(toUserFacingBillingError(err));
       setBusyPlan(null);
@@ -139,29 +165,34 @@ export default function PricingCards({
   };
 
   const ctaLabel = (planTier: SubscriptionTier): string => {
-    if (busyPlan === planTier) return "Opening…";
+    if (busyPlan === planTier) return iap ? "Purchasing…" : "Opening…";
     if (planTier === "free") {
       if (tier === "free" && user) return "Open garage";
-      return user ? "Continue free" : "Start free";
+      return user ? "Continue free" : storeShell ? "Create account" : "Start free";
     }
-    if (planTier === "pro" && isTrialing) return "Keep Pro after trial";
-    if (planTier === "pro" && isPro && !isHeavy) return "Manage billing";
-    if (planTier === "pro_heavy" && isHeavy) return "Manage billing";
-    if (planTier === "pro" && isHeavy) return "Switch in portal";
+    if (planTier === "pro" && isTrialing) {
+      return iap ? "Subscribe to Pro" : "Keep Pro after trial";
+    }
+    if (planTier === "pro" && isPro && !isHeavy) {
+      return iap ? "Manage in Apple" : "Manage billing";
+    }
+    if (planTier === "pro_heavy" && isHeavy) {
+      return iap ? "Manage in Apple" : "Manage billing";
+    }
+    if (planTier === "pro" && isHeavy) {
+      return iap ? "Manage in Apple" : "Switch in portal";
+    }
     if (!user) return "Sign in to upgrade";
-    return planTier === "pro_heavy" ? "Upgrade to Heavy" : "Start Pro";
+    return planTier === "pro_heavy" ? "Subscribe to Heavy" : "Subscribe to Pro";
   };
 
-  if (storeSafe) {
+  if (blocked) {
     return (
       <div className={className}>
         <div className="rounded-3xl border border-slate-700 bg-[#111827] px-5 py-6">
           <p className="text-sm font-semibold text-white">Account plans</p>
           <p className="mt-2 text-sm leading-relaxed text-slate-400">
             {NATIVE_NO_IAP_MESSAGE}
-          </p>
-          <p className="mt-3 text-xs leading-relaxed text-slate-500">
-            {NATIVE_WEBSITE_MANAGE_HINT}
           </p>
           <Link
             href={appHref}
@@ -176,7 +207,47 @@ export default function PricingCards({
 
   return (
     <div className={className}>
-      <TrialStatusBanner resolved={resolved} loading={subLoading} className="mb-6" />
+      {!storeShell && (
+        <TrialStatusBanner resolved={resolved} loading={subLoading} className="mb-6" />
+      )}
+
+      {iap && (
+        <div className="mb-6 flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={busyRestore || busyPlan !== null}
+            onClick={() => {
+              void (async () => {
+                setError(null);
+                setBusyRestore(true);
+                try {
+                  const { synced } = await restoreApplePurchases();
+                  await refresh();
+                  if (synced === 0) {
+                    setError(
+                      "No active Apple subscriptions found for this Apple ID.",
+                    );
+                  }
+                } catch (err) {
+                  setError(toUserFacingBillingError(err));
+                } finally {
+                  setBusyRestore(false);
+                }
+              })();
+            }}
+            className="min-h-[44px] rounded-2xl border border-slate-600 px-4 text-sm text-slate-200 hover:border-cyan-500/40 disabled:opacity-60"
+          >
+            {busyRestore ? "Restoring…" : "Restore purchases"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void openWebManageSubscriptionInSystemBrowser()}
+            className="min-h-[44px] rounded-2xl px-4 text-xs text-slate-500 underline-offset-2 hover:text-slate-300 hover:underline"
+          >
+            {NATIVE_WEBSITE_MANAGE_HINT}
+          </button>
+        </div>
+      )}
 
       {contextCopy && (
         <div className="mb-6 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3">
@@ -325,13 +396,25 @@ export default function PricingCards({
 
       {footnote && (
         <p className="mt-10 text-center text-xs text-slate-500">
-          New accounts get a {TRIAL_DAYS}-day Pro trial automatically — no card
-          required to start. Upgrade anytime to keep Pro after the trial.
-          Cancel paid plans anytime. Token top-ups on{" "}
-          <Link href="/recharge" className="text-cyan-400 hover:underline">
-            /recharge
-          </Link>
-          .
+          {iap || storeShell ? (
+            <>
+              In the iOS app, Pro and Pro Heavy are auto-renewable Apple In-App
+              Purchases. Payment is charged to your Apple ID; manage or cancel in
+              Settings → Apple ID → Subscriptions. List prices above are
+              reference USD; StoreKit shows the localized App Store price.
+              Website billing uses Stripe separately.
+            </>
+          ) : (
+            <>
+              New accounts get a {TRIAL_DAYS}-day Pro trial automatically — no card
+              required to start. Upgrade anytime to keep Pro after the trial.
+              Cancel paid plans anytime. Token top-ups on{" "}
+              <Link href="/recharge" className="text-cyan-400 hover:underline">
+                /recharge
+              </Link>
+              .
+            </>
+          )}
         </p>
       )}
     </div>

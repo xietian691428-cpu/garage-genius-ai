@@ -8,7 +8,9 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { TrialEndedModal } from "@/components/subscription/TrialBanners";
 import { TRIAL_DAYS } from "@/lib/subscription";
 import {
-  hideStorePurchaseUi,
+  canUseNativeIap,
+  getBillingMode,
+  isStoreShellClient,
   NATIVE_NO_IAP_MESSAGE,
   NATIVE_WEBSITE_MANAGE_HINT,
 } from "@/lib/native-platform";
@@ -18,7 +20,9 @@ export default function PricingPageClient({
 }: {
   forceStoreSafe?: boolean;
 }) {
-  const storeSafe = forceStoreSafe || hideStorePurchaseUi();
+  const storeShell = forceStoreSafe || isStoreShellClient();
+  const iap = canUseNativeIap();
+  const blocked = getBillingMode() === "native_blocked";
   const {
     isTrialing,
     trialCountdown,
@@ -55,19 +59,23 @@ export default function PricingPageClient({
             Garage Genius AI
           </p>
           <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight text-white sm:text-5xl">
-            {storeSafe ? "Account plans" : "Simple plans for DIY repair"}
+            {iap || storeShell
+              ? "Subscribe with Apple"
+              : "Simple plans for DIY repair"}
           </h1>
           <p className="mt-3 text-base text-slate-400 sm:text-lg">
-            {storeSafe
+            {blocked
               ? NATIVE_NO_IAP_MESSAGE
-              : `Every new account gets a ${TRIAL_DAYS}-day Pro Trial. Free covers basics; Pro unlocks voice, custom tags, annual reports, and higher limits. Cancel anytime.`}
+              : iap || storeShell
+                ? "Pro and Pro Heavy are auto-renewable Apple In-App Purchases. Restore purchases anytime. Optional plan details also open on our website in the system browser."
+                : `Every new account gets a ${TRIAL_DAYS}-day Pro Trial. Free covers basics; Pro unlocks voice, custom tags, annual reports, and higher limits. Cancel anytime.`}
           </p>
-          {storeSafe && (
+          {(iap || storeShell) && !blocked && (
             <p className="mt-3 text-sm text-slate-500">
               {NATIVE_WEBSITE_MANAGE_HINT}
             </p>
           )}
-          {!storeSafe && isTrialing && trialCountdown && (
+          {!storeShell && isTrialing && trialCountdown && (
             <p className="mt-4 text-sm font-medium text-cyan-300">
               {trialCountdown}
             </p>

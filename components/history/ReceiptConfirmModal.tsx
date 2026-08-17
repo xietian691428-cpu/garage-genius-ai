@@ -16,6 +16,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { compressImageDataUrl } from "@/lib/image";
 import CameraCapture from "@/components/chat/CameraCapture";
+import { useAiConsentGate } from "@/components/legal/AiConsentProvider";
 
 type Draft = {
   vehicleId: string;
@@ -71,6 +72,7 @@ export default function ReceiptConfirmModal({
   onSaved,
 }: Props) {
   const { t } = useTranslation();
+  const { ensureConsent } = useAiConsentGate();
   const galleryRef = useRef<HTMLInputElement>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -139,6 +141,7 @@ export default function ReceiptConfirmModal({
     setError(null);
     setVisionNote(null);
     try {
+      if (!(await ensureConsent())) return;
       const compressed = await compressImageDataUrl(imageDataUrl);
       setPreview(compressed);
       const {

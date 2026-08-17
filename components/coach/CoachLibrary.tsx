@@ -53,6 +53,7 @@ import { vehicleHasModifiedTag } from "@/lib/insurance-tips";
 import { useSafetyAdviceAck } from "@/hooks/useSafetyAdviceAck";
 import SafetyTierTip from "@/components/legal/SafetyTierTip";
 import SafetyAdviceAckModal from "@/components/legal/SafetyAdviceAckModal";
+import { useAiConsentGate } from "@/components/legal/AiConsentProvider";
 import { MOD_CONTEXT_PATTERN } from "@/lib/insurance-safety-copy";
 
 type Props = {
@@ -98,6 +99,7 @@ export default function CoachLibrary({
 }: Props) {
   const { features, isFree, recordPhotoDiagnose } = useSubscription();
   const { t } = useTranslation();
+  const { ensureConsent } = useAiConsentGate();
   const [activeSlug, setActiveSlug] = useState<CoachPlaybookSlug | null>(null);
   const [pendingSlug, setPendingSlug] = useState<CoachPlaybookSlug | null>(
     null,
@@ -274,6 +276,7 @@ export default function CoachLibrary({
       alert(t("obd.selectVehicleFirst"));
       return;
     }
+    if (!(await ensureConsent())) return;
     // Same Free daily photo-diagnose soft-cap as Chat
     if (!features.canUsePhotoDiagnose || !recordPhotoDiagnose()) {
       setUpgradeReason("photo");

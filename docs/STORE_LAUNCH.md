@@ -15,7 +15,7 @@ Native shell: Capacitor 8 (remote URL → production Next.js)
 | Capacitor `ios/` + `android/` | **Scaffolded in repo** |
 | Permission strings (camera / mic / photos / BT) | **Declared** |
 | Stripe inside native WebView | **Blocked in client** (`lib/billing.ts`) |
-| StoreKit / Play Billing IAP | **Not implemented yet — blocker for paid upgrades in-app** |
+| StoreKit / Play Billing IAP | **iOS StoreKit 2 wired** (`@capgo/native-purchases` + `/api/apple/verify`); Android Play Billing still pending |
 | Universal Links / App Links templates | **Present** (replace Team ID + SHA-256) |
 | Screenshots / store listing assets | **You — create in consoles** |
 | Sign in with Apple (if Google enabled) | **Ops — enable in Supabase + Apple** |
@@ -43,7 +43,7 @@ Native shell: Capacitor 8 (remote URL → production Next.js)
   Web: Stripe       Native: IAP (future)
 ```
 
-**Do not** open Stripe Checkout / Customer Portal inside the store WebView for digital Pro / token unlocks. That is a common App Store / Play rejection path (Guideline 3.1.1 / Play Payments).
+**Do not** open Stripe Checkout / Customer Portal inside the store WebView for digital Pro unlocks. iOS uses StoreKit 2 IAP; website uses Stripe. See `docs/APP_STORE_REVIEW_NOTES.md`.
 
 ---
 

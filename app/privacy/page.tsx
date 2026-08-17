@@ -129,10 +129,14 @@ export default async function PrivacyPage() {
           When you use Chat, Coach-related AI, Dashboard inspect, or vision
           features (vehicle photo, OBD photo, receipt scan), relevant text and
           images are sent to our AI provider (currently DeepSeek) to generate a
-          response. We send only what is needed for that request. AI outputs can
-          be wrong or incomplete — treat them as DIY education, not certified
-          repair advice. Providers may process data on servers outside your
-          country; see their policies for retention details.
+          response. We send only what is needed for that request. Before the
+          first AI request, the app shows a consent screen that names DeepSeek,
+          lists the data categories that may be sent, and requires your active
+          agreement; if you decline, we do not call DeepSeek. You can review
+          details anytime in this Privacy Policy. AI outputs can be wrong or
+          incomplete — treat them as DIY education, not certified repair advice.
+          Providers may process data on servers outside your country; see their
+          policies for retention details.
         </p>
       </section>
 
@@ -142,9 +146,10 @@ export default async function PrivacyPage() {
         </h2>
         <p className="mt-2">
           We use trusted processors such as Supabase (auth &amp; database),
-          Stripe (payments), Vercel (hosting), and AI providers (e.g. DeepSeek)
-          to operate the product. Optional email / push providers may be used for
-          maintenance reminders you enable.
+          Stripe (website payments), Apple (App Store In-App Purchases on iOS),
+          Vercel (hosting), and AI providers (e.g. DeepSeek) to operate the
+          product. Optional email / push providers may be used for maintenance
+          reminders you enable.
         </p>
       </section>
 

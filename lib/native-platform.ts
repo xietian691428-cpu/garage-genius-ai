@@ -1,6 +1,6 @@
 /**
  * Capacitor / store-shell detection and billing policy helpers.
- * Digital goods are never sold inside the native WebView (no Stripe, no StoreKit).
+ * Web → Stripe Checkout. iOS native → StoreKit 2 IAP. Android native → blocked until Play Billing.
  */
 
 type CapacitorBridge = {
@@ -8,7 +8,7 @@ type CapacitorBridge = {
   getPlatform?: () => string;
 };
 
-export type NativeBillingMode = "web_stripe" | "native_blocked";
+export type NativeBillingMode = "web_stripe" | "native_iap" | "native_blocked";
 
 export type CapacitorPlatformId = "ios" | "android" | "web";
 
@@ -49,7 +49,7 @@ export const NATIVE_UA_TOKEN = "GarageGeniusNative";
 /** Set by the native shell client so subsequent SSR requests stay store-safe. */
 export const NATIVE_STORE_SHELL_COOKIE = "gg_store_shell";
 
-/** Landing CTA / kicker when hideStorePurchaseUi() is on (no trial / Start free). */
+/** Landing CTA / kicker when store shell (no web trial pitch). */
 export const NATIVE_LANDING_CTA = "Create account";
 export const NATIVE_LANDING_KICKER =
   "Free to start · Sign in to save your vehicles and chat history";
@@ -98,11 +98,8 @@ function clientStoreShellCookiePresent(): boolean {
     .some((part) => part.trim() === `${NATIVE_STORE_SHELL_COOKIE}=1`);
 }
 
-/**
- * Hide purchase / trial CTAs in App Store and Play shells.
- * Web keeps Stripe + 14-day trial copy.
- */
-export function hideStorePurchaseUi(): boolean {
+/** True inside App Store / Play WebView (or Cap shell). */
+export function isStoreShellClient(): boolean {
   if (isNativeCapacitor()) return true;
   if (typeof navigator !== "undefined") {
     if (userAgentLooksNative(navigator.userAgent)) return true;
@@ -113,51 +110,92 @@ export function hideStorePurchaseUi(): boolean {
 }
 
 /**
+ * Hide purchase CTAs only when no in-app purchase path exists.
+ * iOS Capacitor uses StoreKit — keep upgrade / pricing CTAs visible.
+ * Android Capacitor stays blocked until Play Billing ships.
+ */
+export function hideStorePurchaseUi(): boolean {
+  if (isNativeIos()) return false;
+  if (isNativeCapacitor()) return true;
+  // WKWebView heuristic without Cap bridge (SSR flash / edge) — treat as iOS store shell → show IAP UI
+  if (typeof navigator !== "undefined") {
+    if (userAgentLooksLikeIosAppWebView(navigator.userAgent)) return false;
+    if (userAgentLooksNative(navigator.userAgent)) {
+      // UA token without platform — prefer showing IAP (iOS primary store)
+      return false;
+    }
+  }
+  if (clientStoreShellCookiePresent()) {
+    // Cookie alone: show IAP (iOS). Android will still block at purchase time.
+    return false;
+  }
+  return false;
+}
+
+/**
  * Web → Stripe Checkout / portal.
- * Native → block Stripe; do not offer StoreKit in this phase.
+ * iOS native → StoreKit 2.
+ * Android native → blocked (no Play Billing yet).
  */
 export function getBillingMode(): NativeBillingMode {
-  if (!isNativeCapacitor()) return "web_stripe";
+  if (!isNativeCapacitor()) {
+    // Heuristic store shell without Cap still must not open Stripe in WebView
+    if (isStoreShellClient()) return "native_iap";
+    return "web_stripe";
+  }
+  if (getCapacitorPlatform() === "ios") return "native_iap";
   return "native_blocked";
 }
 
-/** Informational only — no purchase CTAs; avoid trial/upgrade/subscription words. */
-export const NATIVE_NO_IAP_MESSAGE =
-  "Purchases and plan changes are not available in this app. Account plan details are on the Garage Genius website.";
+export function canUseStripeCheckout(): boolean {
+  return getBillingMode() === "web_stripe";
+}
 
-export const NATIVE_ACCOUNT_LIMITS_TITLE = "Account limits";
+export function canUseNativeIap(): boolean {
+  return getBillingMode() === "native_iap";
+}
+
+/** Android / blocked shells — purchases unavailable. */
+export const NATIVE_NO_IAP_MESSAGE =
+  "In-app purchases are not available on this platform yet. On iPhone/iPad, upgrade with Apple In-App Purchase. On the website, you can manage billing with Stripe.";
+
+export const NATIVE_ACCOUNT_LIMITS_TITLE = "Upgrade your plan";
 
 export const NATIVE_ACCOUNT_LIMITS_BODY =
-  "This feature isn’t included with your current account. Purchases are not available in this app.";
+  "This feature isn’t included with your current plan. Subscribe with Apple In-App Purchase to unlock Pro.";
 
 export const NATIVE_WEBSITE_MANAGE_HINT =
-  "Plan changes are handled on our website.";
+  "You can also review plan details on our website (opens in the system browser). Purchases in this app use Apple In-App Purchase.";
 
 export const NATIVE_TERMS_BILLING_HEADING = "5. Accounts & billing";
 
 export const NATIVE_TERMS_BILLING_BULLETS = [
-  "Purchases and plan changes are not available in this app.",
-  "Account plan details are on the Garage Genius website.",
-  "Account limits in the app follow the signed-in account. Existing vehicles and history remain readable.",
-  "Deleting your account cancels access immediately.",
+  "In the iOS app, Pro and Pro Heavy are sold as auto-renewable Apple In-App Purchases.",
+  "On the website, paid plans are billed through Stripe.",
+  "Account entitlements follow the signed-in Garage Genius account after Apple or Stripe verification.",
+  "Deleting your account cancels access immediately; Apple subscriptions are managed in Apple ID settings.",
 ] as const;
 
 export const NATIVE_DELETE_ACCOUNT_BODY =
-  "Permanently deletes your Garage Genius account, vehicles, chats, maintenance history, and inventory we store for you. This cannot be undone.";
+  "Permanently deletes your Garage Genius account, vehicles, chats, maintenance history, and inventory we store for you. This cannot be undone. Apple subscriptions must be canceled separately in your Apple ID settings.";
 
 export const NATIVE_PRIVACY_BILLING =
-  "Stripe customer IDs and plan status (card details are handled by Stripe, not stored on our servers).";
+  "Apple App Store transaction identifiers and plan status (for iOS In-App Purchases); Stripe customer IDs and plan status on the website (card details are handled by Apple or Stripe, not stored on our servers).";
 
 export const NATIVE_PRIVACY_PUSH =
   "reminder endpoint if you enable maintenance reminders.";
 
 export const NATIVE_PRIVACY_USE =
-  "Process invoices, account limits, and support requests.";
+  "Process invoices, subscriptions, account limits, and support requests.";
 
 export const NATIVE_PRIVACY_CHOICES =
-  "You can sign out, review account plan details on the Garage Genius website, disable push reminders, limit what vehicle or photo data you enter, and delete your account.";
+  "You can sign out, manage Apple subscriptions in your Apple ID settings, review plan details on the Garage Genius website, decline AI provider consent (DeepSeek) until you agree, disable push reminders, limit what vehicle or photo data you enter, and delete your account.";
 
 export function nativeUpgradeBlockedMessage(): string {
+  const mode = getBillingMode();
+  if (mode === "native_iap") {
+    return "Use Apple In-App Purchase in this app to change your plan.";
+  }
   return NATIVE_NO_IAP_MESSAGE;
 }
 
@@ -174,6 +212,7 @@ export function nativePlanDisplayLabel(input: {
   label: string;
   isTrialing?: boolean;
 }): string {
-  if (!hideStorePurchaseUi()) return input.label;
+  // Keep trial word soft on store-facing badges
+  if (!isStoreShellClient()) return input.label;
   return storeSafePlanLabel(input);
 }

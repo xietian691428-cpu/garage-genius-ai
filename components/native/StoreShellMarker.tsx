@@ -3,20 +3,18 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  hideStorePurchaseUi,
+  isStoreShellClient,
   NATIVE_STORE_SHELL_COOKIE,
 } from "@/lib/native-platform";
 
 /**
  * Persist store-shell detection for SSR (Landing / Terms / Login).
- * Without GarageGeniusNative UA, first HTML can still be web marketing —
- * cookie + refresh closes that gap after Capacitor injects.
  */
 export default function StoreShellMarker() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!hideStorePurchaseUi()) return;
+    if (!isStoreShellClient()) return;
 
     const key = `${NATIVE_STORE_SHELL_COOKIE}=1`;
     const hasCookie = document.cookie

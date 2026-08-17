@@ -5,7 +5,7 @@ import type {
   PaidPlan,
 } from "@/lib/types/subscription";
 import {
-  getBillingMode,
+  canUseStripeCheckout,
   nativeUpgradeBlockedMessage,
 } from "@/lib/native-platform";
 import {
@@ -31,7 +31,7 @@ async function authHeaders(): Promise<HeadersInit> {
 }
 
 function assertWebStripeAllowed(_action: string): void {
-  if (getBillingMode() === "web_stripe") return;
+  if (canUseStripeCheckout()) return;
   throw new Error(nativeUpgradeBlockedMessage());
 }
 

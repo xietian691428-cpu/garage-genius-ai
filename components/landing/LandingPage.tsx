@@ -13,7 +13,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import PricingCards from "@/components/landing/PricingCards";
 import {
-  hideStorePurchaseUi,
+  isStoreShellClient,
   NATIVE_LANDING_CTA,
   NATIVE_LANDING_KICKER,
 } from "@/lib/native-platform";
@@ -69,7 +69,7 @@ export default function LandingPage({
   forceStoreSafe?: boolean;
 }) {
   const { isAuthenticated, loading } = useAuth();
-  const storeSafe = forceStoreSafe || hideStorePurchaseUi();
+  const storeSafe = forceStoreSafe || isStoreShellClient();
   const primaryHref = isAuthenticated ? "/app" : "/login?next=/app";
   const primaryLabel = isAuthenticated
     ? "Open garage"

@@ -26,6 +26,7 @@ import {
   hideStorePurchaseUi,
   NATIVE_ACCOUNT_LIMITS_TITLE,
 } from "@/lib/native-platform";
+import { useAiConsentGate } from "@/components/legal/AiConsentProvider";
 
 type ShopReportQuotaState = {
   limit: number | null;
@@ -58,6 +59,7 @@ export default function ShopReportModal({
   coachContext,
 }: Props) {
   const { t } = useTranslation();
+  const { ensureConsent } = useAiConsentGate();
   const [includeFullVin, setIncludeFullVin] = useState(false);
   const [includeImages, setIncludeImages] = useState(false);
   const [includeInventory, setIncludeInventory] = useState(false);
@@ -153,6 +155,8 @@ export default function ShopReportModal({
           preview.reasonIfEmpty || "Please complete a diagnosis first.",
         );
       }
+
+      if (!(await ensureConsent())) return;
 
       const {
         data: { session },
