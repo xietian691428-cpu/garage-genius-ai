@@ -23,13 +23,13 @@ export default function UpgradeButton({
 
   const sizeClass =
     size === "sm"
-      ? "px-3 py-1.5 text-xs"
-      : "px-4 py-2 text-sm";
+      ? "min-h-[44px] px-3 py-2 text-xs"
+      : "min-h-[44px] px-4 py-2.5 text-sm";
 
   return (
     <Link
       href="/pricing"
-      className={`inline-flex items-center gap-1.5 rounded-xl bg-cyan-500 font-semibold text-black transition hover:bg-cyan-400 ${sizeClass} ${className}`}
+      className={`inline-flex touch-manipulation items-center gap-1.5 rounded-xl bg-cyan-500 font-semibold text-black transition hover:bg-cyan-400 ${sizeClass} ${className}`}
     >
       <Sparkles className="h-3.5 w-3.5" aria-hidden />
       {label}

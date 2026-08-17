@@ -71,11 +71,23 @@ import {
   formatChatClientError,
   type ChatClientError,
 } from "@/lib/chat-request-error";
+import {
+  gateCopy,
+  resolveGateLanguage,
+} from "@/lib/gate-copy";
+import type { ReplyLanguageHint } from "@/lib/reply-language";
 import AddVehicleModal from "@/components/vehicles/AddVehicleModal";
 import UpgradeModal, {
   type UpgradeReason,
 } from "@/components/ui/UpgradeModal";
 import { FileText } from "lucide-react";
+
+/** Shared touch-friendly CTA for gate / switch banners (≥44px). */
+const GATE_CTA =
+  "inline-flex min-h-[44px] touch-manipulation items-center justify-center rounded-xl px-3 py-2.5 text-sm font-semibold";
+const GATE_CTA_PRIMARY = `${GATE_CTA} bg-cyan-500 text-black hover:bg-cyan-400`;
+const GATE_CTA_SECONDARY = `${GATE_CTA} border border-slate-600 text-slate-200 hover:bg-slate-800`;
+const GATE_CTA_GHOST = `${GATE_CTA} border border-slate-700 font-medium text-slate-400 hover:bg-slate-800`;
 
 interface Props {
   seedPrompt?: string;
@@ -119,7 +131,7 @@ export default function ChatApp({
   onArchiveVehicle,
   onRemoveVehicle,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showVehicleSwitcher, setShowVehicleSwitcher] = useState(false);
@@ -138,6 +150,7 @@ export default function ChatApp({
     images: string[];
     vehicle: VehicleInfo;
     mentionLabel: string;
+    lang: ReplyLanguageHint;
   } | null>(null);
   const [gateBanner, setGateBanner] = useState<{
     code: Exclude<
@@ -145,6 +158,7 @@ export default function ChatApp({
       "ok" | "switch_confirm"
     >;
     message: string;
+    lang: ReplyLanguageHint;
     mentionLabel?: string;
     candidates?: VehicleInfo[];
     makeHint?: string;
@@ -348,17 +362,20 @@ export default function ChatApp({
   // Empty garage / no selection — persistent guide (shared current-vehicle state)
   useEffect(() => {
     if (vehiclesLoading) return;
+    const lang = resolveGateLanguage("", i18n.language);
     if (!vehicles.length) {
       setGateBanner({
         code: "empty_garage",
-        message: t("ai.gateEmptyGarage"),
+        message: gateCopy(lang, "gateEmptyGarage"),
+        lang,
       });
       return;
     }
     if (!currentVehicle) {
       setGateBanner({
         code: "no_vehicle_selected",
-        message: t("ai.gateNoVehicle"),
+        message: gateCopy(lang, "gateNoVehicle"),
+        lang,
       });
       return;
     }
@@ -367,7 +384,7 @@ export default function ChatApp({
         ? null
         : prev,
     );
-  }, [vehiclesLoading, vehicles.length, currentVehicle, t]);
+  }, [vehiclesLoading, vehicles.length, currentVehicle, i18n.language]);
 
   const refreshMaintenanceContext = () => {
     setMaintenanceTick((n) => n + 1);
@@ -720,9 +737,11 @@ export default function ChatApp({
     if (isLoading) return;
     const active = vehicleOverride || currentVehicle;
     if (!active) {
+      const lang = resolveGateLanguage("", i18n.language);
       setGateBanner({
         code: "no_vehicle_selected",
-        message: t("ai.gateNoVehicle"),
+        message: gateCopy(lang, "gateNoVehicle"),
+        lang,
       });
       return;
     }
@@ -797,10 +816,13 @@ export default function ChatApp({
       maxVehicles: features.maxVehicles,
     });
 
+    const lang = resolveGateLanguage(finalContent, i18n.language);
+
     if (gate.code === "empty_garage") {
       setGateBanner({
         code: "empty_garage",
-        message: t("ai.gateEmptyGarage"),
+        message: gateCopy(lang, "gateEmptyGarage"),
+        lang,
         pendingContent: finalContent,
         pendingImages: photoList,
       });
@@ -810,7 +832,8 @@ export default function ChatApp({
     if (gate.code === "no_vehicle_selected") {
       setGateBanner({
         code: "no_vehicle_selected",
-        message: t("ai.gateNoVehicle"),
+        message: gateCopy(lang, "gateNoVehicle"),
+        lang,
         pendingContent: finalContent,
         pendingImages: photoList,
       });
@@ -821,7 +844,10 @@ export default function ChatApp({
     if (gate.code === "not_in_garage_can_add") {
       setGateBanner({
         code: "not_in_garage_can_add",
-        message: t("ai.gateNotInGarageAdd", { mention: gate.mentionLabel }),
+        message: gateCopy(lang, "gateNotInGarageAdd", {
+          mention: gate.mentionLabel,
+        }),
+        lang,
         mentionLabel: gate.mentionLabel,
         makeHint: gate.makeHint,
         modelHint: gate.modelHint,
@@ -834,12 +860,14 @@ export default function ChatApp({
     if (gate.code === "not_in_garage_limit") {
       setGateBanner({
         code: "not_in_garage_limit",
-        message: t(
+        message: gateCopy(
+          lang,
           hideStorePurchaseUi()
-            ? "ai.gateNotInGarageLimitStore"
-            : "ai.gateNotInGarageLimit",
+            ? "gateNotInGarageLimitStore"
+            : "gateNotInGarageLimit",
           { mention: gate.mentionLabel, count: gate.maxVehicles },
         ),
+        lang,
         mentionLabel: gate.mentionLabel,
         pendingContent: finalContent,
         pendingImages: photoList,
@@ -850,7 +878,10 @@ export default function ChatApp({
     if (gate.code === "ambiguous") {
       setGateBanner({
         code: "ambiguous",
-        message: t("ai.ambiguousGarage", { mention: gate.mentionLabel }),
+        message: gateCopy(lang, "ambiguousGarage", {
+          mention: gate.mentionLabel,
+        }),
+        lang,
         mentionLabel: gate.mentionLabel,
         candidates: gate.candidates,
         pendingContent: finalContent,
@@ -865,6 +896,7 @@ export default function ChatApp({
         images: photoList,
         vehicle: gate.vehicle,
         mentionLabel: gate.mentionLabel,
+        lang,
       });
       return;
     }
@@ -1117,7 +1149,8 @@ export default function ChatApp({
           <button
             type="button"
             onClick={() => setShowVehicleSwitcher(true)}
-            className="min-w-0 flex-1 text-left"
+            className="min-h-[44px] min-w-0 flex-1 touch-manipulation rounded-xl text-left active:bg-slate-800/50"
+            data-testid="chat-vehicle-switcher-open"
           >
             <VehiclePanel vehicle={currentVehicle} isMobile />
           </button>
@@ -1127,14 +1160,14 @@ export default function ChatApp({
                 type="button"
                 data-testid="shop-report-open"
                 onClick={() => setShopReportOpen(true)}
-                className="inline-flex items-center gap-1 rounded-xl border border-slate-700 px-2 py-1.5 text-[11px] font-medium text-cyan-300 hover:bg-slate-800"
+                className="inline-flex min-h-[44px] touch-manipulation items-center gap-1 rounded-xl border border-slate-700 px-3 py-2 text-xs font-medium text-cyan-300 hover:bg-slate-800"
                 title={t("shopReport.openCta")}
               >
                 <FileText className="h-3.5 w-3.5" />
                 Shop
               </button>
             )}
-            {isFree && <UpgradeButton label="Pro" />}
+            {isFree && <UpgradeButton size="sm" label="Pro" />}
           </div>
         </div>
 
@@ -1170,7 +1203,7 @@ export default function ChatApp({
                 type="button"
                 data-testid="shop-report-open-desktop"
                 onClick={() => setShopReportOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-slate-800"
+                className="inline-flex min-h-[44px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-cyan-300 hover:bg-slate-800"
               >
                 <FileText className="h-3.5 w-3.5" />
                 {t("shopReport.openCta")}
@@ -1192,32 +1225,44 @@ export default function ChatApp({
           onGenerateShopReport={() => setShopReportOpen(true)}
         />
         {gateBanner ? (
-          <div className="shrink-0 border-t border-amber-800/50 bg-amber-950/45 px-4 py-3">
-            <div className="mx-auto flex max-w-3xl flex-col gap-2">
-              <p className="text-sm text-amber-50">{gateBanner.message}</p>
+          <div
+            className="shrink-0 border-t border-amber-800/50 bg-amber-950/45 px-3 py-3 sm:px-4"
+            data-testid="chat-gate-banner"
+            data-gate-code={gateBanner.code}
+            data-gate-lang={gateBanner.lang}
+          >
+            <div className="mx-auto flex max-h-[min(42dvh,22rem)] max-w-3xl flex-col gap-2 overflow-y-auto overscroll-contain">
+              <p className="text-sm leading-relaxed text-amber-50">
+                {gateBanner.message}
+              </p>
               {gateBanner.code === "ambiguous" && gateBanner.candidates?.length ? (
-                <div className="flex flex-wrap gap-2">
+                <div
+                  className="flex max-h-[28dvh] flex-col gap-2 overflow-y-auto overscroll-contain sm:max-h-none sm:flex-row sm:flex-wrap"
+                  data-testid="chat-gate-ambiguous-list"
+                >
                   {gateBanner.candidates.map((v) => (
                     <button
                       key={v.id}
                       type="button"
+                      data-testid="chat-gate-pick"
                       onClick={() => void selectAmbiguousVehicleAndSend(v)}
-                      className="rounded-xl border border-cyan-700/60 bg-slate-900 px-3 py-1.5 text-sm text-cyan-100 hover:bg-slate-800"
+                      className={`${GATE_CTA_SECONDARY} w-full justify-start sm:w-auto`}
                     >
                       {formatVehicleShort(v)}
                     </button>
                   ))}
                 </div>
               ) : null}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 pb-[max(0.25rem,env(safe-area-inset-bottom))] sm:pb-0">
                 {(gateBanner.code === "empty_garage" ||
                   gateBanner.code === "not_in_garage_can_add") && (
                   <button
                     type="button"
+                    data-testid="chat-gate-add-vehicle"
                     onClick={openAddFromGate}
-                    className="rounded-xl bg-cyan-500 px-3 py-1.5 text-sm font-semibold text-black hover:bg-cyan-400"
+                    className={GATE_CTA_PRIMARY}
                   >
-                    {t("ai.gateAddVehicle")}
+                    {gateCopy(gateBanner.lang, "gateAddVehicle")}
                   </button>
                 )}
                 {gateBanner.code === "not_in_garage_limit" && (
@@ -1225,21 +1270,23 @@ export default function ChatApp({
                     {!hideStorePurchaseUi() ? (
                       <button
                         type="button"
+                        data-testid="chat-gate-upgrade"
                         onClick={() => {
                           setUpgradeReason("vehicles");
                           setUpgradeOpen(true);
                         }}
-                        className="rounded-xl bg-cyan-500 px-3 py-1.5 text-sm font-semibold text-black hover:bg-cyan-400"
+                        className={GATE_CTA_PRIMARY}
                       >
-                        {t("ai.gateUpgrade")}
+                        {gateCopy(gateBanner.lang, "gateUpgrade")}
                       </button>
                     ) : null}
                     <button
                       type="button"
+                      data-testid="chat-gate-manage"
                       onClick={() => setShowVehicleSwitcher(true)}
-                      className="rounded-xl border border-slate-600 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-800"
+                      className={GATE_CTA_SECONDARY}
                     >
-                      {t("ai.gateManageGarage")}
+                      {gateCopy(gateBanner.lang, "gateManageGarage")}
                     </button>
                   </>
                 )}
@@ -1247,54 +1294,62 @@ export default function ChatApp({
                   gateBanner.code === "ambiguous") && (
                   <button
                     type="button"
+                    data-testid="chat-gate-pick-open"
                     onClick={() => setShowVehicleSwitcher(true)}
-                    className="rounded-xl border border-slate-600 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-800"
+                    className={GATE_CTA_SECONDARY}
                   >
-                    {t("ai.gatePickVehicle")}
+                    {gateCopy(gateBanner.lang, "gatePickVehicle")}
                   </button>
                 )}
                 <button
                   type="button"
+                  data-testid="chat-gate-dismiss"
                   onClick={() => setGateBanner(null)}
-                  className="rounded-xl border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800"
+                  className={GATE_CTA_GHOST}
                 >
-                  {t("ai.switchConfirmNo")}
+                  {gateCopy(gateBanner.lang, "switchConfirmNo")}
                 </button>
               </div>
             </div>
           </div>
         ) : null}
         {pendingGarageSwitch && currentVehicle ? (
-          <div className="shrink-0 border-t border-cyan-800/50 bg-cyan-950/50 px-4 py-3">
-            <div className="mx-auto flex max-w-3xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-cyan-50">
-                {t("ai.switchConfirm", {
+          <div
+            className="shrink-0 border-t border-cyan-800/50 bg-cyan-950/50 px-3 py-3 sm:px-4"
+            data-testid="chat-gate-switch"
+            data-gate-lang={pendingGarageSwitch.lang}
+          >
+            <div className="mx-auto flex max-h-[min(42dvh,22rem)] max-w-3xl flex-col gap-3 overflow-y-auto overscroll-contain sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm leading-relaxed text-cyan-50">
+                {gateCopy(pendingGarageSwitch.lang, "switchConfirm", {
                   mention: pendingGarageSwitch.mentionLabel,
                   vehicle: formatVehicleShort(pendingGarageSwitch.vehicle),
                   current: formatVehicleShort(currentVehicle),
                 })}
               </p>
-              <div className="flex shrink-0 gap-2">
+              <div className="flex shrink-0 flex-wrap gap-2">
                 <button
                   type="button"
+                  data-testid="chat-gate-switch-no"
                   onClick={() => setPendingGarageSwitch(null)}
-                  className="rounded-xl border border-slate-600 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-800"
+                  className={GATE_CTA_SECONDARY}
                 >
-                  {t("ai.switchConfirmNo")}
+                  {gateCopy(pendingGarageSwitch.lang, "switchConfirmNo")}
                 </button>
                 <button
                   type="button"
+                  data-testid="chat-gate-switch-yes"
                   onClick={() => void confirmGarageSwitchAndSend()}
-                  className="rounded-xl bg-cyan-500 px-3 py-1.5 text-sm font-semibold text-black hover:bg-cyan-400"
+                  className={GATE_CTA_PRIMARY}
                 >
-                  {t("ai.switchConfirmYes")}
+                  {gateCopy(pendingGarageSwitch.lang, "switchConfirmYes")}
                 </button>
               </div>
             </div>
           </div>
         ) : null}
         {requestError && !isLoading ? (
-          <div className="shrink-0 border-t border-amber-800/40 bg-amber-950/40 px-4 py-2.5">
+          <div className="shrink-0 border-t border-amber-800/40 bg-amber-950/40 px-3 py-2.5 sm:px-4">
             <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-amber-100">
                 <span className="mr-2 rounded bg-amber-900/80 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-200">
@@ -1308,9 +1363,12 @@ export default function ChatApp({
                   setRequestError(null);
                   void handleRegenerate();
                 }}
-                className="rounded-xl bg-cyan-500 px-3 py-1.5 text-sm font-semibold text-black hover:bg-cyan-400"
+                className={GATE_CTA_PRIMARY}
               >
-                {t("ai.retry")}
+                {gateCopy(
+                  resolveGateLanguage("", i18n.language),
+                  "retry",
+                )}
               </button>
             </div>
           </div>

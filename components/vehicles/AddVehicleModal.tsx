@@ -282,13 +282,17 @@ export default function AddVehicleModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/80 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/80 pt-[max(0.5rem,env(safe-area-inset-top))] sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={isEdit ? "Edit vehicle" : "Add new vehicle"}
       data-testid="add-vehicle-dialog"
     >
-      <div className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-[#1e2937] p-6 sm:rounded-3xl sm:p-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <div className="flex max-h-[min(92dvh,100%)] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-[#1e2937] sm:rounded-3xl">
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 sm:p-8"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
         <h3 className="mb-1 text-xl font-semibold">
           {isEdit ? "Edit Vehicle" : "Add New Vehicle"}
         </h3>
@@ -296,6 +300,22 @@ export default function AddVehicleModal({
           Market version is required — manuals and specs differ by country even
           for the same year / make / model.
         </p>
+
+        {!isEdit && seedHint?.label ? (
+          <div
+            className="mb-4 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2.5 text-sm text-cyan-100"
+            data-testid="vehicle-seed-hint"
+          >
+            Prefill from your question:{" "}
+            <span className="font-semibold">{seedHint.label}</span>
+            {seedHint.make || seedHint.model ? (
+              <span className="mt-1 block text-xs text-cyan-200/80">
+                {[seedHint.make, seedHint.model].filter(Boolean).join(" ")} — editable
+                below
+              </span>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="mb-4">
           <MarketSelect
@@ -469,29 +489,7 @@ export default function AddVehicleModal({
           </details>
         )}
 
-        <div className="mt-8 flex gap-4">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="min-h-[48px] flex-1 rounded-2xl border border-slate-700 disabled:opacity-40"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            data-testid="vehicle-save"
-            onClick={() => void handleSubmit()}
-            disabled={!canSubmit}
-            className="min-h-[48px] flex-1 rounded-2xl bg-blue-600 disabled:opacity-40"
-          >
-            {saving
-              ? "Saving…"
-              : isEdit
-                ? "Save changes"
-                : "Save to garage"}
-          </button>
-        </div>
+        <div className="h-2" aria-hidden />
         {saveError && (
           <p className="mt-2 text-center text-xs text-rose-400">{saveError}</p>
         )}
@@ -504,6 +502,32 @@ export default function AddVehicleModal({
               Select engine (and drive/transmission when listed) to save.
             </p>
           )}
+        </div>
+        <div className="shrink-0 border-t border-slate-700/80 bg-[#1e2937] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              className="inline-flex min-h-[48px] flex-1 touch-manipulation items-center justify-center rounded-2xl border border-slate-700 disabled:opacity-40"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              data-testid="vehicle-save"
+              onClick={() => void handleSubmit()}
+              disabled={!canSubmit}
+              className="inline-flex min-h-[48px] flex-1 touch-manipulation items-center justify-center rounded-2xl bg-blue-600 disabled:opacity-40"
+            >
+              {saving
+                ? "Saving…"
+                : isEdit
+                  ? "Save changes"
+                  : "Save to garage"}
+            </button>
+          </div>
+        </div>
       </div>
 
       <UpgradeModal

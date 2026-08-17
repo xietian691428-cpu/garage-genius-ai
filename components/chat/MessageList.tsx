@@ -101,7 +101,12 @@ export default function MessageList({
       )}
 
       {isLoading && (
-        <div className="flex justify-start" role="status" aria-live="polite">
+        <div
+          className="flex justify-start"
+          role="status"
+          aria-live="polite"
+          data-testid="chat-thinking"
+        >
           <div className="rounded-3xl bg-slate-800 px-5 py-4">
             <div className="flex items-center gap-2 text-slate-300">
               <div className="h-2 w-2 animate-pulse rounded-full bg-cyan-400" />

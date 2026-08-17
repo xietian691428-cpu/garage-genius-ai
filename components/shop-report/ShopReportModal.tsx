@@ -235,12 +235,21 @@ export default function ShopReportModal({
 
   const download = () => {
     if (!payload || !pdfBlob) return;
-    const url = URL.createObjectURL(pdfBlob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = defaultShopReportFileName(payload);
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = defaultShopReportFileName(payload);
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // iOS Safari often needs a beat before revoke
+      window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+      showToast(t("shopReport.downloadPdf"));
+    } catch {
+      showToast(t("shopReport.generateFailed"));
+    }
   };
 
   const copyLink = async () => {
@@ -264,6 +273,25 @@ export default function ShopReportModal({
       type: "application/pdf",
     });
     try {
+      // Prefer URL share on mobile Safari (file share often unsupported).
+      if (navigator.share && publicUrl) {
+        try {
+          await navigator.share({
+            title: "Owner Diagnostic Summary",
+            text: `${preview.ymm} — Garage Genius shop handoff`,
+            url: publicUrl,
+          });
+          return;
+        } catch (err) {
+          // User cancel → stop; other errors fall through to file/download.
+          if (
+            err instanceof DOMException &&
+            (err.name === "AbortError" || err.name === "NotAllowedError")
+          ) {
+            return;
+          }
+        }
+      }
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           title: "Owner Diagnostic Summary",
@@ -274,23 +302,29 @@ export default function ShopReportModal({
         });
         return;
       }
-      if (navigator.share && publicUrl) {
-        await navigator.share({
-          title: "Owner Diagnostic Summary",
-          text: publicUrl,
-          url: publicUrl,
-        });
+      if (publicUrl) {
+        await copyLink();
         return;
       }
       download();
-    } catch {
-      /* cancelled */
+    } catch (err) {
+      if (
+        err instanceof DOMException &&
+        (err.name === "AbortError" || err.name === "NotAllowedError")
+      ) {
+        return;
+      }
+      if (publicUrl) {
+        await copyLink();
+      } else {
+        download();
+      }
     }
   };
 
   return (
     <div
-      className="fixed inset-0 z-[90] flex items-end justify-center overflow-y-auto bg-black/70 p-4 sm:items-start sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+      className="fixed inset-0 z-[90] flex items-end justify-center overflow-y-auto bg-black/70 p-0 sm:items-start sm:p-4 sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="shop-report-title"
@@ -298,7 +332,7 @@ export default function ShopReportModal({
       data-testid="shop-report-modal"
     >
       <div
-        className="my-auto max-h-[min(90dvh,100%)] w-full max-w-lg overflow-y-auto rounded-3xl border border-slate-700 bg-[#111827] p-5 shadow-2xl sm:p-6"
+        className="my-0 max-h-[min(94dvh,100%)] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-slate-700 bg-[#111827] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:my-auto sm:rounded-3xl sm:p-6"
         style={{ WebkitOverflowScrolling: "touch" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -492,15 +526,16 @@ export default function ShopReportModal({
                 type="button"
                 data-testid="shop-report-download"
                 onClick={download}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-black hover:bg-cyan-400"
+                className="inline-flex min-h-[44px] flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-black hover:bg-cyan-400"
               >
                 <Download className="h-4 w-4" />
                 {t("shopReport.downloadPdf")}
               </button>
               <button
                 type="button"
+                data-testid="shop-report-share"
                 onClick={() => void share()}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-600 px-4 py-3 text-sm font-semibold text-slate-100 hover:bg-slate-800"
+                className="inline-flex min-h-[44px] flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl border border-slate-600 px-4 py-3 text-sm font-semibold text-slate-100 hover:bg-slate-800"
               >
                 <Share2 className="h-4 w-4" />
                 {t("shopReport.share")}
@@ -511,7 +546,7 @@ export default function ShopReportModal({
               data-testid="shop-report-copy-link"
               onClick={() => void copyLink()}
               disabled={!publicUrl}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-40"
+              className="inline-flex min-h-[44px] w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-40"
             >
               {copied ? (
                 <Check className="h-4 w-4" />
@@ -535,7 +570,7 @@ export default function ShopReportModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl px-4 py-2.5 text-sm text-slate-400 hover:text-white"
+            className="min-h-[44px] touch-manipulation rounded-xl px-4 py-2.5 text-sm text-slate-400 hover:text-white"
           >
             {t("shopReport.close")}
           </button>
@@ -545,7 +580,7 @@ export default function ShopReportModal({
               data-testid="shop-report-generate"
               disabled={busy || !preview.hasEnoughData || quotaExhausted}
               onClick={() => void generate()}
-              className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400 disabled:opacity-50"
+              className="inline-flex min-h-[48px] touch-manipulation items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400 disabled:opacity-50"
             >
               <FileText className="h-4 w-4" />
               {busy ? t("shopReport.generating") : t("shopReport.generatePdf")}
@@ -556,7 +591,7 @@ export default function ShopReportModal({
               type="button"
               disabled={busy || quotaExhausted}
               onClick={() => void generate()}
-              className="rounded-xl border border-slate-600 px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-800"
+              className="min-h-[44px] touch-manipulation rounded-xl border border-slate-600 px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-800"
             >
               {t("shopReport.regenerate")}
             </button>

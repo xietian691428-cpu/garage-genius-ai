@@ -64,21 +64,21 @@ export default function UpgradeModal({
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-4 sm:items-center"
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="account-limits-modal-title"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-700 bg-[#111827] shadow-2xl"
+        className="max-h-[min(92dvh,100%)] w-full max-w-md overflow-y-auto rounded-t-3xl border border-slate-700 bg-[#111827] shadow-2xl sm:rounded-3xl pb-[max(0.5rem,env(safe-area-inset-bottom))]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="relative border-b border-slate-800 bg-gradient-to-br from-cyan-500/15 via-slate-900 to-slate-900 px-6 pb-5 pt-6">
+        <div className="relative border-b border-slate-800 bg-gradient-to-br from-cyan-500/15 via-slate-900 to-slate-900 px-6 pb-5 pt-[max(1.5rem,env(safe-area-inset-top))] sm:pt-6">
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-3 top-3 rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
+            className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] min-h-[44px] min-w-[44px] touch-manipulation rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white sm:top-3"
             aria-label="Close"
           >
             <X className="h-5 w-5" />
@@ -133,7 +133,7 @@ export default function UpgradeModal({
                   type="button"
                   disabled={busy !== null}
                   onClick={() => void checkout("yearly")}
-                  className="flex w-full flex-col items-center justify-center rounded-2xl bg-cyan-500 px-4 py-3 text-black hover:bg-cyan-400 disabled:opacity-60"
+                  className="flex min-h-[48px] w-full touch-manipulation flex-col items-center justify-center rounded-2xl bg-cyan-500 px-4 py-3 text-black hover:bg-cyan-400 disabled:opacity-60"
                 >
                   <span className="text-sm font-semibold">
                     {busy === "yearly"
@@ -148,7 +148,7 @@ export default function UpgradeModal({
                   type="button"
                   disabled={busy !== null}
                   onClick={() => void checkout("monthly")}
-                  className="flex w-full items-center justify-center rounded-2xl border border-slate-600 px-4 py-2.5 text-sm text-slate-200 hover:border-slate-400 disabled:opacity-60"
+                  className="flex min-h-[44px] w-full touch-manipulation items-center justify-center rounded-2xl border border-slate-600 px-4 py-2.5 text-sm text-slate-200 hover:border-slate-400 disabled:opacity-60"
                 >
                   {busy === "monthly"
                     ? "Opening checkout…"
@@ -177,7 +177,7 @@ export default function UpgradeModal({
           <button
             type="button"
             onClick={onClose}
-            className="mt-3 w-full py-2 text-sm text-slate-500 hover:text-slate-300"
+            className="mt-3 min-h-[44px] w-full touch-manipulation py-2 text-sm text-slate-500 hover:text-slate-300"
           >
             {storeSafe ? "OK" : "Not now"}
           </button>

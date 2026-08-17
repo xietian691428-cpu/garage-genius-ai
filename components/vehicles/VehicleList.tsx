@@ -127,7 +127,7 @@ export default function VehicleList({
                   <button
                     type="button"
                     onClick={() => onEdit(vehicle)}
-                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-2 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                    className="inline-flex min-h-[44px] touch-manipulation items-center gap-1.5 rounded-lg px-2.5 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-200"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                     Edit profile
@@ -145,7 +145,7 @@ export default function VehicleList({
                         onArchive(vehicle);
                       }
                     }}
-                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-2 text-xs text-slate-400 hover:bg-slate-800 hover:text-amber-200"
+                    className="inline-flex min-h-[44px] touch-manipulation items-center gap-1.5 rounded-lg px-2.5 text-xs text-slate-400 hover:bg-slate-800 hover:text-amber-200"
                   >
                     <Archive className="h-3.5 w-3.5" />
                     Archive
@@ -163,7 +163,7 @@ export default function VehicleList({
                         onRemove(vehicle);
                       }
                     }}
-                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-2 text-xs text-slate-400 hover:bg-red-950/40 hover:text-red-300"
+                    className="inline-flex min-h-[44px] touch-manipulation items-center gap-1.5 rounded-lg px-2.5 text-xs text-slate-400 hover:bg-red-950/40 hover:text-red-300"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Delete
