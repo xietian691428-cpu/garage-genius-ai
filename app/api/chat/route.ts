@@ -13,6 +13,7 @@ import { buildChatSystemPrompt } from "@/lib/chat-system-prompt";
 import {
   detectReplyLanguageHint,
   latestUserPlainText,
+  turnReplyLanguageLock,
 } from "@/lib/reply-language";
 import { createSupabaseUserClient, createSupabaseAdmin } from "@/lib/supabase-admin";
 import { tokenService } from "@/lib/token-service";
@@ -320,6 +321,9 @@ export async function POST(request: NextRequest) {
           : maintenanceSummary
         : null;
 
+    const userPlainForLang = latestUserPlainText(userMessages) || content;
+    const replyLangHint = detectReplyLanguageHint(userPlainForLang);
+
     const fullMessages: DeepSeekMessage[] = trimDeepSeekConversation(
       [
         buildChatSystemPrompt(
@@ -332,6 +336,11 @@ export async function POST(request: NextRequest) {
           diySkill,
           obdPreference,
         ),
+        // Hard lock after history bias: mid-thread ZH→EN (or reverse) must follow latest user msg.
+        {
+          role: "system",
+          content: turnReplyLanguageLock(replyLangHint),
+        },
         ...userMessages,
       ],
       { imageHeavy: uniqueImages.length > 0 },

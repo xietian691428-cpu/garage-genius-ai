@@ -27,9 +27,15 @@ export const REPLY_LANGUAGE_PROMPT = `
 
 export type ReplyLanguageHint = "zh" | "es" | "en";
 
+const HINT_LABEL: Record<ReplyLanguageHint, string> = {
+  zh: "Chinese (简体中文)",
+  es: "Spanish (Español)",
+  en: "English",
+};
+
 /**
- * Lightweight script / keyword hint for disclaimer fallback only.
- * The model still follows the user message via REPLY_LANGUAGE_PROMPT.
+ * Lightweight script / keyword hint for disclaimer fallback + hard turn lock.
+ * Soft REPLY_LANGUAGE_PROMPT alone is not enough after a mid-thread language switch.
  */
 export function detectReplyLanguageHint(
   text: string | null | undefined,
@@ -52,6 +58,30 @@ export function detectReplyLanguageHint(
   if (esHits >= 3) return "es";
 
   return "en";
+}
+
+/**
+ * Hard per-turn lock injected after the main system prompt.
+ * Prevents sticking to the previous turn's language when the user switches.
+ */
+export function turnReplyLanguageLock(
+  hint: ReplyLanguageHint,
+): string {
+  const label = HINT_LABEL[hint];
+  const must =
+    hint === "zh"
+      ? "Write the **entire** reply in Chinese (简体中文) — including problem summary, steps, tips, cost notes, encouragement, Focus Mode user-visible strings, and the closing liability disclaimer."
+      : hint === "es"
+        ? "Write the **entire** reply in Spanish (Español) — including summary, steps, tips, Focus Mode user-visible strings, and the closing liability disclaimer."
+        : "Write the **entire** reply in English — including summary, steps, tips, Focus Mode user-visible strings, and the closing liability disclaimer.";
+
+  return `
+## THIS TURN — HARD LANGUAGE LOCK (required)
+- Detected language of the user's **latest** message: **${label}**.
+- ${must}
+- Do **not** continue in another language even if earlier messages in this thread used a different language.
+- Machine markers stay English tokens only: <focus>…</focus> and focus-data "part" ids.
+`.trim();
 }
 
 export function disclaimerForReplyLanguage(

@@ -103,6 +103,15 @@ describe("shop report generate helpers", () => {
     expect(preview.reasonIfEmpty).toMatch(/diagnosis|symptoms|fault code/i);
   });
 
+  it("accepts short Chinese symptom text (CJK code-point threshold)", () => {
+    expect(
+      buildShopReportPreview({
+        vehicle,
+        messages: [{ role: "user", content: "卡罗拉空调不出风" }],
+      }).hasEnoughData,
+    ).toBe(true);
+  });
+
   it("accepts longer symptom-only text without DTC", () => {
     expect(
       buildShopReportPreview({

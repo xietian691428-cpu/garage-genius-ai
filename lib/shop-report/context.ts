@@ -56,9 +56,12 @@ export function buildShopReportPreview(input: {
   const userBlob = userTextBlob(messages);
   const coach = (input.coachText || "").trim();
   const symptomPreview = (userBlob || coach).replace(/\s+/g, " ").slice(0, 160);
+  // CJK symptoms are short in char count; count code points and lower the bar when CJK is present.
+  const userChars = [...userBlob.replace(/\s+/g, "")].length;
+  const hasCjk = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]/.test(userBlob);
   const hasEnoughData =
     codes.length > 0 ||
-    userBlob.length >= 24 ||
+    userChars >= (hasCjk ? 6 : 24) ||
     coach.length >= 40;
 
   return {

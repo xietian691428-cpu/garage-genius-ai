@@ -6,6 +6,7 @@ import {
   disclaimerForReplyLanguage,
   latestUserPlainText,
   REPLY_LANGUAGE_PROMPT,
+  turnReplyLanguageLock,
 } from "@/lib/reply-language";
 import {
   ensureLegalDisclaimer,
@@ -36,6 +37,16 @@ describe("reply language follows user message", () => {
     expect(detectReplyLanguageHint("My brakes squeal when stopping")).toBe(
       "en",
     );
+    expect(detectReplyLanguageHint("Cabin air barely blows, worse at idle")).toBe(
+      "en",
+    );
+  });
+
+  it("builds a hard turn language lock from the detected hint", () => {
+    expect(turnReplyLanguageLock("en")).toMatch(/HARD LANGUAGE LOCK/i);
+    expect(turnReplyLanguageLock("en")).toMatch(/entire.*reply in English/i);
+    expect(turnReplyLanguageLock("zh")).toMatch(/Chinese/i);
+    expect(turnReplyLanguageLock("es")).toMatch(/Spanish/i);
   });
 
   it("picks disclaimer language for append fallback", () => {
