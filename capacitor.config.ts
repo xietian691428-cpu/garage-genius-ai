@@ -44,9 +44,10 @@ const config: CapacitorConfig = {
   },
   ios: {
     scheme: "Garage Genius AI",
-    contentInset: "automatic",
+    // Avoid automatic white inset banding behind the dark WebView
+    contentInset: "never",
+    backgroundColor: "#0a0f1c",
     appendUserAgent: "GarageGeniusNative",
-    // Prefer scrolling over fixed insets so iPad keyboard doesn't trap forms
     // Custom URL scheme for OAuth / deep links (also register Universal Links).
     // Associated Domains configured in Xcode: applinks:garagegenius.cloud
   },
@@ -55,6 +56,8 @@ const config: CapacitorConfig = {
     backgroundColor: "#0a0f1c",
     appendUserAgent: "GarageGeniusNative",
   },
+  // Also used by some Cap hosts when platform-specific bg is missing
+  backgroundColor: "#0a0f1c",
 };
 
 export default config;
