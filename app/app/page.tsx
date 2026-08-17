@@ -224,7 +224,7 @@ function GarageAppInner() {
             <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             <div className="shrink-0 pt-[max(0.35rem,env(safe-area-inset-top))] lg:hidden">
               {mobileNavPlacement === "top" && (
                 <MobileTabBar

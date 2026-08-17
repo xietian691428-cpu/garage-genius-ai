@@ -104,7 +104,7 @@ export default function MobileVehicleSwitcher({
             </button>
           </div>
 
-          <div className="chat-scroll flex-1 overflow-y-auto px-5 pb-4">
+          <div className="chat-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 pb-4">
             <VehicleList
               vehicles={vehicles}
               currentVehicle={currentVehicle}

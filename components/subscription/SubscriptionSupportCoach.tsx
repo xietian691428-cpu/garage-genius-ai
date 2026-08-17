@@ -268,7 +268,7 @@ export default function SubscriptionSupportCoach({
 
   if (completed) {
     return (
-      <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-[#0a0f1c] px-4 py-6">
+      <div className="panel-scroll flex h-full min-h-0 flex-col overflow-y-auto overscroll-y-contain bg-[#0a0f1c] px-4 py-6">
         <div className="mx-auto w-full max-w-lg space-y-4">
           <h2 className="text-2xl font-bold text-white">
             {scenario.completion.title}
@@ -323,7 +323,7 @@ export default function SubscriptionSupportCoach({
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="panel-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
         <div className="mx-auto w-full max-w-lg">
           <div className="relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-[#0f172a] to-cyan-950">
             <CreditCard className="h-14 w-14 text-cyan-500/40" />

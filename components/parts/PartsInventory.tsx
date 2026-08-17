@@ -150,7 +150,7 @@ export default function PartsInventory({
       : "No vehicle selected";
 
   return (
-    <div className="flex-1 overflow-auto p-4 pb-[var(--content-pad-bottom)] sm:p-8 lg:pb-8">
+    <div className="panel-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-4 pb-[var(--content-pad-bottom)] sm:p-8 lg:pb-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold sm:text-4xl">Parts Inventory</h1>

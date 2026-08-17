@@ -4,7 +4,10 @@ import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ChatMessage, VehicleInfo } from "@/lib/types/chat";
 import type { FocusCommand } from "@/lib/types/focus";
+import type { SafetyTier } from "@/lib/safety-tier";
 import MessageBubble from "./MessageBubble";
+import SafetyTierTip from "@/components/legal/SafetyTierTip";
+import { INSURANCE_SAFETY_COPY } from "@/lib/insurance-safety-copy";
 import { getChatStarterChips } from "@/lib/chat-repair-loop";
 
 interface Props {
@@ -17,6 +20,7 @@ interface Props {
   onEditUser?: (content: string) => void;
   onQuickPrompt?: (prompt: string) => void;
   onGenerateShopReport?: () => void;
+  sessionSafety?: { tier: SafetyTier; mods: boolean };
 }
 
 export default function MessageList({
@@ -29,9 +33,10 @@ export default function MessageList({
   onEditUser,
   onQuickPrompt,
   onGenerateShopReport,
+  sessionSafety,
 }: Props) {
   const { t } = useTranslation();
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const showStarters =
     Boolean(onQuickPrompt) &&
     !isLoading &&
@@ -39,8 +44,11 @@ export default function MessageList({
     messages.every((m) => m.id === "welcome" || m.role === "assistant") &&
     messages.filter((m) => m.role === "user").length === 0;
 
+  // Scroll only inside the message list — never scrollIntoView (that moves the page on iOS).
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = listRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
   }, [messages, isLoading]);
 
   const lastAssistantId = [...messages]
@@ -48,7 +56,12 @@ export default function MessageList({
     .find((m) => m.role === "assistant" && m.id !== "welcome")?.id;
 
   return (
-    <div className="chat-scroll flex-1 space-y-2 overflow-y-auto p-3 tech-grid sm:p-4 md:p-6">
+    <div
+      ref={listRef}
+      data-testid="chat-message-list"
+      className="chat-scroll flex-1 space-y-2 overflow-y-auto overscroll-y-contain p-3 tech-grid sm:p-4 md:p-6"
+      style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
+    >
       {messages.map((msg) => (
         <MessageBubble
           key={msg.id}
@@ -116,7 +129,27 @@ export default function MessageList({
         </div>
       )}
 
-      <div ref={bottomRef} aria-hidden className="h-px" />
+      {/* Keep safety tip inside the scroll region so it never crushes the message list on phones. */}
+      {sessionSafety &&
+      (sessionSafety.tier !== "low" || sessionSafety.mods) &&
+      messages.some((m) => m.role === "assistant") ? (
+        <div
+          className="mx-auto max-w-3xl border-t border-slate-800/80 px-1 pt-3"
+          data-testid="chat-session-safety"
+        >
+          <p className="mb-1.5 text-[11px] text-slate-500">
+            {INSURANCE_SAFETY_COPY.possibleFactorsOnly}{" "}
+            {INSURANCE_SAFETY_COPY.nextStepOptions}
+          </p>
+          <SafetyTierTip
+            tier={sessionSafety.tier}
+            mods={sessionSafety.mods}
+            onExportShopReport={onGenerateShopReport}
+          />
+        </div>
+      ) : null}
+
+      <div aria-hidden className="h-px" />
     </div>
   );
 }

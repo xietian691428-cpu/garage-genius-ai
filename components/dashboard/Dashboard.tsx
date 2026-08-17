@@ -926,7 +926,7 @@ export default function Dashboard({
   };
 
   return (
-    <div className="relative flex-1 overflow-auto bg-[#0a0f1c] p-3 pb-[var(--content-pad-bottom)] sm:p-6 lg:p-8 lg:pb-8">
+    <div className="panel-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-[#0a0f1c] p-3 pb-[var(--content-pad-bottom)] sm:p-6 lg:p-8 lg:pb-8">
       <div className="mx-auto max-w-7xl">
         <HomeHub
           vehicles={vehicles}

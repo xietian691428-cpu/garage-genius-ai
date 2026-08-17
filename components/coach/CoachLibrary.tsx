@@ -429,7 +429,7 @@ export default function CoachLibrary({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-[#0a0f1c] pb-[var(--content-pad-bottom)] lg:pb-0">
+    <div className="panel-scroll flex h-full min-h-0 flex-col overflow-y-auto overscroll-y-contain bg-[#0a0f1c] pb-[var(--content-pad-bottom)] lg:pb-0">
       <SafetyAdviceAckModal
         open={showAckModal}
         onContinue={() => {

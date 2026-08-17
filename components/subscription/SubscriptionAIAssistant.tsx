@@ -121,7 +121,7 @@ export default function SubscriptionAIAssistant({ onClose }: Props) {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-[#0a0f1c]">
+    <div className="panel-scroll flex h-full min-h-0 flex-col overflow-y-auto overscroll-y-contain bg-[#0a0f1c]">
       <div className="mx-auto w-full max-w-lg px-4 py-6">
         <div className="mb-6 flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">

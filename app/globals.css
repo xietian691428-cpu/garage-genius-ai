@@ -62,6 +62,8 @@ body {
   height: 100vh;
   min-height: -webkit-fill-available;
   overflow: hidden;
+  /* Prevent iOS rubber-band from scrolling the document behind the shell */
+  overscroll-behavior: none;
 }
 
 /* ── Landing page ─────────────────────────────────────── */
@@ -525,10 +527,17 @@ body {
 }
 
 /* 可滚动聊天区：惯性滚动 + 不链式拉动页面 */
-.chat-scroll {
+.chat-scroll,
+.panel-scroll {
+  min-height: 0;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-  min-height: 0;
+  touch-action: pan-y;
+}
+
+/* Message list keeps a usable touch target on short phones (CTAs live below). */
+.chat-scroll[data-testid="chat-message-list"] {
+  min-height: min(36dvh, 16rem);
 }
 
 /* iOS 输入框 ≥16px 防止聚焦自动放大 */

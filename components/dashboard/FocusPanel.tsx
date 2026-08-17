@@ -251,7 +251,7 @@ export default function FocusPanel({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <div className="panel-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4">
           <div
             className="focus-zoom relative overflow-hidden rounded-2xl border border-slate-700 bg-[#070b14] p-2"
             style={{ borderColor: `${region.color}55` }}

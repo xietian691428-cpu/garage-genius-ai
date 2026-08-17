@@ -39,7 +39,6 @@ import {
   formatFamiliarityForPrompt,
 } from "@/lib/vehicle-familiarity";
 import ReceiptConfirmModal from "@/components/history/ReceiptConfirmModal";
-import SafetyTierTip from "@/components/legal/SafetyTierTip";
 import {
   combineSafetyTiers,
   inferSafetyTierFromText,
@@ -47,7 +46,6 @@ import {
 } from "@/lib/safety-tier";
 import { vehicleHasModifiedTag } from "@/lib/insurance-tips";
 import { MOD_CONTEXT_PATTERN } from "@/lib/insurance-safety-copy";
-import { INSURANCE_SAFETY_COPY } from "@/lib/insurance-safety-copy";
 import ShopReportModal from "@/components/shop-report/ShopReportModal";
 import { formatAiHttpError } from "@/lib/format-ai-http-error";
 import type { MaintenanceRecord } from "@/lib/types/maintenance";
@@ -1118,7 +1116,7 @@ export default function ChatApp({
 
   return (
     <div className="flex h-full min-h-0 flex-1 overflow-hidden">
-      <div className="hidden w-72 shrink-0 border-r border-slate-800 bg-[#111827] lg:block">
+      <div className="hidden w-72 shrink-0 overflow-hidden border-r border-slate-800 bg-[#111827] lg:block lg:min-h-0">
         <VehicleManager
           vehicles={vehicles}
           currentVehicle={currentVehicle}
@@ -1144,8 +1142,8 @@ export default function ChatApp({
         />
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center justify-between gap-2 border-b border-slate-800 bg-[#111827] px-3 py-2 lg:hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-800 bg-[#111827] px-3 py-2 lg:hidden">
           <button
             type="button"
             onClick={() => setShowVehicleSwitcher(true)}
@@ -1223,6 +1221,7 @@ export default function ChatApp({
           onEditUser={handleEditUser}
           onQuickPrompt={handleQuickPrompt}
           onGenerateShopReport={() => setShopReportOpen(true)}
+          sessionSafety={sessionSafety}
         />
         {gateBanner ? (
           <div
@@ -1371,20 +1370,6 @@ export default function ChatApp({
                 )}
               </button>
             </div>
-          </div>
-        ) : null}
-        {(sessionSafety.tier !== "low" || sessionSafety.mods) &&
-        messages.some((m) => m.role === "assistant") ? (
-          <div className="shrink-0 border-t border-slate-800 px-3 py-2 sm:px-4">
-            <p className="mb-1.5 text-[11px] text-slate-500">
-              {INSURANCE_SAFETY_COPY.possibleFactorsOnly}{" "}
-              {INSURANCE_SAFETY_COPY.nextStepOptions}
-            </p>
-            <SafetyTierTip
-              tier={sessionSafety.tier}
-              mods={sessionSafety.mods}
-              onExportShopReport={() => setShopReportOpen(true)}
-            />
           </div>
         ) : null}
         <ChatInput

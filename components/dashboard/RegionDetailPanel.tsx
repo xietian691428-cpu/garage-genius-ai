@@ -229,7 +229,7 @@ export default function RegionDetailPanel({
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
+      <div className="panel-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-6 sm:px-8">
         <div className="mx-auto max-w-5xl space-y-8">
           {error && (
             <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-6 text-red-300">

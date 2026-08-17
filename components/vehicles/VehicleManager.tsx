@@ -51,7 +51,7 @@ export default function VehicleManager({
         );
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto">
+    <div className="panel-scroll flex h-full min-h-0 flex-col overflow-y-auto overscroll-y-contain">
       <div className="shrink-0 border-b border-slate-800 bg-[#111827]">
         <VehiclePanel
           vehicle={currentVehicle}
