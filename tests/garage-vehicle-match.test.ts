@@ -69,4 +69,41 @@ describe("matchGarageVehicleMention", () => {
     expect(formatVehicleShort(bmw)).toContain("BMW");
     expect(formatVehicleShort(bmw)).toContain("Daily Driver");
   });
+
+  it("does not treat DIY brake wording as a Ram mention (C3)", () => {
+    const cases = [
+      "手刹没事，行车制动绵",
+      "Parking brake is fine, the service brakes feel spongy",
+      "The parking brake works but the service brakes are soft",
+      "I need a wiring diagram for the parking brake",
+      "Need to program the EPB module",
+      "Check the unibody frame while I'm under there",
+    ];
+    for (const text of cases) {
+      const r = matchGarageVehicleMention(text, garage, camry);
+      expect(r.kind, text).toBe("ok");
+      if (r.kind === "ok") expect(r.reason, text).toBe("no_vehicle_mention");
+    }
+  });
+
+  it("still detects a real Ram mention that is not in the garage", () => {
+    const r = matchGarageVehicleMention(
+      "My Ram 1500 rattles at highway speed",
+      garage,
+      camry,
+    );
+    expect(r.kind).toBe("not_in_garage");
+    if (r.kind === "not_in_garage") {
+      expect(r.mentionLabel.toLowerCase()).toContain("ram");
+    }
+  });
+
+  it("does not treat 'number of clicks' as Mercedes mb", () => {
+    const r = matchGarageVehicleMention(
+      "The parking brake has a high number of clicks and feels loose",
+      garage,
+      camry,
+    );
+    expect(r.kind).toBe("ok");
+  });
 });

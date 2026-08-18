@@ -99,6 +99,14 @@ describe("matchSafetyTopicIds", () => {
     },
     {
       shouldTrigger: true,
+      text: "During the oil change I noticed the parking brake shoes are worn, should I replace them too?",
+    },
+    {
+      shouldTrigger: true,
+      text: "换油时发现手刹蹄片磨损，要不要一起换",
+    },
+    {
+      shouldTrigger: true,
       text: "Handbrake won't release, it's stuck on and I smell burning.",
     },
     {

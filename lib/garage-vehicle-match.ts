@@ -111,15 +111,34 @@ function compact(s: string): string {
   return s.toLowerCase().normalize("NFKC");
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Latin make/model tokens need word boundaries.
+ * Unbounded includes() on compacted text treats "diagram" / "program" / "frame"
+ * as Ram, and "number" as Mercedes "mb".
+ */
+export function textMentionsAlias(text: string, alias: string): boolean {
+  const raw = text || "";
+  const token = compact(alias).trim();
+  if (!token) return false;
+
+  if (/[\u3400-\u9fff]/.test(alias)) {
+    return compact(raw).includes(token) || norm(raw).includes(norm(alias));
+  }
+
+  const hay = compact(raw);
+  const flexible = escapeRegExp(token).replace(/[\s-]+/g, "[\\s\\-]*");
+  return new RegExp(`(?<![a-z0-9])${flexible}(?![a-z0-9])`, "i").test(hay);
+}
+
 function modelAliasHits(text: string): string[] {
-  const c = compact(text);
-  const n = norm(text);
   const hits: string[] = [];
   for (const [canonical, aliases] of Object.entries(MODEL_ALIASES)) {
     for (const a of aliases) {
-      const ca = compact(a);
-      const na = norm(a);
-      if ((ca && c.includes(ca)) || (na && n.includes(na))) {
+      if (textMentionsAlias(text, a) || textMentionsAlias(text, canonical)) {
         hits.push(canonical);
         break;
       }
@@ -129,14 +148,10 @@ function modelAliasHits(text: string): string[] {
 }
 
 function makeAliasHits(text: string): string[] {
-  const c = compact(text);
-  const n = norm(text);
   const hits: string[] = [];
   for (const [canonical, aliases] of Object.entries(MAKE_ALIASES)) {
     for (const a of aliases) {
-      const ca = compact(a);
-      const na = norm(a);
-      if ((ca && c.includes(ca)) || (na && n.includes(na))) {
+      if (textMentionsAlias(text, a) || textMentionsAlias(text, canonical)) {
         hits.push(canonical);
         break;
       }
@@ -207,19 +222,13 @@ export function matchGarageVehicleMention(
   const makeKeys = makeAliasHits(raw);
 
   // Also catch plain English make/model tokens present in garage rows
-  const c = compact(raw);
-  const n = norm(raw);
   for (const v of garage) {
     const mk = vehicleModelKey(v);
     const make = vehicleMakeKey(v);
-    if (mk && (c.includes(compact(v.model)) || n.includes(norm(v.model)))) {
-      if (!modelKeys.includes(mk)) modelKeys.push(mk);
+    if (mk && textMentionsAlias(raw, v.model) && !modelKeys.includes(mk)) {
+      modelKeys.push(mk);
     }
-    if (
-      make &&
-      (c.includes(compact(v.make)) || n.includes(norm(v.make))) &&
-      !makeKeys.includes(make)
-    ) {
+    if (make && textMentionsAlias(raw, v.make) && !makeKeys.includes(make)) {
       makeKeys.push(make);
     }
   }

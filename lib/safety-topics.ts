@@ -290,6 +290,8 @@ const PARKING_BRAKE_FAULT_INDICATORS = [
   "look worn",
   "looks worn",
   "worn shoes",
+  "shoes worn",
+  "shoes are worn",
   // Warning / EPB (lamp + parking-brake term in the same window)
   "epb fault",
   "epb error",
@@ -320,6 +322,10 @@ const PARKING_BRAKE_FAULT_INDICATORS = [
   "拖滞",
   "抱死",
   "溜车",
+  "溜了",
+  "溜了一点",
+  "蹄片磨损",
+  "蹄片磨平",
   "故障灯",
   // ES
   "no sujeta",
@@ -341,6 +347,8 @@ const PARKING_BRAKE_FAULT_INDICATORS = [
   "luz de fallo",
   "fallo",
   "arrastra",
+  "zapatas gastadas",
+  "zapatas desgastadas",
 ] as const;
 
 /**

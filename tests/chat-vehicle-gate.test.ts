@@ -123,4 +123,16 @@ describe("resolveChatVehicleGate", () => {
     expect(r.code).toBe("ok");
     if (r.code === "ok") expect(r.vehicle.id).toBe("bmw-1");
   });
+
+  it("does not gate Camry DIY brake text as a missing Ram (C3)", () => {
+    const r = resolveChatVehicleGate({
+      text: "手刹没事，行车制动绵",
+      garage: [camryA],
+      current: camryA,
+      canAddVehicle: false,
+      maxVehicles: 5,
+    });
+    expect(r.code).toBe("ok");
+    if (r.code === "ok") expect(r.vehicle.id).toBe("camry-a");
+  });
 });

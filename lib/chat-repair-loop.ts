@@ -306,18 +306,38 @@ ${lines.join("\n")}${more}`;
 export function trimMessagesForApi(
   messages: ChatMessage[],
   windowSize = CHAT_API_MESSAGE_WINDOW,
-  options?: { maxContentChars?: number; imageHeavy?: boolean },
+  options?: {
+    maxContentChars?: number;
+    imageHeavy?: boolean;
+    /** After a hard intent reset, send only the latest user turn. */
+    latestUserOnly?: boolean;
+    /** Inclusive start of the post-reset window (ChatMessage.id). */
+    fromMessageId?: string;
+  },
 ): { role: string; content: string }[] {
   const maxChars = options?.maxContentChars ?? (options?.imageHeavy ? 4_000 : 6_000);
   const win = options?.imageHeavy
     ? Math.min(windowSize, 16)
     : windowSize;
-  const usable = messages.filter(
+  let usable = messages.filter(
     (m) =>
       m.id !== "welcome" &&
       (m.role === "user" || m.role === "assistant") &&
       Boolean(m.content?.trim()),
   );
+
+  if (options?.latestUserOnly) {
+    for (let i = usable.length - 1; i >= 0; i--) {
+      if (usable[i].role === "user") {
+        usable = [usable[i]];
+        break;
+      }
+    }
+  } else if (options?.fromMessageId) {
+    const start = usable.findIndex((m) => m.id === options.fromMessageId);
+    if (start >= 0) usable = usable.slice(start);
+  }
+
   const sliced = usable.slice(-win);
   return sliced.map((m) => {
     const raw = m.content.trim();
@@ -345,4 +365,11 @@ When Retrieved Knowledge is present (especially car_fault / car_repair_qa / owne
 Prefer continuing the prior diagnosis over generic reset questions.
 When maintenance history lists a completed job, acknowledge it and adjust intervals (e.g. "Pads replaced at 60k — at 72k inspect thickness; this is a recommended check, not a guaranteed need for new pads").
 Prefer tentative language: possible cause / recommended check / general guidance — never claim a definite sole cause or guaranteed fix.
+When a CONTEXT RESET block is present for this turn, do not continue the prior job.
+When a [CRITICAL STATE] block is present and the issue involves brakes / parking brake: do not continue previous service steps; do not assume chocking still holds; first priority is vehicle stability or getting clear from underneath if it is moving. Do not send the user back to front jack points, drain-plug, or oil-filter steps.
 `.trim();
+
+export {
+  assistantContinuesStaleFocus,
+  formatStaleFocusRepairPrompt,
+} from "@/lib/chat-intent-drift";

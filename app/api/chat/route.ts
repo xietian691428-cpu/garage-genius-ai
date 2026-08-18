@@ -49,6 +49,15 @@ import { fitmentSearchString } from "@/lib/vcdb/format";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
 import { normalizeDiySkill } from "@/lib/diy-skill";
 import { parseObdAdapterPreference } from "@/lib/obd-preference";
+import {
+  assistantContinuesStaleFocus,
+  formatStaleFocusRepairPrompt,
+  logChatDrift,
+  matchedStalePhrases,
+  parseTurnFocus,
+  prepareDriftForChatTurn,
+} from "@/lib/chat-intent-drift";
+import type { TurnFocus } from "@/lib/chat-intent-drift";
 
 export const runtime = "nodejs";
 /** Allow RAG + DeepSeek within Vercel serverless limits (no OpenAI fallback). */
@@ -133,6 +142,7 @@ export async function POST(request: NextRequest) {
       playbookSlug,
       coachSlug,
       maintenanceSummary,
+      conversationFocus,
     } = body as {
       messages?: DeepSeekMessage[];
       /** @deprecated prefer `images` */
@@ -144,6 +154,13 @@ export async function POST(request: NextRequest) {
       coachSlug?: string;
       /** Client-formatted recent maintenance_records for multi-turn context */
       maintenanceSummary?: string | null;
+      /** Per-vehicle focus from localStorage — never mix across vehicle_id. */
+      conversationFocus?: {
+        previous?: TurnFocus | null;
+        abandoned?: TurnFocus | null;
+        vehicleId?: string;
+        apiHistoryFromId?: string | null;
+      } | null;
     };
 
     if (!currentVehicle?.make || !currentVehicle?.model) {
@@ -324,6 +341,20 @@ export async function POST(request: NextRequest) {
     const userPlainForLang = latestUserPlainText(userMessages) || content;
     const replyLangHint = detectReplyLanguageHint(userPlainForLang);
 
+    // Intent reset: after vehicle gate + language lock inputs, before DeepSeek.
+    const focusVehicleOk =
+      !conversationFocus?.vehicleId ||
+      conversationFocus.vehicleId === currentVehicle.id;
+    const { drift, conversation, systemBlock } = prepareDriftForChatTurn({
+      messages: userMessages,
+      previousFocus: focusVehicleOk ? conversationFocus?.previous : null,
+      vehicleId: currentVehicle.id,
+      apiHistoryFromId: focusVehicleOk
+        ? conversationFocus?.apiHistoryFromId
+        : null,
+    });
+    userMessages = conversation as DeepSeekMessage[];
+
     const fullMessages: DeepSeekMessage[] = trimDeepSeekConversation(
       [
         buildChatSystemPrompt(
@@ -341,6 +372,9 @@ export async function POST(request: NextRequest) {
           role: "system",
           content: turnReplyLanguageLock(replyLangHint),
         },
+        ...(systemBlock
+          ? [{ role: "system" as const, content: systemBlock }]
+          : []),
         ...userMessages,
       ],
       { imageHeavy: uniqueImages.length > 0 },
@@ -352,8 +386,56 @@ export async function POST(request: NextRequest) {
     );
     await assertAiTokenBudget(user.id, estimatedTokens, user.email);
 
-    const { content: reply, usage } = await callDeepSeek(fullMessages);
-    const actualTokensUsed = Math.max(1, usage.total_tokens);
+    let { content: reply, usage } = await callDeepSeek(fullMessages);
+    let actualTokensUsed = Math.max(1, usage.total_tokens);
+    let promptTokens = usage.prompt_tokens;
+    let completionTokens = usage.completion_tokens;
+
+    const abandonedFocus =
+      (focusVehicleOk ? parseTurnFocus(conversationFocus?.abandoned) : null) ??
+      (drift.shouldReset ? drift.previousFocus : null) ??
+      null;
+    const staleHits = matchedStalePhrases(
+      reply,
+      abandonedFocus,
+      drift.currentFocus,
+    );
+    const shouldRepair =
+      uniqueImages.length === 0 &&
+      assistantContinuesStaleFocus(reply, abandonedFocus, drift.currentFocus);
+    logChatDrift(
+      {
+        historySentToDeepSeek: userMessages.length,
+        apiHistoryFromId: conversationFocus?.apiHistoryFromId ?? null,
+        repairTriggered: shouldRepair,
+        staleHits,
+      },
+      currentVehicle.id,
+    );
+    if (shouldRepair) {
+      try {
+        const repaired = await callDeepSeek(
+          trimDeepSeekConversation(
+            [
+              ...fullMessages,
+              {
+                role: "system",
+                content: formatStaleFocusRepairPrompt(drift, abandonedFocus),
+              },
+            ],
+            { imageHeavy: false },
+          ),
+        );
+        reply = repaired.content;
+        actualTokensUsed += Math.max(1, repaired.usage.total_tokens);
+        promptTokens += repaired.usage.prompt_tokens;
+        completionTokens += repaired.usage.completion_tokens;
+      } catch (err) {
+        console.warn("[/api/chat] stale-focus repair skipped", {
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
     const resolvedPlaybook =
       (typeof playbookSlug === "string" && playbookSlug.trim()) ||
       (typeof coachSlug === "string" && coachSlug.trim()) ||
@@ -365,8 +447,8 @@ export async function POST(request: NextRequest) {
       {
         route: "chat",
         model: "deepseek-chat",
-        promptTokens: usage.prompt_tokens,
-        completionTokens: usage.completion_tokens,
+        promptTokens,
+        completionTokens,
         playbookSlug: resolvedPlaybook,
         email: user.email,
         metadata: {
@@ -388,8 +470,8 @@ export async function POST(request: NextRequest) {
     return Response.json({
       content: finalContent,
       usage: {
-        prompt_tokens: usage.prompt_tokens,
-        completion_tokens: usage.completion_tokens,
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
         total_tokens: actualTokensUsed,
       },
       rag: {
@@ -420,6 +502,12 @@ export async function POST(request: NextRequest) {
       suggestedFocus,
       ragFocusHint,
       configConflicts: conflicts,
+      drift: {
+        shouldReset: drift.shouldReset,
+        reason: drift.reason,
+        summary: drift.currentFocus.summary,
+      },
+      conversationFocus: drift.currentFocus,
     });
   } catch (error: unknown) {
     const abuse = aiAbuseResponse(error);

@@ -38,6 +38,20 @@ import {
   trimMessagesForApi,
 } from "@/lib/chat-repair-loop";
 import {
+  detectIntentDrift,
+  logChatDrift,
+  matchDriftSafetyTopics,
+  type DriftCheckResult,
+  type TurnFocus,
+} from "@/lib/chat-intent-drift";
+import {
+  driftHistoryOptions,
+  loadChatFocus,
+  nextChatFocusStore,
+  previousFocusFromStore,
+  saveChatFocus,
+} from "@/lib/chat-focus-storage";
+import {
   computeVehicleFamiliarity,
   formatFamiliarityForPrompt,
 } from "@/lib/vehicle-familiarity";
@@ -595,6 +609,33 @@ export default function ChatApp({
         throw new Error(t("ai.signInRequired"));
       }
 
+      const focusStore = loadChatFocus(activeVehicle.id);
+      const lastUser = [...nextMessages]
+        .reverse()
+        .find((m) => m.role === "user");
+      const userText = lastUser?.content?.trim() || "";
+      const intentDrift = detectIntentDrift(
+        userText,
+        nextMessages,
+        previousFocusFromStore(focusStore),
+        matchDriftSafetyTopics(userText),
+      );
+      const historyOpts = driftHistoryOptions(intentDrift, focusStore);
+      logChatDrift(
+        {
+          shouldReset: intentDrift.shouldReset,
+          reason: intentDrift.reason,
+          summary: intentDrift.currentFocus.summary,
+          vehicleRaised: intentDrift.currentFocus.vehicleRaised ?? false,
+          parkingBrakeState:
+            intentDrift.currentFocus.parkingBrakeState ?? "unknown",
+          latestUserOnly: historyOpts.latestUserOnly,
+          fromMessageId: historyOpts.fromMessageId,
+          apiHistoryFromId: focusStore.apiHistoryFromId,
+        },
+        activeVehicle.id,
+      );
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -605,12 +646,20 @@ export default function ChatApp({
         body: JSON.stringify({
           messages: trimMessagesForApi(nextMessages, undefined, {
             imageHeavy: imagePayloads.length > 0,
+            latestUserOnly: historyOpts.latestUserOnly,
+            fromMessageId: historyOpts.fromMessageId,
           }),
           images: imagePayloads,
           image: imagePayloads[0],
           currentVehicle: activeVehicle,
           playbookSlug: playbookSlugRef.current || undefined,
           maintenanceSummary: maintenanceSummary || undefined,
+          conversationFocus: {
+            previous: previousFocusFromStore(focusStore),
+            abandoned: focusStore.abandonedFocus,
+            vehicleId: activeVehicle.id,
+            apiHistoryFromId: focusStore.apiHistoryFromId,
+          },
         }),
       });
 
@@ -621,6 +670,12 @@ export default function ChatApp({
         retryable?: boolean;
         suggestedFocus?: FocusCommand | null;
         ragHits?: RagKnowledgeHit[];
+        drift?: {
+          shouldReset: boolean;
+          reason: DriftCheckResult["reason"];
+          summary: string;
+        };
+        conversationFocus?: TurnFocus;
       };
       try {
         data = (await response.json()) as typeof data;
@@ -664,6 +719,24 @@ export default function ChatApp({
       setMessages((prev) => [...prev, assistantMessage]);
       setRequestError(null);
       void refreshTokenUsage();
+
+      if (lastUser && (data.conversationFocus || intentDrift.currentFocus)) {
+        const resolved: DriftCheckResult = {
+          ...intentDrift,
+          shouldReset: data.drift?.shouldReset ?? intentDrift.shouldReset,
+          reason: data.drift?.reason ?? intentDrift.reason,
+          currentFocus: data.conversationFocus ?? intentDrift.currentFocus,
+        };
+        saveChatFocus(
+          activeVehicle.id,
+          nextChatFocusStore({
+            vehicleId: activeVehicle.id,
+            store: focusStore,
+            drift: resolved,
+            latestUserId: lastUser.id,
+          }),
+        );
+      }
 
       const focus = sanitizeFocusCommand(
         data.suggestedFocus ||
