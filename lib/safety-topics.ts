@@ -48,6 +48,8 @@ export const DEFAULT_SAFETY_TOPICS: readonly SafetyTopic[] = [
   {
     id: "brakes",
     severity: "high",
+    // Parking brake / 手刹 / EPB are masked unless a nearby fault phrase hits
+    // (see maskParkingBrakeMentions + describeParkingBrakeMatch).
     keywords: [
       "brake",
       "brakes",
@@ -67,7 +69,6 @@ export const DEFAULT_SAFETY_TOPICS: readonly SafetyTopic[] = [
       "刹车片",
       "刹车盘",
       "刹车油",
-      "手刹",
       "制动液",
     ],
     calloutEn:
@@ -201,6 +202,171 @@ export const DEFAULT_SAFETY_TOPICS: readonly SafetyTopic[] = [
   },
 ] as const;
 
+/**
+ * Parking brake / EPB is not service-brake work by itself.
+ * Bare "brake" would otherwise match inside "parking brake"; 制动 would
+ * match inside 驻车制动. Mask those phrases, then require a nearby fault
+ * phrase before counting the brakes topic.
+ */
+const PARKING_BRAKE_PLACEHOLDER = "pbrk";
+
+/** Longer phrases first so they consume before shorter aliases. */
+const PARKING_BRAKE_BASE_TERMS = [
+  "electronic parking brake",
+  "emergency brake",
+  "freno de estacionamiento",
+  "parking brake",
+  "park brake",
+  "hand brake",
+  "freno de mano",
+  "handbrake",
+  "e-brake",
+  "e brake",
+  "epb",
+  "电子手刹",
+  "驻车制动",
+  "手刹",
+] as const;
+
+/**
+ * Fault / hazard cues that must co-occur with a parking-brake base term.
+ * Prefer ≥2-word phrases. Do not add bald: soft, stuck, rolling, light, failed.
+ * Contractions are expanded at match time (won't → will not).
+ */
+const PARKING_BRAKE_FAULT_INDICATORS = [
+  // Hold / fail to hold
+  "not holding",
+  "won't hold",
+  "doesn't hold",
+  "didn't hold",
+  "did not hold",
+  "failed to hold",
+  "no longer holds",
+  "not working",
+  "doesn't work",
+  "inoperative",
+  "won't stay on",
+  "doesn't stay engaged",
+  "won't engage",
+  "doesn't engage",
+  "no holds",
+  "no engage",
+  "creeps forward",
+  "slipping on",
+  "slips on",
+  "slipping on incline",
+  "cable stretched",
+  "cable is stretched",
+  "cable broken",
+  "motor failed",
+  "actuator failed",
+  // Won't release / stuck on
+  "won't release",
+  "can't release",
+  "won't disengage",
+  "can't disengage",
+  "won't come off",
+  "stuck on",
+  "stuck engaged",
+  "stays engaged",
+  "remains on",
+  "engaged while driving",
+  // Drag / heat
+  "dragging",
+  "dragging while driving",
+  "burning smell",
+  "smell burning",
+  "smell of burning",
+  // Feel / travel
+  "no resistance",
+  "no tension",
+  "too many clicks",
+  "too loose",
+  "goes to the floor",
+  "feels soft",
+  "feels softer",
+  "completely soft",
+  "gone soft",
+  "look worn",
+  "looks worn",
+  "worn shoes",
+  // Warning / EPB (lamp + parking-brake term in the same window)
+  "epb fault",
+  "epb error",
+  "epb warning",
+  "epb light",
+  "fault light",
+  // Roll-away
+  "rolls away",
+  "rolled away",
+  "started rolling",
+  "still rolls",
+  "car rolls",
+  "car roll",
+  "let the car roll",
+  "vehicle rolled",
+  "car rolled",
+  "rolled into",
+  // ZH — after 手刹 / 驻车制动 mask
+  "不持力",
+  "拉不住",
+  "拉不起",
+  "刹不住",
+  "松不开",
+  "放不下",
+  "无法释放",
+  "还是会动",
+  "还会动",
+  "拖滞",
+  "抱死",
+  "溜车",
+  "故障灯",
+  // ES
+  "no sujeta",
+  "no se sujeta",
+  "no aguanta",
+  "no retiene",
+  "no funciona",
+  "no suelta",
+  "no se suelta",
+  "no desengancha",
+  "no agarra",
+  "se queda enganchado",
+  "se va rodando",
+  "se desplaza",
+  "se desplazo",
+  "muy blando",
+  "sin resistencia",
+  "no tiene resistencia",
+  "luz de fallo",
+  "fallo",
+  "arrastra",
+] as const;
+
+/**
+ * Already a parking-brake / EPB hazard without needing a second fault word.
+ * Checked on the original text (before mask) so “parking brake light” still matches.
+ * Warning lamps default to trigger — owners mentioning them are usually worried.
+ */
+const PARKING_BRAKE_STANDALONE_FAULTS = [
+  "epb fault",
+  "epb error",
+  "epb warning",
+  "epb light",
+  "parking brake warning",
+  "parking brake light",
+  "handbrake light",
+  "brake warning light",
+  "luz de fallo",
+  "luz del freno de mano",
+  "手刹灯",
+  "手刹故障灯",
+  "驻车制动故障灯",
+  "电子手刹故障",
+] as const;
+
+const PARKING_BRAKE_TOKEN_WINDOW = 12;
+
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -215,26 +381,189 @@ function latinKeywordMatches(haystackLower: string, keyword: string): boolean {
   return re.test(haystackLower);
 }
 
+function parkingBrakeFaultPhraseMatches(window: string, fault: string): boolean {
+  if (isCjkPhrase(fault)) return window.includes(fault);
+  if (latinKeywordMatches(window, fault)) return true;
+  // “no se suelta” / “no lo agarra” — one short pronoun between no + verb.
+  const parts = fault.split(/\s+/);
+  if (parts[0] === "no" && parts.length === 2) {
+    const verb = escapeRegex(parts[1]);
+    const re = new RegExp(
+      `(?:^|[^a-z0-9])no\\s+(?:se|lo|la|le)\\s+${verb}(?:$|[^a-z0-9])`,
+      "i",
+    );
+    return re.test(window);
+  }
+  return false;
+}
+
 function cjkKeywordMatches(haystack: string, keyword: string): boolean {
   const kw = keyword.trim();
   if (!kw) return false;
   return haystack.includes(kw);
 }
 
+function isCjkPhrase(phrase: string): boolean {
+  return /[\u3400-\u9fff]/.test(phrase);
+}
+
+function parkingBrakeTermRegex(term: string): RegExp {
+  const escaped = escapeRegex(term).replace(/\s+/g, "\\s+");
+  if (isCjkPhrase(term)) return new RegExp(escaped, "gi");
+  // Consume the leading delimiter so we can put it back on replace.
+  return new RegExp(`(^|[^a-z0-9])${escaped}(?=$|[^a-z0-9])`, "gi");
+}
+
+function foldDiacritics(text: string): string {
+  return text.normalize("NFD").replace(/\p{M}/gu, "");
+}
+
+function expandParkingBrakeContractions(text: string): string {
+  return foldDiacritics(text)
+    .toLowerCase()
+    .replace(/won't/g, "will not")
+    .replace(/can't/g, "cannot")
+    .replace(/doesn't/g, "does not")
+    .replace(/didn't/g, "did not")
+    .replace(/isn't/g, "is not")
+    .replace(/it's/g, "it is");
+}
+
+function stripParkingBrakePunct(text: string): string {
+  return text
+    .replace(/-/g, " ")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Replace parking-brake aliases with a token that does not contain "brake" /
+ * 制动, so generic brakes keywords do not fire on DIY “set the parking brake”.
+ */
+export function maskParkingBrakeMentions(text: string): string {
+  if (!text.trim()) return text;
+  let out = text;
+  const terms = [...PARKING_BRAKE_BASE_TERMS].sort((a, b) => b.length - a.length);
+  for (const term of terms) {
+    const re = parkingBrakeTermRegex(term);
+    out = isCjkPhrase(term)
+      ? out.replace(re, ` ${PARKING_BRAKE_PLACEHOLDER} `)
+      : out.replace(re, `$1 ${PARKING_BRAKE_PLACEHOLDER} `);
+  }
+  return out;
+}
+
+function tokensOf(text: string): string[] {
+  return text.split(/\s+/).filter(Boolean);
+}
+
+function phraseAt(tokens: string[], start: number, phrase: string[]): boolean {
+  if (start + phrase.length > tokens.length) return false;
+  return phrase.every((p, j) => tokens[start + j] === p);
+}
+
+function findPhraseStarts(tokens: string[], phrase: string): number[] {
+  const parts = tokensOf(phrase);
+  if (!parts.length) return [];
+  const starts: number[] = [];
+  for (let i = 0; i <= tokens.length - parts.length; i++) {
+    if (phraseAt(tokens, i, parts)) starts.push(i);
+  }
+  return starts;
+}
+
+export type ParkingBrakeMatchReason = {
+  matched: boolean;
+  baseTerm: string | null;
+  fault: string | null;
+};
+
+/**
+ * Parking-brake mention + nearby fault/hazard phrase → brakes callout.
+ * Window is ~12 tokens (or the whole CJK fragment after masking).
+ */
+export function describeParkingBrakeMatch(text: string): ParkingBrakeMatchReason {
+  const none = { matched: false, baseTerm: null, fault: null };
+  const raw = text || "";
+  if (!raw.trim()) return none;
+
+  const expanded = expandParkingBrakeContractions(raw);
+  for (const phrase of PARKING_BRAKE_STANDALONE_FAULTS) {
+    if (isCjkPhrase(phrase) ? expanded.includes(phrase) : latinKeywordMatches(expanded, phrase)) {
+      return { matched: true, baseTerm: "parking brake", fault: phrase };
+    }
+  }
+
+  // Mask while hyphens still exist (e-brake), then tokenize.
+  const masked = stripParkingBrakePunct(maskParkingBrakeMentions(expanded));
+  const tokens = tokensOf(masked);
+  const pbStarts = findPhraseStarts(tokens, PARKING_BRAKE_PLACEHOLDER);
+  if (!pbStarts.length) return none;
+
+  const faults = [...PARKING_BRAKE_FAULT_INDICATORS].sort(
+    (a, b) => b.length - a.length,
+  );
+
+  for (const start of pbStarts) {
+    const from = Math.max(0, start - PARKING_BRAKE_TOKEN_WINDOW);
+    const to = Math.min(
+      tokens.length,
+      start + 1 + PARKING_BRAKE_TOKEN_WINDOW,
+    );
+    const window = tokens.slice(from, to).join(" ");
+    for (const fault of faults) {
+      const faultNorm = stripParkingBrakePunct(
+        expandParkingBrakeContractions(fault),
+      );
+      if (!faultNorm) continue;
+      if (parkingBrakeFaultPhraseMatches(window, faultNorm || fault)) {
+        return { matched: true, baseTerm: "parking brake", fault };
+      }
+    }
+  }
+  return none;
+}
+
+export function parkingBrakeFaultMatches(text: string): boolean {
+  return describeParkingBrakeMatch(text).matched;
+}
+
+function debugParkingBrake(text: string, reason: ParkingBrakeMatchReason): void {
+  if (typeof process === "undefined") return;
+  if (process.env.NEXT_PUBLIC_SAFETY_TOPICS_DEBUG !== "1") return;
+  console.debug("[safety-topics] parking-brake", {
+    matched: reason.matched,
+    baseTerm: reason.baseTerm,
+    fault: reason.fault,
+    preview: text.replace(/\s+/g, " ").slice(0, 160),
+  });
+}
+
+function brakesHaystack(text: string): string {
+  return maskParkingBrakeMentions(text);
+}
+
 export function topicMatchesText(topic: SafetyTopic, text: string): boolean {
   if (topic.enabled === false) return false;
   const raw = text || "";
   if (!raw.trim()) return false;
-  const lower = raw.toLowerCase();
+  const haystack = topic.id === "brakes" ? brakesHaystack(raw) : raw;
+  const lower = haystack.toLowerCase();
 
   for (const kw of topic.keywords) {
     if (latinKeywordMatches(lower, kw)) return true;
   }
   for (const kw of topic.keywordsZh ?? []) {
-    if (cjkKeywordMatches(raw, kw)) return true;
+    if (cjkKeywordMatches(haystack, kw)) return true;
   }
   for (const kw of topic.keywordsEs ?? []) {
     if (latinKeywordMatches(lower, kw)) return true;
+  }
+  if (topic.id === "brakes") {
+    const reason = describeParkingBrakeMatch(raw);
+    debugParkingBrake(raw, reason);
+    if (reason.matched) return true;
   }
   return false;
 }
@@ -316,16 +645,20 @@ export function firstMatchingKeyword(
   if (topic.enabled === false) return null;
   const raw = text || "";
   if (!raw.trim()) return null;
-  const lower = raw.toLowerCase();
+  const haystack = topic.id === "brakes" ? brakesHaystack(raw) : raw;
+  const lower = haystack.toLowerCase();
   const hits: string[] = [];
   for (const kw of topic.keywords) {
     if (latinKeywordMatches(lower, kw)) hits.push(kw);
   }
   for (const kw of topic.keywordsZh ?? []) {
-    if (cjkKeywordMatches(raw, kw)) hits.push(kw);
+    if (cjkKeywordMatches(haystack, kw)) hits.push(kw);
   }
   for (const kw of topic.keywordsEs ?? []) {
     if (latinKeywordMatches(lower, kw)) hits.push(kw);
+  }
+  if (topic.id === "brakes" && parkingBrakeFaultMatches(raw)) {
+    hits.push("parking brake");
   }
   if (!hits.length) return null;
   hits.sort((a, b) => b.trim().length - a.trim().length);

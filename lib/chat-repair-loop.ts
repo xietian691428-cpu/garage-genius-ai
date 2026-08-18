@@ -4,6 +4,7 @@
  */
 
 import type { ChatMessage, VehicleInfo } from "@/lib/types/chat";
+import { maskParkingBrakeMentions } from "@/lib/safety-topics";
 import type { MaintenanceRecord } from "@/lib/types/maintenance";
 import { listRecommendedCoachPlaybooks } from "@/lib/coach-scenarios/catalog";
 import { getDtcFollowUpChips, textHasDtcSignal } from "@/lib/dtc";
@@ -204,14 +205,16 @@ export function getFollowUpChips(options?: {
 
   const out: StarterChip[] = [];
 
-  const inferFrom = (blob: string) =>
-    /\bbrake\s*pads?\b|\bbrakes?\b|\bbraking\b/.test(blob)
+  const inferFrom = (blob: string) => {
+    const forBrakes = maskParkingBrakeMentions(blob);
+    return /\bbrake\s*pads?\b|\bbrakes?\b|\bbraking\b/.test(forBrakes)
       ? FOCUS_CHECK_CHIPS.brakes
       : /\bbattery\b/.test(blob)
         ? FOCUS_CHECK_CHIPS.battery
         : /\btires?\b|\btread\b/.test(blob)
           ? FOCUS_CHECK_CHIPS.tires
           : null;
+  };
 
   const focusChip =
     FOCUS_CHECK_CHIPS[focus] ||
