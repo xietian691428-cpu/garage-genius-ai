@@ -2,11 +2,10 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChatMessage, VehicleInfo, messageImages } from "@/lib/types/chat";
 import { stripTrailingLegalDisclaimer } from "@/lib/legal-disclaimer";
-import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 import { stripPartsDataFromContent } from "@/lib/parse-ai-parts";
 import { stripFocusFromContent } from "@/lib/parse-ai-focus";
 import {
@@ -23,11 +22,20 @@ import { extractFocusCommand, sanitizeFocusCommand } from "@/lib/parse-ai-focus"
 import PartsRecommendationTable from "../parts/PartsRecommendationTable";
 import { speakText, stopSpeaking } from "@/lib/browser-voice";
 import { getFollowUpChips } from "@/lib/chat-repair-loop";
+import HighRiskSafetyCallout from "./HighRiskSafetyCallout";
+import {
+  matchSafetyTopics,
+  type SafetyTopicHit,
+} from "@/lib/safety-topics";
+import { getActiveSafetyTopics } from "@/lib/safety-topics-remote";
+import { detectReplyLanguageHint } from "@/lib/reply-language";
 
 interface Props {
   message: ChatMessage;
   vehicle?: VehicleInfo;
   isLastAssistant?: boolean;
+  /** Preceding user message — used for high-risk detection. */
+  priorUserText?: string;
   onGoToInventory?: () => void;
   onOpenFocus?: (
     command: NonNullable<ReturnType<typeof extractFocusCommand>>,
@@ -38,10 +46,13 @@ interface Props {
   onGenerateShopReport?: () => void;
 }
 
+const LONG_REPLY_CHARS = 1400;
+
 export default function MessageBubble({
   message,
   vehicle,
   isLastAssistant = false,
+  priorUserText = "",
   onGoToInventory,
   onOpenFocus,
   onRegenerate,
@@ -59,9 +70,45 @@ export default function MessageBubble({
   const partsData = !isUser ? extractPartsData(message.content) : null;
   const parts = messageImages(message);
   const focusCmd = !isUser
-    ? sanitizeFocusCommand(extractFocusCommand(message.content), "focus.MessageBubble")
+    ? sanitizeFocusCommand(
+        extractFocusCommand(message.content),
+        "focus.MessageBubble",
+      )
     : null;
   const [copied, setCopied] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const safetyHits: SafetyTopicHit[] = useMemo(() => {
+    if (isUser || message.id === "welcome") return [];
+    return matchSafetyTopics("", {
+      topics: getActiveSafetyTopics(),
+      userText: priorUserText,
+      assistantText: displayContent,
+      lang: detectReplyLanguageHint(priorUserText || displayContent),
+    });
+  }, [isUser, message.id, priorUserText, displayContent]);
+
+  const isLong = !isUser && displayContent.length > LONG_REPLY_CHARS;
+  const visibleContent =
+    isLong && !expanded
+      ? `${displayContent.slice(0, LONG_REPLY_CHARS).trimEnd()}…`
+      : displayContent;
+
+  const followUps = useMemo(() => {
+    if (!isLastAssistant || !onQuickPrompt || isUser) return [];
+    return getFollowUpChips({
+      focusPart: focusCmd?.part ?? null,
+      assistantText: displayContent,
+      userText: priorUserText,
+    }).slice(0, 3);
+  }, [
+    isLastAssistant,
+    onQuickPrompt,
+    isUser,
+    focusCmd?.part,
+    displayContent,
+    priorUserText,
+  ]);
 
   const handleReplay = () => {
     stopSpeaking();
@@ -79,9 +126,9 @@ export default function MessageBubble({
   };
 
   return (
-    <div className={`mb-6 flex ${isUser ? "justify-end" : "justify-start"}`}>
+    <div className={`mb-4 flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[90%] rounded-3xl px-5 py-4 sm:max-w-[80%] ${
+        className={`max-w-[92%] rounded-3xl px-4 py-3.5 sm:max-w-[80%] sm:px-5 sm:py-4 ${
           isUser ? "bg-blue-600" : "bg-slate-800"
         }`}
       >
@@ -108,7 +155,7 @@ export default function MessageBubble({
             <button
               type="button"
               onClick={() => void handleCopy()}
-              className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-slate-300 transition hover:bg-slate-900"
+              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-slate-300 transition hover:bg-slate-900"
               title="Copy"
             >
               {copied ? (
@@ -122,7 +169,7 @@ export default function MessageBubble({
               <button
                 type="button"
                 onClick={onRegenerate}
-                className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-slate-300 transition hover:bg-slate-900"
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-slate-300 transition hover:bg-slate-900"
                 title="Regenerate"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
@@ -133,7 +180,7 @@ export default function MessageBubble({
               <button
                 type="button"
                 onClick={onGenerateShopReport}
-                className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-cyan-300 transition hover:bg-slate-900"
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-cyan-300 transition hover:bg-slate-900"
                 title={t("shopReport.openCta")}
               >
                 <FileText className="h-3.5 w-3.5" />
@@ -143,7 +190,7 @@ export default function MessageBubble({
             <button
               type="button"
               onClick={handleReplay}
-              className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-cyan-300 transition hover:bg-slate-900"
+              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-cyan-300 transition hover:bg-slate-900"
               aria-label="Read this reply aloud"
               title="Read aloud"
             >
@@ -158,7 +205,7 @@ export default function MessageBubble({
             <button
               type="button"
               onClick={() => onEditUser(message.content)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-blue-700/80 px-2.5 py-1 text-[11px] text-blue-100 transition hover:bg-blue-700"
+              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-blue-700/80 px-2.5 py-1 text-[11px] text-blue-100 transition hover:bg-blue-700"
               title="Edit & resend"
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -169,15 +216,28 @@ export default function MessageBubble({
 
         <div className="chat-markdown prose prose-invert max-w-none text-[15px]">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {displayContent}
+            {visibleContent}
           </ReactMarkdown>
         </div>
+
+        {isLong && (
+          <button
+            type="button"
+            data-testid="chat-reply-show-more"
+            onClick={() => setExpanded((v) => !v)}
+            className="mt-2 text-xs font-medium text-cyan-300 hover:text-cyan-200"
+          >
+            {expanded ? "Show less" : "Show more"}
+          </button>
+        )}
+
+        {safetyHits.length > 0 && <HighRiskSafetyCallout hits={safetyHits} />}
 
         {!isUser && focusCmd && (
           <button
             type="button"
             onClick={() => onOpenFocus?.(focusCmd)}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-500/40 bg-cyan-500/10 py-3 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20"
+            className="mt-4 flex min-h-[44px] w-full touch-manipulation items-center justify-center gap-2 rounded-2xl border border-cyan-500/40 bg-cyan-500/10 py-3 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20"
           >
             <Crosshair className="h-4 w-4" />
             Focus Mode — highlight {focusCmd.part} on map
@@ -192,25 +252,23 @@ export default function MessageBubble({
           />
         )}
 
-        {!isUser && isLastAssistant && onQuickPrompt && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {getFollowUpChips({
-              focusPart: focusCmd?.part ?? null,
-              assistantText: displayContent,
-            }).map((chip) => (
+        {followUps.length > 0 && (
+          <div
+            data-testid="chat-follow-up-chips"
+            className="mt-3 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {followUps.map((chip) => (
               <button
                 key={chip.id}
                 type="button"
-                onClick={() => onQuickPrompt(chip.prompt)}
-                className="rounded-full border border-slate-600 bg-slate-900/70 px-3 py-1.5 text-left text-[11px] text-slate-200 transition hover:border-cyan-500/50 hover:text-cyan-200"
+                onClick={() => onQuickPrompt?.(chip.prompt)}
+                className="shrink-0 rounded-full border border-slate-600 bg-slate-900/70 px-3 py-2 text-left text-[12px] text-slate-200 transition hover:border-cyan-500/50 hover:text-cyan-200"
               >
                 {chip.label}
               </button>
             ))}
           </div>
         )}
-
-        {!isUser && <LiabilityDisclaimer variant="footer" />}
 
         <div
           className="mt-2 text-right text-[10px] text-slate-500"

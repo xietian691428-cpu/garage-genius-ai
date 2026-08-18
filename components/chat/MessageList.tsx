@@ -6,8 +6,7 @@ import { ChatMessage, VehicleInfo } from "@/lib/types/chat";
 import type { FocusCommand } from "@/lib/types/focus";
 import type { SafetyTier } from "@/lib/safety-tier";
 import MessageBubble from "./MessageBubble";
-import SafetyTierTip from "@/components/legal/SafetyTierTip";
-import { INSURANCE_SAFETY_COPY } from "@/lib/insurance-safety-copy";
+import ChatDisclaimerBanner from "./ChatDisclaimerBanner";
 import { getChatStarterChips } from "@/lib/chat-repair-loop";
 
 interface Props {
@@ -20,7 +19,12 @@ interface Props {
   onEditUser?: (content: string) => void;
   onQuickPrompt?: (prompt: string) => void;
   onGenerateShopReport?: () => void;
+  /** @deprecated kept for callers; elevated tip lives in Safety notes sheet */
   sessionSafety?: { tier: SafetyTier; mods: boolean };
+  showDisclaimerBanner?: boolean;
+  disclaimerMode?: "first" | "interval";
+  onDisclaimerGotIt?: () => void;
+  onDisclaimerLearnMore?: () => void;
 }
 
 export default function MessageList({
@@ -33,7 +37,10 @@ export default function MessageList({
   onEditUser,
   onQuickPrompt,
   onGenerateShopReport,
-  sessionSafety,
+  showDisclaimerBanner = false,
+  disclaimerMode = "first",
+  onDisclaimerGotIt,
+  onDisclaimerLearnMore,
 }: Props) {
   const { t } = useTranslation();
   const listRef = useRef<HTMLDivElement>(null);
@@ -44,67 +51,87 @@ export default function MessageList({
     messages.every((m) => m.id === "welcome" || m.role === "assistant") &&
     messages.filter((m) => m.role === "user").length === 0;
 
-  // Scroll only inside the message list — never scrollIntoView (that moves the page on iOS).
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
-  }, [messages, isLoading]);
+  }, [messages, isLoading, showDisclaimerBanner]);
 
   const lastAssistantId = [...messages]
     .reverse()
     .find((m) => m.role === "assistant" && m.id !== "welcome")?.id;
 
+  const starterChips = showStarters
+    ? getChatStarterChips(vehicle).slice(0, 3)
+    : [];
+
   return (
     <div
       ref={listRef}
       data-testid="chat-message-list"
-      className="chat-scroll flex-1 space-y-2 overflow-y-auto overscroll-y-contain p-3 tech-grid sm:p-4 md:p-6"
+      className="chat-scroll flex-1 space-y-1 overflow-y-auto overscroll-y-contain p-3 tech-grid sm:p-4 md:p-6"
       style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
     >
-      {messages.map((msg) => (
-        <MessageBubble
-          key={msg.id}
-          message={msg}
-          vehicle={vehicle}
-          isLastAssistant={
-            msg.role === "assistant" &&
-            msg.id === lastAssistantId &&
-            !isLoading
-          }
-          onGoToInventory={onGoToInventory}
-          onOpenFocus={onOpenFocus}
-          onRegenerate={
-            msg.role === "assistant" && msg.id === lastAssistantId
-              ? onRegenerate
-              : undefined
-          }
-          onEditUser={msg.role === "user" ? onEditUser : undefined}
-          onQuickPrompt={
-            msg.role === "assistant" && msg.id === lastAssistantId
-              ? onQuickPrompt
-              : undefined
-          }
-          onGenerateShopReport={
-            msg.role === "assistant" && msg.id === lastAssistantId
-              ? onGenerateShopReport
-              : undefined
-          }
+      {showDisclaimerBanner && onDisclaimerGotIt && onDisclaimerLearnMore ? (
+        <ChatDisclaimerBanner
+          mode={disclaimerMode}
+          onGotIt={onDisclaimerGotIt}
+          onLearnMore={onDisclaimerLearnMore}
         />
-      ))}
+      ) : null}
 
-      {showStarters && (
-        <div className="mx-auto max-w-xl px-1 pb-2">
+      {messages.map((msg, idx) => {
+        const priorUser =
+          msg.role === "assistant"
+            ? [...messages.slice(0, idx)]
+                .reverse()
+                .find((m) => m.role === "user")?.content ?? ""
+            : "";
+        return (
+          <MessageBubble
+            key={msg.id}
+            message={msg}
+            vehicle={vehicle}
+            priorUserText={priorUser}
+            isLastAssistant={
+              msg.role === "assistant" &&
+              msg.id === lastAssistantId &&
+              !isLoading
+            }
+            onGoToInventory={onGoToInventory}
+            onOpenFocus={onOpenFocus}
+            onRegenerate={
+              msg.role === "assistant" && msg.id === lastAssistantId
+                ? onRegenerate
+                : undefined
+            }
+            onEditUser={msg.role === "user" ? onEditUser : undefined}
+            onQuickPrompt={
+              msg.role === "assistant" && msg.id === lastAssistantId
+                ? onQuickPrompt
+                : undefined
+            }
+            onGenerateShopReport={
+              msg.role === "assistant" && msg.id === lastAssistantId
+                ? onGenerateShopReport
+                : undefined
+            }
+          />
+        );
+      })}
+
+      {starterChips.length > 0 && (
+        <div className="mx-auto max-w-xl px-1 pb-2" data-testid="chat-starter-chips">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
             {t("ai.tryStartingPoint")}
           </p>
-          <div className="flex flex-wrap gap-2">
-            {getChatStarterChips(vehicle).map((chip) => (
+          <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {starterChips.map((chip) => (
               <button
                 key={chip.id}
                 type="button"
                 onClick={() => onQuickPrompt?.(chip.prompt)}
-                className="rounded-2xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-left text-sm text-slate-200 transition hover:border-cyan-500/40 hover:text-cyan-200"
+                className="min-h-[44px] shrink-0 rounded-2xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-left text-sm text-slate-200 transition hover:border-cyan-500/40 hover:text-cyan-200"
               >
                 {chip.label}
               </button>
@@ -128,26 +155,6 @@ export default function MessageList({
           </div>
         </div>
       )}
-
-      {/* Keep safety tip inside the scroll region so it never crushes the message list on phones. */}
-      {sessionSafety &&
-      (sessionSafety.tier !== "low" || sessionSafety.mods) &&
-      messages.some((m) => m.role === "assistant") ? (
-        <div
-          className="mx-auto max-w-3xl border-t border-slate-800/80 px-1 pt-3"
-          data-testid="chat-session-safety"
-        >
-          <p className="mb-1.5 text-[11px] text-slate-500">
-            {INSURANCE_SAFETY_COPY.possibleFactorsOnly}{" "}
-            {INSURANCE_SAFETY_COPY.nextStepOptions}
-          </p>
-          <SafetyTierTip
-            tier={sessionSafety.tier}
-            mods={sessionSafety.mods}
-            onExportShopReport={onGenerateShopReport}
-          />
-        </div>
-      ) : null}
 
       <div aria-hidden className="h-px" />
     </div>

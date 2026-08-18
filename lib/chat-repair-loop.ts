@@ -189,27 +189,37 @@ const FOCUS_CHECK_CHIPS: Record<string, StarterChip> = {
 export function getFollowUpChips(options?: {
   focusPart?: string | null;
   assistantText?: string | null;
+  /** Prefer for topic inference — avoids “Brake inspection” false chips on oil DIY. */
+  userText?: string | null;
 }): StarterChip[] {
   const focus = (options?.focusPart || "").toLowerCase();
   const text = (options?.assistantText || "").toLowerCase();
+  const user = (options?.userText || "").toLowerCase();
   const rawText = options?.assistantText || "";
 
   // DTC-focused replies → explain / checks / parts chips
-  if (textHasDtcSignal(rawText)) {
+  if (textHasDtcSignal(rawText) || textHasDtcSignal(options?.userText || "")) {
     return getDtcFollowUpChips().slice(0, 3);
   }
 
   const out: StarterChip[] = [];
 
+  const inferFrom = (blob: string) =>
+    /\bbrake\s*pads?\b|\bbrakes?\b|\bbraking\b/.test(blob)
+      ? FOCUS_CHECK_CHIPS.brakes
+      : /\bbattery\b/.test(blob)
+        ? FOCUS_CHECK_CHIPS.battery
+        : /\btires?\b|\btread\b/.test(blob)
+          ? FOCUS_CHECK_CHIPS.tires
+          : null;
+
   const focusChip =
     FOCUS_CHECK_CHIPS[focus] ||
-    (text.includes("brake")
+    inferFrom(user) ||
+    // Assistant soft-mention alone: require stronger pad/rotor wording
+    (/\bbrake\s*pads?\b|\brotors?\b|\bcalipers?\b/.test(text)
       ? FOCUS_CHECK_CHIPS.brakes
-      : text.includes("battery")
-        ? FOCUS_CHECK_CHIPS.battery
-        : text.includes("tire")
-          ? FOCUS_CHECK_CHIPS.tires
-          : null);
+      : null);
 
   if (focusChip) out.push(focusChip);
 

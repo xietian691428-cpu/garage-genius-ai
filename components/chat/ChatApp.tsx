@@ -12,6 +12,9 @@ import MobileVehicleSwitcher from "../vehicles/MobileVehicleSwitcher";
 import VehiclePanel from "./VehiclePanel";
 import MessageList from "./MessageList";
 import ChatInput from "./ChatInput";
+import ChatSafetyNotesSheet from "./ChatSafetyNotesSheet";
+import { useChatDisclaimer } from "@/hooks/useChatDisclaimer";
+import { ensureSafetyTopicsRemote } from "@/lib/safety-topics-remote";
 import { toBase64DataUrl } from "@/lib/image";
 import { stripPartsDataFromContent } from "@/lib/parse-ai-parts";
 import { stripFocusFromContent } from "@/lib/parse-ai-focus";
@@ -207,6 +210,18 @@ export default function ChatApp({
       vehicleHasModifiedTag(currentVehicle) || MOD_CONTEXT_PATTERN.test(recent);
     return { tier, mods };
   }, [messages, currentVehicle]);
+
+  const assistantCount = useMemo(
+    () =>
+      messages.filter((m) => m.role === "assistant" && m.id !== "welcome")
+        .length,
+    [messages],
+  );
+  const chatDisclaimer = useChatDisclaimer(assistantCount);
+
+  useEffect(() => {
+    void ensureSafetyTopicsRemote();
+  }, []);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -1227,6 +1242,10 @@ export default function ChatApp({
           onQuickPrompt={handleQuickPrompt}
           onGenerateShopReport={() => setShopReportOpen(true)}
           sessionSafety={sessionSafety}
+          showDisclaimerBanner={chatDisclaimer.showBanner}
+          disclaimerMode={chatDisclaimer.bannerMode}
+          onDisclaimerGotIt={() => void chatDisclaimer.dismiss()}
+          onDisclaimerLearnMore={chatDisclaimer.openSheet}
         />
         {gateBanner ? (
           <div
@@ -1398,8 +1417,19 @@ export default function ChatApp({
           onStop={handleStop}
           draftValue={draftValue}
           onDraftConsumed={() => setDraftValue(undefined)}
+          onOpenSafetyNotes={chatDisclaimer.openSheet}
         />
       </div>
+
+      <ChatSafetyNotesSheet
+        open={chatDisclaimer.sheetOpen}
+        onClose={chatDisclaimer.closeSheet}
+        sessionSafety={sessionSafety}
+        onGenerateShopReport={() => {
+          chatDisclaimer.closeSheet();
+          setShopReportOpen(true);
+        }}
+      />
 
       <ReceiptConfirmModal
         open={receiptModalOpen}

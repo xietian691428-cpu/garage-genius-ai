@@ -56,6 +56,8 @@ interface Props {
   /** Prefill composer (edit / quick prompts) */
   draftValue?: string;
   onDraftConsumed?: () => void;
+  /** Open Educational guidance · Safety notes sheet */
+  onOpenSafetyNotes?: () => void;
 }
 
 type SpeechRecognitionResultEvent = {
@@ -108,6 +110,7 @@ export default function ChatInput({
   onStop,
   draftValue,
   onDraftConsumed,
+  onOpenSafetyNotes,
 }: Props) {
   const { t } = useTranslation();
   const busy = isLoading || isGenerating;
@@ -561,7 +564,7 @@ export default function ChatInput({
                   ? "Token quota used — try again next month…"
                   : images.length > 0
                     ? "Optional note about these photos…"
-                    : "Ask about your car… (Enter send · Shift+Enter newline)"
+                    : "Ask about your car…"
             }
             className="chat-textarea max-h-40 min-h-[48px] min-w-0 flex-1 resize-none rounded-3xl border border-slate-700 bg-slate-900 px-3 py-3 text-base leading-snug focus:border-cyan-400 focus:outline-none disabled:opacity-60 sm:px-6 sm:py-3.5"
             disabled={busy || isListening}
@@ -652,15 +655,21 @@ export default function ChatInput({
         )}
       </div>
 
-      <p className="mt-2 text-center text-[11px] leading-relaxed text-slate-500">
-        {photoRemainingLabel}
-        {" · "}
-        {!features.voiceEnabled
-          ? "Text · photo · (Pro: mic draft + auto-read). Diagnose → checks → parts → verify."
-          : voiceSupported
-            ? "Text · voice draft · photo. Loop: diagnose → checks → parts → verify."
-            : "Text · photo. Voice needs Chrome, Edge, or Safari."}
-      </p>
+      <div className="mt-2 space-y-1 text-center">
+        {onOpenSafetyNotes ? (
+          <button
+            type="button"
+            data-testid="chat-safety-notes-link"
+            onClick={onOpenSafetyNotes}
+            className="min-h-[44px] text-[11px] font-medium text-slate-400 underline-offset-2 hover:text-cyan-300 hover:underline"
+          >
+            Educational guidance · Safety notes
+          </button>
+        ) : null}
+        <p className="text-[11px] leading-relaxed text-slate-500">
+          {photoRemainingLabel}
+        </p>
+      </div>
       {voiceError && (
         <p className="mt-1 text-center text-xs text-amber-400">{voiceError}</p>
       )}
