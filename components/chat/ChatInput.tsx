@@ -393,7 +393,7 @@ export default function ChatInput({
         } left today`;
 
   return (
-    <div className="panel-scroll max-h-[min(48dvh,22rem)] shrink-0 overflow-y-auto overscroll-y-contain border-t border-slate-800 bg-[#111827] p-3 pb-[max(0.75rem,var(--content-pad-bottom))] sm:max-h-none sm:overflow-visible sm:p-4 lg:pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <div className="panel-scroll max-h-[min(42dvh,24rem)] shrink-0 overflow-y-auto overscroll-y-contain border-t border-slate-800 bg-[#111827] p-3 pb-[max(0.75rem,var(--content-pad-bottom))] sm:p-4 xl:max-h-none xl:overflow-visible xl:pb-[max(1rem,env(safe-area-inset-bottom))]">
       <UpgradeModal
         open={upgradeOpen}
         onClose={() => setUpgradeOpen(false)}

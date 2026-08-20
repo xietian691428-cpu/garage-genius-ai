@@ -99,7 +99,7 @@ export default function AuthCallbackPage() {
   }, [router]);
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#0a0f1c] px-4 text-center text-slate-300">
+    <div className="page-scroll flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#0a0f1c] px-4 text-center text-slate-300">
       <p
         data-testid="auth-callback-status"
         className="rounded-2xl border border-slate-800 bg-[#111827] px-6 py-4 text-sm"

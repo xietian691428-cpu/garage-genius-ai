@@ -3,8 +3,7 @@
 /* ── 断点策略（Tailwind 默认）────────────────────────────
    < 640px   手机竖屏 — Web: 顶栏导航；Capacitor 原生壳: 底栏
    640–1023  大屏手机横屏、平板竖屏 — 同上
-   ≥ 1024    桌面 + iPad 横屏 — 左侧 Sidebar
-   ≥ 1280    宽屏显示器 — Sidebar 略宽
+   ≥ 1280    桌面 Sidebar；iPad Air 11 横屏 (~1180) 仍用 Tab 壳
 ──────────────────────────────────────────────────────── */
 
 :root {
@@ -59,7 +58,24 @@ html.gg-native body {
   max-width: 100%;
   overflow: hidden;
   overscroll-behavior: none;
-  touch-action: manipulation;
+  touch-action: pan-y;
+}
+
+/* Full-page routes outside .app-shell (/pricing, /login, legal, /recharge).
+   Body is overflow:hidden, so these must be the viewport scrollport. */
+html.gg-native .landing-root,
+html.gg-native .login-page,
+html.gg-native .page-scroll {
+  position: fixed;
+  inset: 0;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
 }
 
 /* Login must scroll on iPad landscape + software keyboard (App Store 2.1) */

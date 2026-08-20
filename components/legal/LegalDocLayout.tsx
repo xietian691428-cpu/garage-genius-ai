@@ -11,7 +11,7 @@ export default function LegalDocLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-full bg-[#0a0f1c]">
+    <div className="page-scroll min-h-full bg-[#0a0f1c]">
       <div
         className="pointer-events-none absolute inset-0 opacity-40"
         style={{

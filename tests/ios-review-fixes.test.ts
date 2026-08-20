@@ -11,7 +11,14 @@ import {
   ALL_APPLE_PRODUCT_IDS,
   APPLE_PRODUCT_IDS,
 } from "@/lib/apple-iap-products";
-import { APP_DESKTOP_MIN_PX } from "@/lib/app-chrome";
+import {
+  APP_DESKTOP_MIN_PX,
+} from "@/lib/app-chrome";
+import {
+  BILLING_IAP_UNAVAILABLE,
+  isPurchaseCancelled,
+  toUserFacingBillingError,
+} from "@/lib/billing-errors";
 import { hideWebCheckoutUi } from "@/lib/native-platform";
 import {
   displayIapPrice,
@@ -210,5 +217,30 @@ describe("source regressions for App Store 2.1 / 3.1.1", () => {
     );
     expect(modal).toContain("items-center justify-center");
     expect(modal).not.toContain("items-end");
+  });
+
+  it("native full-page routes are a viewport scrollport", () => {
+    const css = readFileSync("app/globals.css", "utf8");
+    expect(css).toContain("html.gg-native .landing-root");
+    expect(css).toContain("html.gg-native .login-page");
+    expect(css).toContain("html.gg-native .page-scroll");
+    expect(css).toMatch(/html\.gg-native \.landing-root[\s\S]*overflow-y:\s*auto/);
+    expect(css).toContain("touch-action: pan-y");
+    expect(readFileSync("components/legal/LegalDocLayout.tsx", "utf8")).toContain(
+      "page-scroll",
+    );
+    expect(readFileSync("app/recharge/RechargePageClient.tsx", "utf8")).toContain(
+      "page-scroll",
+    );
+  });
+
+  it("does not map IAP failures to Stripe checkout copy", () => {
+    expect(isPurchaseCancelled(new Error("Purchase cancelled."))).toBe(true);
+    expect(isPurchaseCancelled(new Error("network down"))).toBe(false);
+    expect(
+      toUserFacingBillingError(new Error("SKErrorDomain"), BILLING_IAP_UNAVAILABLE),
+    ).toBe(BILLING_IAP_UNAVAILABLE);
+    expect(BILLING_IAP_UNAVAILABLE).toMatch(/In-App Purchase/i);
+    expect(BILLING_IAP_UNAVAILABLE).not.toMatch(/Checkout is temporarily unavailable/i);
   });
 });

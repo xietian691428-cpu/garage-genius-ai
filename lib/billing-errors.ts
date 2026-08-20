@@ -12,6 +12,9 @@ export const BILLING_PORTAL_UNAVAILABLE =
 export const BILLING_RECHARGE_UNAVAILABLE =
   "Token top-up is temporarily unavailable. Please try again in a few minutes.";
 
+export const BILLING_IAP_UNAVAILABLE =
+  "Apple In-App Purchase couldn’t complete. Try Restore purchases, or try again in a few minutes.";
+
 /** Intentional product messages that are safe to show as-is. */
 const SAFE_EXACT = new Set([
   "Sign in to manage your subscription.",
@@ -19,6 +22,7 @@ const SAFE_EXACT = new Set([
   "Unauthorized",
   "No Stripe customer on file. Subscribe first.",
   "Stripe did not return a checkout URL.",
+  "No active Apple subscriptions found for this Apple ID.",
 ]);
 
 const SAFE_PATTERNS: RegExp[] = [
@@ -29,6 +33,7 @@ const SAFE_PATTERNS: RegExp[] = [
   /couldn't open billing/i,
   /unavailable in the store app/i,
   /In-App Purchase/i,
+  /Restore purchases/i,
   /Payments are disabled/i,
   /QA unlock/i,
   /email before upgrading/i,
@@ -58,6 +63,12 @@ export function isSafeUserBillingMessage(message: string): boolean {
   if (looksLikeInternalBillingError(msg)) return false;
   if (SAFE_EXACT.has(msg)) return true;
   return SAFE_PATTERNS.some((re) => re.test(msg));
+}
+
+export function isPurchaseCancelled(err: unknown): boolean {
+  const raw = extractMessage(err);
+  if (!raw) return false;
+  return /\bcancel/i.test(raw) && !/cannot cancel|failed to cancel/i.test(raw);
 }
 
 export function toUserFacingBillingError(

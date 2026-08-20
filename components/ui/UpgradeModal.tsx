@@ -4,7 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { Check, Sparkles, X } from "lucide-react";
 import { startCheckout } from "@/lib/billing";
-import { toUserFacingBillingError } from "@/lib/billing-errors";
+import {
+  BILLING_CHECKOUT_UNAVAILABLE,
+  BILLING_IAP_UNAVAILABLE,
+  isPurchaseCancelled,
+  toUserFacingBillingError,
+} from "@/lib/billing-errors";
 import {
   canUseNativeIap,
   canUseStripeCheckout,
@@ -95,8 +100,14 @@ export default function UpgradeModal({
       await refresh?.();
       onClose();
     } catch (err) {
-      setError(toUserFacingBillingError(err));
       setBusy(null);
+      if (isPurchaseCancelled(err)) return;
+      setError(
+        toUserFacingBillingError(
+          err,
+          iap ? BILLING_IAP_UNAVAILABLE : BILLING_CHECKOUT_UNAVAILABLE,
+        ),
+      );
     }
   };
 

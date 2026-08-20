@@ -23,7 +23,10 @@ import {
 } from "@/lib/native-iap";
 import { startCheckout, openBillingPortal } from "@/lib/billing";
 import {
+  BILLING_CHECKOUT_UNAVAILABLE,
+  BILLING_IAP_UNAVAILABLE,
   BILLING_PORTAL_UNAVAILABLE,
+  isPurchaseCancelled,
   toUserFacingBillingError,
 } from "@/lib/billing-errors";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -162,8 +165,14 @@ export default function PricingCards({
         await startCheckout({ plan: planTier as PaidPlan, interval });
       }
     } catch (err) {
-      setError(toUserFacingBillingError(err));
       setBusyPlan(null);
+      if (isPurchaseCancelled(err)) return;
+      setError(
+        toUserFacingBillingError(
+          err,
+          iap ? BILLING_IAP_UNAVAILABLE : BILLING_CHECKOUT_UNAVAILABLE,
+        ),
+      );
     }
   };
 
@@ -232,7 +241,9 @@ export default function PricingCards({
                     );
                   }
                 } catch (err) {
-                  setError(toUserFacingBillingError(err));
+                  setError(
+                    toUserFacingBillingError(err, BILLING_IAP_UNAVAILABLE),
+                  );
                 } finally {
                   setBusyRestore(false);
                 }
@@ -296,7 +307,7 @@ export default function PricingCards({
         </p>
       )}
 
-      <div className="mt-8 grid gap-5 lg:grid-cols-3">
+      <div className="mt-8 grid gap-5 xl:grid-cols-3">
         {TIERS.map((planTier) => {
           const plan = PLAN_ENTITLEMENTS[planTier];
           const isCurrent =

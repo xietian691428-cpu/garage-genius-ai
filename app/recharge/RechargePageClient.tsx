@@ -53,7 +53,7 @@ export default function RechargePageClient({
 
   return (
     <TokenUsageProvider>
-    <div className="min-h-dvh bg-[#0a0f1c] text-slate-200">
+    <div className="page-scroll min-h-dvh bg-[#0a0f1c] text-slate-200">
       <div className="mx-auto max-w-2xl px-4 py-10 sm:px-8">
         <Link
           href="/app"

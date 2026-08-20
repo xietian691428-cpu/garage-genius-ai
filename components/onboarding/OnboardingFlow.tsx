@@ -228,7 +228,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
     "w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-slate-200 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none";
 
   return (
-    <div className="fixed inset-0 z-[80] overflow-y-auto bg-[#0a0f1c]">
+    <div className="page-scroll fixed inset-0 z-[80] overflow-y-auto bg-[#0a0f1c]">
       <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6">
         <div className="mb-6 flex items-center gap-2">
           {(["welcome", "market", "skill", "obd", "vehicle"] as const).map(
