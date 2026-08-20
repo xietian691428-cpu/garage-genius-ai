@@ -272,11 +272,19 @@ describe("source regressions for App Store 2.1 / 3.1.1", () => {
 
   it("does not map IAP failures to Stripe checkout copy", () => {
     expect(isPurchaseCancelled(new Error("Purchase cancelled."))).toBe(true);
+    expect(isPurchaseCancelled(new Error("User cancelled"))).toBe(true);
     expect(isPurchaseCancelled(new Error("network down"))).toBe(false);
     expect(
       toUserFacingBillingError(new Error("SKErrorDomain"), BILLING_IAP_UNAVAILABLE),
     ).toBe(BILLING_IAP_UNAVAILABLE);
+    expect(
+      toUserFacingBillingError(new Error("Sandbox IAP hang"), BILLING_IAP_UNAVAILABLE),
+    ).toMatch(/Sandbox IAP/i);
     expect(BILLING_IAP_UNAVAILABLE).toMatch(/In-App Purchase/i);
     expect(BILLING_IAP_UNAVAILABLE).not.toMatch(/Checkout is temporarily unavailable/i);
+    expect(readFileSync("lib/native-iap.ts", "utf8")).toContain("IAP_PURCHASE_TIMEOUT_MS");
+    expect(readFileSync("components/landing/PricingCards.tsx", "utf8")).toContain(
+      "physical iPhone or iPad",
+    );
   });
 });

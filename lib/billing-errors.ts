@@ -15,6 +15,9 @@ export const BILLING_RECHARGE_UNAVAILABLE =
 export const BILLING_IAP_UNAVAILABLE =
   "Apple In-App Purchase couldn’t complete. Try Restore purchases, or try again in a few minutes.";
 
+export const BILLING_IAP_SANDBOX_HUNG =
+  "The App Store didn’t finish this purchase. Sandbox IAP does not complete in the iOS Simulator — use a physical iPhone or iPad. On a device, add the Sandbox account in Settings → App Store first, then tap Subscribe again.";
+
 /** Intentional product messages that are safe to show as-is. */
 const SAFE_EXACT = new Set([
   "Sign in to manage your subscription.",
@@ -34,6 +37,8 @@ const SAFE_PATTERNS: RegExp[] = [
   /unavailable in the store app/i,
   /In-App Purchase/i,
   /Restore purchases/i,
+  /Sandbox IAP/i,
+  /physical iPhone or iPad/i,
   /Payments are disabled/i,
   /QA unlock/i,
   /email before upgrading/i,
@@ -68,7 +73,10 @@ export function isSafeUserBillingMessage(message: string): boolean {
 export function isPurchaseCancelled(err: unknown): boolean {
   const raw = extractMessage(err);
   if (!raw) return false;
-  return /\bcancel/i.test(raw) && !/cannot cancel|failed to cancel/i.test(raw);
+  if (/cannot cancel|failed to cancel/i.test(raw)) return false;
+  return /^(user cancelled|purchase cancelled\.?|sign in cancelled\.?)$/i.test(
+    raw,
+  );
 }
 
 export function toUserFacingBillingError(

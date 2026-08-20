@@ -164,6 +164,7 @@ export default function PricingCards({
       } else {
         await startCheckout({ plan: planTier as PaidPlan, interval });
       }
+      setBusyPlan(null);
     } catch (err) {
       setBusyPlan(null);
       if (isPurchaseCancelled(err)) return;
@@ -430,7 +431,11 @@ export default function PricingCards({
               In the iOS app, Pro and Pro Heavy are auto-renewable Apple In-App
               Purchases. Prices come from the App Store. Payment is charged to
               your Apple ID; manage or cancel in Settings → Apple ID →
-              Subscriptions. Website billing (Safari) uses Stripe separately.
+              Subscriptions. Sandbox testers: use a physical iPhone or iPad
+              (the Simulator often accepts a Sandbox Apple ID then never
+              finishes). On device, add the Sandbox account in Settings → App
+              Store before tapping Subscribe. Website billing (Safari) uses
+              Stripe separately.
             </>
           ) : (
             <>

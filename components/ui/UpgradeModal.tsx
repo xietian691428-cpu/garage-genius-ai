@@ -100,7 +100,6 @@ export default function UpgradeModal({
       await refresh?.();
       onClose();
     } catch (err) {
-      setBusy(null);
       if (isPurchaseCancelled(err)) return;
       setError(
         toUserFacingBillingError(
@@ -108,6 +107,8 @@ export default function UpgradeModal({
           iap ? BILLING_IAP_UNAVAILABLE : BILLING_CHECKOUT_UNAVAILABLE,
         ),
       );
+    } finally {
+      setBusy(null);
     }
   };
 

@@ -132,7 +132,7 @@ Consent is stored in `profiles.has_acknowledged_ai_consent`. Privacy Policy alon
 1. Sign in with Apple → system sheet, lands in `/app`.
 2. AI consent appears → Agree.
 3. Open subscription page → four products show **App Store prices** (not only hardcoded USD).
-4. Tap Subscribe → **system purchase sheet** (Sandbox Apple ID).
+4. Tap Subscribe → **system purchase sheet**. Use a **physical iPhone or iPad** and a Sandbox Apple ID (Settings → App Store). The iOS Simulator often accepts Sandbox sign-in then never finishes the purchase.
 5. Email/password login still works.
 
 This machine’s unit tests cannot present ASAuthorization or StoreKit sheets. Device verification is required.

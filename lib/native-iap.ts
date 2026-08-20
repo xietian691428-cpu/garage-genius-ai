@@ -22,6 +22,20 @@ import type {
   PaidPlan,
 } from "@/lib/types/subscription";
 import { Browser } from "@capacitor/browser";
+import { withTimeout } from "@/lib/auth-timeout";
+import { BILLING_IAP_SANDBOX_HUNG } from "@/lib/billing-errors";
+
+/** StoreKit purchase sheet + Sandbox sign-in can hang forever on Simulator. */
+const IAP_PURCHASE_TIMEOUT_MS = 120_000;
+
+function jwsFromTransaction(transaction: Transaction): string | undefined {
+  const rec = transaction as Transaction & {
+    jwsRepresentation?: string;
+    receipt?: string;
+  };
+  const jws = rec.jwsRepresentation?.trim() || rec.receipt?.trim();
+  return jws || undefined;
+}
 
 async function authHeaders(): Promise<HeadersInit> {
   const {
@@ -55,13 +69,10 @@ export async function fetchAppleProducts(): Promise<Product[]> {
 async function syncTransactionToServer(
   transaction: Transaction,
 ): Promise<void> {
-  const jws =
-    (transaction as Transaction & { jwsRepresentation?: string })
-      .jwsRepresentation ||
-    (transaction as Transaction & { receipt?: string }).receipt;
+  const jws = jwsFromTransaction(transaction);
   if (!jws) {
     throw new Error(
-      "Purchase completed but no signed transaction was returned. Try Restore Purchases.",
+      "Purchase completed but no signed transaction was returned. Try Restore purchases.",
     );
   }
 
@@ -70,7 +81,6 @@ async function syncTransactionToServer(
     headers: await authHeaders(),
     body: JSON.stringify({
       signedTransaction: jws,
-      environment: Capacitor.getPlatform() === "ios" ? undefined : undefined,
     }),
   });
   const data = (await res.json()) as { error?: string };
@@ -92,11 +102,15 @@ export async function purchaseApplePlan(
   if (!user?.id) throw new Error("Sign in to purchase.");
 
   const productIdentifier = appleProductIdForSelection(selection);
-  const transaction = await NativePurchases.purchaseProduct({
-    productIdentifier,
-    productType: PURCHASE_TYPE.SUBS,
-    appAccountToken: user.id,
-  });
+  const transaction = await withTimeout(
+    NativePurchases.purchaseProduct({
+      productIdentifier,
+      productType: PURCHASE_TYPE.SUBS,
+      appAccountToken: user.id,
+    }),
+    IAP_PURCHASE_TIMEOUT_MS,
+    BILLING_IAP_SANDBOX_HUNG,
+  );
 
   await syncTransactionToServer(transaction);
 }
