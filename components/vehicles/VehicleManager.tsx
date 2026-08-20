@@ -64,11 +64,11 @@ export default function VehicleManager({
       </div>
 
       <div className="flex-1 p-4 sm:p-5 lg:p-6">
-        <div className="mb-6 flex items-center justify-between gap-3">
+        <div className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold">Vehicle profiles</h2>
-            <p className="mt-0.5 text-xs text-slate-500">
-              Active garage · injected into Coach Guides automatically
+            <h2 className="text-base font-semibold leading-snug">Vehicle profiles</h2>
+            <p className="mt-0.5 text-xs leading-snug text-slate-500">
+              Active garage · injected into Guides automatically
             </p>
           </div>
           {canAdd ? (

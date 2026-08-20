@@ -84,7 +84,9 @@ export default function DtcEntryBar({
   const wrap =
     variant === "coach"
       ? "flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-800 bg-[#0d1424] px-3 py-2"
-      : "mb-2 flex flex-wrap gap-2";
+      : showConnect
+        ? "mb-2 grid grid-cols-3 gap-2"
+        : "mb-2 grid grid-cols-2 gap-2";
 
   return (
     <>
@@ -116,7 +118,7 @@ export default function DtcEntryBar({
             disabled={disabled || busy}
             data-testid="obd-connect-entry"
             onClick={() => setBleOpen(true)}
-            className="inline-flex min-h-[44px] flex-1 touch-manipulation items-center justify-center gap-1.5 rounded-xl border border-cyan-500/50 bg-cyan-500/15 px-3 py-2.5 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-500/25 disabled:opacity-50 sm:flex-none sm:text-sm"
+            className="inline-flex min-h-[44px] w-full touch-manipulation items-center justify-center gap-1.5 rounded-xl border border-cyan-500/50 bg-cyan-500/15 px-3 py-2.5 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-500/25 disabled:opacity-50 sm:text-sm"
           >
             <Bluetooth className="h-3.5 w-3.5" />
             {t("obd.connectEntry")}
@@ -129,8 +131,8 @@ export default function DtcEntryBar({
           onClick={() => setModalOpen(true)}
           className={
             showConnect
-              ? "inline-flex min-h-[44px] flex-1 touch-manipulation items-center justify-center gap-1.5 rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-2.5 text-xs font-medium text-slate-200 transition hover:border-cyan-500/50 hover:text-cyan-200 disabled:opacity-50 sm:flex-none sm:text-sm"
-              : "inline-flex min-h-[44px] flex-1 touch-manipulation items-center justify-center gap-1.5 rounded-xl border border-cyan-500/50 bg-cyan-500/15 px-3 py-2.5 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-500/25 disabled:opacity-50 sm:flex-none sm:text-sm"
+              ? "inline-flex min-h-[44px] w-full touch-manipulation items-center justify-center gap-1.5 rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-2.5 text-xs font-medium text-slate-200 transition hover:border-cyan-500/50 hover:text-cyan-200 disabled:opacity-50 sm:text-sm"
+              : "inline-flex min-h-[44px] w-full touch-manipulation items-center justify-center gap-1.5 rounded-xl border border-cyan-500/50 bg-cyan-500/15 px-3 py-2.5 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-500/25 disabled:opacity-50 sm:text-sm"
           }
         >
           <Binary className="h-3.5 w-3.5 text-cyan-400" />
@@ -143,8 +145,8 @@ export default function DtcEntryBar({
           onClick={pickObd}
           className={
             showConnect
-              ? "inline-flex min-h-[44px] flex-1 touch-manipulation items-center justify-center gap-1.5 rounded-xl border border-slate-600 bg-slate-900/60 px-3 py-2.5 text-xs font-medium text-slate-200 transition hover:border-cyan-500/40 hover:text-cyan-200 disabled:opacity-50 sm:flex-none sm:text-sm"
-              : "inline-flex min-h-[44px] flex-1 touch-manipulation items-center justify-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3 py-2.5 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:opacity-50 sm:flex-none sm:text-sm"
+              ? "inline-flex min-h-[44px] w-full touch-manipulation items-center justify-center gap-1.5 rounded-xl border border-slate-600 bg-slate-900/60 px-3 py-2.5 text-xs font-medium text-slate-200 transition hover:border-cyan-500/40 hover:text-cyan-200 disabled:opacity-50 sm:text-sm"
+              : "inline-flex min-h-[44px] w-full touch-manipulation items-center justify-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3 py-2.5 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:opacity-50 sm:text-sm"
           }
         >
           {busy ? (

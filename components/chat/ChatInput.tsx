@@ -12,8 +12,8 @@ import {
   VolumeX,
   Square,
   FileText,
+  Plus,
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import {
   isSpeechSynthesisSupported,
   saveAutoSpeakPreference,
@@ -29,6 +29,7 @@ import { hideStorePurchaseUi } from "@/lib/native-platform";
 import CameraCapture from "@/components/chat/CameraCapture";
 import DtcEntryBar from "@/components/chat/DtcEntryBar";
 import { compressImageDataUrl } from "@/lib/image";
+import { DEFAULT_PHOTO_PROMPT } from "@/lib/chat-empty-photo";
 import { MAX_PHOTO_DIAGNOSE_IMAGES } from "@/lib/types/subscription";
 import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
 import type { MileageUnit } from "@/lib/obd-mileage";
@@ -81,9 +82,6 @@ type SpeechRecognitionInstance = {
   onerror: ((event: SpeechRecognitionError) => void) | null;
 };
 
-const DEFAULT_PHOTO_PROMPT =
-  "Please analyze this vehicle photo from my garage. Describe what you see, diagnose the likely issue, and highlight the primary area in Focus Mode.";
-
 function getSpeechRecognitionCtor():
   | (new () => SpeechRecognitionInstance)
   | undefined {
@@ -112,7 +110,6 @@ export default function ChatInput({
   onDraftConsumed,
   onOpenSafetyNotes,
 }: Props) {
-  const { t } = useTranslation();
   const busy = isLoading || isGenerating;
   const [input, setInput] = useState("");
   const [images, setImages] = useState<string[]>([]);
@@ -124,6 +121,7 @@ export default function ChatInput({
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeReason, setUpgradeReason] =
     useState<UpgradeReason>("generic");
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   const { isFree, features, recordVoiceUse, recordPhotoDiagnose } =
     useSubscription();
@@ -389,7 +387,7 @@ export default function ChatInput({
   const showTts = ttsSupported;
   const photoRemainingLabel =
     features.photoRemainingToday == null
-      ? "Unlimited photo diagnoses"
+      ? null
       : `${features.photoRemainingToday} photo diagnose${
           features.photoRemainingToday === 1 ? "" : "s"
         } left today`;
@@ -420,43 +418,51 @@ export default function ChatInput({
         onChange={handleImageUpload}
       />
 
-      {onFaultCode && onObdScreenshot ? (
-        <DtcEntryBar
-          variant="chat"
-          disabled={busy}
-          onCodeSubmit={onFaultCode}
-          onObdImage={async (img) => {
-            if (!ensurePhotoQuota()) return;
-            await onObdScreenshot(img);
-          }}
-          onObdBleSession={onObdBleSession}
-          vehicleId={vehicleId}
-          onMileageSynced={onMileageSynced}
-        />
-      ) : null}
-
-      {/* Garage primary CTA — large camera */}
-      <button
-        type="button"
-        onClick={openCamera}
-        disabled={busy}
-        className="mb-3 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-3 text-sm font-semibold text-black shadow-[0_0_24px_rgba(34,211,238,0.25)] transition hover:bg-cyan-400 disabled:opacity-50 sm:min-h-[56px] sm:gap-3 sm:px-4 sm:text-base"
-      >
-        <Camera className="h-5 w-5 sm:h-6 sm:w-6" />
-        <span className="sm:hidden">Photo diagnosis</span>
-        <span className="hidden sm:inline">Take photo for AI diagnosis</span>
-      </button>
-
-      {onScanReceipt ? (
-        <button
-          type="button"
-          onClick={onScanReceipt}
-          disabled={busy}
-          className="mb-3 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-2xl border border-slate-600 bg-slate-900/80 px-3 text-sm font-medium text-slate-100 transition hover:border-cyan-500/40 hover:text-cyan-200 disabled:opacity-50"
-        >
-          <FileText className="h-4 w-4 text-cyan-400" />
-          {t("history.chatScanCta")}
-        </button>
+      {toolsOpen ? (
+        <div data-testid="chat-composer-tools">
+          {onFaultCode && onObdScreenshot ? (
+            <DtcEntryBar
+              variant="chat"
+              disabled={busy}
+              onCodeSubmit={onFaultCode}
+              onObdImage={async (img) => {
+                if (!ensurePhotoQuota()) return;
+                await onObdScreenshot(img);
+              }}
+              onObdBleSession={onObdBleSession}
+              vehicleId={vehicleId}
+              onMileageSynced={onMileageSynced}
+            />
+          ) : null}
+          <div
+            className={
+              onScanReceipt ? "mb-3 grid grid-cols-2 gap-2" : "mb-3"
+            }
+          >
+            <button
+              type="button"
+              onClick={openCamera}
+              disabled={busy}
+              data-testid="chat-tool-photo"
+              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-cyan-500 px-3 text-sm font-semibold text-black transition hover:bg-cyan-400 disabled:opacity-50"
+            >
+              <Camera className="h-4 w-4" />
+              Photo
+            </button>
+            {onScanReceipt ? (
+              <button
+                type="button"
+                onClick={onScanReceipt}
+                disabled={busy}
+                data-testid="chat-tool-report"
+                className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-slate-600 bg-slate-900/80 px-3 text-sm font-medium text-slate-100 transition hover:border-cyan-500/40 disabled:opacity-50"
+              >
+                <FileText className="h-4 w-4 text-cyan-400" />
+                Report
+              </button>
+            ) : null}
+          </div>
+        </div>
       ) : null}
 
       {images.length > 0 && (
@@ -531,13 +537,22 @@ export default function ChatInput({
         <div className="flex items-end gap-2 sm:gap-3">
           <button
             type="button"
-            onClick={openGallery}
+            onClick={() => setToolsOpen((open) => !open)}
             disabled={busy}
-            aria-label="Choose photos from gallery"
-            title="Choose from gallery (multi-select)"
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl p-2.5 text-slate-400 transition-colors hover:bg-slate-800 disabled:opacity-50 sm:min-h-[48px] sm:min-w-[48px] sm:p-3"
+            data-testid="chat-composer-more"
+            aria-expanded={toolsOpen}
+            aria-label={toolsOpen ? "Hide extra actions" : "More actions"}
+            className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl p-2.5 transition-colors disabled:opacity-50 sm:min-h-[48px] sm:min-w-[48px] ${
+              toolsOpen
+                ? "bg-cyan-500/20 text-cyan-300"
+                : "text-slate-400 hover:bg-slate-800"
+            }`}
           >
-            <ImageIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+            {toolsOpen ? (
+              <X className="h-5 w-5 sm:h-6 sm:w-6" />
+            ) : (
+              <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
+            )}
           </button>
 
           <textarea
@@ -593,7 +608,7 @@ export default function ChatInput({
           )}
         </div>
 
-        {(showMic || showTts) && (
+        {(toolsOpen && (showMic || showTts)) && (
           <div className="flex items-center justify-center gap-2 sm:justify-start">
             {showMic && (
               <button
@@ -648,7 +663,7 @@ export default function ChatInput({
                 ) : (
                   <VolumeX className="h-5 w-5" />
                 )}
-                <span className="ml-1.5 text-xs sm:hidden">Read aloud</span>
+                <span className="sr-only">Read aloud</span>
               </button>
             )}
           </div>
@@ -663,12 +678,14 @@ export default function ChatInput({
             onClick={onOpenSafetyNotes}
             className="min-h-[44px] text-[11px] font-medium text-slate-400 underline-offset-2 hover:text-cyan-300 hover:underline"
           >
-            Educational guidance · Safety notes
+            Safety notes
           </button>
         ) : null}
-        <p className="text-[11px] leading-relaxed text-slate-500">
-          {photoRemainingLabel}
-        </p>
+        {photoRemainingLabel ? (
+          <p className="text-[11px] leading-relaxed text-slate-500">
+            {photoRemainingLabel}
+          </p>
+        ) : null}
       </div>
       {voiceError && (
         <p className="mt-1 text-center text-xs text-amber-400">{voiceError}</p>

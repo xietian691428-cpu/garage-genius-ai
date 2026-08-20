@@ -104,11 +104,3 @@ export function subscriptionStatusFromAppleProduct(
 /** App Store subscriptions management (system browser / Settings deep link). */
 export const APPLE_MANAGE_SUBSCRIPTIONS_URL =
   "https://apps.apple.com/account/subscriptions";
-
-/** Optional US “manage on website” secondary link (not the only purchase path). */
-export function webManageSubscriptionUrl(): string {
-  const base =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    "https://garagegenius.cloud";
-  return `${base}/pricing`;
-}

@@ -15,11 +15,9 @@ import {
   getBillingMode,
   isStoreShellClient,
   NATIVE_NO_IAP_MESSAGE,
-  NATIVE_WEBSITE_MANAGE_HINT,
 } from "@/lib/native-platform";
 import {
   openAppleManageSubscriptions,
-  openWebManageSubscriptionInSystemBrowser,
   purchaseApplePlan,
   restoreApplePurchases,
 } from "@/lib/native-iap";
@@ -33,6 +31,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { TrialStatusBanner } from "@/components/subscription/TrialBanners";
 import { TRIAL_DAYS } from "@/lib/subscription";
 import { upgradeCopy, type UpgradeReason } from "@/lib/upgrade-copy";
+import { appleProductIdForSelection } from "@/lib/apple-iap-products";
+import { displayIapPrice } from "@/lib/storekit-price-display";
+import { useAppleStoreKitPrices } from "@/hooks/useAppleStoreKitPrices";
 
 const TIERS: SubscriptionTier[] = ["free", "pro", "pro_heavy"];
 
@@ -101,6 +102,8 @@ export default function PricingCards({
   const iap = canUseNativeIap();
   const storeShell = forceStoreSafe || isStoreShellClient();
   const blocked = billingMode === "native_blocked";
+  const { prices: storeKitPrices, loaded: storeKitLoaded } =
+    useAppleStoreKitPrices(iap);
 
   const yearlySavings = useMemo(() => {
     const pro = PLAN_ENTITLEMENTS.pro;
@@ -239,13 +242,6 @@ export default function PricingCards({
           >
             {busyRestore ? "Restoring…" : "Restore purchases"}
           </button>
-          <button
-            type="button"
-            onClick={() => void openWebManageSubscriptionInSystemBrowser()}
-            className="min-h-[44px] rounded-2xl px-4 text-xs text-slate-500 underline-offset-2 hover:text-slate-300 hover:underline"
-          >
-            {NATIVE_WEBSITE_MANAGE_HINT}
-          </button>
         </div>
       )}
 
@@ -309,12 +305,29 @@ export default function PricingCards({
             ((planTier === "free" && tier === "free") ||
               (planTier === "pro" && tier === "pro") ||
               (planTier === "pro_heavy" && tier === "pro_heavy"));
-          const price =
+          const fallbackUsd =
             planTier === "free"
               ? 0
               : interval === "yearly"
                 ? plan.priceYearly
                 : plan.priceMonthly;
+          const productId =
+            planTier === "free"
+              ? ""
+              : appleProductIdForSelection({
+                  plan: planTier as PaidPlan,
+                  interval,
+                });
+          const iapPrice =
+            planTier === "free"
+              ? { label: "$0", fromStoreKit: false }
+              : displayIapPrice({
+                  productId,
+                  storeKitPrices,
+                  loaded: storeKitLoaded,
+                  fallbackUsd,
+                });
+          const priceLabel = iap ? iapPrice.label : formatPrice(fallbackUsd);
           const period =
             planTier === "free"
               ? ""
@@ -343,10 +356,15 @@ export default function PricingCards({
               </h3>
               <div className="mt-3 flex items-baseline gap-1">
                 <span className="text-4xl font-bold text-white">
-                  {formatPrice(price)}
+                  {priceLabel}
                 </span>
-                {period && (
+                {period && !iapPrice.fromStoreKit && (
                   <span className="text-sm text-slate-500">{period}</span>
+                )}
+                {iap && planTier !== "free" && iapPrice.fromStoreKit && (
+                  <span className="text-sm text-slate-500">
+                    {interval === "yearly" ? "/year" : "/mo"}
+                  </span>
                 )}
               </div>
               <p className="mt-2 text-sm text-slate-400">
@@ -399,10 +417,9 @@ export default function PricingCards({
           {iap || storeShell ? (
             <>
               In the iOS app, Pro and Pro Heavy are auto-renewable Apple In-App
-              Purchases. Payment is charged to your Apple ID; manage or cancel in
-              Settings → Apple ID → Subscriptions. List prices above are
-              reference USD; StoreKit shows the localized App Store price.
-              Website billing uses Stripe separately.
+              Purchases. Prices come from the App Store. Payment is charged to
+              your Apple ID; manage or cancel in Settings → Apple ID →
+              Subscriptions. Website billing (Safari) uses Stripe separately.
             </>
           ) : (
             <>

@@ -133,7 +133,18 @@ export function formatMarketContextBlock(vehicle: {
   ].join("\n");
 }
 
-/** e.g. "2023 Toyota Camry SE - US" */
+function vehicleYmmLine(vehicle: {
+  year: number;
+  make: string;
+  model: string;
+  submodel?: string | null;
+}): string {
+  return [vehicle.year, vehicle.make, vehicle.model, vehicle.submodel || null]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/** Machine/prompt form, e.g. "2023 Toyota Camry SE - US". */
 export function formatVehicleYmmMarket(vehicle: {
   year: number;
   make: string;
@@ -141,16 +152,50 @@ export function formatVehicleYmmMarket(vehicle: {
   submodel?: string | null;
   market?: VehicleMarketCode | string | null;
 }): string {
-  const ymm = [
-    vehicle.year,
-    vehicle.make,
-    vehicle.model,
-    vehicle.submodel || null,
-  ]
-    .filter(Boolean)
-    .join(" ");
   const market = normalizeVehicleMarket(vehicle.market);
-  return `${ymm} - ${market}`;
+  return `${vehicleYmmLine(vehicle)} - ${market}`;
+}
+
+/**
+ * Owner-facing YMM. US-first app: don't stamp "US" on every line,
+ * and never show the catch-all OTHER code.
+ */
+export function formatVehicleYmmDisplay(vehicle: {
+  year: number;
+  make: string;
+  model: string;
+  submodel?: string | null;
+  market?: VehicleMarketCode | string | null;
+}): string {
+  const ymm = vehicleYmmLine(vehicle);
+  const raw = vehicle.market;
+  if (!isVehicleMarketCode(raw) || raw === "US" || raw === "OTHER") return ymm;
+  return `${ymm} · ${raw}`;
+}
+
+/** Picker / list row: nickname only when it isn't just another YMM string. */
+export function formatVehiclePickerLabel(vehicle: {
+  name?: string | null;
+  year: number;
+  make: string;
+  model: string;
+  submodel?: string | null;
+  market?: VehicleMarketCode | string | null;
+}): string {
+  const ymm = formatVehicleYmmDisplay(vehicle);
+  const name = vehicle.name?.trim();
+  if (!name) return ymm;
+  const lower = name.toLowerCase();
+  if (lower === ymm.toLowerCase()) return ymm;
+  const model = vehicle.model.toLowerCase();
+  const make = vehicle.make.toLowerCase();
+  if (
+    (model && lower.includes(model)) ||
+    (make && lower.includes(make) && name.includes(String(vehicle.year)))
+  ) {
+    return ymm;
+  }
+  return `${name} · ${ymm}`;
 }
 
 const MARKET_PREF_KEY = "garageGenius_preferredMarket";

@@ -3,7 +3,7 @@ import { FIXTURE, vinLast8 } from "./fixtures/test-data";
 import { loginWithEmail } from "./helpers/auth";
 import { hasE2eCredentials, shouldMockAi } from "./helpers/env";
 import { mockAiRoutes } from "./helpers/mock-ai";
-import { openShopReportModal } from "./helpers/ui";
+import { openChatComposerTools, openShopReportModal } from "./helpers/ui";
 
 test.describe("Chat + Shop Report P0", () => {
   test.beforeEach(async ({ page }) => {
@@ -24,6 +24,7 @@ test.describe("Chat + Shop Report P0", () => {
     // Let cloud chat hydrate finish so it cannot wipe the turns we send next.
     await page.waitForTimeout(1_500);
 
+    await openChatComposerTools(page);
     await page.getByTestId("dtc-enter-code").click();
     await page.getByTestId("dtc-input").fill(FIXTURE.dtc);
     await page.getByTestId("dtc-submit").click();
@@ -105,6 +106,7 @@ test.describe("Chat + Shop Report P0", () => {
     );
 
     await page.goto("/app?tab=chat");
+    await openChatComposerTools(page);
     await page.getByTestId("dtc-enter-code").click();
     await page.getByTestId("dtc-input").fill(FIXTURE.dtc);
     await page.getByTestId("dtc-submit").click();

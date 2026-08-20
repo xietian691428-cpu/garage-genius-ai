@@ -25,7 +25,7 @@ import type { DashboardRegion, RegionInspection } from "@/lib/types/dashboard";
 import type { VehicleInfo } from "@/lib/types/chat";
 import type { FocusCommand } from "@/lib/types/focus";
 import {
-  formatVehicleYmmMarket,
+  formatVehicleYmmDisplay,
   normalizeVehicleMarket,
   VEHICLE_MARKETS,
   type VehicleMarketCode,
@@ -902,7 +902,7 @@ export default function Dashboard({
   };
 
   const vehicleLabel = vehicle
-    ? formatVehicleYmmMarket(vehicle)
+    ? formatVehicleYmmDisplay(vehicle)
     : vehiclesLoading
       ? "Loading garage…"
       : "No vehicle yet";

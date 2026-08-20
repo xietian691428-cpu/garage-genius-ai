@@ -57,6 +57,7 @@ import {
   parseTurnFocus,
   prepareDriftForChatTurn,
 } from "@/lib/chat-intent-drift";
+import { observeChatSafetyTurn } from "@/lib/pilot/observe-chat-safety";
 import type { TurnFocus } from "@/lib/chat-intent-drift";
 
 export const runtime = "nodejs";
@@ -436,6 +437,12 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+    observeChatSafetyTurn({
+      vehicleId: currentVehicle.id,
+      userMessage: userPlainForLang,
+      reply,
+      currentFocus: drift.currentFocus,
+    });
     const resolvedPlaybook =
       (typeof playbookSlug === "string" && playbookSlug.trim()) ||
       (typeof coachSlug === "string" && coachSlug.trim()) ||

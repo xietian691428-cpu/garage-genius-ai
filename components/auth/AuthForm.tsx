@@ -6,14 +6,11 @@ import Link from "next/link";
 import { Car } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { safeNextPath, useAuth } from "@/hooks/useAuth";
-import {
-  hasAnyOAuthProvider,
-  isAppleAuthEnabled,
-  isGoogleAuthEnabled,
-} from "@/lib/auth-providers";
+import { isAppleAuthEnabled, isGoogleAuthEnabled } from "@/lib/auth-providers";
+import { isGoogleOAuthButtonVisible } from "@/lib/native-apple-auth";
 import { hideNativeSplash } from "@/lib/native-splash";
 import { isSupabaseConfigured } from "@/lib/supabase";
-import { hideStorePurchaseUi } from "@/lib/native-platform";
+import { hideStorePurchaseUi, isNativeIos } from "@/lib/native-platform";
 
 type Mode = "signin" | "signup";
 
@@ -77,8 +74,11 @@ export default function AuthForm({
   const nextPath = safeNextPath(searchParams.get("next"));
   const oauthErrorParam = searchParams.get("error");
   const showApple = isAppleAuthEnabled();
-  const showGoogle = isGoogleAuthEnabled();
-  const showOAuth = hasAnyOAuthProvider();
+  const showGoogle = isGoogleOAuthButtonVisible({
+    googleEnabled: isGoogleAuthEnabled(),
+    nativeIos: forceStoreSafe || isNativeIos(),
+  });
+  const showOAuth = showApple || showGoogle;
   const {
     isAuthenticated,
     loading: authLoading,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { trimMessagesForApi } from "@/lib/chat-repair-loop";
+import { usTop10CoreUserQuestionFailures } from "@/lib/pilot/hard-validate-seed-answer";
 import type { ChatMessage } from "@/lib/types/chat";
 import {
   applyHistoryForDrift,
@@ -18,6 +19,7 @@ import {
   prepareDriftForChatTurn,
   reconstructFocusFromHistory,
   staleFocusPhrases,
+  updateParkingBrakeState,
 } from "@/lib/chat-intent-drift";
 import { driftHistoryOptions } from "@/lib/chat-focus-storage";
 import type { ChatFocusStore } from "@/lib/chat-focus-storage";
@@ -279,6 +281,96 @@ describe("vehicleRaised + parkingBrakeState", () => {
     expect(needsCriticalRaisedState(pb)).toBe(true);
     expect(pb.summary.toLowerCase()).toMatch(/jack stand/);
   });
+
+  it("clears parkingBrakeState on explicit negation (C3)", () => {
+    const prev = {
+      ...buildTurnFocus(PB, 0),
+      parkingBrakeState: "not_holding" as const,
+      vehicleRaised: true,
+    };
+    const userMessage = "手刹没事，行车制动绵";
+    const safetyTopics = matchDriftSafetyTopics(userMessage);
+    expect(safetyTopics).toContain("brakes");
+
+    const next = buildTurnFocus(userMessage, 1, safetyTopics, prev);
+    expect(next.parkingBrakeState).not.toBe("not_holding");
+    expect(next.parkingBrakeState).not.toBe("failed");
+    expect(next.parkingBrakeState).toBe("ok");
+    expect(next.vehicleRaised).toBe(true);
+  });
+
+  it("EN negation clears state", () => {
+    const prev = {
+      ...buildTurnFocus(PB, 0),
+      parkingBrakeState: "not_holding" as const,
+    };
+    const next = buildTurnFocus(
+      "Parking brake is fine, but the regular brakes feel spongy",
+      1,
+      matchDriftSafetyTopics(
+        "Parking brake is fine, but the regular brakes feel spongy",
+      ),
+      prev,
+    );
+    expect(next.parkingBrakeState).not.toBe("not_holding");
+    expect(next.parkingBrakeState).not.toBe("failed");
+    expect(next.parkingBrakeState).toBe("ok");
+  });
+
+  it("clears inherited not_holding when the user says the parking brake is fine", () => {
+    const pb = buildTurnFocus(PB, 0);
+    expect(pb.parkingBrakeState).toBe("not_holding");
+
+    const zh = buildTurnFocus(
+      "手刹没事，行车制动绵",
+      1,
+      matchDriftSafetyTopics("手刹没事，行车制动绵"),
+      pb,
+    );
+    expect(zh.parkingBrakeState).toBe("ok");
+    expect(zh.summary).toMatch(/行车制动/);
+    expect(zh.summary).not.toMatch(/手刹不持力/);
+
+    const en = buildTurnFocus(
+      "Parking brake is fine. Pedal feels spongy.",
+      1,
+      matchDriftSafetyTopics("Parking brake is fine. Pedal feels spongy."),
+      pb,
+    );
+    expect(en.parkingBrakeState).toBe("ok");
+    expect(en.summary.toLowerCase()).not.toMatch(/parking brake not holding/);
+
+    const es = buildTurnFocus(
+      "El freno de mano está bien, el pedal se siente esponjoso.",
+      1,
+      matchDriftSafetyTopics("El freno de mano está bien, el pedal se siente esponjoso."),
+      pb,
+    );
+    expect(es.parkingBrakeState).toBe("ok");
+  });
+
+  it("keeps not_holding when a fault and a fine-phrase appear together", () => {
+    const mixed = buildTurnFocus(
+      "Parking brake is fine most days but it won't hold on a slope.",
+      0,
+    );
+    expect(mixed.parkingBrakeState).toBe("not_holding");
+  });
+
+  it("does not treat a generic brakes topic as a parking-brake fault", () => {
+    const spongy = "手刹没事，行车制动绵";
+    const topics = matchDriftSafetyTopics(spongy);
+    expect(topics).toContain("brakes");
+    expect(
+      updateParkingBrakeState(spongy, "not_holding", topics),
+    ).toBe("ok");
+    expect(
+      updateParkingBrakeState("行车制动绵", "not_holding", ["brakes"]),
+    ).toBe("not_holding");
+    expect(
+      updateParkingBrakeState("The pedal feels spongy.", "set", ["brakes"]),
+    ).toBe("set");
+  });
 });
 
 describe("multi-turn high-risk scripts", () => {
@@ -451,5 +543,11 @@ describe("CRITICAL STATE generation rules", () => {
       vehicleId: "camry-1",
     });
     expect(systemBlock).toMatch(/Do NOT suggest continuing previous service steps/i);
+  });
+});
+
+describe("US top-10 safety seed CI gate", () => {
+  it("user-question matchers still pass on the 10 core seeds", () => {
+    expect(usTop10CoreUserQuestionFailures()).toEqual([]);
   });
 });

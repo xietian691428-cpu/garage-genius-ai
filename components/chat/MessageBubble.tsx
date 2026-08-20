@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChatMessage, VehicleInfo, messageImages } from "@/lib/types/chat";
+import { isPhotoPromptWithoutImages } from "@/lib/chat-empty-photo";
 import { stripTrailingLegalDisclaimer } from "@/lib/legal-disclaimer";
 import { stripPartsDataFromContent } from "@/lib/parse-ai-parts";
 import { stripFocusFromContent } from "@/lib/parse-ai-focus";
@@ -23,6 +24,7 @@ import PartsRecommendationTable from "../parts/PartsRecommendationTable";
 import { speakText, stopSpeaking } from "@/lib/browser-voice";
 import { getFollowUpChips } from "@/lib/chat-repair-loop";
 import HighRiskSafetyCallout from "./HighRiskSafetyCallout";
+import { formatAppTime } from "@/lib/format-app-date";
 import {
   matchSafetyTopics,
   type SafetyTopicHit,
@@ -44,6 +46,7 @@ interface Props {
   onEditUser?: (content: string) => void;
   onQuickPrompt?: (prompt: string) => void;
   onGenerateShopReport?: () => void;
+  onHideEmptyPhoto?: () => void;
 }
 
 const LONG_REPLY_CHARS = 1400;
@@ -59,8 +62,9 @@ export default function MessageBubble({
   onEditUser,
   onQuickPrompt,
   onGenerateShopReport,
+  onHideEmptyPhoto,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isUser = message.role === "user";
   const displayContent = isUser
     ? message.content
@@ -125,10 +129,35 @@ export default function MessageBubble({
     }
   };
 
+  if (isUser && isPhotoPromptWithoutImages(message.content, parts)) {
+    return (
+      <div className="mb-3 flex justify-end">
+        <div
+          data-testid="chat-empty-photo-hint"
+          className="flex max-w-[92%] items-center gap-2 rounded-2xl bg-slate-800/80 px-3 py-2 text-xs text-slate-400"
+        >
+          <span>Photo prompt with no picture attached.</span>
+          {onHideEmptyPhoto ? (
+            <button
+              type="button"
+              data-testid="chat-empty-photo-hide"
+              onClick={onHideEmptyPhoto}
+              className="shrink-0 font-medium text-slate-300 underline-offset-2 hover:text-cyan-300 hover:underline"
+            >
+              Hide
+            </button>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`mb-4 flex ${isUser ? "justify-end" : "justify-start"}`}>
+    <div
+      className={`mb-4 flex flex-col ${isUser ? "items-end" : "items-start"}`}
+    >
       <div
-        className={`max-w-[92%] rounded-3xl px-4 py-3.5 sm:max-w-[80%] sm:px-5 sm:py-4 ${
+      className={`max-w-[min(36rem,92%)] rounded-3xl px-4 py-3.5 sm:px-5 sm:py-4 ${
           isUser ? "bg-blue-600" : "bg-slate-800"
         }`}
       >
@@ -147,56 +176,6 @@ export default function MessageBubble({
                 className="max-h-56 w-full rounded-2xl object-cover"
               />
             ))}
-          </div>
-        )}
-
-        {!isUser && (
-          <div className="mb-2 flex flex-wrap justify-end gap-1.5">
-            <button
-              type="button"
-              onClick={() => void handleCopy()}
-              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-slate-300 transition hover:bg-slate-900"
-              title="Copy"
-            >
-              {copied ? (
-                <Check className="h-3.5 w-3.5 text-cyan-300" />
-              ) : (
-                <Copy className="h-3.5 w-3.5" />
-              )}
-              {copied ? "Copied" : "Copy"}
-            </button>
-            {isLastAssistant && onRegenerate && (
-              <button
-                type="button"
-                onClick={onRegenerate}
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-slate-300 transition hover:bg-slate-900"
-                title="Regenerate"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-                Regenerate
-              </button>
-            )}
-            {isLastAssistant && onGenerateShopReport && (
-              <button
-                type="button"
-                onClick={onGenerateShopReport}
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-cyan-300 transition hover:bg-slate-900"
-                title={t("shopReport.openCta")}
-              >
-                <FileText className="h-3.5 w-3.5" />
-                {t("shopReport.openShort")}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={handleReplay}
-              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-cyan-300 transition hover:bg-slate-900"
-              aria-label="Read this reply aloud"
-              title="Read aloud"
-            >
-              <Volume2 className="h-3.5 w-3.5" />
-              Listen
-            </button>
           </div>
         )}
 
@@ -240,7 +219,7 @@ export default function MessageBubble({
             className="mt-4 flex min-h-[44px] w-full touch-manipulation items-center justify-center gap-2 rounded-2xl border border-cyan-500/40 bg-cyan-500/10 py-3 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20"
           >
             <Crosshair className="h-4 w-4" />
-            Focus Mode — highlight {focusCmd.part} on map
+            Highlight {focusCmd.part} on the map
           </button>
         )}
 
@@ -252,21 +231,53 @@ export default function MessageBubble({
           />
         )}
 
-        {followUps.length > 0 && (
-          <div
-            data-testid="chat-follow-up-chips"
-            className="mt-3 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {followUps.map((chip) => (
+        {!isUser && isLastAssistant && (
+          <div className="mt-3 flex flex-wrap justify-end gap-1.5">
+            <button
+              type="button"
+              onClick={() => void handleCopy()}
+              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-slate-300 transition hover:bg-slate-900"
+              title="Copy"
+            >
+              {copied ? (
+                <Check className="h-3.5 w-3.5 text-cyan-300" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
+              {copied ? "Copied" : "Copy"}
+            </button>
+            {onRegenerate && (
               <button
-                key={chip.id}
                 type="button"
-                onClick={() => onQuickPrompt?.(chip.prompt)}
-                className="shrink-0 rounded-full border border-slate-600 bg-slate-900/70 px-3 py-2 text-left text-[12px] text-slate-200 transition hover:border-cyan-500/50 hover:text-cyan-200"
+                onClick={onRegenerate}
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-slate-300 transition hover:bg-slate-900"
+                title="Regenerate"
               >
-                {chip.label}
+                <RefreshCw className="h-3.5 w-3.5" />
+                Retry
               </button>
-            ))}
+            )}
+            {onGenerateShopReport && (
+              <button
+                type="button"
+                onClick={onGenerateShopReport}
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-cyan-300 transition hover:bg-slate-900"
+                title={t("shopReport.openCta")}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                {t("shopReport.openShort")}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleReplay}
+              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-cyan-300 transition hover:bg-slate-900"
+              aria-label="Read this reply aloud"
+              title="Read aloud"
+            >
+              <Volume2 className="h-3.5 w-3.5" />
+              Listen
+            </button>
           </div>
         )}
 
@@ -274,12 +285,26 @@ export default function MessageBubble({
           className="mt-2 text-right text-[10px] text-slate-500"
           suppressHydrationWarning
         >
-          {message.timestamp.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+          {formatAppTime(message.timestamp, i18n.language)}
         </div>
       </div>
+      {followUps.length > 0 && (
+        <div
+          data-testid="chat-follow-up-chips"
+          className="mt-2 flex max-w-[92%] gap-2 overflow-x-auto overscroll-x-contain pb-1 pr-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:max-w-[80%]"
+        >
+          {followUps.map((chip) => (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={() => onQuickPrompt?.(chip.prompt)}
+              className="shrink-0 whitespace-nowrap rounded-full border border-slate-600 bg-slate-800 px-3 py-2 text-[12px] text-slate-200 transition hover:border-cyan-500/50 hover:text-cyan-200"
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

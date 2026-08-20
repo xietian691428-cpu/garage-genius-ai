@@ -23,8 +23,7 @@ interface Props {
 }
 
 /**
- * 手机 / iPad 竖屏底部抽屉
- * lg 以下显示（含 iPhone、Android、iPad portrait）
+ * 手机 / iPad 底部抽屉。xl 以下显示（含 iPad Air 11 横屏）。
  */
 export default function MobileVehicleSwitcher({
   open,
@@ -75,7 +74,7 @@ export default function MobileVehicleSwitcher({
   return (
     <>
       <div
-        className="fixed inset-0 z-50 lg:hidden"
+        className="fixed inset-0 z-50 xl:hidden"
         role="dialog"
         aria-modal="true"
         aria-label="Switch vehicle"

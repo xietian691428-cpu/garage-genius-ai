@@ -34,7 +34,7 @@ export default function VehicleHealthSnapshot({ snapshot, onPrimary }: Props) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-            Vehicle Health
+            Vehicle health
           </p>
           <h2 className="mt-1 text-xl font-semibold text-white sm:text-2xl">
             <span

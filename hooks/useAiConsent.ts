@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import {
   readAiConsentLocal,
+  shouldAutoShowAiConsent,
   writeAiConsentLocal,
 } from "@/lib/ai-consent";
 import {
@@ -22,30 +23,47 @@ type Waiter = {
  */
 export function useAiConsent() {
   const { user, loading: authLoading } = useAuth();
-  const [acknowledged, setAcknowledged] = useState(true);
+  const [acknowledged, setAcknowledged] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const acknowledgedRef = useRef(true);
+  const acknowledgedRef = useRef(false);
   const waiterRef = useRef<Waiter | null>(null);
+  const loadedRef = useRef(false);
+  const loadedWaitersRef = useRef<Array<() => void>>([]);
 
   const mark = useCallback((done: boolean) => {
     acknowledgedRef.current = done;
     setAcknowledged(done);
   }, []);
 
+  const markLoaded = useCallback((done: boolean) => {
+    loadedRef.current = done;
+    setLoaded(done);
+    if (done) {
+      const waiters = loadedWaitersRef.current;
+      loadedWaitersRef.current = [];
+      waiters.forEach((fn) => fn());
+    }
+  }, []);
+
   useEffect(() => {
-    if (authLoading || !user?.id) {
+    if (authLoading) {
+      markLoaded(false);
+      return;
+    }
+    if (!user?.id) {
       mark(true);
-      setLoaded(!authLoading);
+      markLoaded(true);
       return;
     }
     if (readAiConsentLocal(user.id)) {
       mark(true);
-      setLoaded(true);
+      markLoaded(true);
       return;
     }
 
     let cancelled = false;
+    markLoaded(false);
     void (async () => {
       try {
         const { data, error } = await withTimeout(
@@ -78,14 +96,26 @@ export function useAiConsent() {
       } catch {
         if (!cancelled) mark(false);
       } finally {
-        if (!cancelled) setLoaded(true);
+        if (!cancelled) markLoaded(true);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user?.id, mark]);
+  }, [authLoading, user?.id, mark, markLoaded]);
+
+  useEffect(() => {
+    if (
+      shouldAutoShowAiConsent({
+        loaded,
+        hasUser: Boolean(user?.id),
+        acknowledged,
+      })
+    ) {
+      setShowModal(true);
+    }
+  }, [loaded, user?.id, acknowledged]);
 
   const finishWaiter = useCallback((ok: boolean) => {
     const w = waiterRef.current;
@@ -93,14 +123,18 @@ export function useAiConsent() {
     w?.resolve(ok);
   }, []);
 
-  const ensureConsent = useCallback((): Promise<boolean> => {
-    if (!loaded) return Promise.resolve(false);
-    if (acknowledgedRef.current) return Promise.resolve(true);
+  const ensureConsent = useCallback(async (): Promise<boolean> => {
+    if (!loadedRef.current) {
+      await new Promise<void>((resolve) => {
+        loadedWaitersRef.current.push(resolve);
+      });
+    }
+    if (acknowledgedRef.current) return true;
     setShowModal(true);
     return new Promise<boolean>((resolve) => {
       waiterRef.current = { resolve };
     });
-  }, [loaded]);
+  }, []);
 
   const acknowledge = useCallback(async () => {
     mark(true);

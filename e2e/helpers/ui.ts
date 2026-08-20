@@ -1,7 +1,14 @@
 import type { Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 
-/** Prefer desktop Shop Report CTA; fall back to mobile when viewport is narrow. */
+export async function openChatComposerTools(page: Page): Promise<void> {
+  const tools = page.getByTestId("chat-composer-tools");
+  if (await tools.isVisible().catch(() => false)) return;
+  const more = page.getByTestId("chat-composer-more");
+  await expect(more).toBeVisible({ timeout: 30_000 });
+  await more.click();
+  await expect(tools).toBeVisible({ timeout: 10_000 });
+}
 export async function openShopReportModal(page: Page): Promise<void> {
   const visible = page
     .locator(

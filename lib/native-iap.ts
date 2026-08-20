@@ -15,7 +15,6 @@ import {
   ALL_APPLE_PRODUCT_IDS,
   appleProductIdForSelection,
   APPLE_MANAGE_SUBSCRIPTIONS_URL,
-  webManageSubscriptionUrl,
 } from "@/lib/apple-iap-products";
 import type {
   BillingInterval,
@@ -141,15 +140,5 @@ export async function openAppleManageSubscriptions(): Promise<void> {
     } else {
       window.open(APPLE_MANAGE_SUBSCRIPTIONS_URL, "_blank", "noopener");
     }
-  }
-}
-
-/** Secondary path (US allowed): manage plan details on the website in system browser — not WebView Stripe. */
-export async function openWebManageSubscriptionInSystemBrowser(): Promise<void> {
-  const url = webManageSubscriptionUrl();
-  if (Capacitor.isNativePlatform()) {
-    await Browser.open({ url });
-  } else {
-    window.open(url, "_blank", "noopener");
   }
 }

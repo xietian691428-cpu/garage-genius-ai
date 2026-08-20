@@ -13,7 +13,11 @@
  */
 
 import { detectReplyLanguageHint, type ReplyLanguageHint } from "@/lib/reply-language";
-import { matchSafetyTopicIds, parkingBrakeFaultMatches } from "@/lib/safety-topics";
+import {
+  matchSafetyTopicIds,
+  parkingBrakeFaultMatches,
+  parkingBrakeNegationMatches,
+} from "@/lib/safety-topics";
 
 export type DriftReason =
   | "new_high_risk"
@@ -23,6 +27,7 @@ export type DriftReason =
 
 export type ParkingBrakeState =
   | "unknown"
+  | "ok"
   | "set"
   | "not_holding"
   | "failed";
@@ -417,21 +422,47 @@ export function inferVehicleRaised(
   return false;
 }
 
-export function inferParkingBrakeState(
-  userMessage: string,
-  previous: TurnFocus | null | undefined,
-): ParkingBrakeState {
+function hasParkingBrakeFaultCue(userMessage: string): boolean {
   const hay = (userMessage || "").toLowerCase();
-  const fault = parkingBrakeFaultMatches(userMessage);
-  if (
-    fault ||
+  return (
+    parkingBrakeFaultMatches(userMessage) ||
     /won't hold|will not hold|not holding|不持力|拉不住|溜车|溜了/.test(hay)
-  ) {
+  );
+}
+
+/**
+ * Parking-brake slot on TurnFocus. Called from buildTurnFocus.
+ *
+ * Do not treat `currentSafetyTopics.includes("brakes")` as a parking-brake
+ * fault — that fires on service-brake text (行车制动绵) and would undo
+ * “手刹没事”.
+ *
+ * Negation returns `ok`, not `set`: `set` means the user engaged the brake
+ * for DIY (oil/jack). `unknown` would drop the explicit clear and let
+ * summaries fall back to inherited not_holding phrasing.
+ */
+export function updateParkingBrakeState(
+  userMessage: string,
+  prevState: ParkingBrakeState | undefined,
+  _currentSafetyTopics: string[],
+): ParkingBrakeState {
+  const fault = hasParkingBrakeFaultCue(userMessage);
+  const negated = parkingBrakeNegationMatches(userMessage);
+  const hay = (userMessage || "").toLowerCase();
+
+  // 1. Explicit “parking brake is fine” / 手刹没事 — clear not_holding.
+  //    Same-turn fault still wins (“fine most days but it won't hold”).
+  if (negated && !fault) return "ok";
+
+  // 2. Parking-brake fault phrases (not generic brakes topic).
+  if (fault) {
     if (/failed to hold|has failed|坏了|actuator failed/.test(hay)) {
       return "failed";
     }
     return "not_holding";
   }
+
+  // 3. DIY “set / engage the parking brake” (oil change, jacking).
   if (
     /set the parking brake|parking brake (?:is |was )?on|engage(?:d)? the (?:parking brake|handbrake)|拉(?:上)?手刹|拉驻车/.test(
       hay,
@@ -439,9 +470,21 @@ export function inferParkingBrakeState(
   ) {
     return "set";
   }
-  const prev = previous?.parkingBrakeState;
-  if (prev && prev !== "unknown") return prev;
-  return "unknown";
+
+  // 4. Otherwise inherit.
+  return prevState && prevState !== "unknown" ? prevState : "unknown";
+}
+
+export function inferParkingBrakeState(
+  userMessage: string,
+  previous: TurnFocus | null | undefined,
+  currentSafetyTopics?: string[],
+): ParkingBrakeState {
+  return updateParkingBrakeState(
+    userMessage,
+    previous?.parkingBrakeState,
+    currentSafetyTopics ?? matchDriftSafetyTopics(userMessage),
+  );
 }
 
 type PrimaryJob =
@@ -459,11 +502,14 @@ function inferPrimaryJob(
   pbState?: ParkingBrakeState,
 ): PrimaryJob | null {
   const pbIssue =
-    pbState === "not_holding" ||
-    pbState === "failed" ||
-    parkingBrakeFaultMatches(text) ||
-    (entities.includes("parking_brake") && hasFaultCue(text));
-  if (pbIssue || entities.includes("brake_shoes")) return "parking_brake";
+    pbState !== "ok" &&
+    (pbState === "not_holding" ||
+      pbState === "failed" ||
+      parkingBrakeFaultMatches(text) ||
+      (entities.includes("parking_brake") && hasFaultCue(text)));
+  if (pbIssue || (entities.includes("brake_shoes") && pbState !== "ok")) {
+    return "parking_brake";
+  }
   if (
     topics.includes("brakes") ||
     entities.includes("brake_pads") ||
@@ -542,11 +588,13 @@ export function composeFocusSummary(input: {
   const pbBad =
     input.parkingBrakeState === "not_holding" ||
     input.parkingBrakeState === "failed";
+  const pbCleared = input.parkingBrakeState === "ok";
   const pbIssue =
-    pbBad ||
-    (e.has("parking_brake") &&
-      (input.topics.includes("brakes") ||
-        parkingBrakeFaultMatches(input.userMessage)));
+    !pbCleared &&
+    (pbBad ||
+      (e.has("parking_brake") &&
+        (input.topics.includes("brakes") ||
+          parkingBrakeFaultMatches(input.userMessage))));
 
   if (lang === "zh") {
     if (pbIssue && raised) {
@@ -556,13 +604,13 @@ export function composeFocusSummary(input: {
     if (pbBad && (e.has("jack") || input.topics.includes("lifting_under_car"))) {
       return "手刹可能不持力；顶车前先塞轮掩，未稳定勿上车底。";
     }
+    if (e.has("brake_pads") || input.topics.includes("brakes")) {
+      return "行车制动（刹车片/制动系统）问题。";
+    }
     if (e.has("oil") && !raised) return "换机油 / 放油相关。";
     if (e.has("oil") && raised) return "换机油；车辆可能已顶起。";
     if (e.has("jack_stands") || input.topics.includes("lifting_under_car") || raised) {
       return "顶车或车下作业；不要只靠千斤顶。";
-    }
-    if (e.has("brake_pads") || input.topics.includes("brakes")) {
-      return "行车制动（刹车片/制动系统）问题。";
     }
   } else if (lang === "es") {
     if (pbIssue && raised) {
@@ -570,6 +618,9 @@ export function composeFocusSummary(input: {
     }
     if (pbIssue) {
       return "El freno de estacionamiento no sujeta o no funciona.";
+    }
+    if (e.has("brake_pads") || input.topics.includes("brakes")) {
+      return "Freno de servicio (pastillas / sistema de frenado).";
     }
     if (e.has("oil")) return "Cambio de aceite / tapón de drenaje.";
     if (e.has("jack_stands") || input.topics.includes("lifting_under_car") || raised) {
@@ -585,15 +636,15 @@ export function composeFocusSummary(input: {
     if (pbBad && (e.has("jack") || input.topics.includes("lifting_under_car"))) {
       return "Parking brake may not hold; chock before raising and stay out until stable.";
     }
+    if (e.has("brake_pads") || input.topics.includes("brakes")) {
+      return "Service-brake concern (pads, stopping power, or related).";
+    }
     if (e.has("oil") && raised) {
       return "Oil change; vehicle may already be raised on stands.";
     }
     if (e.has("oil")) return "Oil change / drain-plug service.";
     if (e.has("jack_stands") || input.topics.includes("lifting_under_car") || raised) {
       return "Vehicle lifting / working under the car; do not rely on a jack alone.";
-    }
-    if (e.has("brake_pads") || input.topics.includes("brakes")) {
-      return "Service-brake concern (pads, stopping power, or related).";
     }
     if (e.has("airbag") || input.topics.includes("airbag_srs")) {
       return "Airbag / SRS concern — high-risk.";
@@ -624,7 +675,11 @@ export function parseTurnFocus(value: unknown): TurnFocus | null {
   const raw = value as TurnFocus & Record<string, unknown>;
   const pb = raw.parkingBrakeState;
   const parkingBrakeState: ParkingBrakeState =
-    pb === "set" || pb === "not_holding" || pb === "failed" || pb === "unknown"
+    pb === "ok" ||
+    pb === "set" ||
+    pb === "not_holding" ||
+    pb === "failed" ||
+    pb === "unknown"
       ? pb
       : "unknown";
   return {
@@ -650,7 +705,11 @@ export function buildTurnFocus(
 ): TurnFocus {
   const entities = extractKeyEntities(userMessage);
   const vehicleRaised = inferVehicleRaised(userMessage, previous);
-  const parkingBrakeState = inferParkingBrakeState(userMessage, previous);
+  const parkingBrakeState = updateParkingBrakeState(
+    userMessage,
+    previous?.parkingBrakeState,
+    topics,
+  );
   return {
     summary: composeFocusSummary({
       userMessage,
@@ -710,7 +769,11 @@ export function detectIntentDrift(
   const currentEntities = extractKeyEntities(userMessage);
   const entityShift = hasEntityShift(currentEntities, previousFocus?.entities);
   const faultCue = hasFaultCue(userMessage);
-  const currentPbState = inferParkingBrakeState(userMessage, previousFocus);
+  const currentPbState = updateParkingBrakeState(
+    userMessage,
+    previousFocus?.parkingBrakeState,
+    currentSafetyTopics,
+  );
   const previousJob = previousFocus
     ? inferPrimaryJob(
         previousFocus.entities,
@@ -771,7 +834,11 @@ export function detectIntentDrift(
       turnIndex: currentFocus.turnIndex,
       createdAt: currentFocus.createdAt,
       vehicleRaised: inferVehicleRaised(userMessage, previousFocus),
-      parkingBrakeState: inferParkingBrakeState(userMessage, previousFocus),
+      parkingBrakeState: updateParkingBrakeState(
+        userMessage,
+        previousFocus.parkingBrakeState,
+        currentSafetyTopics,
+      ),
     };
   }
 
@@ -873,6 +940,7 @@ function preferParkingBrakeState(
     failed: 4,
     not_holding: 3,
     set: 2,
+    ok: 2,
     unknown: 1,
   };
   const left = a ?? "unknown";
@@ -910,17 +978,33 @@ export function reconstructFocusFromHistory(
   const scanEntities = [
     ...new Set(lastTwo.flatMap((t) => extractKeyEntities(t))),
   ];
+  const newestTopics = matchDriftSafetyTopics(newest);
+  const newestPb = updateParkingBrakeState(
+    newest,
+    olderFocus?.parkingBrakeState,
+    newestTopics,
+  );
   const scanPb = lastTwo.reduce<ParkingBrakeState>(
-    (acc, t) => preferParkingBrakeState(acc, inferParkingBrakeState(t, olderFocus)),
+    (acc, t) =>
+      preferParkingBrakeState(
+        acc,
+        updateParkingBrakeState(
+          t,
+          olderFocus?.parkingBrakeState,
+          matchDriftSafetyTopics(t),
+        ),
+      ),
     newestFocus.parkingBrakeState ?? "unknown",
   );
+  // Latest-turn "parking brake is fine" beats an older not_holding scan.
+  const parkingBrakeState =
+    newestPb === "ok"
+      ? "ok"
+      : preferParkingBrakeState(newestFocus.parkingBrakeState, scanPb);
   return {
     ...newestFocus,
     vehicleRaised: newestFocus.vehicleRaised || scanRaised,
-    parkingBrakeState: preferParkingBrakeState(
-      newestFocus.parkingBrakeState,
-      scanPb,
-    ),
+    parkingBrakeState,
     topics: [...new Set([...newestFocus.topics, ...scanTopics])],
     entities: [...new Set([...newestFocus.entities, ...scanEntities])],
     summary: composeFocusSummary({
@@ -928,10 +1012,7 @@ export function reconstructFocusFromHistory(
       topics: [...new Set([...newestFocus.topics, ...scanTopics])],
       entities: [...new Set([...newestFocus.entities, ...scanEntities])],
       vehicleRaised: newestFocus.vehicleRaised || scanRaised,
-      parkingBrakeState: preferParkingBrakeState(
-        newestFocus.parkingBrakeState,
-        scanPb,
-      ),
+      parkingBrakeState,
     }),
   };
 }

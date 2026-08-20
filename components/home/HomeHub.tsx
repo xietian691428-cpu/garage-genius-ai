@@ -29,6 +29,7 @@ import RecentActivitySection, {
 import HomeTrustStrip from "@/components/home/HomeTrustStrip";
 import DtcCodeModal from "@/components/chat/DtcCodeModal";
 import ShopReportModal from "@/components/shop-report/ShopReportModal";
+import { formatAppDate, formatAppNumber } from "@/lib/format-app-date";
 
 type Props = {
   vehicles: VehicleInfo[];
@@ -158,7 +159,7 @@ export default function HomeHub({
           .map((r) => ({
             id: r.id,
             label: `Shop Report #${r.reportCode}`,
-            detail: `${new Date(r.createdAt).toLocaleDateString()}${
+            detail: `${formatAppDate(r.createdAt)}${
               r.codes?.length ? ` · ${r.codes.slice(0, 2).join(", ")}` : ""
             }`,
             onClick: () => setShopOpen(true),
@@ -167,7 +168,7 @@ export default function HomeHub({
           items.push({
             id: "mileage",
             label: "Mileage on file",
-            detail: `${Number(vehicle.mileage).toLocaleString()} mi`,
+            detail: `${formatAppNumber(Number(vehicle.mileage))} mi`,
           });
         }
         if (!cancelled) setRecent(items.slice(0, 3));
@@ -282,7 +283,6 @@ export default function HomeHub({
           current={null}
           loading={vehiclesLoading}
           onVehicleChange={(v) => void onVehicleChange(v)}
-          onOpenSettings={onOpenSettings}
         />
         <p className="rounded-3xl border border-slate-800 bg-[#111827] p-5 text-sm text-slate-400">
           Add a vehicle to see health, next actions, and upcoming maintenance.
@@ -298,7 +298,6 @@ export default function HomeHub({
         current={vehicle}
         loading={vehiclesLoading}
         onVehicleChange={(v) => void onVehicleChange(v)}
-        onOpenSettings={onOpenSettings}
       />
 
       {toast ? (

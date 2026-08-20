@@ -260,7 +260,7 @@ export function listRecommendedCoachPlaybooks(
   if (powertrain === "bev" || powertrain === "phev" || powertrain === "hybrid") {
     push("maintenance_ev_charging", "Matched to your electrified powertrain");
   } else {
-    push("maintenance_oil", "Oil is the foundation of ICE longevity");
+    push("maintenance_oil", "Oil changes keep the engine lasting");
     push("maintenance_fuel_injectors", "Fuel system care for smoother running");
   }
 

@@ -155,6 +155,16 @@ export function canUseNativeIap(): boolean {
   return getBillingMode() === "native_iap";
 }
 
+/**
+ * Hide Stripe Checkout, token packs, and “buy/manage on website” CTAs.
+ * iOS App Store Guideline 3.1.1: digital goods in the binary must use IAP.
+ */
+export function hideWebCheckoutUi(
+  mode: NativeBillingMode = getBillingMode(),
+): boolean {
+  return mode !== "web_stripe";
+}
+
 /** Android / blocked shells — purchases unavailable. */
 export const NATIVE_NO_IAP_MESSAGE =
   "In-app purchases are not available on this platform yet. On iPhone/iPad, upgrade with Apple In-App Purchase. On the website, you can manage billing with Stripe.";
@@ -165,7 +175,7 @@ export const NATIVE_ACCOUNT_LIMITS_BODY =
   "This feature isn’t included with your current plan. Subscribe with Apple In-App Purchase to unlock Pro.";
 
 export const NATIVE_WEBSITE_MANAGE_HINT =
-  "You can also review plan details on our website (opens in the system browser). Purchases in this app use Apple In-App Purchase.";
+  "Purchases in this app use Apple In-App Purchase. Manage or cancel in Settings → Apple ID → Subscriptions.";
 
 export const NATIVE_TERMS_BILLING_HEADING = "5. Accounts & billing";
 

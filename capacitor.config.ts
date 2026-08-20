@@ -39,7 +39,8 @@ const config: CapacitorConfig = {
       splashImmersive: true,
     },
     Browser: {
-      // Used for OAuth on native so Apple/Google don't trap the WebView
+      // Used for Restore/manage fallbacks and non-iOS OAuth. iOS Sign in with Apple
+      // uses native ASAuthorization — do not open Apple login in an in-app Browser.
     },
   },
   ios: {

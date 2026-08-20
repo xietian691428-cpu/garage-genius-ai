@@ -35,7 +35,7 @@ export default function QuickActionsRow({
           className={btn}
         >
           <MessageSquare className="h-5 w-5 text-cyan-400" />
-          Start Chat
+          Chat
         </button>
         <button
           type="button"
@@ -44,7 +44,7 @@ export default function QuickActionsRow({
           className={btn}
         >
           <Binary className="h-5 w-5 text-cyan-400" />
-          Enter Code
+          Code
         </button>
         <button
           type="button"
@@ -53,7 +53,7 @@ export default function QuickActionsRow({
           className={btn}
         >
           <Camera className="h-5 w-5 text-cyan-400" />
-          Upload Photo
+          Photo
         </button>
         {showObdConnect ? (
           <button
@@ -70,10 +70,11 @@ export default function QuickActionsRow({
             type="button"
             data-testid="home-qa-obd-settings"
             onClick={onObdSettings}
+            title="I have an OBD adapter"
             className={btn}
           >
             <Settings2 className="h-5 w-5 text-slate-400" />
-            I have an OBD adapter
+            My OBD
           </button>
         )}
       </div>

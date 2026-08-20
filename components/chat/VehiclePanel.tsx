@@ -3,7 +3,8 @@
 import { VehicleInfo } from "@/lib/types/chat";
 import { Car, Gauge, Calendar, Pencil } from "lucide-react";
 import VehicleConfigCard from "@/components/vehicles/VehicleConfigCard";
-import { formatVehicleYmmMarket } from "@/lib/types/vehicle-market";
+import { formatVehiclePickerLabel, formatVehicleYmmDisplay } from "@/lib/types/vehicle-market";
+import { formatAppDateOnly, formatAppNumber } from "@/lib/format-app-date";
 
 interface Props {
   vehicle: VehicleInfo | null;
@@ -43,10 +44,7 @@ export default function VehiclePanel({ vehicle, isMobile, onEdit }: Props) {
     .join(" · ");
 
   if (isMobile) {
-    const shortLabel =
-      vehicle.name?.trim() ||
-      [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(" ") ||
-      formatVehicleYmmMarket(vehicle);
+    const shortLabel = formatVehiclePickerLabel(vehicle);
     return (
       <div className="flex min-h-[44px] items-center gap-2.5 py-0.5">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400">
@@ -63,17 +61,17 @@ export default function VehiclePanel({ vehicle, isMobile, onEdit }: Props) {
   }
 
   return (
-    <div className="flex items-start gap-4 p-6">
-      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400">
-        <Car className="h-9 w-9 text-white" />
+    <div className="flex items-start gap-3 p-4">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400">
+        <Car className="h-6 w-6 text-white" />
       </div>
 
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-sm font-medium text-cyan-400">{vehicle.name}</p>
-            <h2 className="text-xl font-bold text-white">
-              {formatVehicleYmmMarket(vehicle)}
+            <p className="truncate text-sm font-medium text-cyan-400">{vehicle.name}</p>
+            <h2 className="text-lg font-bold leading-snug text-white">
+              {formatVehicleYmmDisplay(vehicle)}
             </h2>
           </div>
           {onEdit ? (
@@ -92,11 +90,14 @@ export default function VehiclePanel({ vehicle, isMobile, onEdit }: Props) {
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-400">
             <span className="inline-flex items-center gap-1.5">
               <Gauge className="h-4 w-4" />
-              {vehicle.mileage.toLocaleString()} miles
+              {formatAppNumber(vehicle.mileage)} mi
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
-              Last service: {vehicle.lastMaintenance ?? "—"}
+              Last service:{" "}
+              {vehicle.lastMaintenance
+                ? formatAppDateOnly(vehicle.lastMaintenance)
+                : "—"}
             </span>
           </div>
           {trimLine ? (

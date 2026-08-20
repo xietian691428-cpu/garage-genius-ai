@@ -12,7 +12,6 @@ import {
   getBillingMode,
   isStoreShellClient,
   NATIVE_NO_IAP_MESSAGE,
-  NATIVE_WEBSITE_MANAGE_HINT,
 } from "@/lib/native-platform";
 
 export default function PricingPageClient({
@@ -67,14 +66,9 @@ export default function PricingPageClient({
             {blocked
               ? NATIVE_NO_IAP_MESSAGE
               : iap || storeShell
-                ? "Pro and Pro Heavy are auto-renewable Apple In-App Purchases. Restore purchases anytime. Optional plan details also open on our website in the system browser."
+                ? "Pro and Pro Heavy are auto-renewable Apple In-App Purchases. App Store prices load on this page; tapping Subscribe opens the system purchase sheet. Restore purchases anytime from this page or Account."
                 : `Every new account gets a ${TRIAL_DAYS}-day Pro Trial. Free covers basics; Pro unlocks voice, custom tags, annual reports, and higher limits. Cancel anytime.`}
           </p>
-          {(iap || storeShell) && !blocked && (
-            <p className="mt-3 text-sm text-slate-500">
-              {NATIVE_WEBSITE_MANAGE_HINT}
-            </p>
-          )}
           {!storeShell && isTrialing && trialCountdown && (
             <p className="mt-4 text-sm font-medium text-cyan-300">
               {trialCountdown}

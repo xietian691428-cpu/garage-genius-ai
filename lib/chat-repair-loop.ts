@@ -85,7 +85,7 @@ export const FOLLOW_UP_CHIPS: StarterChip[] = [
   },
   {
     id: "more-checks",
-    label: "What to check next",
+    label: "Next check",
     prompt:
       "Based on your diagnosis, give me a short prioritized DIY checklist of what to inspect or measure next (photo / OBD / fluid / feel). Keep it safe.",
   },
@@ -97,19 +97,19 @@ export const FOLLOW_UP_CHIPS: StarterChip[] = [
   },
   {
     id: "check-done",
-    label: "I finished that check",
+    label: "Check done",
     prompt:
       "I completed the check you suggested. Ask what I observed in one question, then update the Problem → Checks → Solution plan and the top 3 causes.",
   },
   {
     id: "attach-photo",
-    label: "I'll send a photo",
+    label: "Send photo",
     prompt:
       "I'm going to take a photo of the area next. Tell me the best angle to capture so you can refine the diagnosis.",
   },
   {
     id: "open-coach",
-    label: "Which Coach guide?",
+    label: "Which guide?",
     prompt:
       "Name the single best Coach playbook theme/slug for this issue on my vehicle and why (1–2 sentences), then the first 3 DIY checks before starting that guided flow.",
   },
@@ -130,7 +130,7 @@ export const FOLLOW_UP_CHIPS: StarterChip[] = [
 const FOCUS_CHECK_CHIPS: Record<string, StarterChip> = {
   brakes: {
     id: "check-pads",
-    label: "Check pad thickness",
+    label: "Pad thickness",
     prompt:
       "Walk me through safely checking front brake pad thickness and rotor condition on this vehicle (jack stands, torque later). Problem → Checks → what thickness means for replace vs OK.",
   },

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTokenUsage } from "@/hooks/useTokenUsage";
-import { hideStorePurchaseUi } from "@/lib/native-platform";
+import { hideWebCheckoutUi } from "@/lib/native-platform";
 
 const PLAN_LABEL: Record<string, string> = {
   free: "Free",
@@ -59,7 +59,7 @@ export default function TokenDisplay() {
       ) : isExhausted ? (
         <p className="mt-2 text-xs text-red-300">
           Monthly quota used up.
-          {!hideStorePurchaseUi() && (
+          {!hideWebCheckoutUi() && (
             <>
               {" "}
               <Link href="/recharge" className="underline hover:text-red-200">
@@ -67,28 +67,47 @@ export default function TokenDisplay() {
               </Link>
             </>
           )}
+          {hideWebCheckoutUi() && (
+            <>
+              {" "}
+              <Link href="/pricing" className="underline hover:text-red-200">
+                Upgrade with Apple
+              </Link>
+            </>
+          )}
         </p>
       ) : isNearLimit ? (
         <p className="mt-2 text-xs text-amber-400">
-          Running low
-          {!hideStorePurchaseUi() && (
+          {hideWebCheckoutUi() ? (
             <>
-              {" "}
-              —{" "}
+              Running low —{" "}
+              <Link href="/pricing" className="underline hover:text-amber-300">
+                upgrade with Apple
+              </Link>
+              .
+            </>
+          ) : (
+            <>
+              Running low —{" "}
               <Link href="/recharge" className="underline hover:text-amber-300">
                 top up
               </Link>{" "}
               or upgrade.
             </>
           )}
-          .
         </p>
       ) : !usage.signedIn ? (
         <p className="mt-2 text-xs text-slate-500">
           Sign in to track usage across devices. Free plan includes{" "}
           {usage.limit.toLocaleString()} tokens / month.
         </p>
-      ) : hideStorePurchaseUi() ? null : (
+      ) : hideWebCheckoutUi() ? (
+        <p className="mt-2 text-xs text-slate-500">
+          <Link href="/pricing" className="text-cyan-400 hover:underline">
+            Upgrade plan
+          </Link>
+        </p>
+      ) : (
         <p className="mt-2 text-xs text-slate-500">
           <Link href="/recharge" className="text-cyan-400 hover:underline">
             Buy more tokens

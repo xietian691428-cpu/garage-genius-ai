@@ -17,6 +17,8 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
+      - name: US top-10 safety seeds (CI gate)
+        run: npm run test:safety-seeds
       - run: npm run test
 
   e2e:

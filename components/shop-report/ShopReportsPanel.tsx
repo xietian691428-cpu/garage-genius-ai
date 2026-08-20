@@ -16,6 +16,7 @@ import {
   defaultShopReportFileName,
   exportShopReportPdf,
 } from "@/lib/shop-report/export-pdf";
+import { formatAppDate } from "@/lib/format-app-date";
 
 type ShopReportQuotaState = {
   limit: number | null;
@@ -31,7 +32,7 @@ type Props = {
 };
 
 export default function ShopReportsPanel({ vehicle, loading }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [reports, setReports] = useState<ShopReportListItem[]>([]);
   const [quota, setQuota] = useState<ShopReportQuotaState | null>(null);
   const [busy, setBusy] = useState(false);
@@ -251,7 +252,7 @@ export default function ShopReportsPanel({ vehicle, loading }: Props) {
                   </span>
                 </p>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  {new Date(r.createdAt).toLocaleString()} · {r.source}
+                  {formatAppDate(r.createdAt, i18n.language)} · {r.source}
                 </p>
                 <p className="mt-1 text-xs text-cyan-300/90">
                   {r.codes.length > 0

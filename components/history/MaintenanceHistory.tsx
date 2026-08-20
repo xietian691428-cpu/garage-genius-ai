@@ -16,6 +16,8 @@ import {
   type VehicleFamiliarity,
 } from "@/lib/vehicle-familiarity";
 import { partsToText } from "@/lib/receipt-parse";
+import { formatAppDateOnly, formatAppNumber } from "@/lib/format-app-date";
+import { formatVehiclePickerLabel } from "@/lib/types/vehicle-market";
 
 type Props = {
   vehicles: VehicleInfo[];
@@ -49,7 +51,7 @@ export default function MaintenanceHistory({
   currentVehicle,
   vehiclesLoading = false,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { isFree, features } = useSubscription();
   const [vehicleFilter, setVehicleFilter] = useState<string>("current");
   const [records, setRecords] = useState<MaintenanceRecord[]>([]);
@@ -152,7 +154,7 @@ export default function MaintenanceHistory({
   const vehicleLabel = (id: string) => {
     const v = vehicles.find((x) => x.id === id);
     if (!v) return "Vehicle";
-    return `${v.name} · ${v.year} ${v.make} ${v.model}`;
+    return formatVehiclePickerLabel(v);
   };
 
   return (
@@ -166,8 +168,7 @@ export default function MaintenanceHistory({
           <p className="mt-1 text-sm text-slate-400">{t("history.subtitle")}</p>
           {familiarity && (
             <p className="mt-2 text-xs text-cyan-300/90">
-              {t("history.familiarity")}: {familiarity.label} (
-              {familiarity.score}/100)
+              {t("history.familiarity")}: {familiarity.label}
             </p>
           )}
         </div>
@@ -226,7 +227,7 @@ export default function MaintenanceHistory({
           <option value="current">
             Current —{" "}
             {currentVehicle
-              ? `${currentVehicle.year} ${currentVehicle.make} ${currentVehicle.model}`
+              ? formatVehiclePickerLabel(currentVehicle)
               : "none selected"}
           </option>
           {features.maintenanceHistory && (
@@ -234,7 +235,7 @@ export default function MaintenanceHistory({
               <option value="all">All vehicles</option>
               {vehicles.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.name} · {v.year} {v.make} {v.model}
+                  {formatVehiclePickerLabel(v)}
                 </option>
               ))}
             </>
@@ -279,15 +280,15 @@ export default function MaintenanceHistory({
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-slate-500">
-                    {r.performedAt}
+                    {formatAppDateOnly(r.performedAt, i18n.language)}
                     {r.mileage != null
-                      ? ` · ${r.mileage.toLocaleString()} mi`
+                      ? ` · ${formatAppNumber(r.mileage, i18n.language)} mi`
                       : ""}
                     {formatMoney(r.costCents)
                       ? ` · ${formatMoney(r.costCents)}`
                       : ""}
                     {r.shopName ? ` · ${r.shopName}` : ""}
-                    {vehicleFilter === "all" || vehicleFilter === "current"
+                    {vehicleFilter === "all"
                       ? ` · ${vehicleLabel(r.vehicleId)}`
                       : ""}
                   </p>

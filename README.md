@@ -32,6 +32,8 @@ Supabase：执行 `supabase/migrations/025_admin_ops_console.sql`（及既有 02
 
 知识库 seed / Autodata 转换等见 `package.json` 的 `seed:*` / `train:*` 脚本。
 
+安全回归种子（`content/pilot/`）= CI 契约，**禁止 auto 进 `knowledge_base`**。改 safety-topics / drift / repair 时跑 `npm run test:safety-seeds`。
+
 ## Deploy
 
 推荐 Vercel。生产环境勿开启 `NEXT_PUBLIC_QA_UNLOCK`。清单：`DEPLOYMENT_CHECKLIST.md`。

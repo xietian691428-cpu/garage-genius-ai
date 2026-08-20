@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { usTop10CoreUserQuestionFailures } from "@/lib/pilot/hard-validate-seed-answer";
 import {
   DEFAULT_SAFETY_TOPICS,
   matchSafetyTopicIds,
   matchSafetyTopics,
   mergeSafetyTopics,
+  parkingBrakeNegationMatches,
   resolveSafetyCallout,
   textNeedsHighRiskSafetyCallout,
   type SafetyTopic,
@@ -370,5 +372,36 @@ describe("textNeedsHighRiskSafetyCallout", () => {
       ),
     ).toBe(true);
     expect(textNeedsHighRiskSafetyCallout("Cabin filter")).toBe(false);
+  });
+});
+
+describe("parkingBrakeNegationMatches", () => {
+  it.each([
+    "Parking brake is fine.",
+    "parking brake is OK",
+    "The handbrake works, but the pedal feels spongy.",
+    "No issue with the parking brake",
+    "EPB is fine",
+    "El freno de mano está bien",
+    "freno de mano no tiene problema",
+    "手刹没事，行车制动绵",
+    "驻车制动正常，脚刹发软",
+  ])("matches %s", (text) => {
+    expect(parkingBrakeNegationMatches(text)).toBe(true);
+  });
+
+  it.each([
+    "ok thanks, go ahead",
+    "Set the parking brake before you jack it up.",
+    "Parking brake won't hold on a slope.",
+    "请先拉手刹再顶车。",
+  ])("does not match %s", (text) => {
+    expect(parkingBrakeNegationMatches(text)).toBe(false);
+  });
+});
+
+describe("US top-10 safety seed CI gate", () => {
+  it("user-question matchers still pass on the 10 core seeds", () => {
+    expect(usTop10CoreUserQuestionFailures()).toEqual([]);
   });
 });

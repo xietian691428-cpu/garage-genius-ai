@@ -12,6 +12,7 @@ import {
   type SubscriptionTier,
 } from "@/lib/types/subscription";
 import { isLongLivedQaTrialEmail } from "@/lib/qa-test-account";
+import { formatAppDate } from "@/lib/format-app-date";
 
 /** Signup + Stripe Checkout trial length (days). */
 export const TRIAL_DAYS = 14;
@@ -189,11 +190,7 @@ export function formatTrialCountdown(resolved: ResolvedSubscription): string {
 
 export function formatTrialEndDate(resolved: ResolvedSubscription): string {
   if (!resolved.trialEndsAt) return "";
-  return resolved.trialEndsAt.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return formatAppDate(resolved.trialEndsAt);
 }
 
 /** One-shot local flag so we can show a friendly upgrade prompt after expiry. */

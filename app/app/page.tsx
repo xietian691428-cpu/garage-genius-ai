@@ -12,6 +12,7 @@ import MaintenanceHistory from "@/components/history/MaintenanceHistory";
 import PartsInventory from "@/components/parts/PartsInventory";
 import SettingsPanel from "@/components/settings/SettingsPanel";
 import type { FocusCommand } from "@/lib/types/focus";
+import { parseAppTab, appTabHref, type AppTab } from "@/lib/app-tab";
 import { TrialEndedModal } from "@/components/subscription/TrialBanners";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useVehicles } from "@/hooks/useVehicles";
@@ -31,27 +32,11 @@ import WelcomeNoteModal from "@/components/welcome/WelcomeNoteModal";
 import { useWelcomeNote } from "@/hooks/useWelcomeNote";
 import { AiConsentProvider } from "@/components/legal/AiConsentProvider";
 
-type AppTab = "dashboard" | "chat" | "coach" | "history" | "parts" | "settings";
-
-const VALID_TABS = new Set<AppTab>([
-  "dashboard",
-  "chat",
-  "coach",
-  "history",
-  "parts",
-  "settings",
-]);
-
 /** Assert 27 *_production.json + safety UX rules when the garage module loads. */
 try {
   logAppModuleMount(assertCoachProductionReady());
 } catch (err) {
   console.error(err);
-}
-
-function parseAppTab(value: string | null): AppTab {
-  if (value && VALID_TABS.has(value as AppTab)) return value as AppTab;
-  return "dashboard";
 }
 
 function GarageAppInner() {
@@ -92,11 +77,7 @@ function GarageAppInner() {
 
   const setAppTab = useCallback(
     (tab: AppTab) => {
-      const next = new URLSearchParams(searchParams.toString());
-      if (tab === "dashboard") next.delete("tab");
-      else next.set("tab", tab);
-      const qs = next.toString();
-      router.replace(qs ? `/app?${qs}` : "/app", { scroll: false });
+      router.replace(appTabHref(tab, searchParams), { scroll: false });
     },
     [router, searchParams],
   );
@@ -109,10 +90,6 @@ function GarageAppInner() {
     setChatSeedImages(options?.images?.filter(Boolean) ?? []);
     setChatPlaybookSlug(options?.playbookSlug ?? null);
     setAppTab("chat");
-  };
-
-  const handleTabChange = (tab: string) => {
-    setAppTab(parseAppTab(tab));
   };
 
   const handleFocusFromChat = useCallback(
@@ -222,16 +199,15 @@ function GarageAppInner() {
 
       {!vehiclesLoading && !showGarageError && !needsOnboarding && (
         <div className="app-shell flex overflow-hidden">
-          <div className="hidden lg:block">
-            <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
+          <div className="hidden h-full xl:block">
+            <Sidebar activeTab={activeTab} />
           </div>
 
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            <div className="shrink-0 pt-[max(0.35rem,env(safe-area-inset-top))] lg:hidden">
+            <div className="shrink-0 pt-[max(0.35rem,env(safe-area-inset-top))] xl:hidden">
               {mobileNavPlacement === "top" && (
                 <MobileTabBar
                   activeTab={activeTab}
-                  onTabChange={handleTabChange}
                   placement="top"
                 />
               )}
@@ -348,7 +324,6 @@ function GarageAppInner() {
             {mobileNavPlacement === "bottom" && (
               <MobileTabBar
                 activeTab={activeTab}
-                onTabChange={handleTabChange}
                 placement="bottom"
               />
             )}

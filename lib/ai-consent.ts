@@ -26,6 +26,15 @@ export function writeAiConsentLocal(userId: string): void {
   }
 }
 
+/** True after auth+profile load when a signed-in user has not agreed yet. */
+export function shouldAutoShowAiConsent(input: {
+  loaded: boolean;
+  hasUser: boolean;
+  acknowledged: boolean;
+}): boolean {
+  return input.loaded && input.hasUser && !input.acknowledged;
+}
+
 export const AI_CONSENT_COPY = {
   title: "AI processing consent",
   lead: "Before we send anything to our AI provider, please review and agree.",

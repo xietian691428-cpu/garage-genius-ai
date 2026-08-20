@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Archive, Pencil, Trash2 } from "lucide-react";
 import { VehicleInfo } from "@/lib/types/chat";
 import {
-  formatVehicleYmmMarket,
+  formatVehicleYmmDisplay,
   normalizeVehicleMarket,
   VEHICLE_MARKETS,
   type VehicleMarketCode,
@@ -114,7 +114,7 @@ export default function VehicleList({
                 </div>
               </div>
               <div className="text-sm text-slate-400">
-                {formatVehicleYmmMarket(vehicle)}
+                {formatVehicleYmmDisplay(vehicle)}
               </div>
               <div className="mt-1 text-xs text-slate-500">
                 {vehicle.mileage.toLocaleString()} mi · {vehicle.engine}

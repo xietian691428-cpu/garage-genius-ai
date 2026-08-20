@@ -12,9 +12,9 @@ import { TOKEN_RECHARGE_PACKS } from "@/lib/types/tokens";
 import TokenDisplay from "@/components/ui/token-display";
 import { TokenUsageProvider } from "@/hooks/useTokenUsage";
 import {
-  hideStorePurchaseUi,
+  canUseNativeIap,
+  hideWebCheckoutUi,
   NATIVE_NO_IAP_MESSAGE,
-  NATIVE_WEBSITE_MANAGE_HINT,
 } from "@/lib/native-platform";
 
 export default function RechargePageClient({
@@ -22,7 +22,8 @@ export default function RechargePageClient({
 }: {
   forceStoreSafe?: boolean;
 }) {
-  const storeSafe = forceStoreSafe || hideStorePurchaseUi();
+  const storeSafe = forceStoreSafe || hideWebCheckoutUi();
+  const iap = canUseNativeIap();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -63,12 +64,14 @@ export default function RechargePageClient({
         </Link>
 
         <h1 className="text-3xl font-bold text-white sm:text-4xl">
-          {storeSafe ? "AI quota" : "Buy More Tokens"}
+          {iap ? "Subscribe with Apple" : storeSafe ? "AI quota" : "Buy More Tokens"}
         </h1>
         <p className="mt-2 text-sm text-slate-400">
-          {storeSafe
-            ? NATIVE_NO_IAP_MESSAGE
-            : "Top up when your monthly included quota runs out. Pricing follows PROJECT.md (~$0.06–$0.08 per 1k with volume packs)."}
+          {iap
+            ? "Token packs are not sold in the iOS app. Upgrade to Pro or Pro Heavy with Apple In-App Purchase."
+            : storeSafe
+              ? NATIVE_NO_IAP_MESSAGE
+              : "Top up when your monthly included quota runs out. Pricing follows PROJECT.md (~$0.06–$0.08 per 1k with volume packs)."}
         </p>
 
         <div className="mt-6">
@@ -84,6 +87,15 @@ export default function RechargePageClient({
           <p className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
             {error}
           </p>
+        )}
+
+        {iap && (
+          <Link
+            href="/pricing"
+            className="mt-6 block rounded-2xl bg-cyan-500 px-4 py-3 text-center text-sm font-semibold text-black hover:bg-cyan-400"
+          >
+            View Apple subscriptions
+          </Link>
         )}
 
         {!storeSafe && (
@@ -131,9 +143,11 @@ export default function RechargePageClient({
         )}
 
         <p className="mt-8 text-center text-xs text-slate-500">
-          {storeSafe
-            ? NATIVE_WEBSITE_MANAGE_HINT
-            : (
+          {iap
+            ? "Manage or cancel in Settings → Apple ID → Subscriptions."
+            : storeSafe
+              ? NATIVE_NO_IAP_MESSAGE
+              : (
               <>
           Payments are processed by Stripe. Tokens are credited after{" "}
           <code className="text-slate-400">checkout.session.completed</code>.

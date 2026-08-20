@@ -22,14 +22,14 @@ export default function AiProviderConsentModal({
 
   return (
     <div
-      className="fixed inset-0 z-[95] flex items-end justify-center bg-black/75 p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[95] flex items-center justify-center bg-black/75 p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="ai-consent-title"
       data-testid="ai-provider-consent-modal"
     >
-      <div className="flex max-h-[min(94dvh,100%)] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl border border-slate-700 bg-[#111827] shadow-2xl sm:rounded-3xl">
-        <div className="shrink-0 border-b border-slate-800 px-5 pb-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:pt-5">
+      <div className="flex max-h-[min(90dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-slate-700 bg-[#111827] shadow-2xl">
+        <div className="shrink-0 border-b border-slate-800 px-5 pb-4 pt-5">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300">
             <Shield className="h-5 w-5" aria-hidden />
           </div>

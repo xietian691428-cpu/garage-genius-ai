@@ -34,7 +34,6 @@ import {
 } from "@/lib/native-platform";
 import {
   openAppleManageSubscriptions,
-  openWebManageSubscriptionInSystemBrowser,
   restoreApplePurchases,
 } from "@/lib/native-iap";
 
@@ -150,8 +149,7 @@ export default function SettingsPanel({
         <div>
           <h1 className="text-2xl font-bold text-white">Account</h1>
           <p className="mt-1 text-sm text-slate-400">
-            Manage sign-in, plan, and tokens. Optimized for iOS & Android store
-            apps.
+            Sign-in, language, plan, and garage tools.
           </p>
         </div>
 
@@ -161,9 +159,6 @@ export default function SettingsPanel({
           </h2>
           <p className="mt-2 break-all text-lg font-medium text-white">
             {user?.email ?? "—"}
-          </p>
-          <p className="mt-1 text-xs text-slate-500">
-            User ID: {user?.id?.slice(0, 8)}…
           </p>
           {!isEmailVerified && (
             <div className="mt-4 rounded-2xl border border-amber-700/40 bg-amber-950/30 px-3 py-3 text-sm text-amber-100">
@@ -269,7 +264,7 @@ export default function SettingsPanel({
                 ? "Pro and Pro Heavy unlock via Apple In-App Purchase. Entitlements sync to this signed-in account after verification."
                 : isTrialing
                   ? "Enjoy full Pro features during your trial. Subscribe before it ends to keep voice coaching and higher limits."
-                  : "Free includes limited monthly tokens. Pro unlocks voice coaching, more vehicles, and higher RAG depth. Heavy adds deep RAG and higher caps."}
+                  : "Free includes limited monthly help. Pro unlocks voice coaching, more vehicles, and fuller repair answers. Heavy adds the highest limits."}
           </p>
           {billingMode === "native_blocked" ? (
             <p className="mt-4 text-xs leading-relaxed text-slate-500">
@@ -316,13 +311,6 @@ export default function SettingsPanel({
                 className="w-full rounded-2xl border border-slate-700 px-4 py-3 text-sm text-slate-300 hover:border-slate-500 disabled:opacity-60"
               >
                 Restore purchases
-              </button>
-              <button
-                type="button"
-                onClick={() => void openWebManageSubscriptionInSystemBrowser()}
-                className="text-center text-xs text-slate-500 underline-offset-2 hover:text-slate-300 hover:underline"
-              >
-                {NATIVE_WEBSITE_MANAGE_HINT}
               </button>
             </div>
           ) : !isPro || isTrialing ? (

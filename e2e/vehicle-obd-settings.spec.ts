@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { FIXTURE } from "./fixtures/test-data";
 import { loginWithEmail } from "./helpers/auth";
 import { hasE2eCredentials } from "./helpers/env";
-import { setObdAdapterToggle } from "./helpers/ui";
+import { openChatComposerTools, setObdAdapterToggle } from "./helpers/ui";
 
 test.describe("Vehicle + OBD settings P0", () => {
   test.beforeEach(async ({ page }) => {
@@ -100,6 +100,7 @@ test.describe("Vehicle + OBD settings P0", () => {
     await setObdAdapterToggle(page, false);
 
     await page.goto("/app?tab=chat");
+    await openChatComposerTools(page);
     await expect(page.getByTestId("dtc-enter-code")).toBeVisible({
       timeout: 30_000,
     });
@@ -109,6 +110,7 @@ test.describe("Vehicle + OBD settings P0", () => {
     await setObdAdapterToggle(page, true);
 
     await page.goto("/app?tab=chat");
+    await openChatComposerTools(page);
     await expect(page.getByTestId("obd-connect-entry")).toBeVisible({
       timeout: 30_000,
     });

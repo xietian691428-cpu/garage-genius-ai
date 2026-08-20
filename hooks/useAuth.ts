@@ -12,7 +12,11 @@ import {
   TimeoutError,
   withTimeout,
 } from "@/lib/auth-timeout";
-import { isNativeCapacitor } from "@/lib/native-platform";
+import { getCapacitorPlatform, isNativeCapacitor, isNativeIos } from "@/lib/native-platform";
+import {
+  shouldUseNativeAppleSignIn,
+  signInWithNativeApple,
+} from "@/lib/native-apple-auth";
 
 export type OAuthProvider = "apple" | "google";
 
@@ -187,13 +191,35 @@ export function useAuth() {
   }, []);
 
   /**
-   * Starts OAuth (PKCE). Web: full-page redirect. Native: Capacitor Browser.
+   * Social sign-in. iOS native Apple uses ASAuthorization (no PKCE Browser).
+   * Web Apple/Google still use Supabase OAuth.
    */
   const signInWithOAuth = useCallback(
     async (provider: OAuthProvider, next?: string | null) => {
-      const redirectTo = oauthRedirectTo(next);
-      const native = isNativeCapacitor();
       try {
+        if (
+          provider === "apple" &&
+          shouldUseNativeAppleSignIn({
+            nativeCapacitor: isNativeCapacitor(),
+            platform: getCapacitorPlatform(),
+          })
+        ) {
+          await withTimeout(
+            signInWithNativeApple(),
+            AUTH_OAUTH_TIMEOUT_MS,
+            "Could not start Sign in with Apple. Please use email instead.",
+          );
+          return { url: null, provider };
+        }
+
+        if (provider === "google" && isNativeIos()) {
+          throw new Error(
+            "Google sign-in is not available in the iOS app. Use Sign in with Apple or email.",
+          );
+        }
+
+        const redirectTo = oauthRedirectTo(next);
+        const native = isNativeCapacitor();
         const { data, error } = await withTimeout(
           supabase.auth.signInWithOAuth({
             provider,
@@ -233,7 +259,7 @@ export function useAuth() {
 
         if (native && data?.url) {
           const { Browser } = await import("@capacitor/browser");
-          await Browser.open({ url: data.url, presentationStyle: "popover" });
+          await Browser.open({ url: data.url });
         }
 
         return data;

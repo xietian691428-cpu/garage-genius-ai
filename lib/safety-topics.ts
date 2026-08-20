@@ -373,6 +373,75 @@ const PARKING_BRAKE_STANDALONE_FAULTS = [
   "电子手刹故障",
 ] as const;
 
+/**
+ * User says the parking brake itself is OK / not the problem.
+ * Matched on lowercased, de-punctuated text. Longer phrases first.
+ * A same-turn parking-brake fault still wins (see updateParkingBrakeState).
+ */
+export const PARKING_BRAKE_NEGATION_PHRASES = [
+  "no issue with the parking brake",
+  "no problem with the parking brake",
+  "parking brake is not the problem",
+  "parking brake isn't the problem",
+  "parking brake is not the issue",
+  "parking brake isn't the issue",
+  "parking brake no problem",
+  "parking brake is holding",
+  "parking brake is working",
+  "parking brake is okay",
+  "parking brake is fine",
+  "parking brake is good",
+  "parking brake is ok",
+  "parking brake works",
+  "parking brake holds",
+  "handbrake is working",
+  "handbrake is fine",
+  "handbrake is okay",
+  "handbrake is good",
+  "handbrake is ok",
+  "handbrake works",
+  "e-brake is fine",
+  "e brake is fine",
+  "epb is fine",
+  "epb is ok",
+  "epb is okay",
+] as const;
+
+export const PARKING_BRAKE_NEGATION_PHRASES_ES = [
+  "no hay problema con el freno de estacionamiento",
+  "no hay problema con el freno de mano",
+  "freno de estacionamiento esta bien",
+  "freno de estacionamiento está bien",
+  "el freno de estacionamiento funciona",
+  "freno de mano no tiene problema",
+  "el freno de mano funciona",
+  "freno de mano esta bien",
+  "freno de mano está bien",
+  "freno de mano bien",
+  "freno de mano ok",
+] as const;
+
+export const PARKING_BRAKE_NEGATION_PHRASES_ZH = [
+  "驻车制动没问题",
+  "驻车制动没事",
+  "驻车制动正常",
+  "电子手刹没事",
+  "电子手刹正常",
+  "手刹没问题",
+  "手刹没毛病",
+  "手刹没坏",
+  "手刹没事",
+  "手刹正常",
+  "手刹好使",
+  "手刹可以",
+] as const;
+
+const PARKING_BRAKE_NEGATION_ALL = [
+  ...PARKING_BRAKE_NEGATION_PHRASES,
+  ...PARKING_BRAKE_NEGATION_PHRASES_ZH,
+  ...PARKING_BRAKE_NEGATION_PHRASES_ES,
+] as const;
+
 const PARKING_BRAKE_TOKEN_WINDOW = 12;
 
 function escapeRegex(s: string): string {
@@ -443,6 +512,31 @@ function stripParkingBrakePunct(text: string): string {
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/** Lowercase + fold accents + drop punctuation for phrase lookup. */
+export function normalizeParkingBrakePhraseText(text: string): string {
+  return stripParkingBrakePunct(expandParkingBrakeContractions(text || ""));
+}
+
+/**
+ * True when the user is clearing the parking-brake job ("handbrake is fine").
+ * Bare "ok" / "thanks" do not match. Fault phrases in the same turn still win
+ * at state inference.
+ */
+export function parkingBrakeNegationMatches(text: string): boolean {
+  const hay = normalizeParkingBrakePhraseText(text);
+  if (!hay) return false;
+  for (const phrase of PARKING_BRAKE_NEGATION_ALL) {
+    const needle = normalizeParkingBrakePhraseText(phrase);
+    if (!needle) continue;
+    if (isCjkPhrase(phrase)) {
+      if (hay.includes(needle)) return true;
+    } else if (latinKeywordMatches(hay, needle)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**

@@ -11,7 +11,7 @@ import type { InventoryItem as DbInventoryItem } from "@/lib/types/inventory";
 import type { InventoryItem as FormInventoryItem } from "@/lib/types/parts";
 import { normalizeInventoryCategory } from "@/lib/types/parts";
 import type { VehicleInfo } from "@/lib/types/chat";
-import { formatVehicleYmmMarket } from "@/lib/types/vehicle-market";
+import { formatVehiclePickerLabel } from "@/lib/types/vehicle-market";
 import { AlertTriangle, Package, Plus, Trash2 } from "lucide-react";
 import PartFormModal from "./PartFormModal";
 
@@ -144,7 +144,7 @@ export default function PartsInventory({
   };
 
   const vehicleLabel = currentVehicle
-    ? formatVehicleYmmMarket(currentVehicle)
+    ? formatVehiclePickerLabel(currentVehicle)
     : vehiclesLoading
       ? "Loading garage…"
       : "No vehicle selected";
@@ -153,9 +153,9 @@ export default function PartsInventory({
     <div className="panel-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-4 pb-[var(--content-pad-bottom)] sm:p-8 lg:pb-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold sm:text-4xl">Parts Inventory</h1>
+          <h1 className="text-3xl font-bold sm:text-4xl">Parts</h1>
           <p className="text-slate-400">
-            {vehicleLabel} — track stock & wishlist for this car
+            {vehicleLabel} — stock and wishlist for this car
           </p>
           {vehicles.length >= 1 && (
             <label className="mt-3 block max-w-md text-sm text-slate-400">
@@ -171,7 +171,7 @@ export default function PartsInventory({
               >
                 {vehicles.map((v) => (
                   <option key={v.id} value={v.id}>
-                    {v.name} — {formatVehicleYmmMarket(v)}
+                    {formatVehiclePickerLabel(v)}
                   </option>
                 ))}
               </select>
@@ -187,7 +187,7 @@ export default function PartsInventory({
           }}
           className="inline-flex min-h-[48px] items-center justify-center gap-3 rounded-2xl bg-cyan-500 px-6 py-3 font-medium text-black disabled:opacity-40"
         >
-          <Plus className="h-5 w-5" /> Add Part Manually
+          <Plus className="h-5 w-5" /> Add part
         </button>
       </div>
 
@@ -202,7 +202,7 @@ export default function PartsInventory({
         <p className="mb-4 text-sm text-rose-400">{error}</p>
       )}
 
-      <div className="mb-8 flex flex-wrap gap-3">
+      <div className="-mx-1 mb-6 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {[
           "all",
           "low-stock",
@@ -218,13 +218,13 @@ export default function PartsInventory({
             key={f}
             type="button"
             onClick={() => setFilter(f)}
-            className={`rounded-2xl px-5 py-2 capitalize transition-colors ${
+            className={`shrink-0 rounded-full px-4 py-2 text-sm capitalize transition-colors ${
               filter === f
                 ? "bg-cyan-500 text-black"
-                : "bg-slate-800 hover:bg-slate-700"
+                : "bg-slate-800 text-slate-200 hover:bg-slate-700"
             }`}
           >
-            {f === "low-stock" ? `Low Stock (${lowStockCount})` : f}
+            {f === "low-stock" ? `Low stock (${lowStockCount})` : f}
           </button>
         ))}
       </div>

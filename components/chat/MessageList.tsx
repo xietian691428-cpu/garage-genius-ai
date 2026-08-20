@@ -19,6 +19,7 @@ interface Props {
   onEditUser?: (content: string) => void;
   onQuickPrompt?: (prompt: string) => void;
   onGenerateShopReport?: () => void;
+  onHideEmptyPhoto?: (id: string) => void;
   /** @deprecated kept for callers; elevated tip lives in Safety notes sheet */
   sessionSafety?: { tier: SafetyTier; mods: boolean };
   showDisclaimerBanner?: boolean;
@@ -37,6 +38,7 @@ export default function MessageList({
   onEditUser,
   onQuickPrompt,
   onGenerateShopReport,
+  onHideEmptyPhoto,
   showDisclaimerBanner = false,
   disclaimerMode = "first",
   onDisclaimerGotIt,
@@ -114,6 +116,11 @@ export default function MessageList({
             onGenerateShopReport={
               msg.role === "assistant" && msg.id === lastAssistantId
                 ? onGenerateShopReport
+                : undefined
+            }
+            onHideEmptyPhoto={
+              msg.role === "user"
+                ? () => onHideEmptyPhoto?.(msg.id)
                 : undefined
             }
           />

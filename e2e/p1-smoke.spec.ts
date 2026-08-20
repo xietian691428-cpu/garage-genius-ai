@@ -60,4 +60,23 @@ test.describe("P1 smoke", () => {
       timeout: 20_000,
     });
   });
+
+  test("Guides and AI tabs stay in sync with URL", async ({ page }) => {
+    await page.goto("/app");
+    const coachTab = page.getByTestId("app-tab-coach");
+    await expect(coachTab).toBeVisible({ timeout: 45_000 });
+    for (let i = 0; i < 10; i++) {
+      await coachTab.click();
+      await expect(page).toHaveURL(/tab=coach/);
+      await expect(page.getByTestId("chat-input")).toHaveCount(0);
+      await page.getByTestId("app-tab-chat").click();
+      await expect(page).toHaveURL(/tab=chat/);
+      await expect(page.getByTestId("chat-input")).toBeVisible();
+    }
+    await page.reload();
+    await expect(page).toHaveURL(/tab=chat/);
+    await expect(page.getByTestId("chat-input")).toBeVisible({
+      timeout: 45_000,
+    });
+  });
 });

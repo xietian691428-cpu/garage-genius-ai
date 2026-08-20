@@ -10,10 +10,8 @@ import {
   canUseStripeCheckout,
   getBillingMode,
   NATIVE_NO_IAP_MESSAGE,
-  NATIVE_WEBSITE_MANAGE_HINT,
 } from "@/lib/native-platform";
 import {
-  openWebManageSubscriptionInSystemBrowser,
   purchaseApplePlan,
   restoreApplePurchases,
 } from "@/lib/native-iap";
@@ -25,6 +23,9 @@ import {
 } from "@/lib/upgrade-copy";
 import { TRIAL_DAYS } from "@/lib/subscription";
 import { useSubscription } from "@/hooks/useSubscription";
+import { APPLE_PRODUCT_IDS } from "@/lib/apple-iap-products";
+import { displayIapPrice } from "@/lib/storekit-price-display";
+import { useAppleStoreKitPrices } from "@/hooks/useAppleStoreKitPrices";
 
 export type { UpgradeReason };
 
@@ -51,6 +52,8 @@ export default function UpgradeModal({
   const mode = getBillingMode();
   const iap = canUseNativeIap();
   const stripe = canUseStripeCheckout();
+  const { prices: storeKitPrices, loaded: storeKitLoaded } =
+    useAppleStoreKitPrices(iap && open);
 
   if (!open) return null;
 
@@ -65,6 +68,24 @@ export default function UpgradeModal({
   const heavy = PLAN_ENTITLEMENTS.pro_heavy;
   const saveYr = yearlySavingsUsd("pro");
   const pricingHref = `/pricing?from=${encodeURIComponent(reason)}`;
+  const proYearly = displayIapPrice({
+    productId: APPLE_PRODUCT_IDS.PRO_YEARLY,
+    storeKitPrices,
+    loaded: storeKitLoaded,
+    fallbackUsd: pro.priceYearly,
+  });
+  const proMonthly = displayIapPrice({
+    productId: APPLE_PRODUCT_IDS.PRO_MONTHLY,
+    storeKitPrices,
+    loaded: storeKitLoaded,
+    fallbackUsd: pro.priceMonthly,
+  });
+  const heavyYearly = displayIapPrice({
+    productId: APPLE_PRODUCT_IDS.HEAVY_YEARLY,
+    storeKitPrices,
+    loaded: storeKitLoaded,
+    fallbackUsd: heavy.priceYearly,
+  });
 
   const run = async (fn: () => Promise<void>, key: typeof busy) => {
     setError(null);
@@ -161,7 +182,7 @@ export default function UpgradeModal({
                   <span className="text-sm font-semibold">
                     {busy === "yearly"
                       ? "Purchasing…"
-                      : `Subscribe Pro annual — $${pro.priceYearly}/yr`}
+                      : `Subscribe Pro annual — ${proYearly.label}${proYearly.fromStoreKit ? "" : "/yr"}`}
                   </span>
                   <span className="text-[11px] font-medium text-black/70">
                     Apple In-App Purchase · Best value
@@ -182,7 +203,7 @@ export default function UpgradeModal({
                 >
                   {busy === "monthly"
                     ? "Purchasing…"
-                    : `Subscribe Pro monthly — $${pro.priceMonthly}/mo`}
+                    : `Subscribe Pro monthly — ${proMonthly.label}${proMonthly.fromStoreKit ? "" : "/mo"}`}
                 </button>
                 <button
                   type="button"
@@ -202,7 +223,7 @@ export default function UpgradeModal({
                 >
                   {busy === "heavy_y"
                     ? "Purchasing…"
-                    : `Subscribe Heavy annual — $${heavy.priceYearly}/yr`}
+                    : `Subscribe Heavy annual — ${heavyYearly.label}${heavyYearly.fromStoreKit ? "" : "/yr"}`}
                 </button>
                 <button
                   type="button"
@@ -221,15 +242,6 @@ export default function UpgradeModal({
                   className="flex min-h-[44px] w-full touch-manipulation items-center justify-center rounded-2xl px-4 py-2.5 text-sm text-slate-400 hover:text-slate-200 disabled:opacity-60"
                 >
                   {busy === "restore" ? "Restoring…" : "Restore purchases"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void openWebManageSubscriptionInSystemBrowser()
-                  }
-                  className="text-center text-[11px] text-slate-500 underline-offset-2 hover:text-slate-300 hover:underline"
-                >
-                  {NATIVE_WEBSITE_MANAGE_HINT}
                 </button>
               </>
             ) : (

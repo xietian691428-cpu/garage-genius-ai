@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { ChatMessage, VehicleInfo } from "@/lib/types/chat";
+import { isPhotoPromptWithoutImages } from "@/lib/chat-empty-photo";
 import { createWelcomeMessage } from "@/lib/constants";
 import { loadChatMessages, saveCurrentVehicleId } from "@/lib/chat-storage";
 import { chatCloudService, resolveLoadedChat } from "@/lib/chat-cloud";
-import { FREE_CHAT_MESSAGE_LIMIT } from "@/lib/history-limits";
-import { formatVehicleYmmMarket } from "@/lib/types/vehicle-market";
+import { formatVehicleYmmDisplay } from "@/lib/types/vehicle-market";
 import VehicleManager from "../vehicles/VehicleManager";
 import MobileVehicleSwitcher from "../vehicles/MobileVehicleSwitcher";
 import VehiclePanel from "./VehiclePanel";
@@ -150,6 +150,7 @@ export default function ChatApp({
   const { t, i18n } = useTranslation();
   const { ensureConsent } = useAiConsentGate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [hiddenEmptyPhotoIds, setHiddenEmptyPhotoIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showVehicleSwitcher, setShowVehicleSwitcher] = useState(false);
   const [ready, setReady] = useState(false);
@@ -458,6 +459,11 @@ export default function ChatApp({
   useEffect(() => {
     if (!seedPrompt?.trim()) {
       seedSentRef.current = null;
+      return;
+    }
+    if (isPhotoPromptWithoutImages(seedPrompt, seedImages)) {
+      seedSentRef.current = `${seedPrompt}::0`;
+      onPromptUsed?.();
       return;
     }
     const seedKey = `${seedPrompt}::${(seedImages ?? []).length}`;
@@ -891,6 +897,7 @@ export default function ChatApp({
     const photoList = (images ?? []).filter(Boolean).slice(0, 4);
     const finalContent = expandDtcIfNeeded(content.trim());
     if (!finalContent && photoList.length === 0) return;
+    if (isPhotoPromptWithoutImages(finalContent, photoList)) return;
 
     if (!(await ensureConsent())) return;
 
@@ -1209,7 +1216,7 @@ export default function ChatApp({
 
   return (
     <div className="flex h-full min-h-0 flex-1 overflow-hidden">
-      <div className="hidden w-72 shrink-0 overflow-hidden border-r border-slate-800 bg-[#111827] lg:block lg:min-h-0">
+      <div className="hidden w-72 shrink-0 overflow-hidden border-r border-slate-800 bg-[#111827] xl:block xl:min-h-0">
         <VehicleManager
           vehicles={vehicles}
           currentVehicle={currentVehicle}
@@ -1236,7 +1243,7 @@ export default function ChatApp({
       </div>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-800 bg-[#111827] px-3 py-2 lg:hidden">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-800 bg-[#111827] px-3 py-2 xl:hidden">
           <button
             type="button"
             onClick={() => setShowVehicleSwitcher(true)}
@@ -1255,32 +1262,27 @@ export default function ChatApp({
                 title={t("shopReport.openCta")}
               >
                 <FileText className="h-3.5 w-3.5" />
-                Shop
+                {t("shopReport.headerCta")}
               </button>
             )}
             {isFree && <UpgradeButton size="sm" label="Pro" />}
           </div>
         </div>
 
-        <div className="hidden items-center justify-between border-b border-slate-800 bg-[#111827] px-4 py-3 lg:flex">
-          <div className="min-w-0 text-sm text-slate-400">
+        <div className="hidden items-center justify-between gap-3 border-b border-slate-800 bg-[#111827] px-4 py-3 xl:flex">
+          <div className="min-w-0 flex-1 truncate text-sm text-slate-400">
             {vehiclesLoading ? (
               "Loading garage…"
             ) : currentVehicle ? (
               <>
                 <span className="font-medium text-slate-200">
                   {t("ai.sessionTitle", {
-                    vehicle: formatVehicleYmmMarket(currentVehicle),
+                    vehicle: formatVehicleYmmDisplay(currentVehicle),
                   })}
                 </span>
                 {currentVehicle.name ? (
-                  <span className="ml-2 text-xs text-slate-500">
+                  <span className="ml-2 hidden text-xs text-slate-500 2xl:inline">
                     · {currentVehicle.name}
-                  </span>
-                ) : null}
-                {isFree ? (
-                  <span className="ml-2 text-xs text-slate-500">
-                    · Free keeps last {FREE_CHAT_MESSAGE_LIMIT} messages in cloud
                   </span>
                 ) : null}
               </>
@@ -1288,7 +1290,7 @@ export default function ChatApp({
               t("ai.gateNoVehicle")
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             {currentVehicle && (
               <button
                 type="button"
@@ -1305,7 +1307,7 @@ export default function ChatApp({
         </div>
 
         <MessageList
-          messages={messages}
+          messages={messages.filter((m) => !hiddenEmptyPhotoIds.includes(m.id))}
           isLoading={isLoading}
           vehicle={currentVehicle ?? undefined}
           onGoToInventory={onGoToInventory}
@@ -1314,6 +1316,11 @@ export default function ChatApp({
           onEditUser={handleEditUser}
           onQuickPrompt={handleQuickPrompt}
           onGenerateShopReport={() => setShopReportOpen(true)}
+          onHideEmptyPhoto={(id) =>
+            setHiddenEmptyPhotoIds((prev) =>
+              prev.includes(id) ? prev : [...prev, id],
+            )
+          }
           sessionSafety={sessionSafety}
           showDisclaimerBanner={chatDisclaimer.showBanner}
           disclaimerMode={chatDisclaimer.bannerMode}

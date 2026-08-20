@@ -9,23 +9,27 @@ import {
   Home,
   BookOpen,
 } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import TokenDisplay from "@/components/ui/token-display";
+import { appTabHref, type AppTab } from "@/lib/app-tab";
 
-const menuItems = [
-  { id: "dashboard", label: "Dashboard", icon: Home },
-  { id: "chat", label: "AI Assistant", icon: MessageSquare },
-  { id: "coach", label: "Coach Guides", icon: BookOpen },
-  { id: "history", label: "Maintenance History", icon: History },
-  { id: "parts", label: "Parts Inventory", icon: ShoppingCart },
+const menuItems: { id: AppTab; label: string; icon: typeof Home }[] = [
+  { id: "dashboard", label: "Home", icon: Home },
+  { id: "chat", label: "Chat", icon: MessageSquare },
+  { id: "coach", label: "Guides", icon: BookOpen },
+  { id: "history", label: "History", icon: History },
+  { id: "parts", label: "Parts", icon: ShoppingCart },
   { id: "settings", label: "Account", icon: Settings },
 ];
 
 interface Props {
   activeTab: string;
-  onTabChange: (tab: string) => void;
 }
 
-export default function Sidebar({ activeTab, onTabChange }: Props) {
+export default function Sidebar({ activeTab }: Props) {
+  const searchParams = useSearchParams();
+
   return (
     <div className="flex h-full min-h-0 w-64 flex-col border-r border-slate-800 bg-[#0a0f1c] xl:w-72">
       <div className="flex items-center gap-3 border-b border-slate-800 p-6">
@@ -43,10 +47,13 @@ export default function Sidebar({ activeTab, onTabChange }: Props) {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
-            <button
+            <Link
               key={item.id}
-              type="button"
-              onClick={() => onTabChange(item.id)}
+              href={appTabHref(item.id, searchParams)}
+              replace
+              scroll={false}
+              data-testid={`app-sidebar-tab-${item.id}`}
+              aria-current={isActive ? "page" : undefined}
               className={`flex w-full items-center gap-3.5 rounded-2xl px-5 py-3.5 text-left transition-all ${
                 isActive
                   ? "bg-slate-800 text-white shadow-md"
@@ -55,7 +62,7 @@ export default function Sidebar({ activeTab, onTabChange }: Props) {
             >
               <Icon className="h-5 w-5" />
               <span className="font-medium">{item.label}</span>
-            </button>
+            </Link>
           );
         })}
       </nav>

@@ -23,6 +23,7 @@ import {
 } from "@/lib/coach-scenarios/catalog";
 import { toCoachVehicleContext } from "@/lib/coach-scenarios/vehicle-context";
 import CoachScenarioPlayer from "@/components/coach/CoachScenarioPlayer";
+import { formatAppDate } from "@/lib/format-app-date";
 import DtcEntryBar from "@/components/chat/DtcEntryBar";
 import InsuranceModTip from "@/components/legal/InsuranceModTip";
 import {
@@ -481,10 +482,7 @@ export default function CoachLibrary({
                   <span className="text-slate-500">·</span>
                   <span className="text-slate-500">
                     {quota.resetsAt
-                      ? `resets ${new Date(quota.resetsAt).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}`
+                      ? `Resets ${formatAppDate(quota.resetsAt)}`
                       : "every 30 days"}
                   </span>
                 </p>
@@ -506,8 +504,8 @@ export default function CoachLibrary({
             {reportBusy
               ? "Building…"
               : features.annualHealthReport
-                ? "Annual Health Report"
-                : "Annual Report (Pro)"}
+                ? "Yearly report"
+                : "Yearly report (Pro)"}
           </button>
         </div>
 

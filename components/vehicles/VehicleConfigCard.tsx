@@ -136,28 +136,36 @@ export default function VehicleConfigCard({
         verified ? "border-emerald-600/35" : "border-cyan-700/40"
       } ${compact ? "p-3" : "p-4"} ${className}`}
     >
-      <div className="mb-2 flex items-start justify-between gap-2">
+      <div className="mb-2 flex flex-col gap-2">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-400">
             Vehicle configuration
           </p>
           <h4
-            className={`font-semibold text-white ${compact ? "text-sm" : "text-base"}`}
+            className={`font-semibold leading-snug text-white ${compact ? "text-sm" : "text-base"}`}
           >
             {identity}
           </h4>
         </div>
-        {verified && <VcdbVerifiedBadge compact={compact} />}
+        {verified && (
+          <div className="self-start">
+            <VcdbVerifiedBadge compact={compact} />
+          </div>
+        )}
       </div>
 
       <dl className={`grid gap-1.5 ${compact ? "text-xs" : "text-sm"}`}>
         {rows.map((row) => (
           <div
             key={row.label}
-            className="grid grid-cols-[7.5rem_1fr] gap-2 border-t border-slate-800/80 pt-1.5 first:border-t-0 first:pt-0"
+            className={
+              compact
+                ? "border-t border-slate-800/80 pt-1.5 first:border-t-0 first:pt-0"
+                : "grid grid-cols-[7.5rem_1fr] gap-2 border-t border-slate-800/80 pt-1.5 first:border-t-0 first:pt-0"
+            }
           >
             <dt className="text-slate-500">{row.label}</dt>
-            <dd className="text-slate-200">
+            <dd className="break-words text-slate-200">
               {row.value}
               {row.hint && (
                 <span className="mt-0.5 block text-[10px] font-normal text-slate-500">

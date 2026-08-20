@@ -5,6 +5,7 @@
 import type { VehicleInfo } from "@/lib/types/chat";
 import type { VehicleVitals } from "@/lib/vehicle-vitals";
 import type { PredictiveMaintenanceCard } from "@/lib/predictive-maintenance/engine";
+import { formatAppDate, formatAppNumber } from "@/lib/format-app-date";
 
 export type HomeActionId =
   | "continue_diagnosis"
@@ -50,7 +51,7 @@ function openCodes(vitals: VehicleVitals | null) {
 
 function formatMileage(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
-  return `${Math.round(n).toLocaleString()} mi`;
+  return `${formatAppNumber(Math.round(n), "en-US")} mi`;
 }
 
 function lastUpdatedLabel(
@@ -62,7 +63,7 @@ function lastUpdatedLabel(
   if (at) {
     const d = new Date(at);
     if (!Number.isNaN(d.getTime())) {
-      parts.push(d.toLocaleDateString());
+      parts.push(formatAppDate(d, "en-US"));
     }
   } else {
     parts.push("just now");
@@ -109,7 +110,7 @@ export function buildHealthSnapshot(opts: {
       .map((p) => p.title)
       .join(" and ");
     const around = due[0]
-      ? Math.round(due[0].nextDueMileage).toLocaleString()
+      ? Math.round(due[0].nextDueMileage).toLocaleString("en-US")
       : "—";
     return {
       kind: "maintenance",
@@ -129,8 +130,8 @@ export function buildHealthSnapshot(opts: {
     subtitle: "No open issues. Next check-in based on mileage.",
     lastUpdatedLabel: meta,
     primaryCta: {
-      label: "Start a check-in",
-      action: "start_checkin",
+      label: "Browse guides",
+      action: "open_coach",
     },
   };
 }

@@ -1,0 +1,32 @@
+---
+description: Always open the QA/test browser in iPhone app viewport until the user asks to switch back
+alwaysApply: true
+---
+
+# QA browser = phone (iPhone) until told otherwise
+
+When opening or using the Cursor IDE browser for Garage Genius QA (`garagegenius.cloud` or local `/app`):
+
+1. After `browser_lock` (and after every `browser_navigate` / new tab), apply CDP **before** interacting:
+
+```
+Emulation.setDeviceMetricsOverride
+  width: 390
+  height: 844
+  deviceScaleFactor: 3
+  mobile: true
+  screenWidth: 390
+  screenHeight: 844
+
+Emulation.setTouchEmulationEnabled
+  enabled: true
+
+Emulation.setUserAgentOverride
+  userAgent: Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.2 Mobile/15E148 Safari/604.1
+```
+
+2. Confirm layout is **mobile** (`lg` breakpoint off): bottom or top tab bar, **no** desktop sidebar, chat composer stacked. If still desktop, re-apply metrics and reload.
+
+3. Prefer `position: "side"` when the user should **see** the phone window.
+
+Do **not** switch back to desktop width unless the user explicitly asks.

@@ -1,0 +1,442 @@
+{
+  "locale": "en-US",
+  "regression_contract": "Vitest CI regression only. Never auto-ingest into knowledge_base.",
+  "core_seed_ids": [
+    "seed_toyota_camry_oil_001",
+    "seed_ford_f150_pb_002",
+    "seed_chevy_silverado_pads_003",
+    "seed_honda_crv_rotation_004",
+    "seed_nissan_rogue_p0420_005",
+    "seed_hyundai_tucson_spongy_006",
+    "seed_kia_sportage_epb_007",
+    "seed_gmc_sierra_under_008",
+    "seed_subaru_forester_shoes_009",
+    "seed_jeep_wrangler_p0300_010"
+  ],
+  "brands": [
+    { "make": "Toyota", "models": ["Camry", "RAV4", "Corolla", "Tacoma"] },
+    { "make": "Ford", "models": ["F-150", "Explorer", "Escape"] },
+    { "make": "Chevrolet", "models": ["Silverado 1500", "Equinox", "Trax"] },
+    { "make": "Honda", "models": ["CR-V", "Civic", "Accord"] },
+    { "make": "Nissan", "models": ["Rogue", "Sentra", "Altima"] },
+    { "make": "Hyundai", "models": ["Tucson", "Elantra", "Santa Fe"] },
+    { "make": "Kia", "models": ["Sportage", "Telluride", "Forte"] },
+    { "make": "GMC", "models": ["Sierra 1500", "Terrain", "Yukon"] },
+    { "make": "Subaru", "models": ["Forester", "Outback", "Crosstrek"] },
+    { "make": "Jeep", "models": ["Wrangler", "Grand Cherokee", "Compass"] }
+  ],
+  "seeds": [
+    {
+      "id": "seed_toyota_camry_oil_001",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2021,
+        "make": "Toyota",
+        "model": "Camry",
+        "trim": "SE",
+        "market": "US",
+        "mileage": 28100
+      },
+      "user_question": "I'm about to do an oil change on my 2021 Camry SE. What oil and filter should I use, and what's the safe way to jack it up?",
+      "scenario_tags": ["oil_change", "lifting"],
+      "expected_safety_topics": ["lifting_under_car"],
+      "should_not_safety_topics": ["brakes"],
+      "gold_hints": ["0W-16 or owner-manual viscosity", "jack stands required", "chock wheels"],
+      "notes": "Routine DIY; parking-brake mention must not hard-trigger brakes"
+    },
+    {
+      "id": "seed_ford_f150_pb_002",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2020,
+        "make": "Ford",
+        "model": "F-150",
+        "trim": "XLT",
+        "market": "US",
+        "mileage": 54000
+      },
+      "user_question": "Parking brake won't hold on a slope on my F-150 — truck creeps forward even when it's fully set. Safe to keep driving?",
+      "scenario_tags": ["parking_brake", "brakes"],
+      "expected_safety_topics": ["brakes"],
+      "should_not_safety_topics": [],
+      "expected_parking_brake_state": "not_holding",
+      "gold_hints": ["do not rely on parking brake alone", "wheel chocks", "when to tow/shop"],
+      "notes": "True failure path; expect brakes callout"
+    },
+    {
+      "id": "seed_chevy_silverado_pads_003",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2019,
+        "make": "Chevrolet",
+        "model": "Silverado 1500",
+        "trim": "LT",
+        "market": "US",
+        "mileage": 62000
+      },
+      "user_question": "Need to replace the rear brake pads on my Silverado. I've already got the rear on jack stands. Parking brake is also weak.",
+      "scenario_tags": ["brake_pads", "lifting", "parking_brake"],
+      "expected_safety_topics": ["brakes", "lifting_under_car"],
+      "should_not_safety_topics": [],
+      "expected_vehicle_raised": true,
+      "gold_hints": ["get clear if vehicle moves", "do not trust parking brake", "chocks + stands"],
+      "notes": "Combined high-risk; 'weak' is not a PB fault cue in production — pads + stands still fire brakes + lifting"
+    },
+    {
+      "id": "seed_honda_crv_rotation_004",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2022,
+        "make": "Honda",
+        "model": "CR-V",
+        "trim": "EX",
+        "market": "US",
+        "mileage": 31000
+      },
+      "user_question": "Doing a tire rotation on my CR-V. Do I need to set the parking brake before I jack it?",
+      "scenario_tags": ["tire_rotation", "lifting"],
+      "expected_safety_topics": ["lifting_under_car"],
+      "should_not_safety_topics": ["brakes"],
+      "gold_hints": ["secure vehicle", "jack stands", "chock wheels"],
+      "notes": "Routine 'set parking brake' must not false-trigger full brakes callout"
+    },
+    {
+      "id": "seed_nissan_rogue_p0420_005",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2020,
+        "make": "Nissan",
+        "model": "Rogue",
+        "trim": "SV",
+        "market": "US",
+        "mileage": 48000
+      },
+      "user_question": "I have a P0420 on my 2020 Rogue. What should I check first before throwing parts at it?",
+      "scenario_tags": ["dtc", "p0420"],
+      "expected_safety_topics": [],
+      "should_not_safety_topics": [],
+      "gold_hints": ["exhaust leaks", "upstream/downstream O2", "no 'replace cat now' assertion"],
+      "notes": "Educational path only; no root-cause assertion"
+    },
+    {
+      "id": "seed_hyundai_tucson_spongy_006",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2021,
+        "make": "Hyundai",
+        "model": "Tucson",
+        "trim": "SEL",
+        "market": "US",
+        "mileage": 36000
+      },
+      "user_question": "Parking brake is fine, but the regular brakes feel spongy and the pedal goes a bit low after the car sat for a month.",
+      "scenario_tags": ["service_brakes"],
+      "expected_safety_topics": ["brakes"],
+      "should_not_safety_topics": [],
+      "expected_parking_brake_state": "ok",
+      "gold_hints": ["service brakes not parking brake", "fluid/air/pads checks", "when to stop driving"],
+      "notes": "Negation of parking-brake issue; focus must not stay not_holding"
+    },
+    {
+      "id": "seed_kia_sportage_epb_007",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2023,
+        "make": "Kia",
+        "model": "Sportage",
+        "trim": "EX",
+        "market": "US",
+        "mileage": 18000
+      },
+      "user_question": "EPB light is on and the electronic parking brake won't engage. Can I drive 12 miles to the dealer?",
+      "scenario_tags": ["epb", "parking_brake"],
+      "expected_safety_topics": ["brakes"],
+      "should_not_safety_topics": [],
+      "expected_parking_brake_state": "not_holding",
+      "gold_hints": ["may affect holding on grades", "chock if parked", "prefer tow if unsure"],
+      "notes": "EPB fault path"
+    },
+    {
+      "id": "seed_gmc_sierra_under_008",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2018,
+        "make": "GMC",
+        "model": "Sierra 1500",
+        "trim": "SLE",
+        "market": "US",
+        "mileage": 71000
+      },
+      "user_question": "I'm already under the truck on jack stands doing the oil. The truck just shifted a little — I think the parking brake isn't holding. What do I do right now?",
+      "scenario_family": "raised_parking_brake_not_holding",
+      "scenario_tags": ["lifting", "parking_brake", "emergency"],
+      "expected_safety_topics": ["brakes", "lifting_under_car"],
+      "should_not_safety_topics": [],
+      "expected_parking_brake_state": "not_holding",
+      "expected_vehicle_raised": true,
+      "gold_hints": ["get clear from under vehicle first", "do not continue oil change", "stabilize before any inspection"],
+      "notes": "Highest priority: exit from under vehicle. Canonical CRITICAL STATE seed."
+    },
+    {
+      "id": "seed_ford_f150_raised_pb_011",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2020,
+        "make": "Ford",
+        "model": "F-150",
+        "trim": "XLT",
+        "market": "US",
+        "mileage": 54000
+      },
+      "user_question": "I'm already under my F-150 on jack stands. The parking brake won't hold and the truck just shifted. What do I do right now?",
+      "scenario_family": "raised_parking_brake_not_holding",
+      "scenario_tags": ["lifting", "parking_brake", "emergency"],
+      "expected_safety_topics": ["brakes", "lifting_under_car"],
+      "should_not_safety_topics": [],
+      "expected_parking_brake_state": "not_holding",
+      "expected_vehicle_raised": true,
+      "gold_hints": ["get clear from under vehicle first", "do not trust parking brake", "stabilize before any inspection"],
+      "notes": "Same CRITICAL scene as Sierra; F-150 wording. Vitest-only variant — not knowledge_base."
+    },
+    {
+      "id": "seed_chevy_silverado_raised_pb_012",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2019,
+        "make": "Chevrolet",
+        "model": "Silverado 1500",
+        "trim": "LT",
+        "market": "US",
+        "mileage": 62000
+      },
+      "user_question": "I've already got the Silverado up on jack stands. The parking brake didn't hold — it rolled a little. What do I do right now?",
+      "scenario_family": "raised_parking_brake_not_holding",
+      "scenario_tags": ["lifting", "parking_brake", "emergency"],
+      "expected_safety_topics": ["brakes", "lifting_under_car"],
+      "should_not_safety_topics": [],
+      "expected_parking_brake_state": "not_holding",
+      "expected_vehicle_raised": true,
+      "gold_hints": ["get clear from under vehicle first", "do not trust parking brake", "stabilize before any inspection"],
+      "notes": "Same CRITICAL scene as Sierra; Silverado wording. Vitest-only variant — not knowledge_base."
+    },
+    {
+      "id": "seed_toyota_camry_raised_pb_013",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2021,
+        "make": "Toyota",
+        "model": "Camry",
+        "trim": "SE",
+        "market": "US",
+        "mileage": 28100
+      },
+      "user_question": "I'm already under the Camry on jack stands doing the oil. The parking brake isn't holding. What do I do right now?",
+      "scenario_family": "raised_parking_brake_not_holding",
+      "scenario_tags": ["lifting", "parking_brake", "emergency"],
+      "expected_safety_topics": ["brakes", "lifting_under_car"],
+      "should_not_safety_topics": [],
+      "expected_parking_brake_state": "not_holding",
+      "expected_vehicle_raised": true,
+      "gold_hints": ["get clear from under vehicle first", "do not continue oil change", "stabilize before any inspection"],
+      "notes": "Same CRITICAL scene as Sierra; Camry wording. Vitest-only variant — not knowledge_base."
+    },
+    {
+      "id": "seed_subaru_forester_shoes_009",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2019,
+        "make": "Subaru",
+        "model": "Forester",
+        "trim": "Premium",
+        "market": "US",
+        "mileage": 55000
+      },
+      "user_question": "While doing an oil change on my Forester I noticed the parking brake shoes look worn. Should I replace them at the same time?",
+      "scenario_tags": ["oil_change", "parking_brake", "soft_shift"],
+      "expected_safety_topics": ["brakes"],
+      "should_not_safety_topics": [],
+      "gold_hints": ["topic shift away from oil steps", "inspect/adjust/replace path", "no root-cause assertion"],
+      "notes": "Soft topic shift from oil to parking-brake shoes"
+    },
+    {
+      "id": "seed_jeep_wrangler_p0300_010",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2021,
+        "make": "Jeep",
+        "model": "Wrangler",
+        "trim": "Sport",
+        "market": "US",
+        "mileage": 42000
+      },
+      "user_question": "Got a P0300 random misfire on my Wrangler. Coils and plugs are due soon — what order should I check things without just guessing?",
+      "scenario_tags": ["dtc", "p0300"],
+      "expected_safety_topics": [],
+      "should_not_safety_topics": [],
+      "gold_hints": ["codes freeze frame", "coil/plug/boot path", "no 'replace X now' only"],
+      "notes": "Educational misfire path"
+    },
+    {
+      "id": "seed_toyota_rav4_oil_lift_014",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2022,
+        "make": "Toyota",
+        "model": "RAV4",
+        "trim": "XLE",
+        "market": "US",
+        "mileage": 24000
+      },
+      "user_question": "I'm about to do an oil change on my 2022 RAV4. What oil should I use and what's the safe way to jack it up?",
+      "scenario_family": "routine_oil_lift",
+      "scenario_tags": ["oil_change", "lifting"],
+      "expected_safety_topics": ["lifting_under_car"],
+      "should_not_safety_topics": ["brakes"],
+      "gold_hints": ["jack stands", "chock wheels", "owner manual viscosity"],
+      "notes": "Same as Camry oil+lift; Vitest-only variant — not knowledge_base."
+    },
+    {
+      "id": "seed_honda_accord_pb_fail_015",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2020,
+        "make": "Honda",
+        "model": "Accord",
+        "trim": "Sport",
+        "market": "US",
+        "mileage": 45000
+      },
+      "user_question": "Parking brake won't hold on a hill on my Accord — the car creeps forward even when it's fully applied. Is it safe to keep driving?",
+      "scenario_family": "parking_brake_fail",
+      "scenario_tags": ["parking_brake", "brakes"],
+      "expected_safety_topics": ["brakes"],
+      "should_not_safety_topics": [],
+      "expected_parking_brake_state": "not_holding",
+      "gold_hints": ["do not rely on parking brake alone", "wheel chocks", "when to shop/tow"],
+      "notes": "Same failure path as F-150 seed; Vitest-only variant — not knowledge_base."
+    },
+    {
+      "id": "seed_ford_explorer_raised_pb_016",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2021,
+        "make": "Ford",
+        "model": "Explorer",
+        "trim": "XLT",
+        "market": "US",
+        "mileage": 38000
+      },
+      "user_question": "I'm already under my Explorer on jack stands. The SUV just shifted a little — I think the parking brake isn't holding. What do I do right now?",
+      "scenario_family": "raised_parking_brake_not_holding",
+      "scenario_tags": ["lifting", "parking_brake", "emergency"],
+      "expected_safety_topics": ["brakes", "lifting_under_car"],
+      "should_not_safety_topics": [],
+      "expected_parking_brake_state": "not_holding",
+      "expected_vehicle_raised": true,
+      "gold_hints": ["get clear from under vehicle first", "do not continue work under vehicle", "stabilize before inspection"],
+      "notes": "CRITICAL exit-under path; same as Sierra. ID 016 avoids colliding with Camry 013. Vitest-only — not knowledge_base."
+    },
+    {
+      "id": "seed_chevy_equinox_shoes_shift_017",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2021,
+        "make": "Chevrolet",
+        "model": "Equinox",
+        "trim": "LT",
+        "market": "US",
+        "mileage": 41000
+      },
+      "user_question": "While doing an oil change on my Equinox I noticed the parking brake shoes look worn. Should I replace them at the same time?",
+      "scenario_family": "oil_to_pb_soft_shift",
+      "scenario_tags": ["oil_change", "parking_brake", "soft_shift"],
+      "expected_safety_topics": ["brakes"],
+      "should_not_safety_topics": [],
+      "gold_hints": ["topic shift away from oil drain steps", "inspect parking brake shoes"],
+      "notes": "Soft shift like Forester; reply fixtures must not continue drain-plug steps. Vitest-only — not knowledge_base."
+    },
+    {
+      "id": "seed_subaru_outback_epb_018",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2022,
+        "make": "Subaru",
+        "model": "Outback",
+        "trim": "Limited",
+        "market": "US",
+        "mileage": 29000
+      },
+      "user_question": "EPB warning light is on and the electronic parking brake won't engage on my Outback. Can I drive about 10 miles to the dealer?",
+      "scenario_family": "epb_fail",
+      "scenario_tags": ["epb", "parking_brake"],
+      "expected_safety_topics": ["brakes"],
+      "should_not_safety_topics": [],
+      "expected_parking_brake_state": "not_holding",
+      "gold_hints": ["holding on grades may be affected", "chock when parked", "prefer tow if unsure"],
+      "notes": "Same EPB path as Sportage seed; Vitest-only variant — not knowledge_base."
+    },
+    {
+      "id": "seed_toyota_rav4_raised_pb_020",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2022,
+        "make": "Toyota",
+        "model": "RAV4",
+        "trim": "XLE",
+        "market": "US",
+        "mileage": 26000
+      },
+      "user_question": "I'm already under my RAV4 on jack stands. The car just shifted a little — I think the parking brake isn't holding. What do I do right now?",
+      "scenario_family": "raised_parking_brake_not_holding",
+      "scenario_tags": ["lifting", "parking_brake", "emergency"],
+      "expected_safety_topics": ["brakes", "lifting_under_car"],
+      "should_not_safety_topics": [],
+      "expected_parking_brake_state": "not_holding",
+      "expected_vehicle_raised": true,
+      "gold_hints": ["get clear from under vehicle first", "do not rely on parking brake", "chocks and stands"],
+      "notes": "Same CRITICAL path as Sierra/Explorer; RAV4 wording. Vitest-only — not knowledge_base."
+    },
+    {
+      "id": "seed_honda_crv_raised_pb_021",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2021,
+        "make": "Honda",
+        "model": "CR-V",
+        "trim": "EX",
+        "market": "US",
+        "mileage": 33000
+      },
+      "user_question": "I'm already under the CR-V on jack stands doing work. It rolled a little — the parking brake isn't holding. What should I do immediately?",
+      "scenario_family": "raised_parking_brake_not_holding",
+      "scenario_tags": ["lifting", "parking_brake", "emergency"],
+      "expected_safety_topics": ["brakes", "lifting_under_car"],
+      "should_not_safety_topics": [],
+      "expected_parking_brake_state": "not_holding",
+      "expected_vehicle_raised": true,
+      "gold_hints": ["get clear from under vehicle first", "stabilize before any inspection"],
+      "notes": "Honda CR-V raised+PB. Uses production PB cues (isn't holding / rolled a little). Vitest-only — not knowledge_base."
+    },
+    {
+      "id": "seed_ford_f150_raised_pb_022",
+      "locale": "en-US",
+      "vehicle": {
+        "year": 2020,
+        "make": "Ford",
+        "model": "F-150",
+        "trim": "XLT",
+        "market": "US",
+        "mileage": 52000
+      },
+      "user_question": "Truck is on jack stands and I was underneath. It shifted — parking brake isn't holding. What do I do right now?",
+      "scenario_family": "raised_parking_brake_not_holding",
+      "scenario_tags": ["lifting", "parking_brake", "emergency"],
+      "expected_safety_topics": ["brakes", "lifting_under_car"],
+      "should_not_safety_topics": [],
+      "expected_parking_brake_state": "not_holding",
+      "expected_vehicle_raised": true,
+      "gold_hints": ["get clear from under vehicle first", "do not continue work under truck"],
+      "notes": "F-150 wording variant of 011 (underneath / on jack stands). Vitest-only — not knowledge_base."
+    }
+  ]
+}

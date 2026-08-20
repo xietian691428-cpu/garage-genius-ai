@@ -358,7 +358,7 @@ Terms URL: **https://garagegenius.cloud/terms**
 
 ## 9. Current blockers (before paid native launch)
 
-1. **No IAP implementation** — native Stripe is blocked; paid in-app upgrades cannot ship until StoreKit + Play Billing exist.  
+1. **IAP is implemented on iOS** — StoreKit 2 via `@capgo/native-purchases`; website Stripe stays on Safari only.  
 2. **Universal Links not finalized** — Team ID + Play SHA-256 placeholders.  
 3. **Java / Android SDK** may be missing locally — `npx cap open android` after installing Android Studio.  
 4. **Sign in with Apple** must be live if Google is offered on iOS.  

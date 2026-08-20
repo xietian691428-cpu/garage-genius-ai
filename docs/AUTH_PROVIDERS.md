@@ -6,7 +6,11 @@ Garage Genius 登录页支持：
 2. **Sign in with Apple**（iOS 上架：若提供 Google 等第三方登录，通常必须同时提供 Apple）
 3. **Google**（可选，Android / Web 友好）
 
-前端实现：`hooks/useAuth.ts` → `signInWithOAuth`；回调页：`/auth/callback`（PKCE）。
+前端实现：
+
+- **Web：** `hooks/useAuth.ts` → `signInWithOAuth`（Supabase PKCE）→ `/auth/callback`
+- **iOS 原生壳：** Sign in with Apple 走 `ASAuthorization`（`lib/native-apple-auth.ts`）→ `supabase.auth.signInWithIdToken`。**不要**再用 in-app Browser + PKCE（iPad 会报 `code challenge does not match previously saved code verifier`）。
+
 
 ---
 
@@ -77,12 +81,16 @@ Confirm email 开启后：
 
 | 字段 | 来源 |
 |------|------|
-| Client IDs | Services ID（Web）；将来 iOS 原生再追加 Bundle ID，逗号分隔 |
+| Client IDs | **逗号分隔**：Web Services ID **以及** iOS Bundle ID `com.garagegenius.ai`（原生 `signInWithIdToken` 必需） |
 | Secret Key (`.p8` 内容) | 下载的密钥全文 |
 | Key ID | Apple Key ID |
 | Team ID | Apple Team ID |
 
-保存后，在登录页点 **Sign in with Apple** 应跳转 Apple → 再回 `/auth/callback`。
+保存后：
+
+- **网站 / Mobile Safari：** 登录页点 Sign in with Apple → Apple → `/auth/callback`
+- **iOS App：** 登录页点 Sign in with Apple → 系统授权表 → 直接进 `/app`（不经过 PKCE callback）
+
 
 ### 注意
 
@@ -118,7 +126,8 @@ Confirm email 开启后：
 
 | 步骤 | 预期 |
 |------|------|
-| `/login` 点 Apple | 跳转 Apple → `/auth/callback?code=…` → `/app` |
+| `/login` 点 Apple（网站） | 跳转 Apple → `/auth/callback?code=…` → `/app` |
+| `/login` 点 Apple（iOS App） | 系统 Sign in with Apple 表 → session，无 PKCE Browser |
 | `/login?next=/recharge` 点 Google | 回调后进入 `/recharge` |
 | Provider 未开 | 登录页红色错误，提示见本文档 |
 | OAuth 取消 / 报错 | `/auth/callback` 显示错误 → 回 `/login?error=…` |
@@ -132,5 +141,5 @@ Confirm email 开启后：
 - [ ]（可选）Google provider 联调
 - [ ] Redirect URLs 含生产 + 本地 `/auth/callback`
 - [ ] Privacy Policy / Terms 链接（商店审核常查）
-- [ ] iOS 壳上架前：Xcode 打开 Sign in with Apple capability；Services ID / Bundle ID 与 Supabase Client IDs 对齐
-- [ ] 数字商品：Web Stripe 与 App 内 IAP 策略在包壳前再定（见 `PROJECT.md`）
+- [ ] iOS 壳：Xcode Sign in with Apple capability；Supabase Apple **Client IDs** 含 Bundle ID `com.garagegenius.ai`
+- [ ] 数字商品：iOS 仅 IAP（见 `docs/APP_STORE_REVIEW_NOTES.md`）；网站 Stripe 仅 Safari
