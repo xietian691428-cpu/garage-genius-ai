@@ -1,8 +1,18 @@
-# App Store Review Notes — Garage Genius AI (v1.0)
+# App Store Review Notes — Garage Genius AI (v1.0 (6))
 
 Use this file for **App Store Connect → App Review Information → Notes** and the resubmit checklist.
 
 Do **not** paste passwords into git. Rotate any password that already appeared in a previous Review Notes field or screenshot.
+
+**This submission:** Version **1.0**, Build **6**. Xcode `CURRENT_PROJECT_VERSION` is 6. Archive this binary (do not resubmit 1.0 (5)).
+
+### Before Submit for Review
+
+1. `npx cap sync ios` → Xcode Archive **1.0 (6)** → Upload to App Store Connect.
+2. iPad smoke: native Apple sheet (not Safari) → DeepSeek dialog → pricing scrolls → StoreKit Subscribe sheet.
+3. Attach all four IAP products to this version.
+4. Paste Review Notes below. Demo account in ASC must be **Free** (`xietian691428+appstore@gmail.com` or a new Free account). Never the 163 QA account.
+5. Fill Sandbox Apple ID. Confirm Supabase Apple Client IDs include `com.garagegenius.ai`.
 
 ---
 
@@ -61,7 +71,7 @@ The previous rejection (`code challenge does not match previously saved code ver
 3. Supabase → Authentication → Providers → Apple → **Client IDs** must include **both**:
    - Services ID (website OAuth)
    - iOS bundle ID `com.garagegenius.ai` (native `signInWithIdToken`)
-4. After code change: `npx cap sync ios` → Archive a **new build** (1.0 (6+) ).
+4. After code change: `npx cap sync ios` → Archive **1.0 (6)** (this submission).
 
 Google is hidden in the iOS app (same Browser PKCE risk). Email/password remains.
 
