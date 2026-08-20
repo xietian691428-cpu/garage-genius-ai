@@ -144,7 +144,7 @@ export default function SettingsPanel({
   }
 
   return (
-    <div className="panel-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-4 pb-[var(--content-pad-bottom)] sm:p-8 xl:pb-8">
+    <div className="panel-scroll min-h-0 h-0 flex-1 overflow-y-auto overscroll-y-contain p-4 pb-[var(--content-pad-bottom)] sm:p-8 xl:pb-8">
       <div className="mx-auto max-w-lg space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Account</h1>

@@ -1215,7 +1215,7 @@ export default function ChatApp({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-1 overflow-hidden">
+    <div className="flex h-0 min-h-0 flex-1 overflow-hidden">
       <div className="hidden w-72 shrink-0 overflow-hidden border-r border-slate-800 bg-[#111827] xl:block xl:min-h-0">
         <VehicleManager
           vehicles={vehicles}

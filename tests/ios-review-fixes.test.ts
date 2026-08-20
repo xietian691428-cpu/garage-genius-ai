@@ -216,8 +216,8 @@ describe("source regressions for App Store 2.1 / 3.1.1", () => {
     expect(dash).not.toMatch(/md:grid-cols-2 lg:grid-cols-3/);
     expect(dash).toContain("xl:col-span-1");
     expect(dash).toMatch(/flex min-w-0 flex-col gap-2 xl:flex-row/);
-    expect(dash).toContain("overflow-hidden rounded-2xl bg-black/40");
-    expect(dash).not.toContain("className=\"overflow-visible\"");
+    expect(dash).toContain("health-trend-chart");
+    expect(dash).toContain("h-0 min-h-0 flex-1");
     expect(dash).toContain("xl:pb-8");
     expect(readFileSync("components/settings/SettingsPanel.tsx", "utf8")).toContain(
       "xl:pb-8",
@@ -227,6 +227,22 @@ describe("source regressions for App Store 2.1 / 3.1.1", () => {
     );
     expect(readFileSync("components/parts/PartsInventory.tsx", "utf8")).toContain(
       "xl:pb-8",
+    );
+  });
+
+  it("native app shell fills the visible webview so landscape Home can scroll to the end", () => {
+    const css = readFileSync("app/globals.css", "utf8");
+    expect(css).toContain("html.gg-native .app-shell");
+    expect(css).toMatch(/html\.gg-native \.app-shell\s*\{[\s\S]*height:\s*100%/);
+    expect(css).not.toMatch(/\.app-shell\s*\{[^}]*height:\s*100vh/);
+    expect(css).toContain("max-height: 900px");
+    expect(css).toContain("--content-pad-bottom: max(");
+    expect(css).toContain(".health-trend-chart");
+    expect(readFileSync("components/dashboard/Dashboard.tsx", "utf8")).toContain(
+      "pb-[var(--content-pad-bottom)]",
+    );
+    expect(readFileSync("components/coach/CoachLibrary.tsx", "utf8")).toContain(
+      "h-0 min-h-0 flex-1",
     );
   });
 

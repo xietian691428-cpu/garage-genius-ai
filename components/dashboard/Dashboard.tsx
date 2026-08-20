@@ -931,7 +931,7 @@ export default function Dashboard({
   };
 
   return (
-    <div className="panel-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-[#0a0f1c] p-3 pb-[var(--content-pad-bottom)] sm:p-6 xl:p-8 xl:pb-8">
+    <div className="panel-scroll relative h-0 min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-[#0a0f1c] p-3 pb-[var(--content-pad-bottom)] sm:p-6 xl:p-8 xl:pb-8">
       <div className="mx-auto max-w-7xl">
         <HomeHub
           vehicles={vehicles}
@@ -1438,99 +1438,102 @@ export default function Dashboard({
               <h3 className="min-w-0 text-xl font-semibold">Health Trend</h3>
             </div>
 
-            <div className="relative h-48 overflow-hidden rounded-2xl bg-black/40 p-4">
-              <svg
-                width="100%"
-                height="100%"
-                viewBox="0 0 400 160"
-                className="max-h-full max-w-full"
-                aria-label="Health score trend"
-              >
-                <line
-                  x1="24"
-                  y1="144"
-                  x2="376"
-                  y2="144"
-                  stroke="#334155"
-                  strokeWidth="1"
-                />
-                <line
-                  x1="24"
-                  y1="16"
-                  x2="24"
-                  y2="144"
-                  stroke="#334155"
-                  strokeWidth="1"
-                />
-                {healthChart.points ? (
-                  <>
-                    <polyline
-                      points={healthChart.points}
-                      fill="none"
-                      stroke="#22c55e"
-                      strokeWidth="4"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    {healthChart.dots.map((d, i) => (
-                      <g key={`dot-${i}`}>
-                        <circle cx={d.x} cy={d.y} r="5" fill="#22c55e" />
-                        <text
-                          x={d.x}
-                          y={d.y - 10}
-                          textAnchor="middle"
-                          fill="#94a3b8"
-                          fontSize="10"
-                        >
-                          {d.score}
-                        </text>
-                      </g>
-                    ))}
-                  </>
-                ) : null}
-              </svg>
-              <div className="absolute bottom-3 left-6 text-xs text-slate-500">
-                {vitalsHistory.length
-                  ? "Last 5 snapshots — tap a point to restore"
-                  : "No history yet — run Photo or OBD scan"}
-              </div>
-            </div>
-
-            <div className="mt-5 space-y-2 text-sm">
-              {vitalsHistory.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-slate-700 px-4 py-5 text-center text-slate-500">
-                  Photo / OBD scans will appear here. Tap a row to restore.
-                </p>
-              ) : (
-                vitalsHistory.map((row) => (
-                  <button
-                    key={row.id}
-                    type="button"
-                    onClick={() => restoreSnapshot(row)}
-                    className="flex w-full items-center justify-between gap-3 rounded-xl bg-slate-900/80 px-4 py-3 text-left hover:bg-slate-800"
+            {vitalsHistory.length > 0 ? (
+              <>
+                <div className="health-trend-chart relative overflow-hidden rounded-2xl bg-black/40 p-4">
+                  <svg
+                    width="100%"
+                    height="100%"
+                    viewBox="0 0 400 160"
+                    preserveAspectRatio="xMinYMid meet"
+                    className="max-h-full max-w-full"
+                    aria-label="Health score trend"
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Clock className="h-4 w-4 shrink-0 text-slate-500" />
-                      <span className="truncate text-slate-300">
-                        {new Date(row.snapshot_at).toLocaleDateString()}{" "}
-                        {new Date(row.snapshot_at).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-3">
-                      <span className="font-medium text-emerald-400">
-                        {row.health_score != null ? `${row.health_score}%` : "—"}
-                      </span>
-                      <span className="text-[10px] uppercase tracking-wide text-slate-500">
-                        {row.source}
-                      </span>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
+                    <line
+                      x1="24"
+                      y1="144"
+                      x2="376"
+                      y2="144"
+                      stroke="#334155"
+                      strokeWidth="1"
+                    />
+                    <line
+                      x1="24"
+                      y1="16"
+                      x2="24"
+                      y2="144"
+                      stroke="#334155"
+                      strokeWidth="1"
+                    />
+                    {healthChart.points ? (
+                      <>
+                        <polyline
+                          points={healthChart.points}
+                          fill="none"
+                          stroke="#22c55e"
+                          strokeWidth="4"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        {healthChart.dots.map((d, i) => (
+                          <g key={`dot-${i}`}>
+                            <circle cx={d.x} cy={d.y} r="5" fill="#22c55e" />
+                            <text
+                              x={d.x}
+                              y={d.y - 10}
+                              textAnchor="middle"
+                              fill="#94a3b8"
+                              fontSize="10"
+                            >
+                              {d.score}
+                            </text>
+                          </g>
+                        ))}
+                      </>
+                    ) : null}
+                  </svg>
+                  <div className="absolute bottom-3 left-6 text-xs text-slate-500">
+                    Last 5 snapshots — tap a point to restore
+                  </div>
+                </div>
+                <div className="mt-5 space-y-2 text-sm">
+                  {vitalsHistory.map((row) => (
+                    <button
+                      key={row.id}
+                      type="button"
+                      onClick={() => restoreSnapshot(row)}
+                      className="flex w-full items-center justify-between gap-3 rounded-xl bg-slate-900/80 px-4 py-3 text-left hover:bg-slate-800"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Clock className="h-4 w-4 shrink-0 text-slate-500" />
+                        <span className="truncate text-slate-300">
+                          {new Date(row.snapshot_at).toLocaleDateString()}{" "}
+                          {new Date(row.snapshot_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-3">
+                        <span className="font-medium text-emerald-400">
+                          {row.health_score != null
+                            ? `${row.health_score}%`
+                            : "—"}
+                        </span>
+                        <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                          {row.source}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="rounded-xl border border-dashed border-slate-700 px-4 py-5 text-center text-sm text-slate-500">
+                No history yet — run Photo or OBD scan. Snapshots will appear
+                here; tap a row to restore.
+              </p>
+            )}
           </div>
         </div>
 
