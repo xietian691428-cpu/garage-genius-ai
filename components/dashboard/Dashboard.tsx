@@ -931,7 +931,7 @@ export default function Dashboard({
   };
 
   return (
-    <div className="panel-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-[#0a0f1c] p-3 pb-[var(--content-pad-bottom)] sm:p-6 lg:p-8 lg:pb-8">
+    <div className="panel-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-[#0a0f1c] p-3 pb-[var(--content-pad-bottom)] sm:p-6 xl:p-8 xl:pb-8">
       <div className="mx-auto max-w-7xl">
         <HomeHub
           vehicles={vehicles}
@@ -1220,7 +1220,7 @@ export default function Dashboard({
         </div>
 
         {/* Status cards — dynamic from vitals + vehicle */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4 xl:gap-6">
           <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-[#111827] to-[#0a0f1c] p-4 sm:rounded-3xl sm:p-6 lg:p-7">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -1273,7 +1273,7 @@ export default function Dashboard({
             </div>
           </div>
 
-          <div className="col-span-2 rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-[#111827] to-[#0a0f1c] p-4 sm:col-span-1 sm:rounded-3xl sm:p-6 lg:col-span-1 lg:p-7">
+          <div className="col-span-2 min-w-0 rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-[#111827] to-[#0a0f1c] p-4 sm:col-span-1 sm:rounded-3xl sm:p-6 xl:col-span-1 xl:p-7">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-xs text-cyan-400 sm:text-sm">Est. Market Band</p>
@@ -1288,8 +1288,8 @@ export default function Dashboard({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-3xl border border-slate-700 bg-[#111827] p-6 sm:p-8">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="min-w-0 overflow-hidden rounded-3xl border border-slate-700 bg-[#111827] p-6 sm:p-8">
             <h3 className="mb-2 flex items-center gap-3 text-xl font-semibold">
               <Thermometer className="h-6 w-6 text-cyan-400" /> Fluid Levels &amp;
               Tire Pressure
@@ -1301,7 +1301,7 @@ export default function Dashboard({
               {(vitals?.fluids ?? []).map((item) => (
                 <div
                   key={item.key}
-                  className="flex flex-col gap-1 border-b border-slate-800 pb-3 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex min-w-0 flex-col gap-1 border-b border-slate-800 pb-3 xl:flex-row xl:items-center xl:justify-between"
                 >
                   <span className="text-sm text-slate-300">{item.label}</span>
                   <input
@@ -1309,7 +1309,7 @@ export default function Dashboard({
                     value={item.value}
                     onChange={(e) => handleFluidEdit(item.key, e.target.value)}
                     disabled={!vitals}
-                    className={`w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm sm:max-w-[220px] ${fluidTone(item.level)} focus:border-cyan-400 focus:outline-none`}
+                    className={`w-full min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm xl:max-w-[220px] ${fluidTone(item.level)} focus:border-cyan-400 focus:outline-none`}
                   />
                 </div>
               ))}
@@ -1319,7 +1319,7 @@ export default function Dashboard({
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-700 bg-[#111827] p-6 sm:p-8">
+          <div className="min-w-0 overflow-hidden rounded-3xl border border-slate-700 bg-[#111827] p-6 sm:p-8">
             <h3 className="mb-2 text-xl font-semibold">Recent Diagnostic Codes</h3>
             <p className="mb-5 text-xs text-slate-500">
               OBD scan, photo vision, or manual entry · Ask AI uses market + RAG
@@ -1394,26 +1394,26 @@ export default function Dashboard({
 
             {vehicle && (
               <div className="mt-5 space-y-2 border-t border-slate-800 pt-4">
-                <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="flex min-w-0 flex-col gap-2 xl:flex-row">
                   <input
                     type="text"
                     placeholder="Code e.g. P0300"
                     value={manualCode}
                     onChange={(e) => setManualCode(e.target.value)}
-                    className="min-h-[42px] flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm focus:border-cyan-400 focus:outline-none"
+                    className="min-h-[42px] min-w-0 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm xl:flex-1 focus:border-cyan-400 focus:outline-none"
                   />
                   <input
                     type="text"
                     placeholder="Short description"
                     value={manualDesc}
                     onChange={(e) => setManualDesc(e.target.value)}
-                    className="min-h-[42px] flex-[1.4] rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm focus:border-cyan-400 focus:outline-none"
+                    className="min-h-[42px] min-w-0 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm xl:flex-[1.4] focus:border-cyan-400 focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleAddManualCode}
                     disabled={!manualCode.trim()}
-                    className="min-h-[42px] rounded-xl bg-slate-700 px-4 text-sm disabled:opacity-40"
+                    className="min-h-[42px] shrink-0 rounded-xl bg-slate-700 px-4 text-sm disabled:opacity-40"
                   >
                     Add
                   </button>
@@ -1432,18 +1432,18 @@ export default function Dashboard({
           </div>
 
           {/* Health Trend — SVG sparkline + last 5 snapshots */}
-          <div className="rounded-2xl border border-slate-700 bg-[#111827] p-4 sm:rounded-3xl sm:p-6 md:col-span-2 lg:col-span-1 lg:p-8">
+          <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-700 bg-[#111827] p-4 sm:rounded-3xl sm:p-6 md:col-span-2 xl:col-span-1 xl:p-8">
             <div className="mb-4 flex items-center gap-3">
-              <TrendingUp className="h-6 w-6 text-emerald-400" />
-              <h3 className="text-xl font-semibold">Health Trend</h3>
+              <TrendingUp className="h-6 w-6 shrink-0 text-emerald-400" />
+              <h3 className="min-w-0 text-xl font-semibold">Health Trend</h3>
             </div>
 
-            <div className="relative h-48 rounded-2xl bg-black/40 p-4">
+            <div className="relative h-48 overflow-hidden rounded-2xl bg-black/40 p-4">
               <svg
                 width="100%"
                 height="100%"
                 viewBox="0 0 400 160"
-                className="overflow-visible"
+                className="max-h-full max-w-full"
                 aria-label="Health score trend"
               >
                 <line

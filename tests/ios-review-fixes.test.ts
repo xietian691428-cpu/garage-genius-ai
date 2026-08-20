@@ -210,6 +210,26 @@ describe("source regressions for App Store 2.1 / 3.1.1", () => {
     expect(chat).toContain("xl:flex");
   });
 
+  it("dashboard cards stay two-across on iPad and do not overflow into neighbors", () => {
+    const dash = readFileSync("components/dashboard/Dashboard.tsx", "utf8");
+    expect(dash).toContain("md:grid-cols-2 xl:grid-cols-3");
+    expect(dash).not.toMatch(/md:grid-cols-2 lg:grid-cols-3/);
+    expect(dash).toContain("xl:col-span-1");
+    expect(dash).toMatch(/flex min-w-0 flex-col gap-2 xl:flex-row/);
+    expect(dash).toContain("overflow-hidden rounded-2xl bg-black/40");
+    expect(dash).not.toContain("className=\"overflow-visible\"");
+    expect(dash).toContain("xl:pb-8");
+    expect(readFileSync("components/settings/SettingsPanel.tsx", "utf8")).toContain(
+      "xl:pb-8",
+    );
+    expect(readFileSync("components/history/MaintenanceHistory.tsx", "utf8")).toContain(
+      "xl:pb-8",
+    );
+    expect(readFileSync("components/parts/PartsInventory.tsx", "utf8")).toContain(
+      "xl:pb-8",
+    );
+  });
+
   it("consent modal is a centered dialog (iPad-safe)", () => {
     const modal = readFileSync(
       "components/legal/AiProviderConsentModal.tsx",
