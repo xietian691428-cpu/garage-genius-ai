@@ -314,13 +314,15 @@ export default function UpgradeModal({
             </p>
           )}
           {iap && (
-            <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-500">
-              Payment is charged to your Apple ID at confirmation of purchase.
-              Subscriptions renew unless canceled at least 24 hours before the
-              end of the current period. Manage in Settings → Apple ID →
-              Subscriptions.
-            </p>
-            <SubscriptionLegalLinks className="mt-3 text-center text-[11px] text-cyan-300/80" />
+            <>
+              <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-500">
+                Payment is charged to your Apple ID at confirmation of purchase.
+                Subscriptions renew unless canceled at least 24 hours before the
+                end of the current period. Manage in Settings → Apple ID →
+                Subscriptions.
+              </p>
+              <SubscriptionLegalLinks className="mt-3 text-center text-[11px] text-cyan-300/80" />
+            </>
           )}
 
           <button
