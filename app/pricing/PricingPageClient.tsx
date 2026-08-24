@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import PricingCards from "@/components/landing/PricingCards";
+import SubscriptionLegalLinks from "@/components/legal/SubscriptionLegalLinks";
 import { useSubscription } from "@/hooks/useSubscription";
 import { TrialEndedModal } from "@/components/subscription/TrialBanners";
 import { TRIAL_DAYS } from "@/lib/subscription";
@@ -66,9 +67,10 @@ export default function PricingPageClient({
             {blocked
               ? NATIVE_NO_IAP_MESSAGE
               : iap || storeShell
-                ? "Pro and Pro Heavy are auto-renewable Apple In-App Purchases. App Store prices load on this page; tapping Subscribe opens the system purchase sheet. Restore purchases anytime from this page or Account."
+                ? "Pro and Pro Heavy are auto-renewable Apple In-App Purchases. Payment is charged to your Apple ID at the price shown. Subscriptions renew unless canceled at least 24 hours before the end of the current period. Manage or cancel in Settings → Apple ID → Subscriptions. Restore purchases anytime from this page or Account."
                 : `Every new account gets a ${TRIAL_DAYS}-day Pro Trial. Free covers basics; Pro unlocks voice, custom tags, annual reports, and higher limits. Cancel anytime.`}
           </p>
+          <SubscriptionLegalLinks className="mt-4 text-sm text-cyan-300/90" />
           {!storeShell && isTrialing && trialCountdown && (
             <p className="mt-4 text-sm font-medium text-cyan-300">
               {trialCountdown}
@@ -85,15 +87,7 @@ export default function PricingPageClient({
         </Suspense>
 
         <p className="mt-12 text-center text-xs text-slate-500">
-          <Link href="/privacy" className="hover:text-cyan-400 hover:underline">
-            Privacy
-          </Link>
-          <span className="mx-2 opacity-40" aria-hidden>
-            ·
-          </span>
-          <Link href="/terms" className="hover:text-cyan-400 hover:underline">
-            Terms
-          </Link>
+          <SubscriptionLegalLinks />
         </p>
       </div>
     </div>

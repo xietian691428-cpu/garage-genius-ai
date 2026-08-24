@@ -1,7 +1,7 @@
 /**
  * Web Bluetooth + ELM327-style OBD-II helper for garage DIY scans.
  *
- * Supported in Chrome / Edge / Android Chrome. Safari & iOS WebViews generally
+ * Supported in Chrome / Edge on computers. Safari and iOS WebViews generally
  * do not expose Web Bluetooth — callers should use photo / manual DTC fallbacks
  * (never invent live OBD readings).
  *
@@ -215,7 +215,7 @@ export function getObdRuntimeSupport(): {
       supported: false,
       code: "capacitor_ios",
       message:
-        "iOS does not support Bluetooth OBD yet. Use Enter fault code or upload an OBD screenshot. Chrome on Android/desktop works with BLE ELM327 adapters only.",
+        "Live Bluetooth OBD is not available in this iPhone and iPad app. Enter the fault code manually or upload an OBD screenshot.",
     };
   }
   if (!isWebBluetoothAvailable()) {
@@ -223,7 +223,7 @@ export function getObdRuntimeSupport(): {
       supported: false,
       code: "unsupported",
       message:
-        "Web Bluetooth is not available here. Use Chrome or Edge on Android/desktop with a BLE (Bluetooth Low Energy) ELM327 adapter. Classic Bluetooth is not supported. On iOS, use Enter fault code or OBD screenshot instead.",
+        "Web Bluetooth is not available here. Enter the fault code manually or upload an OBD screenshot.",
     };
   }
   return { supported: true, code: null, message: "" };

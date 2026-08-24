@@ -24,6 +24,7 @@ import {
   canStartObdBleConnect,
   shouldEmphasizeObdConnect,
 } from "@/lib/obd-preference";
+import { isNativeIos } from "@/lib/native-platform";
 import { syncObdMileageToVehicle } from "@/lib/obd-mileage-sync-client";
 import type { MileageUnit } from "@/lib/obd-mileage";
 
@@ -109,6 +110,9 @@ export default function ObdConnectModal({
 
   const support = getObdRuntimeSupport();
   const emphasize = shouldEmphasizeObdConnect(pref);
+  // Hard-stop live BLE flow on iOS app even if runtime capability probes are noisy.
+  const iosNoBle = isNativeIos() || support.code === "capacitor_ios";
+  const showBleGuide = emphasize && !iosNoBle;
 
   useEffect(() => {
     if (!open || prefLoading) return;
@@ -292,7 +296,7 @@ export default function ObdConnectModal({
 
           {phase === "guide" || phase === "error" ? (
             <div className="space-y-4">
-              {support.code === "capacitor_ios" ? (
+              {iosNoBle ? (
                 <p className="rounded-xl border border-amber-700/40 bg-amber-950/30 px-3 py-2 text-xs text-amber-100">
                   {t("obd.iosUnsupported")}
                 </p>
@@ -319,7 +323,7 @@ export default function ObdConnectModal({
                 </p>
               ) : null}
 
-              {emphasize || support.supported ? (
+              {showBleGuide ? (
                 <div>
                   <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     {t("obd.stepsTitle")}
@@ -337,7 +341,7 @@ export default function ObdConnectModal({
                 </p>
               )}
 
-              {emphasize ? (
+              {showBleGuide ? (
                 <div>
                   <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     {t("obd.devicesTitle")}
@@ -430,7 +434,9 @@ export default function ObdConnectModal({
 
         {phase !== "pref" &&
         !prefLoading &&
-        canStartObdBleConnect(pref) ? (
+        canStartObdBleConnect(pref) &&
+        support.supported &&
+        !iosNoBle ? (
           <div className="flex shrink-0 flex-wrap gap-2 border-t border-slate-800 px-4 py-3">
             {connectedName ? (
               <button

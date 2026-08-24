@@ -1,18 +1,21 @@
-# App Store Review Notes — Garage Genius AI (v1.0 (6))
+# App Store Review Notes — Garage Genius AI (v1.0 (7))
 
 Use this file for **App Store Connect → App Review Information → Notes** and the resubmit checklist.
 
 Do **not** paste passwords into git. Rotate any password that already appeared in a previous Review Notes field or screenshot.
 
-**This submission:** Version **1.0**, Build **6**. Xcode `CURRENT_PROJECT_VERSION` is 6. Archive this binary (do not resubmit 1.0 (5)).
+**This submission:** Version **1.0**, Build **7**. Archive this binary (do not resubmit 1.0 (6)).
 
 ### Before Submit for Review
 
-1. `npx cap sync ios` → Xcode Archive **1.0 (6)** → Upload to App Store Connect.
-2. iPad smoke: native Apple sheet (not Safari) → DeepSeek dialog → pricing scrolls → StoreKit Subscribe sheet.
-3. Attach all four IAP products to this version.
-4. Paste Review Notes below. Demo account in ASC must be **Free** (`xietian691428+appstore@gmail.com` or a new Free account). Never the 163 QA account.
-5. Fill Sandbox Apple ID. Confirm Supabase Apple Client IDs include `com.garagegenius.ai`.
+1. **Supabase → Authentication → Providers → Apple → Client IDs** must include **`com.garagegenius.ai`** (bundle ID). Without it, Sign in with Apple fails with `Unacceptable audience in id_token`.
+2. App Store Connect **App Description** (or EULA field) must include:  
+   `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
+3. Privacy Policy field: `https://garagegenius.cloud/privacy`
+4. Create/attach all four IAP products to **1.0 (7)** with review screenshots, then Archive **1.0 (7)**.
+5. `npx cap sync ios` → Xcode Archive **1.0 (7)** → Upload.
+6. iPad smoke: Sign in with Apple lands in `/app` with **no** audience error. OBD sheet has **no** other-platform names. Subscribe page shows Privacy Policy + Terms of Use (EULA).
+7. Demo account in ASC must be **Free**. Never the 163 QA account.
 
 ---
 
@@ -71,7 +74,7 @@ The previous rejection (`code challenge does not match previously saved code ver
 3. Supabase → Authentication → Providers → Apple → **Client IDs** must include **both**:
    - Services ID (website OAuth)
    - iOS bundle ID `com.garagegenius.ai` (native `signInWithIdToken`)
-4. After code change: `npx cap sync ios` → Archive **1.0 (6)** (this submission).
+4. After code change: `npx cap sync ios` → Archive **1.0 (7)** (this submission).
 
 Google is hidden in the iOS app (same Browser PKCE risk). Email/password remains.
 

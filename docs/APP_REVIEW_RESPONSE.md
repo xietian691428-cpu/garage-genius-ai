@@ -1,6 +1,6 @@
 # App Review Response — Garage Genius AI (resubmission)
 
-**Build:** 1.0 (6)  
+**Build:** 1.0 (7)  
 **Bundle ID:** com.garagegenius.ai
 
 Do **not** paste passwords into this file or git. Put the Free demo password only in App Store Connect.
@@ -9,53 +9,55 @@ Do **not** paste passwords into this file or git. Put the Free demo password onl
 
 Hello App Review Team,
 
-Thank you for the feedback on Guidelines **2.1**, **3.1.1**, and **5.1.1 / 5.1.2**. We have addressed all three in this build.
+Thank you for the screenshots and notes on Guidelines **2.1(a)**, **2.1(b)**, **2.3.10**, and **3.1.2(c)**. This build addresses each item.
 
-## 1) Guideline 2.1 — Sign in with Apple (iPad)
+## 1) Guideline 2.1(a) — Sign in with Apple
 
-Sign in with Apple now uses the **system ASAuthorization sheet** (native Sign in with Apple). It no longer opens an in-app browser / PKCE popover, which caused `code challenge does not match previously saved code verifier` on iPad.
+The previous error (`Unacceptable audience in id_token: [com.garagegenius.ai]`) was a server Client ID mismatch. Native Sign in with Apple issues an identity token whose audience is the iOS bundle ID `com.garagegenius.ai`. That bundle ID is now included in our Apple provider Client IDs so `signInWithIdToken` accepts the token.
 
-Email/password sign-in remains available. Google is not offered inside the iOS app.
+Sign in with Apple uses the **system authorization sheet** (not Safari). Email/password remains available.
 
-## 2) Guideline 3.1.1 — In-App Purchase
+### How to test
+1. On the Create account / Sign in screen, tap **Sign in with Apple**.
+2. Complete the system sheet. The app should land in Home without an audience error.
 
-Digital Pro / Pro Heavy access is sold **only via Apple In-App Purchase (StoreKit 2)** inside the iOS app.
+## 2) Guideline 2.3.10 — Third-party platforms
 
-- **Auto-renewable subscriptions** (attach all four to this version):
-  - `com.garagegenius.ai.pro.monthly`
-  - `com.garagegenius.ai.pro.yearly`
-  - `com.garagegenius.ai.heavy.monthly`
-  - `com.garagegenius.ai.heavy.yearly`
-- Users can **purchase**, **restore purchases**, and **manage subscriptions** in-app (Account → View plans & subscribe / Upgrade paywalls).
-- Entitlements sync to the signed-in Garage Genius account after server verification of the StoreKit 2 transaction.
-- Stripe Checkout is **not** used inside the app. The website (Safari) remains Stripe-only for web users.
+We removed Android/desktop references from iOS-visible UI text. In this iPhone and iPad app, the OBD helper now only says that live Bluetooth OBD is unavailable in-app and directs users to:
 
-### How to test IAP
-1. Sign in with the **Free** demo account in App Review Information (not a Pro / trial account).
-2. Open **Account** → **View plans & subscribe**, or **Subscribe with Apple**.
-3. Localized App Store prices load from StoreKit. Purchase Pro or Heavy with a Sandbox Apple ID.
-4. Tap **Restore purchases** if needed.
-5. **Manage Apple subscription** opens Apple’s subscription management UI.
+- Enter fault code
+- Upload OBD screenshot
 
-## 3) Guideline 5.1.1 / 5.1.2 — Third-party AI (DeepSeek)
+No Android/desktop/Chrome wording is shown in the iOS OBD flow.
 
-After login, the app shows an **in-app consent dialog** that names **DeepSeek**, purpose (vehicle diagnosis and repair coaching), and data categories (message text, optional photos, vehicle context, related diagnostic details).
+## 3) Guideline 2.1(b) — In-App Purchase products
 
-The user taps **I agree** or **Not now**. AI features do not run without agreement. Consent is stored on the account. Privacy Policy documents this processing.
+The four auto-renewable subscriptions are submitted with this binary:
 
-### How to test AI consent
-1. Sign in with the demo account (consent not yet acknowledged).
-2. The DeepSeek dialog appears on `/app`.
-3. Agree to continue / Not now to skip AI features.
+- `com.garagegenius.ai.pro.monthly`
+- `com.garagegenius.ai.pro.yearly`
+- `com.garagegenius.ai.heavy.monthly`
+- `com.garagegenius.ai.heavy.yearly`
+
+Please review them together with 1.0 (7).
+
+## 4) Guideline 3.1.2(c) — Subscription information
+
+**In the app** (Subscribe with Apple / Account → View plans & subscribe):
+
+- Subscription titles: Pro, Pro Heavy  
+- Length: monthly or yearly  
+- Price: App Store localized price  
+- Links: **Privacy Policy** and **Terms of Use (EULA)** (Apple Standard EULA)
+
+**In App Store metadata:**
+
+- Privacy Policy URL: `https://garagegenius.cloud/privacy`  
+- Terms of Use (EULA): Apple Standard EULA  
+  `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
 
 ## Demo account
 
-Use the email and password in App Review Information. That account is **Free** so Subscribe is tappable. Please use a **Sandbox Apple ID** for the purchase sheet.
-
-## Multi-platform note
-
-- **iOS app:** Apple IAP for digital Pro/Heavy.
-- **Website:** Stripe.
-- Android Play Billing is not in this iOS submission.
+Use the email and password in App Review Information. That account is **Free** so Subscribe is tappable. Please use a Sandbox Apple ID for the purchase sheet.
 
 Thank you for reviewing again.

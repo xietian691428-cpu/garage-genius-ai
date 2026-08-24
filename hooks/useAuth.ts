@@ -9,9 +9,9 @@ import {
   AUTH_OAUTH_TIMEOUT_MS,
   AUTH_SESSION_TIMEOUT_MS,
   AUTH_SIGNIN_TIMEOUT_MS,
-  TimeoutError,
   withTimeout,
 } from "@/lib/auth-timeout";
+import { toUserFacingAuthError } from "@/lib/auth-errors";
 import { getCapacitorPlatform, isNativeCapacitor, isNativeIos } from "@/lib/native-platform";
 import {
   shouldUseNativeAppleSignIn,
@@ -40,30 +40,8 @@ function oauthRedirectTo(next?: string | null): string | undefined {
   return url.toString();
 }
 
-function friendlyAuthError(err: unknown): Error {
-  if (err instanceof TimeoutError) return err;
-  if (err instanceof Error) {
-    const msg = err.message || "Authentication failed.";
-    if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
-      return new Error(
-        "Network error. Check your connection and try again.",
-      );
-    }
-    if (/invalid login credentials/i.test(msg)) {
-      return new Error("Invalid email or password.");
-    }
-    if (/email not confirmed/i.test(msg)) {
-      return new Error(
-        "Email not verified yet. Check your inbox (and spam) for the confirmation link.",
-      );
-    }
-    return new Error(msg);
-  }
-  return new Error("Authentication failed.");
-}
-
 /**
- * App auth for web + Capacitor iOS/Android wrappers.
+ * App auth for web + Capacitor native wrappers.
  * Primary: email + password. Session bootstrap always times out so the UI never freezes.
  */
 export function useAuth() {
@@ -127,7 +105,7 @@ export function useAuth() {
       if (error) throw error;
       return data;
     } catch (err) {
-      throw friendlyAuthError(err);
+      throw toUserFacingAuthError(err);
     }
   }, []);
 
@@ -147,7 +125,7 @@ export function useAuth() {
       if (error) throw error;
       return data;
     } catch (err) {
-      throw friendlyAuthError(err);
+      throw toUserFacingAuthError(err);
     }
   }, []);
 
@@ -169,7 +147,7 @@ export function useAuth() {
         );
         if (error) throw error;
       } catch (err) {
-        throw friendlyAuthError(err);
+        throw toUserFacingAuthError(err);
       }
     },
     [user?.email],
@@ -186,7 +164,7 @@ export function useAuth() {
       setUser(data.user);
       return data.user;
     } catch (err) {
-      throw friendlyAuthError(err);
+      throw toUserFacingAuthError(err);
     }
   }, []);
 
@@ -264,7 +242,7 @@ export function useAuth() {
 
         return data;
       } catch (err) {
-        throw friendlyAuthError(err);
+        throw toUserFacingAuthError(err);
       }
     },
     [],
@@ -279,7 +257,7 @@ export function useAuth() {
       );
       if (error) throw error;
     } catch (err) {
-      throw friendlyAuthError(err);
+      throw toUserFacingAuthError(err);
     }
   }, []);
 

@@ -59,7 +59,7 @@ export const OBD_COMPATIBLE_DEVICES: ObdCompatibleDevice[] = [
   {
     id: "veepeak",
     name: "Veepeak OBDCheck BLE / Mini",
-    notes: "BLE only — Nordic UART; works well with Chrome Android & desktop.",
+    notes: "BLE only — Nordic UART; compatible with BLE ELM327 adapters.",
   },
   {
     id: "obdlink",

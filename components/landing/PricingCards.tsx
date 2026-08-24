@@ -32,6 +32,7 @@ import {
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { TrialStatusBanner } from "@/components/subscription/TrialBanners";
+import SubscriptionLegalLinks from "@/components/legal/SubscriptionLegalLinks";
 import { TRIAL_DAYS } from "@/lib/subscription";
 import { upgradeCopy, type UpgradeReason } from "@/lib/upgrade-copy";
 import { appleProductIdForSelection } from "@/lib/apple-iap-products";
@@ -429,13 +430,13 @@ export default function PricingCards({
           {iap || storeShell ? (
             <>
               In the iOS app, Pro and Pro Heavy are auto-renewable Apple In-App
-              Purchases. Prices come from the App Store. Payment is charged to
-              your Apple ID; manage or cancel in Settings → Apple ID →
-              Subscriptions. Sandbox testers: use a physical iPhone or iPad
-              (the Simulator often accepts a Sandbox Apple ID then never
-              finishes). On device, add the Sandbox account in Settings → App
-              Store before tapping Subscribe. Website billing (Safari) uses
-              Stripe separately.
+              Purchases. Payment is charged to your Apple ID at confirmation of
+              purchase. The subscription automatically renews unless auto-renew
+              is turned off at least 24 hours before the end of the current
+              period. Manage or cancel in Settings → Apple ID → Subscriptions.
+              <span className="mt-3 block">
+                <SubscriptionLegalLinks className="text-cyan-300/80" />
+              </span>
             </>
           ) : (
             <>

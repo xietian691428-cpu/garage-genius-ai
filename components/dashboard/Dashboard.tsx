@@ -1560,7 +1560,7 @@ export default function Dashboard({
             {!hasLiveSensorData(liveSensors) && (
               <p className="mt-4 text-center text-xs text-slate-500">
                 {showObdConnectEntry
-                  ? `No live data yet — ${t("obd.connectEntry")} (Chrome + BLE ELM327), then Refresh Sensors.`
+                  ? `No live data yet — ${t("obd.connectEntry")} with a BLE ELM327 adapter, then Refresh Sensors.`
                   : t("obd.noAdapterLiveHint")}
               </p>
             )}

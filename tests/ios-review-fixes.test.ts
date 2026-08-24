@@ -255,6 +255,17 @@ describe("source regressions for App Store 2.1 / 3.1.1", () => {
     expect(modal).not.toContain("items-end");
   });
 
+  it("removes Android/desktop OBD references from iOS-visible copy", () => {
+    const modal = readFileSync("components/obd/ObdConnectModal.tsx", "utf8");
+    const dashboard = readFileSync("components/dashboard/Dashboard.tsx", "utf8");
+    const en = readFileSync("locales/en-US/common.json", "utf8");
+    const es = readFileSync("locales/es/common.json", "utf8");
+    expect(modal).toContain("!iosNoBle");
+    expect(dashboard).not.toContain("Chrome + BLE ELM327");
+    expect(en).not.toMatch(/Android\/desktop|Chrome or Edge/i);
+    expect(es).not.toMatch(/Android|Chrome o Edge/i);
+  });
+
   it("native full-page routes are a viewport scrollport", () => {
     const css = readFileSync("app/globals.css", "utf8");
     expect(css).toContain("html.gg-native .landing-root");
@@ -282,9 +293,9 @@ describe("source regressions for App Store 2.1 / 3.1.1", () => {
     ).toMatch(/Sandbox IAP/i);
     expect(BILLING_IAP_UNAVAILABLE).toMatch(/In-App Purchase/i);
     expect(BILLING_IAP_UNAVAILABLE).not.toMatch(/Checkout is temporarily unavailable/i);
-    expect(readFileSync("lib/native-iap.ts", "utf8")).toContain("IAP_PURCHASE_TIMEOUT_MS");
-    expect(readFileSync("components/landing/PricingCards.tsx", "utf8")).toContain(
-      "physical iPhone or iPad",
+    expect(readFileSync("lib/billing-errors.ts", "utf8")).toContain(
+      "BILLING_IAP_SANDBOX_HUNG",
     );
+    expect(readFileSync("lib/native-iap.ts", "utf8")).toContain("IAP_PURCHASE_TIMEOUT_MS");
   });
 });
