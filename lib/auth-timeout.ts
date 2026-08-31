@@ -23,9 +23,16 @@ export function withTimeout<T>(
 }
 
 /** Default budgets for Capacitor / flaky mobile networks */
-export const AUTH_SESSION_TIMEOUT_MS = 8_000;
+export const AUTH_SESSION_TIMEOUT_MS = 12_000;
 export const AUTH_SIGNIN_TIMEOUT_MS = 20_000;
+/** Browser OAuth kickoff (redirect / Browser.open) */
 export const AUTH_OAUTH_TIMEOUT_MS = 15_000;
+/**
+ * Native Sign in with Apple includes the system sheet — reviewers often take
+ * longer than 15s. Do not race the sheet with a short timeout or the UI shows
+ * failure while Apple is still open / session is still writing.
+ */
+export const AUTH_NATIVE_APPLE_TIMEOUT_MS = 120_000;
 /** First-paint garage / profile fetches after sign-in */
 export const GARAGE_LOAD_TIMEOUT_MS = 15_000;
 export const PROFILE_LOAD_TIMEOUT_MS = 12_000;

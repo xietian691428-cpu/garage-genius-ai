@@ -4,6 +4,7 @@
  * "code challenge does not match previously saved code verifier".
  */
 
+import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { generateRawNonce, sha256Hex } from "@/lib/apple-nonce";
 
@@ -28,7 +29,12 @@ export function isNativeAppleCancelError(err: unknown): boolean {
   return /cancel/i.test(rec.message ?? "");
 }
 
-export async function signInWithNativeApple(): Promise<void> {
+/**
+ * Completes native SIWA and returns the Supabase session.
+ * Callers must wait for this session before navigating to /app so AuthGate
+ * does not bounce the user back to /login.
+ */
+export async function signInWithNativeApple(): Promise<Session> {
   const rawNonce = generateRawNonce();
   const hashedNonce = await sha256Hex(rawNonce);
 
@@ -56,10 +62,21 @@ export async function signInWithNativeApple(): Promise<void> {
     );
   }
 
-  const { error } = await supabase.auth.signInWithIdToken({
+  const { data, error } = await supabase.auth.signInWithIdToken({
     provider: "apple",
     token: idToken,
     nonce: rawNonce,
   });
   if (error) throw error;
+
+  const session =
+    data.session ??
+    (await supabase.auth.getSession()).data.session ??
+    null;
+  if (!session?.user) {
+    throw new Error(
+      "Sign in with Apple completed, but no session was saved. Please try again or use email.",
+    );
+  }
+  return session;
 }

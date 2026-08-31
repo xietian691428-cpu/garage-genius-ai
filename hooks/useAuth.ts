@@ -6,6 +6,7 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { safeNextPath } from "@/lib/safe-next-path";
 import { isUserEmailVerified } from "@/lib/email-verification";
 import {
+  AUTH_NATIVE_APPLE_TIMEOUT_MS,
   AUTH_OAUTH_TIMEOUT_MS,
   AUTH_SESSION_TIMEOUT_MS,
   AUTH_SIGNIN_TIMEOUT_MS,
@@ -182,12 +183,16 @@ export function useAuth() {
             platform: getCapacitorPlatform(),
           })
         ) {
-          await withTimeout(
+          const session = await withTimeout(
             signInWithNativeApple(),
-            AUTH_OAUTH_TIMEOUT_MS,
-            "Could not start Sign in with Apple. Please use email instead.",
+            AUTH_NATIVE_APPLE_TIMEOUT_MS,
+            "Sign in with Apple is taking too long. Please try again or use email.",
           );
-          return { url: null, provider };
+          // Keep React auth state in sync before the login page navigates.
+          setSession(session);
+          setUser(session.user);
+          setLoading(false);
+          return { url: null, provider, session };
         }
 
         if (provider === "google" && isNativeIos()) {

@@ -8,6 +8,10 @@ import {
 } from "@/lib/native-apple-auth";
 import { shouldAutoShowAiConsent } from "@/lib/ai-consent";
 import {
+  AUTH_NATIVE_APPLE_TIMEOUT_MS,
+  AUTH_SESSION_TIMEOUT_MS,
+} from "@/lib/auth-timeout";
+import {
   ALL_APPLE_PRODUCT_IDS,
   APPLE_PRODUCT_IDS,
 } from "@/lib/apple-iap-products";
@@ -69,6 +73,11 @@ describe("native Apple vs web OAuth policy", () => {
       true,
     );
     expect(isNativeAppleCancelError({ message: "network" })).toBe(false);
+  });
+
+  it("gives native SIWA a long timeout so the system sheet is not raced", () => {
+    expect(AUTH_NATIVE_APPLE_TIMEOUT_MS).toBeGreaterThanOrEqual(60_000);
+    expect(AUTH_SESSION_TIMEOUT_MS).toBeGreaterThanOrEqual(10_000);
   });
 });
 

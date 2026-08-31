@@ -185,7 +185,19 @@ export default function AuthForm({
     setError(null);
     setBusy(true);
     try {
-      await signInWithOAuth(provider, nextPath);
+      const result = await signInWithOAuth(provider, nextPath);
+      // Native SIWA already wrote the session — hard-navigate so AuthGate
+      // remounts against a persisted session (avoids soft-nav bounce to login).
+      if (
+        provider === "apple" &&
+        result &&
+        typeof result === "object" &&
+        "session" in result &&
+        result.session
+      ) {
+        window.location.assign(nextPath);
+        return;
+      }
       window.setTimeout(() => {
         setBusy(false);
         submittingRef.current = false;
