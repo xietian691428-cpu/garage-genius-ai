@@ -71,11 +71,8 @@ export default function LandingPage({
   const { isAuthenticated, loading } = useAuth();
   const storeSafe = forceStoreSafe || isStoreShellClient();
   const primaryHref = isAuthenticated ? "/app" : "/login?next=/app";
-  const primaryLabel = isAuthenticated
-    ? "Open garage"
-    : storeSafe
-      ? NATIVE_LANDING_CTA
-      : "Start free";
+  const primaryLabel = isAuthenticated ? "Open garage" : NATIVE_LANDING_CTA;
+  // Web: Stripe signup trial pitch. Store shell: IAP-safe (no “no card required”).
   const heroKicker = storeSafe ? NATIVE_LANDING_KICKER : TRIAL_COPY;
 
   return (
@@ -100,14 +97,12 @@ export default function LandingPage({
           >
             Features
           </a>
-          {!storeSafe && (
-            <a
-              href="#pricing"
-              className="hidden text-sm text-slate-400 transition hover:text-white sm:inline"
-            >
-              Pricing
-            </a>
-          )}
+          <a
+            href="#pricing"
+            className="hidden text-sm text-slate-400 transition hover:text-white sm:inline"
+          >
+            Pricing
+          </a>
           {!loading && isAuthenticated ? (
             <Link href="/app" className="landing-nav-cta">
               Open garage
@@ -209,9 +204,8 @@ export default function LandingPage({
             Everything you need before you turn a bolt
           </h2>
           <p>
-            Instant value on open — dashboard, diagnosis, parts, and
-            {storeSafe ? " optional voice coaching" : " Pro / trial voice"}{" "}
-            — so you feel confident under the hood.
+            Instant value on open — dashboard, diagnosis, parts, and Pro /
+            trial voice — so you feel confident under the hood.
           </p>
         </div>
 
@@ -231,11 +225,7 @@ export default function LandingPage({
                   <h3 className="font-[family-name:var(--font-display)]">
                     {feature.title}
                   </h3>
-                  <p>
-                    {storeSafe && feature.id === "voice"
-                      ? "Optional mic + auto-read on accounts that include voice coaching. Built for under-the-car DIY, not desk chat."
-                      : feature.body}
-                  </p>
+                  <p>{feature.body}</p>
                 </div>
               </article>
             );
@@ -267,7 +257,6 @@ export default function LandingPage({
         </div>
       </section>
 
-      {!storeSafe && (
       <section id="pricing" className="landing-section">
         <div className="landing-section-head">
           <h2 className="font-[family-name:var(--font-display)]">
@@ -276,6 +265,9 @@ export default function LandingPage({
           <p>
             Free covers basics. Pro unlocks voice coaching and higher token
             limits. Heavy is for multi-car households.
+            {storeSafe
+              ? " Subscribe in this app with Apple In-App Purchase."
+              : ""}
           </p>
         </div>
         <Suspense
@@ -283,10 +275,13 @@ export default function LandingPage({
             <div className="mt-4 h-64 animate-pulse rounded-3xl bg-slate-900/60" />
           }
         >
-          <PricingCards trialHref="/login?next=/app" appHref="/app" />
+          <PricingCards
+            trialHref="/login?next=/app"
+            appHref="/app"
+            forceStoreSafe={forceStoreSafe}
+          />
         </Suspense>
       </section>
-      )}
 
       <section className="landing-final-cta">
         <h2 className="font-[family-name:var(--font-display)]">

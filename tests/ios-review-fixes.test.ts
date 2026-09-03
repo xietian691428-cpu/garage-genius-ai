@@ -275,6 +275,37 @@ describe("source regressions for App Store 2.1 / 3.1.1", () => {
     expect(es).not.toMatch(/Android|Chrome o Edge/i);
   });
 
+  it("restores Cap landing pricing and Start free without Stripe no-card pitch", () => {
+    const landing = readFileSync("components/landing/LandingPage.tsx", "utf8");
+    expect(landing).toContain('id="pricing"');
+    expect(landing).not.toMatch(/\{!storeSafe && \(\s*<section id="pricing"/);
+    expect(landing).toContain("NATIVE_LANDING_CTA");
+    expect(landing).toContain("NATIVE_LANDING_KICKER");
+    expect(landing).toContain("no card required");
+    const platform = readFileSync("lib/native-platform.ts", "utf8");
+    expect(platform).toContain('NATIVE_LANDING_CTA = "Start free"');
+    expect(platform).toContain(
+      'NATIVE_LANDING_KICKER =\n  "Free to start · Upgrade in-app with Apple In-App Purchase"',
+    );
+  });
+
+  it("trial banners stay available in store shell and link to /pricing", () => {
+    const banners = readFileSync(
+      "components/subscription/TrialBanners.tsx",
+      "utf8",
+    );
+    expect(banners).not.toContain("isStoreShellClient");
+    expect(banners).toContain('href="/pricing"');
+    expect(banners).toContain("TrialStatusBanner");
+    expect(banners).toContain("TrialEndedModal");
+  });
+
+  it("keeps Stripe checkout gated off native IAP / blocked modes", () => {
+    expect(hideWebCheckoutUi("web_stripe")).toBe(false);
+    expect(hideWebCheckoutUi("native_iap")).toBe(true);
+    expect(hideWebCheckoutUi("native_blocked")).toBe(true);
+  });
+
   it("native full-page routes are a viewport scrollport", () => {
     const css = readFileSync("app/globals.css", "utf8");
     expect(css).toContain("html.gg-native .landing-root");

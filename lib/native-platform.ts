@@ -49,10 +49,10 @@ export const NATIVE_UA_TOKEN = "GarageGeniusNative";
 /** Set by the native shell client so subsequent SSR requests stay store-safe. */
 export const NATIVE_STORE_SHELL_COOKIE = "gg_store_shell";
 
-/** Landing CTA / kicker when store shell (no web trial pitch). */
-export const NATIVE_LANDING_CTA = "Create account";
+/** Landing CTA / kicker when store shell (no Stripe “no card” web trial pitch). */
+export const NATIVE_LANDING_CTA = "Start free";
 export const NATIVE_LANDING_KICKER =
-  "Free to start · Sign in to save your vehicles and chat history";
+  "Free to start · Upgrade in-app with Apple In-App Purchase";
 
 export function userAgentLooksNative(ua: string | null | undefined): boolean {
   return Boolean(ua && ua.includes(NATIVE_UA_TOKEN));
@@ -60,8 +60,8 @@ export function userAgentLooksNative(ua: string | null | undefined): boolean {
 
 /**
  * Capacitor / in-app WKWebView often omits Mobile Safari's Version/ + Safari/
- * tokens. Treat those as store shell for SSR so Landing never paints trial CTAs
- * before JS hydrates — without breaking real Mobile Safari marketing.
+ * tokens. Treat those as store shell for SSR so Landing never paints Stripe
+ * “no card” trial CTAs before JS hydrates — without breaking real Mobile Safari.
  */
 export function userAgentLooksLikeIosAppWebView(
   ua: string | null | undefined,

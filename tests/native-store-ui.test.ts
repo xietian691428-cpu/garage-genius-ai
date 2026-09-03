@@ -52,9 +52,10 @@ describe("store shell detection", () => {
     expect(storeSafePlanLabel({ label: "Free" })).toBe("Free");
   });
 
-  it("landing store CTA avoids trial pitch", () => {
-    expect(NATIVE_LANDING_CTA).toBe("Create account");
-    expect(NATIVE_LANDING_KICKER).not.toMatch(/14-day|Start free/i);
+  it("landing store CTA is Start free without Stripe no-card trial pitch", () => {
+    expect(NATIVE_LANDING_CTA).toBe("Start free");
+    expect(NATIVE_LANDING_KICKER).toMatch(/In-App Purchase/i);
+    expect(NATIVE_LANDING_KICKER).not.toMatch(/14-day|no card/i);
   });
 
   it("delete-account copy mentions Apple subscriptions", () => {

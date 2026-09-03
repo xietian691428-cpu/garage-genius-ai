@@ -7,7 +7,6 @@ import {
   formatTrialEndDate,
   type ResolvedSubscription,
 } from "@/lib/subscription";
-import { isStoreShellClient } from "@/lib/native-platform";
 
 type TrialStatusBannerProps = {
   resolved: ResolvedSubscription;
@@ -15,13 +14,12 @@ type TrialStatusBannerProps = {
   className?: string;
 };
 
-/** Active trial countdown — web Pricing / account only. Hidden in store shells. */
+/** Active trial countdown. CTAs go to /pricing (IAP in store shell; Stripe on web). */
 export function TrialStatusBanner({
   resolved,
   loading,
   className = "",
 }: TrialStatusBannerProps) {
-  if (isStoreShellClient()) return null;
   if (loading || !resolved.isTrialing) return null;
 
   const countdown = formatTrialCountdown(resolved);
@@ -61,9 +59,8 @@ type TrialEndedModalProps = {
   onClose: () => void;
 };
 
-/** Friendly upgrade prompt after trial auto-downgrades to Free. Hidden in store shells. */
+/** Friendly upgrade prompt after trial auto-downgrades to Free. */
 export function TrialEndedModal({ open, onClose }: TrialEndedModalProps) {
-  if (isStoreShellClient()) return null;
   if (!open) return null;
 
   return (
