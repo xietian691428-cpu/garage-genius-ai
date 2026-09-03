@@ -46,7 +46,11 @@ export type DeepSeekResult = {
   usage: DeepSeekUsage;
 };
 
-const VISION_MODELS = ["deepseek-vl", "deepseek-chat"] as const;
+const VISION_MODELS = [
+  "deepseek-v4-flash-vision-exp",
+  "deepseek-v4-flash",
+  "deepseek-chat",
+] as const;
 const TEXT_MODEL = "deepseek-chat";
 
 function messageHasImage(messages: DeepSeekMessage[]): boolean {

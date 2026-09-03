@@ -15,32 +15,46 @@ import type {
 } from "@/lib/deepseek";
 import { normalizeImageUrl } from "@/lib/deepseek";
 
-const KIMI_API_KEY =
-  process.env.KIMI_API_KEY?.trim() ||
-  process.env.MOONSHOT_API_KEY?.trim() ||
-  "";
-
-/** International default is moonshot.ai; China keys need api.moonshot.cn via env. */
-export const KIMI_BASE_URL = (
-  process.env.KIMI_BASE_URL?.trim() || "https://api.moonshot.cn/v1"
-).replace(/\/$/, "");
-
 export const KIMI_VISION_TIMEOUT_MS = 90_000;
 export const KIMI_MAX_RETRIES = 2;
-
-/** Prefer current multimodal models; fall back for older Moonshot accounts. */
-export const KIMI_VISION_MODELS = [
-  process.env.KIMI_VISION_MODEL?.trim() || "kimi-k3",
-  "kimi-k2.5",
-  "moonshot-v1-32k-vision-preview",
-  "moonshot-v1-8k-vision-preview",
-].filter((m, i, arr) => m && arr.indexOf(m) === i);
 
 /** kimi-k3 spends tokens on reasoning first — keep a healthy completion budget. */
 export const DEFAULT_VISION_MAX_TOKENS = 1600;
 
+function kimiApiKey(): string {
+  return (
+    process.env.KIMI_API_KEY?.trim() ||
+    process.env.MOONSHOT_API_KEY?.trim() ||
+    ""
+  );
+}
+
+/** China keys use api.moonshot.cn; international keys use api.moonshot.ai. */
+export function kimiBaseUrl(): string {
+  return (
+    process.env.KIMI_BASE_URL?.trim() || "https://api.moonshot.cn/v1"
+  ).replace(/\/$/, "");
+}
+
+export function kimiVisionModels(): string[] {
+  return [
+    process.env.KIMI_VISION_MODEL?.trim() || "kimi-k3",
+    "kimi-k3",
+  ].filter((m, i, arr) => m && arr.indexOf(m) === i);
+}
+
+/** @deprecated prefer kimiVisionModels() — kept for tests */
+export const KIMI_VISION_MODELS = [
+  process.env.KIMI_VISION_MODEL?.trim() || "kimi-k3",
+].filter((m, i, arr) => m && arr.indexOf(m) === i);
+
+/** @deprecated prefer kimiBaseUrl() */
+export const KIMI_BASE_URL = (
+  process.env.KIMI_BASE_URL?.trim() || "https://api.moonshot.cn/v1"
+).replace(/\/$/, "");
+
 export function isKimiConfigured(): boolean {
-  return Boolean(KIMI_API_KEY);
+  return Boolean(kimiApiKey());
 }
 
 function messageHasImage(messages: DeepSeekMessage[]): boolean {
@@ -148,7 +162,8 @@ async function fetchOnce(
     attempt: number;
   },
 ): Promise<DeepSeekResult & { model: string }> {
-  if (!KIMI_API_KEY) {
+  const apiKey = kimiApiKey();
+  if (!apiKey) {
     throw new DeepSeekRequestError("KIMI_API_KEY is not configured", {
       code: "config",
       retryable: false,
@@ -159,20 +174,21 @@ async function fetchOnce(
   const timer = setTimeout(() => controller.abort(), options.timeoutMs);
 
   try {
-    const response = await fetch(`${KIMI_BASE_URL}/chat/completions`, {
+    const response = await fetch(`${kimiBaseUrl()}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${KIMI_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       signal: controller.signal,
-      body: JSON.stringify({
-        model,
-        messages: normalizeKimiMessages(messages),
-        temperature: 0.3,
-        max_tokens: options.maxTokens ?? DEFAULT_VISION_MAX_TOKENS,
-        ...(options.json ? { response_format: { type: "json_object" } } : {}),
-      }),
+        body: JSON.stringify({
+          model,
+          messages: normalizeKimiMessages(messages),
+          // kimi-k3 / k2.5 only allow temperature=1
+          temperature: 1,
+          max_tokens: options.maxTokens ?? DEFAULT_VISION_MAX_TOKENS,
+          ...(options.json ? { response_format: { type: "json_object" } } : {}),
+        }),
     });
 
     if (!response.ok) {
@@ -334,7 +350,7 @@ async function requestKimiWithModelFallback(
   options?: { json?: boolean; maxTokens?: number },
 ): Promise<DeepSeekResult & { model: string }> {
   let lastError: unknown = null;
-  for (const model of KIMI_VISION_MODELS) {
+  for (const model of kimiVisionModels()) {
     try {
       return await requestKimi(messages, model, {
         json: options?.json,
