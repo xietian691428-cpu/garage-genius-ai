@@ -11,7 +11,7 @@ type Props = {
 };
 
 /**
- * Forced consent before the first DeepSeek call (Guideline 5.1.1 / 5.1.2).
+ * Forced consent before the first DeepSeek / Kimi call (Guideline 5.1.1 / 5.1.2).
  */
 export default function AiProviderConsentModal({
   open,

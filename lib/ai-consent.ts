@@ -37,19 +37,19 @@ export function shouldAutoShowAiConsent(input: {
 
 export const AI_CONSENT_COPY = {
   title: "AI processing consent",
-  lead: "Before we send anything to our AI provider, please review and agree.",
-  recipient: "DeepSeek",
+  lead: "Before we send anything to our AI providers, please review and agree.",
+  recipient: "DeepSeek (chat & coaching) and Kimi / Moonshot (photo recognition)",
   purpose:
     "Vehicle diagnosis, repair coaching, OBD/photo analysis, and shop-report drafting.",
   dataCategories: [
     "Chat and coach message text you send",
-    "Optional photos (vehicle, OBD screen, receipts)",
+    "Optional photos (vehicle, OBD screen, receipts) — analyzed by Kimi",
     "Vehicle context (year/make/model, mileage, tags, selected garage vehicle)",
     "Related diagnostic details needed for the feature you use",
   ],
   refuse:
-    "If you decline, we will not call DeepSeek and AI features stay unavailable until you agree.",
-  agree: "I agree — send my data to DeepSeek for these features",
+    "If you decline, we will not call DeepSeek or Kimi and AI features stay unavailable until you agree.",
+  agree: "I agree — send my data to DeepSeek and Kimi for these features",
   decline: "Not now",
   privacyHint: "Details are in our Privacy Policy (AI processing & processors).",
 } as const;

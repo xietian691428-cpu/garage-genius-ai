@@ -6,6 +6,7 @@ import {
   trimDeepSeekConversation,
   type DeepSeekMessage,
 } from "@/lib/deepseek";
+import { callChatWithOptionalVision } from "@/lib/vision";
 import { ensureLegalDisclaimer } from "@/lib/legal-disclaimer";
 import { applyInsuranceSafetyGuards } from "@/lib/insurance-coverage-rewrite";
 import type { VehicleInfo } from "@/lib/types/chat";
@@ -387,7 +388,12 @@ export async function POST(request: NextRequest) {
     );
     await assertAiTokenBudget(user.id, estimatedTokens, user.email);
 
-    let { content: reply, usage } = await callDeepSeek(fullMessages);
+    let {
+      content: reply,
+      usage,
+      model: pipelineModel,
+      visionProvider,
+    } = await callChatWithOptionalVision(fullMessages);
     let actualTokensUsed = Math.max(1, usage.total_tokens);
     let promptTokens = usage.prompt_tokens;
     let completionTokens = usage.completion_tokens;
@@ -453,7 +459,7 @@ export async function POST(request: NextRequest) {
       actualTokensUsed,
       {
         route: "chat",
-        model: "deepseek-chat",
+        model: pipelineModel || "deepseek-chat",
         promptTokens,
         completionTokens,
         playbookSlug: resolvedPlaybook,
@@ -461,6 +467,8 @@ export async function POST(request: NextRequest) {
         metadata: {
           make: currentVehicle.make,
           model: currentVehicle.model,
+          visionProvider,
+          hasImages: uniqueImages.length > 0,
         },
       },
       "[/api/chat]",

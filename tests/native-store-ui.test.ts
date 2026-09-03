@@ -37,8 +37,9 @@ describe("billing modes", () => {
 });
 
 describe("DeepSeek consent copy", () => {
-  it("names DeepSeek and requires affirmative agreement", () => {
-    expect(AI_CONSENT_COPY.recipient).toBe("DeepSeek");
+  it("names DeepSeek + Kimi and requires affirmative agreement", () => {
+    expect(AI_CONSENT_COPY.recipient).toMatch(/DeepSeek/i);
+    expect(AI_CONSENT_COPY.recipient).toMatch(/Kimi/i);
     expect(AI_CONSENT_COPY.agree.toLowerCase()).toContain("agree");
     expect(AI_CONSENT_COPY.dataCategories.length).toBeGreaterThanOrEqual(3);
   });

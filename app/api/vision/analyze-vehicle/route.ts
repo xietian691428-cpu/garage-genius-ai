@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import {
-  callDeepSeekVisionJson,
   estimateTokensFromMessages,
   normalizeImageUrl,
   type DeepSeekMessage,
 } from "@/lib/deepseek";
+import { callVisionJson } from "@/lib/vision";
 import { normalizeVehicleMarket } from "@/lib/types/vehicle-market";
 import type { VisionVehicleAnalysis } from "@/lib/supabase-vehicle-vitals";
 import {
@@ -199,17 +199,21 @@ Rules:
     );
     await assertAiTokenBudget(user.id, estimated, user.email);
 
-    // Uses deepseek-vl → deepseek-chat Vision path (not a fictional "deepseek-vision" id)
-    const { content, usage } = await callDeepSeekVisionJson(messages, 900);
+    // Kimi vision first; DeepSeek VL fallback (lib/vision.ts)
+    const { content, usage, model, visionProvider } = await callVisionJson(
+      messages,
+      900,
+    );
     await consumeAiTokensBestEffort(
       user.id,
       Math.max(1, usage.total_tokens),
       {
         route: "vision",
-        model: "deepseek-vl",
+        model,
         promptTokens: usage.prompt_tokens,
         completionTokens: usage.completion_tokens,
         email: user.email,
+        metadata: { visionProvider, kind: "vehicle" },
       },
       "[/api/vision/analyze-vehicle]",
     );

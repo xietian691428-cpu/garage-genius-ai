@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import {
-  callDeepSeekVisionJson,
   estimateTokensFromMessages,
   normalizeImageUrl,
   type DeepSeekMessage,
 } from "@/lib/deepseek";
+import { callVisionJson } from "@/lib/vision";
 import { normalizeVehicleMarket } from "@/lib/types/vehicle-market";
 import type { ReceiptVisionAnalysis } from "@/lib/types/receipt";
 import { normalizeMaintenanceCategory } from "@/lib/receipt-parse";
@@ -229,16 +229,20 @@ Rules:
     );
     await assertAiTokenBudget(user.id, estimated, user.email);
 
-    const { content, usage } = await callDeepSeekVisionJson(messages, 900);
+    const { content, usage, model, visionProvider } = await callVisionJson(
+      messages,
+      900,
+    );
     await consumeAiTokensBestEffort(
       user.id,
       Math.max(1, usage.total_tokens),
       {
         route: "vision",
-        model: "deepseek-vl",
+        model,
         promptTokens: usage.prompt_tokens,
         completionTokens: usage.completion_tokens,
         email: user.email,
+        metadata: { visionProvider, kind: "receipt" },
       },
       "[/api/vision/analyze-receipt]",
     );

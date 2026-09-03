@@ -199,7 +199,7 @@ export const NATIVE_PRIVACY_USE =
   "Process invoices, subscriptions, account limits, and support requests.";
 
 export const NATIVE_PRIVACY_CHOICES =
-  "You can sign out, manage Apple subscriptions in your Apple ID settings, review plan details on the Garage Genius website, decline AI provider consent (DeepSeek) until you agree, disable push reminders, limit what vehicle or photo data you enter, and delete your account.";
+  "You can sign out, manage Apple subscriptions in your Apple ID settings, review plan details on the Garage Genius website, decline AI provider consent (DeepSeek / Kimi) until you agree, disable push reminders, limit what vehicle or photo data you enter, and delete your account.";
 
 export function nativeUpgradeBlockedMessage(): string {
   const mode = getBillingMode();
