@@ -20,12 +20,12 @@ const KIMI_API_KEY =
   process.env.MOONSHOT_API_KEY?.trim() ||
   "";
 
-/** International platform default; override with KIMI_BASE_URL for moonshot.cn. */
+/** International default is moonshot.ai; China keys need api.moonshot.cn via env. */
 export const KIMI_BASE_URL = (
-  process.env.KIMI_BASE_URL?.trim() || "https://api.moonshot.ai/v1"
+  process.env.KIMI_BASE_URL?.trim() || "https://api.moonshot.cn/v1"
 ).replace(/\/$/, "");
 
-export const KIMI_VISION_TIMEOUT_MS = 55_000;
+export const KIMI_VISION_TIMEOUT_MS = 90_000;
 export const KIMI_MAX_RETRIES = 2;
 
 /** Prefer current multimodal models; fall back for older Moonshot accounts. */
@@ -35,6 +35,9 @@ export const KIMI_VISION_MODELS = [
   "moonshot-v1-32k-vision-preview",
   "moonshot-v1-8k-vision-preview",
 ].filter((m, i, arr) => m && arr.indexOf(m) === i);
+
+/** kimi-k3 spends tokens on reasoning first — keep a healthy completion budget. */
+export const DEFAULT_VISION_MAX_TOKENS = 1600;
 
 export function isKimiConfigured(): boolean {
   return Boolean(KIMI_API_KEY);
@@ -167,7 +170,7 @@ async function fetchOnce(
         model,
         messages: normalizeKimiMessages(messages),
         temperature: 0.3,
-        max_tokens: options.maxTokens ?? 1200,
+        max_tokens: options.maxTokens ?? DEFAULT_VISION_MAX_TOKENS,
         ...(options.json ? { response_format: { type: "json_object" } } : {}),
       }),
     });
@@ -184,10 +187,22 @@ async function fetchOnce(
     }
 
     const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string | null } }>;
+      choices?: Array<{
+        message?: {
+          content?: string | null;
+          reasoning_content?: string | null;
+          reasoning?: string | null;
+        };
+      }>;
       usage?: DeepSeekUsage;
     };
-    const content = (data.choices?.[0]?.message?.content ?? "").trim();
+    const message = data.choices?.[0]?.message;
+    const content = (
+      message?.content ||
+      message?.reasoning_content ||
+      message?.reasoning ||
+      ""
+    ).trim();
     if (!content) {
       throw new DeepSeekRequestError("Kimi returned empty content", {
         code: "empty",
@@ -345,7 +360,7 @@ async function requestKimiWithModelFallback(
  */
 export async function callKimiVisionJson(
   messages: DeepSeekMessage[],
-  maxTokens = 1200,
+  maxTokens = DEFAULT_VISION_MAX_TOKENS,
 ): Promise<DeepSeekResult & { model: string }> {
   if (!messageHasImage(messages)) {
     throw new DeepSeekRequestError(
@@ -361,7 +376,7 @@ export async function callKimiVisionJson(
  */
 export async function callKimiVisionDescribe(
   messages: DeepSeekMessage[],
-  maxTokens = 900,
+  maxTokens = DEFAULT_VISION_MAX_TOKENS,
 ): Promise<DeepSeekResult & { model: string }> {
   if (!messageHasImage(messages)) {
     throw new DeepSeekRequestError(

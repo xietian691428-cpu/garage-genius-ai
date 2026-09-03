@@ -12,6 +12,7 @@ import {
   attachKimiVisionNoteToMessages,
   callKimiVisionDescribe,
   callKimiVisionJson,
+  DEFAULT_VISION_MAX_TOKENS,
   isKimiConfigured,
 } from "@/lib/kimi";
 
@@ -29,7 +30,9 @@ export async function callVisionJson(
 ): Promise<VisionPipelineResult> {
   if (isKimiConfigured()) {
     try {
-      const result = await callKimiVisionJson(messages, maxTokens);
+      // kimi-k3 uses reasoning tokens first; never starve completion budget.
+      const kimiMax = Math.max(maxTokens, DEFAULT_VISION_MAX_TOKENS);
+      const result = await callKimiVisionJson(messages, kimiMax);
       return {
         ...result,
         visionProvider: "kimi",
