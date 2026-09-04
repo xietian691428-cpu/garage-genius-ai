@@ -212,9 +212,9 @@ export default function ChatApp({
   const playbookSlugRef = useRef<string | null>(playbookSlug ?? null);
   const abortRef = useRef<AbortController | null>(null);
   const stoppedByUserRef = useRef(false);
-  const abortReasonRef = useRef<"none" | "user" | "timeout" | "vehicle_switch">(
-    "none",
-  );
+  type ChatAbortReason = "none" | "user" | "timeout" | "vehicle_switch";
+  const abortReasonRef = useRef<ChatAbortReason>("none");
+  const readAbortReason = (): ChatAbortReason => abortReasonRef.current;
   const currentVehicleIdRef = useRef<string | null>(null);
   const inFlightVehicleIdRef = useRef<string | null>(null);
   /** After vehicle switch/add, send only once the new vehicle's history is loaded. */
@@ -799,7 +799,9 @@ export default function ChatApp({
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
-        if (abortReasonRef.current === "vehicle_switch") {
+        // Read via helper so TS does not narrow away "vehicle_switch"
+        // after earlier `abortReasonRef.current = "none"` in this function.
+        if (readAbortReason() === "vehicle_switch") {
           return;
         }
         if (currentVehicleIdRef.current !== inFlightVehicleIdRef.current) {

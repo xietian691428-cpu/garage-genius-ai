@@ -27,6 +27,7 @@ import {
   NATIVE_ACCOUNT_LIMITS_TITLE,
 } from "@/lib/native-platform";
 import { isNhtsaRecallMarket } from "@/lib/vehicle-data/recall-copy";
+import { useAiConsentGate } from "@/components/legal/AiConsentProvider";
 
 type ShopReportQuotaState = {
   limit: number | null;
