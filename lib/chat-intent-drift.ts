@@ -412,9 +412,11 @@ export function hasFaultCue(text: string): boolean {
 export function inferVehicleRaised(
   userMessage: string,
   previous: TurnFocus | null | undefined,
+  options?: { allowInherit?: boolean },
 ): boolean {
   if (detectVehicleLowered(userMessage)) return false;
   if (detectVehicleRaised(userMessage)) return true;
+  if (options?.allowInherit === false) return false;
   if (previous?.vehicleRaised) return true;
   // Prior turn was jacking — treat as maybe still raised on the next concern.
   if (
@@ -425,6 +427,33 @@ export function inferVehicleRaised(
     return true;
   }
   return false;
+}
+
+/**
+ * Keep raised/PB-fault sticky across turns for under-car work, but drop it for
+ * clean recall / oil-spec questions so a prior Camry jacking CRITICAL cannot
+ * poison later turns (or another vehicle after messy history).
+ */
+export function shouldInheritRaisedSafetyState(
+  userMessage: string,
+  shouldReset: boolean,
+): boolean {
+  const underCarCue =
+    detectVehicleRaised(userMessage) ||
+    /jack\s*stands?|under (the )?(car|vehicle)|already (on|up)|jack (the |it )/i.test(
+      userMessage,
+    ) ||
+    parkingBrakeFaultMatches(userMessage);
+
+  const cleanSpecOrRecall =
+    /\brecalls?\b|\bnhtsa\b|\boil (viscosity|capacity|spec)\b|how many quarts|drain plug torque|any recalls/i.test(
+      userMessage,
+    ) && !underCarCue;
+
+  if (cleanSpecOrRecall) return false;
+  if (!shouldReset) return true;
+  if (underCarCue) return true;
+  return true;
 }
 
 function hasParkingBrakeFaultCue(userMessage: string): boolean {
@@ -819,16 +848,38 @@ export function detectIntentDrift(
           : "none";
 
   const userCount = history.filter((m) => m.role === "user").length;
+  const inheritRaised = shouldInheritRaisedSafetyState(
+    userMessage,
+    shouldReset,
+  );
+  const focusPrevious =
+    inheritRaised || !previousFocus
+      ? previousFocus
+      : {
+          ...previousFocus,
+          vehicleRaised: false,
+          entities: previousFocus.entities.filter(
+            (e) => e !== "jack" && e !== "jack_stands",
+          ),
+          parkingBrakeState:
+            previousFocus.parkingBrakeState === "not_holding" ||
+            previousFocus.parkingBrakeState === "failed"
+              ? ("unknown" as const)
+              : previousFocus.parkingBrakeState,
+        };
+
   let currentFocus = buildTurnFocus(
     userMessage,
     Math.max(0, userCount - 1),
     currentSafetyTopics,
-    previousFocus,
+    focusPrevious,
   );
 
   // Weak follow-ups ("ok", "thanks") keep the prior summary so the model
-  // stays on the live job without an extra extractor call.
+  // stays on the live job without an extra extractor call. Skip when we
+  // intentionally dropped raised/PB stickiness (clean recall / oil-spec).
   if (
+    inheritRaised &&
     !shouldReset &&
     previousFocus &&
     currentFocus.topics.length === 0 &&
@@ -847,9 +898,19 @@ export function detectIntentDrift(
     };
   }
 
+  // Clean recall/spec with a sticky raised prior: force a soft context reset
+  // so the system block does not keep oil/jack narrative for the model.
+  const forceCleanReset = Boolean(previousFocus && !inheritRaised);
+  const effectiveShouldReset = shouldReset || forceCleanReset;
+  const effectiveReason: DriftReason = shouldReset
+    ? reason
+    : forceCleanReset
+      ? "topic_shift"
+      : reason;
+
   return {
-    shouldReset,
-    reason,
+    shouldReset: effectiveShouldReset,
+    reason: effectiveReason,
     currentFocus,
     previousFocus: previousFocus ?? undefined,
   };

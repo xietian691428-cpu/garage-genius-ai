@@ -293,6 +293,43 @@ describe("prepareDriftForChatTurn + trimMessagesForApi", () => {
     expect(messageContent(conversation[0])).not.toMatch(/Camry|drain plug|jack stands/i);
   });
 
+  it("hard reset onto recalls does not keep sticky raised from a prior oil/jack focus", () => {
+    const raised = {
+      ...buildTurnFocus(PB, 1, matchDriftSafetyTopics(PB), buildTurnFocus(OIL, 0)),
+      vehicleRaised: true,
+      parkingBrakeState: "not_holding" as const,
+    };
+    const { drift, systemBlock } = prepareDriftForChatTurn({
+      messages: [
+        { role: "user", content: OIL },
+        { role: "assistant", content: "Chock and drain next." },
+        { role: "user", content: "Any recalls on this car?" },
+      ],
+      previousFocus: raised,
+      vehicleId: "camry-1",
+    });
+    expect(drift.currentFocus.vehicleRaised).toBe(false);
+    expect(needsCriticalRaisedState(drift.currentFocus)).toBe(false);
+    expect(systemBlock).not.toMatch(/CRITICAL STATE/i);
+  });
+
+  it("oil→PB hard reset still keeps raised when the new message is under-car", () => {
+    const oil = buildTurnFocus(OIL, 0);
+    const { drift, systemBlock } = prepareDriftForChatTurn({
+      messages: [
+        { role: "user", content: OIL },
+        { role: "assistant", content: "Jack stands next." },
+        { role: "user", content: PB },
+      ],
+      previousFocus: oil,
+      vehicleId: "camry-1",
+    });
+    expect(drift.shouldReset).toBe(true);
+    expect(drift.currentFocus.vehicleRaised).toBe(true);
+    expect(needsCriticalRaisedState(drift.currentFocus)).toBe(true);
+    expect(systemBlock).toMatch(/CRITICAL STATE/i);
+  });
+
   it("applies apiHistoryFromId so prior-vehicle turns are not sent", () => {
     const { conversation } = prepareDriftForChatTurn({
       messages: [
