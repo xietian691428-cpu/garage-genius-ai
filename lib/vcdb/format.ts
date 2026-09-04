@@ -152,7 +152,7 @@ export function formatVehicleConfigCard(vehicle: VehicleInfo): string {
   }
   if (chatOilLine) {
     lines.push(
-      `- Engine oil: ${chatOilLine} (garage profile — confirm on the fill cap / owner's manual)`,
+      `- Engine oil: ${chatOilLine} (garage profile — verify on the under-hood fill cap / owner's manual; garage hand-fill can be wrong)`,
     );
   }
 
@@ -178,7 +178,7 @@ export function formatVehicleConfigCard(vehicle: VehicleInfo): string {
   );
   if (fluids.fuelGrade || chatOilLine) {
     lines.push(
-      `When giving oil-change or fuel guidance, cite only garage-saved Fuel / Engine oil values above and name that source; still remind the user to confirm capacity and viscosity on the fill cap and in the owner's manual. Curated lookup oil figures are not Chat anchors.`,
+      `When giving oil-change or fuel guidance, cite only garage-saved Fuel / Engine oil values above and name that source; still require the owner to verify capacity and viscosity on the under-hood fill cap / label and in the owner's manual. Curated lookup oil figures are not Chat anchors.`,
     );
   } else {
     lines.push(

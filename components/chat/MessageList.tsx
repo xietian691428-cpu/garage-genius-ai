@@ -66,7 +66,7 @@ export default function MessageList({
     .find((m) => m.role === "assistant" && m.id !== "welcome")?.id;
 
   const starterChips = showStarters
-    ? getChatStarterChips(vehicle).slice(0, 3)
+    ? getChatStarterChips(vehicle).slice(0, 5)
     : [];
 
   return (

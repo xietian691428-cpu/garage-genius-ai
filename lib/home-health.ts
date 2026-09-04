@@ -203,11 +203,11 @@ export function buildNextRecommendedAction(opts: {
 
   return {
     title: "Describe a symptom or enter a code",
-    body: "Start a check-in with Chat, or jump in with a fault code — we'll keep it educational.",
+    body: "Start a check-in with Chat, or jump in with a common US code (P0420, P0300, P0171, P0455, U0100) — we'll keep it educational.",
     primary: {
       label: "Start Chat",
       action: "describe_symptom",
-      prompt: `I'd like a vehicle check-in for my ${vehicle.year} ${vehicle.make} ${vehicle.model} at ${vehicle.mileage || "unknown"} miles. Ask me about symptoms or codes. Educational only.`,
+      prompt: `I'd like a vehicle check-in for my ${vehicle.year} ${vehicle.make} ${vehicle.model} at ${vehicle.mileage || "unknown"} miles. Ask me about symptoms or codes (P0420, P0300, P0171, P0455, U0100 are common US starts). Educational only.`,
     },
     secondaryLabel,
   };

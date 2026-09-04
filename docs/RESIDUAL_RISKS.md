@@ -6,7 +6,7 @@ Living list of known product gaps after each safety/cost wave. Keep entries shor
 
 **Raised premise not stated.** If the owner never says the vehicle is already on jack stands / raised, Chat cannot force exit-under from history alone. Ask a generic stability premise (level ground, chocked, rated stands, never jack-only) before under-car steps.
 
-**Header vs request.** `/api/chat` now 403s if `vehicle_id` is not in the signed-in garage and 409s if `selectedVehicleId` ≠ request `currentVehicle.id`. Older clients that omit `selectedVehicleId` still get ownership bind from the request id.
+**Header vs request.** `/api/chat` now 403s if `vehicle_id` is not in the signed-in garage and 409s if `selectedVehicleId` ≠ request `currentVehicle.id`. Older clients that omit `selectedVehicleId` still get ownership bind from the request id. Switching cars loads that vehicle’s cloud/local thread; it does not scrub a previously polluted BMW/Camry mix. After a switch, ask important questions (recalls, oil spec) as a **new topic** so sticky raised/CRITICAL and old assistant turns stay off the request.
 
 **vPIC vs garage YMM.** Conflict inject (`[VEHICLE_CONFLICT]`) and the garage warning require a saved vPIC snapshot. Hand-fill after decode failure is `[YMM_UNVERIFIED]`, not a snapshot mismatch.
 
@@ -14,7 +14,7 @@ Living list of known product gaps after each safety/cost wave. Keep entries shor
 
 ## W2 — Spec gate, diagnostic tone, DTC catalog
 
-**Wrong anchors still yield wrong specs.** Garage-saved oil viscosity/capacity, affiliate OEM numbers, and any figure already in an official block can be quoted with a source. If that saved/curated value is wrong for the engine, Chat can still repeat it. Confirm on the fill cap / owner's manual / dealer EPC.
+**Wrong anchors still yield wrong specs.** Garage-saved oil viscosity/capacity, affiliate OEM numbers, and any figure already in an official block can be quoted with a source. If that saved/curated value is wrong for the engine, Chat can still repeat it. Chat must still tell the owner to **verify on the under-hood fill cap / label** and the owner's manual.
 
 **Lookup oil is not a Chat fact.** UI may show a curated oil line; Chat omits lookup quarts/0W-xx unless the owner saved them on the vehicle. Drain-plug torque is almost never anchored — S4 should still get a manual/cap rewrite.
 

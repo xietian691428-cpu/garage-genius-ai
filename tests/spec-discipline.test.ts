@@ -122,6 +122,7 @@ describe("spec discipline (no-anchor fixtures)", () => {
     expect(out).not.toMatch(/25\s*ft-?lb/i);
     expect(out).not.toMatch(/0W-16 required/i);
     expect(out).toMatch(/owner's manual|fill cap/i);
+    expect(out).toMatch(/under-hood label/i);
   });
 
   it("oil change / P0420 / battery fixtures without anchors must not invent specs", () => {

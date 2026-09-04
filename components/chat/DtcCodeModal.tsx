@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { isValidDtcInput, normalizeDtcCode } from "@/lib/dtc";
+import { getUsHighFreqDtcChips } from "@/lib/us-completion-funnel";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 
@@ -96,6 +97,29 @@ export default function DtcCodeModal({ open, onClose, onSubmit }: Props) {
         ) : (
           <p className="mb-2 text-[11px] text-slate-500">{t("dtc.formatHelp")}</p>
         )}
+
+        <div
+          className="mb-3 flex flex-wrap gap-1.5"
+          data-testid="dtc-common-codes"
+        >
+          {getUsHighFreqDtcChips().map((chip) => (
+            <button
+              key={chip.code}
+              type="button"
+              data-testid={`dtc-common-${chip.code}`}
+              onClick={() => {
+                onSubmit(chip.code);
+                onClose();
+              }}
+              className="min-h-[40px] rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-left text-[11px] font-medium text-cyan-200 hover:border-cyan-500/50"
+            >
+              {chip.code}
+              <span className="mt-0.5 block font-normal text-slate-500">
+                {chip.hint.split(/[.(]/)[0]}
+              </span>
+            </button>
+          ))}
+        </div>
 
         <LiabilityDisclaimer variant="inline" className="mb-3" />
 

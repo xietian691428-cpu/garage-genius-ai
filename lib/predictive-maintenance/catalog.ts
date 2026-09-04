@@ -105,6 +105,8 @@ export const PREDICTIVE_MAINTENANCE_CATALOG: PredictiveCatalogItem[] = [
     intervalMonths: null,
     difficulty: "Moderate",
     estCostUsd: { min: 40, max: 150 },
+    /** Interim: dedicated spark-plugs playbook is later. CEL/misfire guide unlocks H4 chips. */
+    coachSlug: "diagnosis_check_engine",
     matchKeywords: ["spark", "spark plug", "plugs", "ignition"],
   },
   {

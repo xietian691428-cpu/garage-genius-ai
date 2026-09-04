@@ -16,6 +16,7 @@ import MobileVehicleSwitcher from "../vehicles/MobileVehicleSwitcher";
 import VehiclePanel from "./VehiclePanel";
 import MessageList from "./MessageList";
 import ChatInput from "./ChatInput";
+import DtcCodeModal from "./DtcCodeModal";
 import ChatSafetyNotesSheet from "./ChatSafetyNotesSheet";
 import { useChatDisclaimer } from "@/hooks/useChatDisclaimer";
 import { ensureSafetyTopicsRemote } from "@/lib/safety-topics-remote";
@@ -105,6 +106,12 @@ import UpgradeModal, {
 } from "@/components/ui/UpgradeModal";
 import { FileText } from "lucide-react";
 import { useAiConsentGate } from "@/components/legal/AiConsentProvider";
+import {
+  getUsHighFreqDtcChips,
+  POST_SAVE_NUDGE_COPY,
+  EMPTY_GARAGE_DIY_HEADLINE,
+  EMPTY_GARAGE_DIY_STEPS,
+} from "@/lib/us-completion-funnel";
 
 /** Shared touch-friendly CTA for gate / switch banners (≥44px). */
 const GATE_CTA =
@@ -195,6 +202,8 @@ export default function ChatApp({
     pendingImages?: string[];
   } | null>(null);
   const [addVehicleOpen, setAddVehicleOpen] = useState(false);
+  const [postSaveNudge, setPostSaveNudge] = useState(false);
+  const [postSaveDtcOpen, setPostSaveDtcOpen] = useState(false);
   const [addVehicleSeed, setAddVehicleSeed] = useState<{
     make?: string;
     model?: string;
@@ -571,6 +580,7 @@ export default function ChatApp({
     setMessages([createWelcomeMessage()]);
     try {
       await onAddVehicle(newVehicle);
+      setPostSaveNudge(true);
       // load effect picks up new current vehicle
     } catch (err) {
       console.error("[ChatApp] add vehicle failed:", err);
@@ -1114,6 +1124,7 @@ export default function ChatApp({
         loadedKeyRef.current = null;
       }
       saveCurrentVehicleId(saved.id);
+      if (!pendingContent) setPostSaveNudge(true);
     } catch (err) {
       console.error("[ChatApp] add vehicle from gate failed:", err);
       alert(
@@ -1417,6 +1428,21 @@ export default function ChatApp({
               <p className="text-sm leading-relaxed text-amber-50">
                 {gateBanner.message}
               </p>
+              {gateBanner.code === "empty_garage" ? (
+                <div
+                  className="rounded-xl border border-amber-800/60 bg-amber-950/40 px-3 py-2"
+                  data-testid="chat-empty-garage-diy"
+                >
+                  <p className="text-xs leading-snug text-amber-100/90">
+                    {EMPTY_GARAGE_DIY_HEADLINE}
+                  </p>
+                  <ol className="mt-1.5 list-decimal space-y-0.5 pl-4 text-[11px] leading-snug text-amber-100/75">
+                    {EMPTY_GARAGE_DIY_STEPS.map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+              ) : null}
               {gateBanner.code === "ambiguous" && gateBanner.candidates?.length ? (
                 <div
                   className="flex max-h-[28dvh] flex-col gap-2 overflow-y-auto overscroll-contain sm:max-h-none sm:flex-row sm:flex-wrap"
@@ -1530,6 +1556,50 @@ export default function ChatApp({
             </div>
           </div>
         ) : null}
+        {postSaveNudge && currentVehicle ? (
+          <div
+            className="shrink-0 border-t border-cyan-800/50 bg-cyan-950/40 px-3 py-3 sm:px-4"
+            data-testid="chat-post-save-nudge"
+          >
+            <div className="mx-auto max-w-3xl">
+              <p className="text-sm leading-relaxed text-cyan-50">
+                {POST_SAVE_NUDGE_COPY}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {getUsHighFreqDtcChips().map((chip) => (
+                  <button
+                    key={chip.code}
+                    type="button"
+                    data-testid={`chat-post-save-dtc-${chip.code}`}
+                    onClick={() => {
+                      setPostSaveNudge(false);
+                      handleFaultCode(chip.code);
+                    }}
+                    className={GATE_CTA_SECONDARY}
+                  >
+                    {chip.code}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  data-testid="chat-post-save-enter-code"
+                  onClick={() => setPostSaveDtcOpen(true)}
+                  className={GATE_CTA_PRIMARY}
+                >
+                  Enter a code
+                </button>
+                <button
+                  type="button"
+                  data-testid="chat-post-save-dismiss"
+                  onClick={() => setPostSaveNudge(false)}
+                  className={GATE_CTA_GHOST}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
         {requestError && !isLoading ? (
           <div className="shrink-0 border-t border-amber-800/40 bg-amber-950/40 px-3 py-2.5 sm:px-4">
             <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2">
@@ -1597,6 +1667,16 @@ export default function ChatApp({
         defaultVehicleId={currentVehicle?.id}
         mode="scan"
         onSaved={handleReceiptSaved}
+      />
+
+      <DtcCodeModal
+        open={postSaveDtcOpen}
+        onClose={() => setPostSaveDtcOpen(false)}
+        onSubmit={(code) => {
+          setPostSaveDtcOpen(false);
+          setPostSaveNudge(false);
+          handleFaultCode(code);
+        }}
       />
 
       {currentVehicle && (

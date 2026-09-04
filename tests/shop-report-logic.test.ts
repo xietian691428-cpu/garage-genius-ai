@@ -349,4 +349,37 @@ describe("shop report generate helpers", () => {
     expect(blob.toLowerCase()).not.toMatch(/replace the sensor now/);
     expect(blob.toLowerCase()).not.toMatch(/replace the \w+ now/);
   });
+
+  it("keeps US recall education when the session topic is parking brake", () => {
+    const listed = formatShopReportRecallEducation(vehicle, {
+      source: "nhtsa-recalls",
+      year: 2019,
+      make: "Toyota",
+      model: "Camry",
+      total: 1,
+      cached: false,
+      hints: [
+        {
+          campaignNumber: "23V865000",
+          component: "AIR BAGS",
+          summary: "Occupant classification sensor may malfunction.",
+          consequence: "",
+          remedy: "",
+          reportReceivedDate: null,
+        },
+      ],
+    });
+    const raw = samplePayload({
+      ownerObservations: {
+        symptoms: "Parking brake will not hold on a slope; car creeps.",
+        conditions: "On jack stands from an oil change",
+        checksDone: ["Set the parking brake"],
+      },
+      recallEducation: listed,
+    });
+    const guarded = applyShopReportToneGuards(raw);
+    expect(guarded.recallEducation).toEqual(listed);
+    expect(guarded.recallEducation?.status).toBe("listed");
+    expect(flattenShopReportText(guarded)).toMatch(/parking brake/i);
+  });
 });

@@ -83,7 +83,9 @@ export type SubscriptionFeatures = PlanEntitlements & {
   voiceRemainingToday: number;
   /** Photo diagnose available (monthly vision cap; QA unlimited) */
   canUsePhotoDiagnose: boolean;
-  /** Remaining photo analyses this UTC month; null = unlimited (QA) */
+  /** Remaining photo analyses this UTC month; null = unlimited (QA / Pro+ server) */
+  photoRemainingThisMonth: number | null;
+  /** @deprecated Use photoRemainingThisMonth — vision cap is monthly, not daily. */
   photoRemainingToday: number | null;
   canAddVehicle: (currentCount: number) => boolean;
 };
@@ -92,7 +94,7 @@ export function useSubscription() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [voiceUsedToday, setVoiceUsedToday] = useState(0);
-  const [photoUsedToday, setPhotoUsedToday] = useState(0);
+  const [photoUsedThisMonth, setPhotoUsedThisMonth] = useState(0);
   const [showTrialEndedPrompt, setShowTrialEndedPrompt] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
@@ -169,7 +171,7 @@ export function useSubscription() {
   useEffect(() => {
     void refresh();
     setVoiceUsedToday(readVoiceDailyCount());
-    setPhotoUsedToday(readPhotoMonthlyCount());
+    setPhotoUsedThisMonth(readPhotoMonthlyCount());
 
     const {
       data: { subscription },
@@ -220,11 +222,12 @@ export function useSubscription() {
     0,
     base.visionCallsPerMonth || base.photoDailyLimit,
   );
-  const photoRemainingToday = photoUnlimited
+  const photoRemainingThisMonth = photoUnlimited
     ? null
-    : Math.max(0, visionCap - photoUsedToday);
+    : Math.max(0, visionCap - photoUsedThisMonth);
   const canUsePhotoDiagnose =
-    photoUnlimited || (photoRemainingToday !== null && photoRemainingToday > 0);
+    photoUnlimited ||
+    (photoRemainingThisMonth !== null && photoRemainingThisMonth > 0);
 
   const features: SubscriptionFeatures = {
     ...base,
@@ -234,7 +237,8 @@ export function useSubscription() {
     canUseVoice,
     voiceRemainingToday,
     canUsePhotoDiagnose,
-    photoRemainingToday,
+    photoRemainingThisMonth,
+    photoRemainingToday: photoRemainingThisMonth,
     canAddVehicle: (currentCount: number) => currentCount < base.maxVehicles,
   };
 
@@ -257,11 +261,11 @@ export function useSubscription() {
     const cap = Math.max(0, base.visionCallsPerMonth || base.photoDailyLimit);
     const next = readPhotoMonthlyCount() + 1;
     if (next > cap) {
-      setPhotoUsedToday(cap);
+      setPhotoUsedThisMonth(cap);
       return false;
     }
     writePhotoMonthlyCount(next);
-    setPhotoUsedToday(next);
+    setPhotoUsedThisMonth(next);
     return true;
   }, [base.visionCallsPerMonth, base.photoDailyLimit]);
 

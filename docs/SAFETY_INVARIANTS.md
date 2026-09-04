@@ -9,7 +9,7 @@ These are product rules, not settings. Owners can dismiss the general Chat discl
 3. **No invented specs without an anchor.** No garage-saved oil figure, affiliate OEM, or official `[VEHICLE_ANCHOR]` / `[EPA_MPG]` / `[DIY_PATH]` → `applySpecOutputGate` strips qt/L, ft-lb/N·m, “0W-xx required”, unaffiliated OEM tokens.
 4. **NHTSA recalls are US-only.** EU/GB get regional education, never a NHTSA campaign list as local recalls. YMM list ≠ this VIN’s open/closed status.
 5. **Hard cap before the model.** `AI_COST_HARD_CAP` defaults ON (unset = ON). `ai_budget_exceeded` (402) and `vision_quota_exceeded` (429) do not emit a silent short coach reply.
-6. **Vehicle bind.** Chat and Shop Report require a garage `vehicle_id` the signed-in user owns. Header ≠ request is 409. Wrong id is 403.
+6. **Vehicle bind.** Chat and Shop Report require a garage `vehicle_id` the signed-in user owns. Header ≠ request is 409. Wrong id is 403. Switching vehicles loads that car’s thread only; a polluted older thread is not auto-wiped — for an important question (recalls, oil spec), start a new topic after the switch.
 7. **Vision low trust.** Blurry / dark / unreadable / confidence below 0.5 drops readings and DTCs before Chat injection.
 8. **No live OBD theater.** `has_obd_adapter=false` must not claim live/realtime adapter data. Pasted codes are user-provided.
 9. **Diagnostic / report tone.** No unnegated “Replace X now” / “It’s definitely” / “Must be the…” in Chat or Shop Report.

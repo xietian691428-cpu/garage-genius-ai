@@ -411,7 +411,7 @@ export default function ChatInput({
       ? null
       : usage.signedIn
         ? usage.visionRemaining
-        : features.photoRemainingToday;
+        : features.photoRemainingThisMonth;
   const photoRemainingLabel =
     photoLeft == null
       ? null

@@ -9,6 +9,7 @@ import type { MaintenanceRecord } from "@/lib/types/maintenance";
 import { listRecommendedCoachPlaybooks } from "@/lib/coach-scenarios/catalog";
 import { getDtcFollowUpChips, textHasDtcSignal } from "@/lib/dtc";
 import { diyPathFollowUpChip } from "@/lib/diy-check-paths";
+import { getUsHighFreqDtcChips } from "@/lib/us-completion-funnel";
 
 /** Max messages sent to the model (keeps recent turns; welcome stripped). */
 export const CHAT_API_MESSAGE_WINDOW = 24;
@@ -63,18 +64,28 @@ export const CHAT_STARTER_CHIPS: StarterChip[] = [
 /** Vehicle-aware starters — prepend recommended playbook-oriented prompts. */
 export function getChatStarterChips(vehicle?: VehicleInfo | null): StarterChip[] {
   const base = [...CHAT_STARTER_CHIPS];
-  if (!vehicle) return base;
+  const freqChips: StarterChip[] = getUsHighFreqDtcChips()
+    .slice(0, 3)
+    .map((c) => ({
+      id: c.id,
+      label: c.label,
+      prompt: vehicle
+        ? `${c.prompt}\nVehicle: ${vehicle.year} ${vehicle.make} ${vehicle.model}.`
+        : c.prompt,
+      playbookSlug: c.playbookSlug,
+    }));
+  if (!vehicle) return [...freqChips, ...base].slice(0, 5);
 
-  const recs = listRecommendedCoachPlaybooks(vehicle, { limit: 2 });
-  const vehicleChips: StarterChip[] = recs.map((r, i) => ({
+  const recs = listRecommendedCoachPlaybooks(vehicle, { limit: 1 });
+  const vehicleChips: StarterChip[] = recs.map((r) => ({
     id: `coach-${r.slug}`,
-    label: i === 0 ? "Guided coach for me" : "Another guided check",
+    label: "Guided coach for me",
     prompt: `For my ${vehicle.year} ${vehicle.make} ${vehicle.model}${
       vehicle.mileage ? ` at ${vehicle.mileage.toLocaleString()} mi` : ""
     }: start a safe DIY diagnosis aligned with the "${r.slug.replace(/_/g, " ")}" guide (${r.reason}). Give top 3 likely issues, DIY checks, and when to open that Coach playbook. Do not invent torque specs, fluid quarts, or OEM part numbers. Do not invent a service-due mileage if odometer is missing.`,
   }));
 
-  return [...vehicleChips, ...base].slice(0, 6);
+  return [...freqChips, ...vehicleChips, ...base].slice(0, 6);
 }
 
 /** After an assistant reply — 2–3 contextual next-step chips. */

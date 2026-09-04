@@ -408,7 +408,8 @@ Garage Genius AI
 | [`PROJECT.md`](../PROJECT.md) | 产品阶段与路线 |
 | [`INTEGRATION.md`](../INTEGRATION.md) | 模块挂载与集成 |
 | [`DEPLOYMENT_CHECKLIST.md`](../DEPLOYMENT_CHECKLIST.md) | 上线清单 |
-| [`docs/STORE_LAUNCH.md`](./STORE_LAUNCH.md) | 商店 / Capacitor |
+| [`docs/INTERNAL_TEST_QUOTAS.md`](./INTERNAL_TEST_QUOTAS.md) | Unlimited 内测 vs Free/Pro 配额（防误判 G1/E3） |
+| [`docs/SAFETY_INVARIANTS.md`](./SAFETY_INVARIANTS.md) | 不可关闭的安全不变量 |
 | [`docs/AUTH_PROVIDERS.md`](./AUTH_PROVIDERS.md) | Apple / Google 登录 |
 
 *文档版本：与仓库 migrations 001–024、27 生产 Playbook、Vercel Web 部署现状对齐（2026-07）。*

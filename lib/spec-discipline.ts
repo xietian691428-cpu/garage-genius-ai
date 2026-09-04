@@ -27,7 +27,7 @@ export const INVENTED_OEM_RE =
   /\b\d{4,5}-[A-Z0-9]{3,}(?:-[A-Z0-9]{2,})?\b/g;
 
 export const SPEC_MANUAL_REWRITE =
-  "the figure in the owner's manual, fill cap, or door sticker";
+  "the figure in the owner's manual, fill cap, under-hood label, or door sticker";
 
 export const SPEC_TORQUE_REWRITE =
   "the torque spec in the owner's manual (do not guess ft-lb or N·m)";
@@ -201,7 +201,7 @@ export function rewriteInventedSpecs(
       out = replaceUnallowed(
         out,
         INVENTED_VISC_REQUIRED_RE,
-        "the viscosity printed on the fill cap (confirm in the owner's manual)",
+        "the viscosity printed on the under-hood fill cap (confirm in the owner's manual)",
         fluidAllow,
         true,
       );

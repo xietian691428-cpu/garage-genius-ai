@@ -16,6 +16,7 @@ import {
   matchDriftSafetyTopics,
   matchedStalePhrases,
   needsCriticalRaisedState,
+  shouldInheritRaisedSafetyState,
   prepareDriftForChatTurn,
   reconstructFocusFromHistory,
   staleFocusPhrases,
@@ -311,6 +312,21 @@ describe("prepareDriftForChatTurn + trimMessagesForApi", () => {
     expect(drift.currentFocus.vehicleRaised).toBe(false);
     expect(needsCriticalRaisedState(drift.currentFocus)).toBe(false);
     expect(systemBlock).not.toMatch(/CRITICAL STATE/i);
+  });
+
+  it("shouldInheritRaisedSafetyState drops raised on clean recall/oil-spec", () => {
+    expect(
+      shouldInheritRaisedSafetyState("Any recalls on this car?", false),
+    ).toBe(false);
+    expect(
+      shouldInheritRaisedSafetyState("What oil capacity should I use?", true),
+    ).toBe(false);
+    expect(
+      shouldInheritRaisedSafetyState(
+        "Parking brake won't hold — still on jack stands",
+        true,
+      ),
+    ).toBe(true);
   });
 
   it("oil→PB hard reset still keeps raised when the new message is under-car", () => {

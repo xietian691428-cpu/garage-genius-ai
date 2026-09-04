@@ -5,6 +5,7 @@ import {
   evaluatePredictiveMaintenance,
   formatDueAroundLine,
 } from "@/lib/predictive-maintenance/engine";
+import { getCatalogItem } from "@/lib/predictive-maintenance/catalog";
 import {
   buildHealthSnapshot,
   buildNextRecommendedAction,
@@ -187,5 +188,11 @@ describe("home health helpers", () => {
       predictive: [],
     });
     expect(next.primary.action).toBe("describe_symptom");
+  });
+
+  it("spark plugs How-to-do-it has a coach slug so H4 chips can appear", () => {
+    expect(getCatalogItem("spark_plugs")?.coachSlug).toBe(
+      "diagnosis_check_engine",
+    );
   });
 });

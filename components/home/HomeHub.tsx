@@ -18,6 +18,11 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/lib/supabase";
 import { chatCloudService } from "@/lib/chat-cloud";
 import { extractDtcCodes } from "@/lib/dtc";
+import {
+  EMPTY_GARAGE_DIY_HEADLINE,
+  EMPTY_GARAGE_DIY_STEPS,
+  getUsHighFreqDtcChips,
+} from "@/lib/us-completion-funnel";
 import HomeTopBar from "@/components/home/HomeTopBar";
 import VehicleHealthSnapshot from "@/components/home/VehicleHealthSnapshot";
 import NextRecommendedAction from "@/components/home/NextRecommendedAction";
@@ -284,9 +289,24 @@ export default function HomeHub({
           loading={vehiclesLoading}
           onVehicleChange={(v) => void onVehicleChange(v)}
         />
-        <p className="rounded-3xl border border-slate-800 bg-[#111827] p-5 text-sm text-slate-400">
-          Add a vehicle to see health, next actions, and upcoming maintenance.
-        </p>
+        <div className="rounded-3xl border border-slate-800 bg-[#111827] p-5">
+          <p className="text-sm leading-relaxed text-slate-200">
+            {EMPTY_GARAGE_DIY_HEADLINE}
+          </p>
+          <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm leading-snug text-slate-400">
+            {EMPTY_GARAGE_DIY_STEPS.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+          <button
+            type="button"
+            data-testid="home-empty-open-chat"
+            onClick={onOpenChat}
+            className="mt-4 inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-cyan-500 px-4 text-sm font-semibold text-black hover:bg-cyan-400"
+          >
+            Open Chat to add this car
+          </button>
+        </div>
       </div>
     );
   }
@@ -343,6 +363,33 @@ export default function HomeHub({
         onConnectObd={onConnectObd}
         onObdSettings={onOpenSettings}
       />
+
+      <section data-testid="home-us-code-chips">
+        <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          Common US codes
+        </h3>
+        <p className="mb-2 text-xs leading-snug text-slate-500">
+          Already mapped to a Coach guide — tap to start an educational check-in.
+        </p>
+        <div className="-mx-1 flex gap-2 overflow-x-auto pb-1">
+          {getUsHighFreqDtcChips().map((chip) => (
+            <button
+              key={chip.code}
+              type="button"
+              data-testid={`home-dtc-${chip.code}`}
+              onClick={() =>
+                onAskAI?.(chip.prompt, { playbookSlug: chip.playbookSlug })
+              }
+              className="min-h-[52px] min-w-[7.5rem] shrink-0 rounded-2xl border border-slate-700 bg-[#111827] px-3 py-2 text-left text-xs font-semibold text-slate-100 hover:border-cyan-500/40 hover:text-cyan-200"
+            >
+              {chip.code}
+              <span className="mt-0.5 block font-normal text-slate-500">
+                {chip.hint.split(/[.(]/)[0]}
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <div
         ref={(el) => {
