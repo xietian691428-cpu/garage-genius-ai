@@ -1,5 +1,6 @@
 /**
- * Vision orchestration: Kimi reads photos; DeepSeek handles text coaching / JSON fallback.
+ * Vision orchestration: Kimi reads photos as JSON; DeepSeek coaches from text.
+ * Chat never sends Kimi's output as the user-facing reply.
  */
 
 import {
@@ -9,39 +10,56 @@ import {
   type DeepSeekResult,
 } from "@/lib/deepseek";
 import {
-  attachKimiVisionNoteToMessages,
-  callKimiVisionDescribe,
+  attachImageAnalysisBlockToUserText,
   callKimiVisionJson,
-  DEFAULT_VISION_MAX_TOKENS,
   isKimiConfigured,
+  isKimiVisionEnabled,
 } from "@/lib/kimi";
+import { analyzeChatImage } from "@/lib/vision/kimi-client";
+import {
+  formatImageAnalysisBlock,
+  formatPerceptionFailedBlock,
+  formatRaisedVehicleImageSafety,
+  toClientImageSummary,
+} from "@/lib/vision/format-analysis";
+import {
+  analysisHasRaisedVehicle,
+  CHAT_VISION_MAX_IMAGES,
+  type ImageAnalysis,
+  type ImageAnalysisClientSummary,
+} from "@/lib/vision/types";
 
 export type VisionPipelineResult = DeepSeekResult & {
   model: string;
-  visionProvider: "kimi" | "deepseek" | "deepseek_text_fallback";
+  visionProvider: "kimi" | "deepseek" | "deepseek_text_fallback" | "unavailable";
+  imageAnalysis?: ImageAnalysis | null;
+  imageAnalysisSummary?: ImageAnalysisClientSummary | null;
+  raisedVehicleFromImage?: boolean;
 };
 
 /**
- * Structured vision (dashboard / OBD / receipt) — prefer Kimi, fall back to DeepSeek VL.
+ * Structured vision (dashboard / OBD / receipt) — prefer Kimi JSON.
+ * Existing DeepSeek VL fallback stays for those routes only (not chat).
  */
 export async function callVisionJson(
   messages: DeepSeekMessage[],
-  maxTokens = 1200,
+  maxTokens = 800,
 ): Promise<VisionPipelineResult> {
-  if (isKimiConfigured()) {
+  if (isKimiConfigured() && isKimiVisionEnabled()) {
     try {
-      // kimi-k3 uses reasoning tokens first; never starve completion budget.
-      const kimiMax = Math.max(maxTokens, DEFAULT_VISION_MAX_TOKENS);
-      const result = await callKimiVisionJson(messages, kimiMax);
+      const result = await callKimiVisionJson(messages, maxTokens);
       return {
         ...result,
         visionProvider: "kimi",
       };
     } catch (error) {
-      console.warn("[vision] Kimi JSON failed, falling back to DeepSeek", error);
+      console.warn("[vision] Kimi JSON failed, falling back to DeepSeek", {
+        code:
+          error && typeof error === "object" && "code" in error
+            ? String((error as { code?: string }).code)
+            : "unknown",
+      });
     }
-  } else {
-    console.warn("[vision] KIMI_API_KEY missing — using DeepSeek for photos");
   }
 
   const result = await callDeepSeekVisionJson(messages, maxTokens);
@@ -52,12 +70,31 @@ export async function callVisionJson(
   };
 }
 
+function stripImageParts(messages: DeepSeekMessage[]): DeepSeekMessage[] {
+  return messages.map((message) => {
+    if (!Array.isArray(message.content)) return message;
+    const text = message.content
+      .filter((p) => p.type === "text")
+      .map((p) => (p.type === "text" ? p.text : ""))
+      .join("\n")
+      .trim();
+    return { ...message, content: text || "Please diagnose from this photo." };
+  });
+}
+
 /**
- * Chat with photos: Kimi describes images → DeepSeek coaches from text + note.
- * Text-only chat stays on DeepSeek.
+ * Chat with photos: Kimi structured perception → DeepSeek text coach.
+ * On Kimi failure: DeepSeek still answers from text (no 500, no DeepSeek VL).
  */
 export async function callChatWithOptionalVision(
   messages: DeepSeekMessage[],
+  options?: {
+    /** Precomputed chat perception (preferred — one Kimi call in the route). */
+    analysis?: ImageAnalysis | null;
+    analysisModel?: string;
+    perceptionFailed?: boolean;
+    perceptionDisabled?: boolean;
+  },
 ): Promise<VisionPipelineResult> {
   const hasImage = messages.some(
     (m) =>
@@ -65,7 +102,7 @@ export async function callChatWithOptionalVision(
       m.content.some((part) => part.type === "image_url"),
   );
 
-  if (!hasImage) {
+  if (!hasImage && !options?.analysis && !options?.perceptionFailed && !options?.perceptionDisabled) {
     const result = await callDeepSeek(messages);
     return {
       ...result,
@@ -74,37 +111,86 @@ export async function callChatWithOptionalVision(
     };
   }
 
-  if (isKimiConfigured()) {
+  let analysis = options?.analysis ?? null;
+  let modelName = options?.analysisModel || "kimi-k3";
+  let failed = Boolean(options?.perceptionFailed);
+  let disabled = Boolean(options?.perceptionDisabled);
+
+  if (hasImage && analysis == null && !failed && !disabled && isKimiVisionEnabled()) {
     try {
-      const vision = await callKimiVisionDescribe(messages);
-      const enriched = attachKimiVisionNoteToMessages(messages, vision.content);
-      const coach = await callDeepSeek(enriched);
-      return {
-        content: coach.content,
-        usage: {
-          prompt_tokens:
-            (vision.usage.prompt_tokens ?? 0) + (coach.usage.prompt_tokens ?? 0),
-          completion_tokens:
-            (vision.usage.completion_tokens ?? 0) +
-            (coach.usage.completion_tokens ?? 0),
-          total_tokens:
-            (vision.usage.total_tokens ?? 0) + (coach.usage.total_tokens ?? 0),
-        },
-        model: `${vision.model}+deepseek-chat`,
-        visionProvider: "kimi",
-      };
-    } catch (error) {
-      console.warn(
-        "[vision] Kimi describe failed, falling back to DeepSeek multimodal",
-        error,
+      const vision = await analyzeChatImage(
+        // analyzeChatImage expects a data URL; extract first image from messages
+        firstImageUrl(messages) || "",
+        latestUserText(messages),
       );
+      analysis = vision.analysis;
+      modelName = vision.model || modelName;
+      failed = vision.failed;
+      disabled = vision.disabled;
+    } catch {
+      failed = true;
     }
+  } else if (hasImage && !isKimiVisionEnabled()) {
+    disabled = true;
   }
 
-  const result = await callDeepSeek(messages);
+  const block =
+    analysis != null
+      ? formatImageAnalysisBlock(analysis, modelName, latestUserText(messages))
+      : formatPerceptionFailedBlock();
+
+  let coachMessages = stripImageParts(messages);
+  coachMessages = attachImageAnalysisBlockToUserText(coachMessages, block);
+  if (analysis && analysisHasRaisedVehicle(analysis)) {
+    coachMessages = [
+      { role: "system", content: formatRaisedVehicleImageSafety() },
+      ...coachMessages,
+    ];
+  }
+
+  const coach = await callDeepSeek(coachMessages);
+  const summary = analysis ? toClientImageSummary(analysis) : null;
+
   return {
-    ...result,
-    model: "deepseek-chat",
-    visionProvider: "deepseek_text_fallback",
+    content: coach.content,
+    usage: coach.usage,
+    model: analysis
+      ? `${modelName}+deepseek-chat`
+      : "deepseek-chat",
+    visionProvider: analysis
+      ? "kimi"
+      : disabled
+        ? "unavailable"
+        : "deepseek_text_fallback",
+    imageAnalysis: analysis,
+    imageAnalysisSummary: summary,
+    raisedVehicleFromImage: Boolean(analysis && analysisHasRaisedVehicle(analysis)),
   };
 }
+
+function latestUserText(messages: DeepSeekMessage[]): string {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.role !== "user") continue;
+    if (typeof m.content === "string") return m.content;
+    if (Array.isArray(m.content)) {
+      return m.content
+        .filter((p) => p.type === "text")
+        .map((p) => (p.type === "text" ? p.text : ""))
+        .join("\n");
+    }
+  }
+  return "";
+}
+
+function firstImageUrl(messages: DeepSeekMessage[]): string | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (!Array.isArray(m.content)) continue;
+    const img = m.content.find((p) => p.type === "image_url");
+    if (img && img.type === "image_url") return img.image_url.url;
+  }
+  return null;
+}
+
+export { CHAT_VISION_MAX_IMAGES };

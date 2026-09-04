@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
-  PHOTO_DAILY_COUNT_KEY,
+  PHOTO_MONTHLY_COUNT_KEY,
   VOICE_DAILY_COUNT_KEY,
   type PlanEntitlements,
   type Profile,
@@ -50,23 +50,28 @@ function writeVoiceDailyCount(count: number) {
   );
 }
 
-function readPhotoDailyCount(): number {
+function utcPeriodKey(): string {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function readPhotoMonthlyCount(): number {
   if (typeof window === "undefined") return 0;
   try {
-    const raw = localStorage.getItem(PHOTO_DAILY_COUNT_KEY);
+    const raw = localStorage.getItem(PHOTO_MONTHLY_COUNT_KEY);
     if (!raw) return 0;
-    const parsed = JSON.parse(raw) as { date?: string; count?: number };
-    if (parsed.date !== todayKey()) return 0;
+    const parsed = JSON.parse(raw) as { period?: string; count?: number };
+    if (parsed.period !== utcPeriodKey()) return 0;
     return typeof parsed.count === "number" ? parsed.count : 0;
   } catch {
     return 0;
   }
 }
 
-function writePhotoDailyCount(count: number) {
+function writePhotoMonthlyCount(count: number) {
   localStorage.setItem(
-    PHOTO_DAILY_COUNT_KEY,
-    JSON.stringify({ date: todayKey(), count }),
+    PHOTO_MONTHLY_COUNT_KEY,
+    JSON.stringify({ period: utcPeriodKey(), count }),
   );
 }
 
@@ -76,8 +81,9 @@ export type SubscriptionFeatures = PlanEntitlements & {
   isFree: boolean;
   canUseVoice: boolean;
   voiceRemainingToday: number;
-  /** Photo diagnose available (Free soft-capped; Pro unlimited) */
+  /** Photo diagnose available (monthly vision cap; QA unlimited) */
   canUsePhotoDiagnose: boolean;
+  /** Remaining photo analyses this UTC month; null = unlimited (QA) */
   photoRemainingToday: number | null;
   canAddVehicle: (currentCount: number) => boolean;
 };
@@ -163,7 +169,7 @@ export function useSubscription() {
   useEffect(() => {
     void refresh();
     setVoiceUsedToday(readVoiceDailyCount());
-    setPhotoUsedToday(readPhotoDailyCount());
+    setPhotoUsedToday(readPhotoMonthlyCount());
 
     const {
       data: { subscription },
@@ -209,12 +215,14 @@ export function useSubscription() {
       base.voiceDailyLimit <= 0 ||
       voiceRemainingToday > 0);
 
-  // photoDailyLimit === 0 → unlimited (Pro / Heavy / QA)
-  const photoUnlimited =
-    isQaUnlockEnabled() || base.photoDailyLimit <= 0 || resolved.isPro;
+  const photoUnlimited = isQaUnlockEnabled();
+  const visionCap = Math.max(
+    0,
+    base.visionCallsPerMonth || base.photoDailyLimit,
+  );
   const photoRemainingToday = photoUnlimited
     ? null
-    : Math.max(0, base.photoDailyLimit - photoUsedToday);
+    : Math.max(0, visionCap - photoUsedToday);
   const canUsePhotoDiagnose =
     photoUnlimited || (photoRemainingToday !== null && photoRemainingToday > 0);
 
@@ -245,18 +253,17 @@ export function useSubscription() {
   }, [base.voiceEnabled, base.voiceDailyLimit]);
 
   const recordPhotoDiagnose = useCallback(() => {
-    if (isQaUnlockEnabled() || resolved.isPro || base.photoDailyLimit <= 0) {
-      return true;
-    }
-    const next = readPhotoDailyCount() + 1;
-    if (next > base.photoDailyLimit) {
-      setPhotoUsedToday(base.photoDailyLimit);
+    if (isQaUnlockEnabled()) return true;
+    const cap = Math.max(0, base.visionCallsPerMonth || base.photoDailyLimit);
+    const next = readPhotoMonthlyCount() + 1;
+    if (next > cap) {
+      setPhotoUsedToday(cap);
       return false;
     }
-    writePhotoDailyCount(next);
+    writePhotoMonthlyCount(next);
     setPhotoUsedToday(next);
     return true;
-  }, [base.photoDailyLimit, resolved.isPro]);
+  }, [base.visionCallsPerMonth, base.photoDailyLimit]);
 
   const dismissTrialEndedPrompt = useCallback(() => {
     setShowTrialEndedPrompt(false);

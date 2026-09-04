@@ -30,6 +30,9 @@ export function upgradeCopy(reason: UpgradeReason): {
 } {
   const save = yearlySavingsUsd("pro");
   const commonBullets = [
+    "30 photo analyses / month on Pro",
+    "US VIN decode + NHTSA recall education",
+    "OBD code coaching (education, not a guaranteed repair)",
     "Unlimited coach playbooks",
     "Annual vehicle health report",
     "Custom profile tags + maintenance history",
@@ -84,16 +87,16 @@ export function upgradeCopy(reason: UpgradeReason): {
       };
     case "photo":
       return {
-        title: "Daily photo limit reached",
+        title: "Monthly photo limit reached",
         message:
-          "Free includes a small daily photo-diagnose cap. Pro unlocks unlimited photo diagnoses.",
+          "Free includes 3 photo analyses / month. Pro includes 30. Photo analyses are AI vision reads of OBD screens, dipsticks, tire sidewalls, and receipts — not a diagnosis.",
         bullets: commonBullets,
       };
     case "tokens":
       return {
-        title: "Token quota running low",
+        title: "AI quota running low",
         message:
-          "Upgrade to Pro for a larger monthly token pool — or top up anytime.",
+          "Upgrade to Pro for a larger monthly AI budget and 30 photo analyses / month — or wait until next month.",
         bullets: commonBullets,
       };
     case "vehicles":
@@ -172,7 +175,7 @@ export function nativeAccountLimitsCopy(reason: UpgradeReason): {
       return {
         title,
         message:
-          "You’ve reached today’s photo-diagnose limit for this account.",
+          "You’ve reached this month’s photo-analysis limit for this account.",
         bullets,
       };
     case "tokens":

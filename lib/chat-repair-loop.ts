@@ -8,6 +8,7 @@ import { maskParkingBrakeMentions } from "@/lib/safety-topics";
 import type { MaintenanceRecord } from "@/lib/types/maintenance";
 import { listRecommendedCoachPlaybooks } from "@/lib/coach-scenarios/catalog";
 import { getDtcFollowUpChips, textHasDtcSignal } from "@/lib/dtc";
+import { diyPathFollowUpChip } from "@/lib/diy-check-paths";
 
 /** Max messages sent to the model (keeps recent turns; welcome stripped). */
 export const CHAT_API_MESSAGE_WINDOW = 24;
@@ -16,6 +17,7 @@ export type StarterChip = {
   id: string;
   label: string;
   prompt: string;
+  playbookSlug?: string;
 };
 
 /** Empty-state / welcome quick starts (ChatGPT-style). */
@@ -69,7 +71,7 @@ export function getChatStarterChips(vehicle?: VehicleInfo | null): StarterChip[]
     label: i === 0 ? "Guided coach for me" : "Another guided check",
     prompt: `For my ${vehicle.year} ${vehicle.make} ${vehicle.model}${
       vehicle.mileage ? ` at ${vehicle.mileage.toLocaleString()} mi` : ""
-    }: start a safe DIY diagnosis aligned with the "${r.slug.replace(/_/g, " ")}" guide (${r.reason}). Give top 3 likely issues, DIY checks, and when to open that Coach playbook. Do not invent torque specs.`,
+    }: start a safe DIY diagnosis aligned with the "${r.slug.replace(/_/g, " ")}" guide (${r.reason}). Give top 3 likely issues, DIY checks, and when to open that Coach playbook. Do not invent torque specs, fluid quarts, or OEM part numbers. Do not invent a service-due mileage if odometer is missing.`,
   }));
 
   return [...vehicleChips, ...base].slice(0, 6);
@@ -144,7 +146,7 @@ const FOCUS_CHECK_CHIPS: Record<string, StarterChip> = {
     id: "check-battery",
     label: "Check battery / terminals",
     prompt:
-      "Guide a safe battery terminal / voltage check (multimeter if I have one). Top 3 causes of no-start / dim lights and next DIY step.",
+      "Guide a safe 12V battery terminal / rest-voltage check (multimeter if I have one). Stop if the case is swollen or I am in traffic. Top 3 causes of no-start / dim lights. Do not invent CCA or OEM battery part numbers.",
   },
   engine: {
     id: "check-fluids",
@@ -200,12 +202,15 @@ export function getFollowUpChips(options?: {
 
   // DTC-focused replies → explain / checks / parts chips
   if (textHasDtcSignal(rawText) || textHasDtcSignal(options?.userText || "")) {
-    return getDtcFollowUpChips().slice(0, 3);
+    const blob = [options?.userText, options?.assistantText].filter(Boolean).join("\n");
+    return getDtcFollowUpChips(blob).slice(0, 3);
   }
 
   const out: StarterChip[] = [];
 
   const inferFrom = (blob: string) => {
+    const pathChip = diyPathFollowUpChip(blob);
+    if (pathChip) return pathChip;
     const forBrakes = maskParkingBrakeMentions(blob);
     return /\bbrake\s*pads?\b|\bbrakes?\b|\bbraking\b/.test(forBrakes)
       ? FOCUS_CHECK_CHIPS.brakes
@@ -217,6 +222,7 @@ export function getFollowUpChips(options?: {
   };
 
   const focusChip =
+    diyPathFollowUpChip(user) ||
     FOCUS_CHECK_CHIPS[focus] ||
     inferFrom(user) ||
     // Assistant soft-mention alone: require stronger pad/rotor wording
@@ -299,6 +305,7 @@ No maintenance records saved for this vehicle yet. If the owner mentions past wo
   return `${familiarity}## Recent maintenance history (from garage log / receipt scans)
 Use these as ground truth for THIS vehicle. Prefer citing them (date + mileage) over generic schedules.
 Do NOT re-recommend jobs clearly already done unless a wear interval clearly applies (e.g. pads at 60k mi, now 72k → check wear, do not say "you still need first pads").
+Do not invent a next-service mileage that is not in this log or the Vehicle Health Profile.
 ${lines.join("\n")}${more}`;
 }
 

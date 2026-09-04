@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import {
   assertAiRateLimit,
+  assertAiSpendGate,
   assertAiTokenBudget,
   assertEmailVerified,
   aiAbuseResponse,
@@ -20,17 +21,26 @@ import {
   buildShopReportPreview,
 } from "@/lib/shop-report/context";
 import { buildShopReportMessages } from "@/lib/shop-report/prompt";
+import {
+  formatShopReportRecallEducation,
+  shopReportWantsNhtsaRecalls,
+} from "@/lib/shop-report/recalls";
 import { toPublicShopReportPayload } from "@/lib/shop-report/public-view";
 import {
+  applyShopReportToneGuards,
   sanitizeShopReportFactors,
+  sanitizeShopReportLiveData,
   sanitizeShopReportSteps,
 } from "@/lib/shop-report/sanitize";
+import { resolveShopReportBoundVehicle } from "@/lib/shop-report/bind-vehicle";
+import { loadOwnedGarageVehicle } from "@/lib/chat-vehicle-ownership";
 import type { VehicleInfo } from "@/lib/types/chat";
 import type {
   ShopReportGenerateRequest,
   ShopReportPayload,
 } from "@/lib/types/shop-report";
-import { SHOP_REPORT_DISCLAIMER } from "@/lib/types/shop-report";
+import { SHOP_REPORT_DISCLAIMER, SHOP_REPORT_DTC_NOTE } from "@/lib/types/shop-report";
+import { fetchRecallsByYmm } from "@/lib/vehicle-data/nhtsa-recalls";
 
 export const runtime = "nodejs";
 
@@ -101,17 +111,40 @@ export async function POST(req: NextRequest) {
     }
 
     await assertAiRateLimit(user.id, "chat", user.email);
+    await assertAiSpendGate(user.id, {
+      needsVision: false,
+      email: user.email,
+    });
     // Plan shop-report cap (Free/Trial) before spending tokens / calling the model.
     const reportQuota = await assertShopReportQuota(user.id);
 
     const body = (await req.json()) as ShopReportGenerateRequest;
-    const vehicle = body.vehicle as VehicleInfo | undefined;
-    if (!vehicle?.year || !vehicle.make || !vehicle.model) {
+    const requested = body.vehicle as VehicleInfo | undefined;
+    if (!requested?.year || !requested.make || !requested.model) {
       return NextResponse.json(
         { error: "Vehicle information is required." },
         { status: 400 },
       );
     }
+
+    const owned = requested.id?.trim()
+      ? await loadOwnedGarageVehicle(userClient, user.id, requested.id)
+      : null;
+    const bound = resolveShopReportBoundVehicle(
+      requested,
+      owned,
+      body.source === "coach" ? "coach" : "chat",
+    );
+    if (!bound.ok) {
+      return NextResponse.json(
+        {
+          error: "That vehicle is not in your garage.",
+          code: bound.code,
+        },
+        { status: 403 },
+      );
+    }
+    const vehicle = bound.vehicle;
 
     const messages = body.messages ?? [];
     const coachText = [
@@ -146,8 +179,12 @@ export async function POST(req: NextRequest) {
     const ownerNotes = (body.options?.ownerNotes || "").trim().slice(0, 500);
     const includeImages = Boolean(body.options?.includeImages);
     const images = includeImages ? sanitizeImages(body.images) : [];
+    const includeRecalls = shopReportWantsNhtsaRecalls(
+      vehicle,
+      body.options?.includeRecalls,
+    );
 
-    const llm = await callDeepSeekJson(
+    const llmPromise = callDeepSeekJson(
       buildShopReportMessages({
         vehicle,
         transcript,
@@ -158,6 +195,13 @@ export async function POST(req: NextRequest) {
       }),
       2200,
     );
+    const recallsPromise = includeRecalls
+      ? fetchRecallsByYmm(vehicle.year, vehicle.make, vehicle.model).catch(
+          () => null,
+        )
+      : Promise.resolve(null);
+
+    const [llm, recalls] = await Promise.all([llmPromise, recallsPromise]);
 
     let parsed: LlmShape = {};
     try {
@@ -175,6 +219,7 @@ export async function POST(req: NextRequest) {
       {
         route: "other",
         model: "deepseek-chat",
+        provider: "deepseek",
         promptTokens: llm.usage.prompt_tokens,
         completionTokens: llm.usage.completion_tokens,
         playbookSlug: body.coachContext?.scenarioSlug ?? null,
@@ -183,7 +228,7 @@ export async function POST(req: NextRequest) {
         metadata: {
           event: "shop_report_generated",
           source: body.source === "coach" ? "coach" : "chat",
-          vehicleId: vehicle.id,
+          vehicleId: bound.archiveVehicleId,
           codeCount: codes.length,
           imageCount: images.length,
         },
@@ -201,6 +246,7 @@ export async function POST(req: NextRequest) {
       Date.now() + SHARE_DAYS * 24 * 60 * 60 * 1000,
     ).toISOString();
 
+    const sessionBlob = `${transcript}\n${coachText}`;
     const payload: ShopReportPayload = {
       reportId,
       generatedAtIso: new Date().toISOString(),
@@ -222,8 +268,12 @@ export async function POST(req: NextRequest) {
       },
       diagnosticData: {
         codes,
-        liveDataSummary: parsed.liveDataSummary?.trim() || null,
+        liveDataSummary: sanitizeShopReportLiveData(
+          parsed.liveDataSummary,
+          sessionBlob,
+        ),
         dataSourceNote: parsed.dataSourceNote?.trim() || null,
+        codeNote: codes.length ? SHOP_REPORT_DTC_NOTE : null,
       },
       contributingFactors: sanitizeShopReportFactors(
         parsed.contributingFactors,
@@ -239,10 +289,15 @@ export async function POST(req: NextRequest) {
       ownerNotes: ownerNotes || null,
       disclaimer: SHOP_REPORT_DISCLAIMER,
       images: images.length ? images : undefined,
+      recallEducation: includeRecalls
+        ? formatShopReportRecallEducation(vehicle, recalls)
+        : null,
     };
 
-    if (payload.contributingFactors.length === 0) {
-      payload.contributingFactors = [
+    const tonedPayload = applyShopReportToneGuards(payload);
+
+    if (tonedPayload.contributingFactors.length === 0) {
+      tonedPayload.contributingFactors = [
         {
           title: "Further verification needed",
           explanation:
@@ -254,10 +309,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Archive + public share: store public-safe payload (no full VIN).
-    const archivePayload = toPublicShopReportPayload(payload);
+    const archivePayload = toPublicShopReportPayload(tonedPayload);
     let archived = false;
-    const vehicleId =
-      vehicle.id && vehicle.id !== "coach-session" ? vehicle.id : null;
+    const vehicleId = bound.archiveVehicleId;
 
     try {
       const admin = createSupabaseAdmin();
@@ -286,7 +340,7 @@ export async function POST(req: NextRequest) {
     const publicUrl = archived ? `${base}/r/${publicToken}` : null;
 
     return NextResponse.json({
-      payload,
+      payload: tonedPayload,
       preview,
       archived,
       public_token: archived ? publicToken : null,

@@ -62,6 +62,55 @@ export function formatMileageWithUnit(
   return unit === "km" ? `${n} km` : `${n} miles`;
 }
 
+/** Single-session jump cap — garbage BLE frames, not a road trip. */
+export const IMPLAUSIBLE_MILEAGE_JUMP_MILES = 50_000;
+export const IMPLAUSIBLE_MILEAGE_JUMP_KM = 80_000;
+
+export type ObdMileageSkipReason = "invalid" | "decreased" | "implausible_jump";
+
+export type ObdMileageWriteDecision =
+  | { action: "write" }
+  | { action: "touch" }
+  | { action: "skip"; reason: ObdMileageSkipReason };
+
+/**
+ * Decide whether to write OBD odometer into the archive.
+ * - Only increase (equal → timestamp touch).
+ * - Decline a decrease or an implausible one-shot jump.
+ */
+export function evaluateObdMileageWrite(
+  nextMileage: number,
+  currentMileage: number,
+  unit: MileageUnit = "miles",
+): ObdMileageWriteDecision {
+  if (!Number.isFinite(nextMileage) || nextMileage <= 0) {
+    return { action: "skip", reason: "invalid" };
+  }
+  const current = Math.max(0, Math.round(Number(currentMileage) || 0));
+  const next = Math.round(nextMileage);
+  if (next < current) return { action: "skip", reason: "decreased" };
+  if (next === current) return { action: "touch" };
+  const jump = next - current;
+  const cap =
+    unit === "km" ? IMPLAUSIBLE_MILEAGE_JUMP_KM : IMPLAUSIBLE_MILEAGE_JUMP_MILES;
+  if (current > 0 && jump > cap) {
+    return { action: "skip", reason: "implausible_jump" };
+  }
+  return { action: "write" };
+}
+
+export function obdMileageSkipUserMessage(
+  reason: Exclude<ObdMileageSkipReason, "invalid"> | "not_newer",
+  previousMileage: number,
+  unit: MileageUnit,
+): string {
+  const shown = formatMileageWithUnit(previousMileage, unit);
+  if (reason === "implausible_jump") {
+    return `OBD odometer jumped too far from the archived ${shown}. Mileage was not overwritten — check the reading or update it manually.`;
+  }
+  return `OBD odometer is not higher than the archived ${shown}. Mileage was not reduced.`;
+}
+
 /**
  * Decide whether to write OBD odometer into the archive.
  * - Only when new reading is strictly greater than stored mileage.
@@ -70,13 +119,9 @@ export function formatMileageWithUnit(
 export function shouldWriteObdMileage(
   nextMileage: number,
   currentMileage: number,
+  unit: MileageUnit = "miles",
 ): "write" | "touch" | "skip" {
-  if (!Number.isFinite(nextMileage) || nextMileage <= 0) return "skip";
-  const current = Math.max(0, Math.round(Number(currentMileage) || 0));
-  const next = Math.round(nextMileage);
-  if (next > current) return "write";
-  if (next === current) return "touch";
-  return "skip";
+  return evaluateObdMileageWrite(nextMileage, currentMileage, unit).action;
 }
 
 /** Gate before calling mileage-sync API / DB write. */

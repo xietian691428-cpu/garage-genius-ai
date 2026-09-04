@@ -97,15 +97,30 @@ export default function ObdConnectModal({
       vehicleId,
       odometerKm: session.odometerKm,
     });
-    if (!result?.updated || result.mileage == null || !result.unit) return;
-    setMileageToast(
-      result.message ||
-        t("obd.mileageUpdated", {
-          value: result.mileage.toLocaleString(),
-          unit: result.unit === "km" ? "km" : "miles",
-        }),
-    );
-    onMileageSynced?.({ mileage: result.mileage, unit: result.unit });
+    if (!result) return;
+    if (result.updated && result.mileage != null && result.unit) {
+      setMileageToast(
+        result.message ||
+          t("obd.mileageUpdated", {
+            value: result.mileage.toLocaleString(),
+            unit: result.unit === "km" ? "km" : "miles",
+          }),
+      );
+      onMileageSynced?.({ mileage: result.mileage, unit: result.unit });
+      return;
+    }
+    if (
+      result.skipped === "decreased" ||
+      result.skipped === "implausible_jump" ||
+      result.skipped === "not_newer"
+    ) {
+      setMileageToast(
+        result.message ||
+          (result.skipped === "implausible_jump"
+            ? t("obd.mileageSkippedJump")
+            : t("obd.mileageSkippedDecrease")),
+      );
+    }
   };
 
   const support = getObdRuntimeSupport();

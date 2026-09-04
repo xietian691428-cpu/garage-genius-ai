@@ -43,9 +43,11 @@ If something is safety-critical or you’re unsure, export a Shop Report and hav
   highAckCancel: "Cancel",
 
   rewriteMayAffect:
-    "This may affect coverage — check your policy or insurer.",
+    "This may affect coverage — check your carrier and applicable law.",
   rewriteDependsOnPolicy:
-    "Coverage depends on your policy; we can’t determine claim outcomes.",
+    "Coverage depends on your policy; we can’t determine claim outcomes. Check your carrier and applicable law.",
+  checkCarrierAndLaw:
+    "This may affect coverage or claims. Check your carrier and applicable law. We cannot say a claim will or will not be paid.",
 } as const;
 
 /** Soft rewrite templates when model asserts coverage outcomes. */
@@ -78,7 +80,35 @@ export const INSURANCE_FORBIDDEN_PATTERNS: Array<{
       /\bsafe\s+to\s+skip\s+the\s+shop\s+for\s+insurance\b/gi,
     replacement: INSURANCE_SAFETY_COPY.verifyBeforeDriving,
   },
+  {
+    pattern: /\bdefinitely\s+covered\b/gi,
+    replacement: INSURANCE_SAFETY_COPY.rewriteDependsOnPolicy,
+  },
+  {
+    pattern: /\b(this|it|that)\s+is\s+covered\b/gi,
+    replacement: INSURANCE_SAFETY_COPY.rewriteMayAffect,
+  },
+  {
+    pattern: /\bclaim\s+will\s+be\s+(paid|approved|covered)\b/gi,
+    replacement: INSURANCE_SAFETY_COPY.rewriteDependsOnPolicy,
+  },
 ];
 
 export const MOD_CONTEXT_PATTERN =
   /\b(mod(?:ification|ded)?|aftermarket|non[- ]?oem|tune[sd]?|tuned|chip\s*tune|stage\s*[123]|catless|downpipe|coilover|stance|track\s*day)\b/i;
+
+const INSURANCE_QUESTION_RE =
+  /\b(insurance|insurer|claim|coverage|policy|will it void|void (?:my )?(?:warranty|insurance|policy)|warranty void)\b/i;
+
+export function isInsuranceOrModQuestion(text: string): boolean {
+  if (!text?.trim()) return false;
+  return INSURANCE_QUESTION_RE.test(text) || MOD_CONTEXT_PATTERN.test(text);
+}
+
+export function formatInsuranceEducationBlock(): string {
+  return `[INSURANCE_EDU]
+Education only — not insurance or legal advice.
+${INSURANCE_SAFETY_COPY.checkCarrierAndLaw}
+Modifications and non-OEM parts may affect coverage. Prefer "may affect" / "check your carrier and applicable law".
+Never assert that a claim is paid, denied, guaranteed, or that a policy is void.`;
+}

@@ -106,4 +106,17 @@ describe("matchGarageVehicleMention", () => {
     );
     expect(r.kind).toBe("ok");
   });
+
+  it("keeps short-brand word boundaries (parameter / Ford / VW false positives)", () => {
+    const cases = [
+      "Check the parameter IDs on the scan tool",
+      "I can't afford a shop for this repair",
+      "Need to review the TPMS procedure",
+    ];
+    for (const text of cases) {
+      const r = matchGarageVehicleMention(text, garage, camry);
+      expect(r.kind, text).toBe("ok");
+      if (r.kind === "ok") expect(r.reason, text).toBe("no_vehicle_mention");
+    }
+  });
 });

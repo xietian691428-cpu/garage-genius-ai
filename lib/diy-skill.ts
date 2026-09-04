@@ -56,7 +56,7 @@ Adapt all coaching to a careful first-time / early DIY owner:
     shortHint: "I wrench weekends — balanced depth",
     systemPromptPrefix: `## User DIY skill: ENTHUSIAST
 Weekend mechanic who has done basic jobs (pads, oil, plugs):
-- Clear steps + tool names; include torque / fluid specs when known for this vehicle.
+- Clear steps + tool names; include torque / fluid specs only when they appear in the vehicle config or official anchors for this car — never invent qt or ft-lb.
 - Mix safety notes with efficient procedure — not hand-holding every bolt.
 - OK to mention common failure patterns and DIY vs shop trade-offs.`,
     ragPreferCategories: [

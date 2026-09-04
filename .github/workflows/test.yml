@@ -17,6 +17,9 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
+      # Safety freeze: lib/safety-topics.ts, lib/spec-discipline.ts,
+      # lib/chat-vehicle-gate.ts, lib/pilot/safety-observe-phrases.ts
+      # must keep tests/README.md (W1–W5 pack) green.
       - name: US top-10 safety seeds (CI gate)
         run: npm run test:safety-seeds
       - run: npm run test

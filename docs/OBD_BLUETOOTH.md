@@ -54,10 +54,13 @@ Detection: `getObdRuntimeSupport()` in `lib/obd.ts`.
 
 ## Photo / screenshot quota
 
-OBD **screenshots** (vision) count against the Free plan **daily photo diagnose** limit in:
+OBD **screenshots** (vision) count against the plan **monthly photo analysis** cap in:
 
-- Chat (`ChatInput` → `ensurePhotoQuota`)  
-- Check Engine coach (`CoachLibrary.runObdScreenshotToChat` → `recordPhotoDiagnose`)  
+- Chat (`ChatInput` → `ensurePhotoQuota`)
+- Check Engine coach (`CoachLibrary.runObdScreenshotToChat` → `recordPhotoDiagnose`)
+- Server: `assertAiSpendGate` (429 `vision_quota_exceeded` / 402 `ai_budget_exceeded`)
+
+Caps: Free **3 / month**, Pro **30 / month**, Heavy **80 / month** (UTC calendar month).
 
 BLE connect itself does **not** consume photo quota.
 

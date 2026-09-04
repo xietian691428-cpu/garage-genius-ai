@@ -112,6 +112,19 @@
 
 原则：英文为主（欧美用户）、含安全提示、尽量带车型/年份、来源可追溯；`metadata.rag_tier` = `config|repair|parts`。
 
+## Paid data deferred; revisit when…
+
+**现在不接入** Auto.dev / ALLDATA / 付费 TSB / 欧洲商业召回库。无 vPIC、EPA 或本地锚点时禁止编造粘度、容量、力矩、保养间隔，引导查手册。
+
+产品日志复用已有 `token_usage_events`：Chat 用户问题打标签 `metadata.spec_gap`（`oil_viscosity_capacity` / `maintenance_interval` / `torque`）。只存标签，不含原文、不含完整 VIN。Admin → Token Usage → Spec-gap demand 看命中次数与 Chat 占比。
+
+**仅当同时满足再开 Auto.dev POC：**
+
+1. 某标签 ≥15% Chat 且 ≥20 次命中（30 天窗）
+2. **并且** NHTSA + playbook +「查手册」仍覆盖不了同一类问题
+
+体积触发不等于可以买库。细则见 `docs/data-sources.md`。
+
 ## 语音对话成本策略（已确认）
 
 **原则：先免费验证体验，再为付费用户上高端语音。**
@@ -137,12 +150,22 @@
 - Token 用完后支持单独充值
 - 每月设置合理上限
 
-具体方案：
-- Free: 15k tokens
-- Pro: $9.99 / 150k tokens
-- Pro Heavy: $19.99 / 400k tokens
-- 超出后按 $0.07-$0.08 / 1k tokens 充值
-- 每月上限：Pro 500k，Heavy 1M
+具体方案（token 文本额度 + USD / vision 硬顶）：
+- Free: 15k tokens / month · **3 photo analyses / month** · AI budget **$0.25**
+- Pro: $9.99 / 150k tokens (cap 500k) · **30 photo analyses / month** · AI budget **$3.00** (~30% of list)
+- Pro Heavy: $19.99 / 400k tokens (cap 1M) · **80 photo analyses / month** · AI budget **$6.50**
+- Trial uses Pro limits. Kimi vision is a separate monthly call cap (not unlimited).
+- 超出后按 $0.07-$0.08 / 1k tokens 充值（text top-up; does not raise vision cap）
+- 硬顶：`AI_COST_HARD_CAP` 默认 ON（unset = ON）；`=0` 仅用于 staging/事故。账本 `token_usage_events` / 视图 `ai_usage_events`
+
+## W1–W6 完成状态（safety / cost）
+
+W1 门禁+drift+exit-under · W2 规格闸+诊断禁语 · W3 召回三态+视觉低置信 · W4 语言/保险/禁驶/配额诚实 · W5 OBD 诚实+Guide↔Chat+Report 绑车 · W6 回归包+raised stay-under 矛盾走同一 repair+观测事件。
+
+- 回归清单：[tests/README.md](tests/README.md)
+- 不变量：[docs/SAFETY_INVARIANTS.md](docs/SAFETY_INVARIANTS.md)
+- 残留：[docs/RESIDUAL_RISKS.md](docs/RESIDUAL_RISKS.md)
+- CI：`npm test`（Vitest）。不接 Auto.dev；不改 CoachScenarioPlayer 核心状态机。
 
 所有 Token 消耗逻辑必须严格执行此策略。
 后续可根据实际 DeepSeek / 火山引擎等成本动态调整单价。

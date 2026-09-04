@@ -41,7 +41,7 @@ Please review the IAPs together with **1.0 (8)**.
 
 ### How to test IAP
 1. Sign in with the Free demo account in App Review Information (or Sign in with Apple).
-2. After login, an AI processing consent dialog names DeepSeek — tap Agree (or Not now to skip AI).
+2. After login, an AI processing consent dialog names DeepSeek (chat) and Kimi (photos) — tap Agree (or Not now to skip AI).
 3. Open Account → View plans & subscribe.
 4. Tap Subscribe → system purchase sheet (use a Sandbox Apple ID).
 5. Restore purchases is on the same page.

@@ -108,6 +108,13 @@ export function qaTokenAvailabilityView(signedIn: boolean) {
     percentLeft: 100,
     unlimited: true,
     qaUnlock: true,
+    visionUsed: 0,
+    visionLimit: 80,
+    visionRemaining: 80,
+    aiSpendUsd: 0,
+    aiBudgetUsd: 6.5,
+    spendRemainingUsd: 6.5,
+    hardCapEnabled: false,
   };
 }
 

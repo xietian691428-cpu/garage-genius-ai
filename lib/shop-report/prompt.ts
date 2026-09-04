@@ -1,7 +1,7 @@
 import type { DeepSeekMessage } from "@/lib/deepseek";
 import type { VehicleInfo } from "@/lib/types/chat";
 import type { ShopReportDtc } from "@/lib/types/shop-report";
-import { SHOP_REPORT_DISCLAIMER } from "@/lib/types/shop-report";
+import { SHOP_REPORT_DISCLAIMER, SHOP_REPORT_DTC_NOTE } from "@/lib/types/shop-report";
 
 export function buildShopReportMessages(input: {
   vehicle: VehicleInfo;
@@ -15,7 +15,10 @@ export function buildShopReportMessages(input: {
   const codeLines =
     input.codes.length > 0
       ? input.codes
-          .map((c) => `- ${c.code}: ${c.definition}${c.severity ? ` [${c.severity}]` : ""}`)
+          .map((c) => {
+            const hit = c.catalogHit === false ? "generic family" : "local catalog";
+            return `- ${c.code}: ${c.definition}${c.severity ? ` [${c.severity}]` : ""} (${hit})`;
+          })
           .join("\n")
       : "- (none extracted)";
 
@@ -26,6 +29,8 @@ STRICT RULES:
 - Use humble professional English for US/EU shops.
 - NEVER say "Replace X", "The root cause is Y", "You must…", or claim certainty.
 - NEVER claim insurance will / will not cover, void a policy, or approve a repair for claims.
+- DTC titles in this prompt are local SAE-style labels for communication — not a diagnosis. Do not invent OEM definitions, torque, or part numbers from a code.
+- Do not invent NHTSA campaign numbers. Recall education (if any) is attached by the app.
 - Prefer: "Common causes reported for this combination include…" and "These are for professional verification only."
 - Prefer insurance language: "may affect coverage", "check your policy or insurer".
 - Possible contributing factors: 3–5 items, ranked by likelihood, each with short explanation + how a tech might verify.
@@ -40,7 +45,7 @@ Mileage: ${input.vehicle.mileage || "unknown"}
 Source: ${input.source}
 Owner notes (optional): ${input.ownerNotes.trim() || "(none)"}
 
-Known DTCs:
+Known DTCs (local titles only — ${SHOP_REPORT_DTC_NOTE}):
 ${codeLines}
 
 ${input.coachContext ? `Coach guide context:\n${input.coachContext}\n` : ""}

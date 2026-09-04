@@ -6,10 +6,11 @@ import {
 import {
   canAttemptObdMileageWriteback,
   convertOdometerKmToUnit,
+  evaluateObdMileageWrite,
   formatMileageWithUnit,
   mileageUnitFromMarket,
   normalizeMileageUnit,
-  shouldWriteObdMileage,
+  obdMileageSkipUserMessage,
   type MileageUnit,
 } from "@/lib/obd-mileage";
 
@@ -196,21 +197,31 @@ export async function POST(req: NextRequest) {
   );
   const nextMileage = convertOdometerKmToUnit(odometerKm, unit);
   const previousMileage = Math.max(0, Math.round(Number(vehicle.mileage) || 0));
-  const decision = shouldWriteObdMileage(nextMileage, previousMileage);
+  const decision = evaluateObdMileageWrite(nextMileage, previousMileage, unit);
 
-  if (decision === "skip") {
+  if (decision.action === "skip") {
+    const skip =
+      decision.reason === "implausible_jump"
+        ? ("implausible_jump" as const)
+        : decision.reason === "decreased"
+          ? ("decreased" as const)
+          : ("no_odometer" as const);
     return NextResponse.json({
       updated: false,
-      skipped: "not_newer" as const,
+      skipped: skip,
       mileage: previousMileage,
       unit,
       previousMileage,
+      message:
+        skip === "no_odometer"
+          ? undefined
+          : obdMileageSkipUserMessage(skip, previousMileage, unit),
     });
   }
 
   const now = new Date().toISOString();
   const richPatch =
-    decision === "write"
+    decision.action === "write"
       ? {
           mileage: nextMileage,
           mileage_updated_at: now,
@@ -223,7 +234,7 @@ export async function POST(req: NextRequest) {
           mileage_unit: unit,
         };
   const leanPatch =
-    decision === "write" ? { mileage: nextMileage } : null;
+    decision.action === "write" ? { mileage: nextMileage } : null;
 
   let updateError =
     columnsReady
@@ -245,7 +256,7 @@ export async function POST(req: NextRequest) {
         : null;
 
   // touch-only with no metadata columns → nothing to write
-  if (!columnsReady && decision === "touch") {
+  if (!columnsReady && decision.action === "touch") {
     return NextResponse.json({
       updated: false,
       touched: false,
@@ -280,7 +291,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const storedMileage = decision === "write" ? nextMileage : previousMileage;
+  const storedMileage =
+    decision.action === "write" ? nextMileage : previousMileage;
 
   void logObdMileageSynced({
     userId: user.id,
@@ -288,17 +300,17 @@ export async function POST(req: NextRequest) {
     mileage: storedMileage,
     unit,
     previousMileage,
-    action: decision,
+    action: decision.action,
   });
 
   return NextResponse.json({
-    updated: decision === "write",
-    touched: decision === "touch",
+    updated: decision.action === "write",
+    touched: decision.action === "touch",
     mileage: storedMileage,
     unit,
     previousMileage,
     message:
-      decision === "write"
+      decision.action === "write"
         ? `Vehicle mileage updated to ${formatMileageWithUnit(storedMileage, unit)}`
         : undefined,
   });

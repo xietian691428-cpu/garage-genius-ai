@@ -1,0 +1,451 @@
+[
+  {
+    "code": "P0101",
+    "title_en": "MAF Circuit Range/Performance",
+    "summary_en": "Mass air flow reading may be outside the expected range. Confirm with live data and intake condition — not a parts order.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Intake leak after the MAF", "Dirty or contaminated MAF element", "Wiring or connector issue"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0113",
+    "title_en": "IAT Sensor Circuit High Input",
+    "summary_en": "Intake air temperature circuit high. Often a connector, open circuit, or sensor issue. Verify with a scan tool.",
+    "system": "powertrain",
+    "severity_hint": "low",
+    "common_causes": ["Unplugged or damaged IAT/MAF connector", "Open circuit in the signal wire", "Failed temperature sensor element"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0121",
+    "title_en": "Throttle/Pedal Position Sensor A Circuit Range/Performance",
+    "summary_en": "Throttle or pedal position signal is out of expected range. Confirm live TP/APP data before assuming a sensor is failed.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Connector or wiring fault", "Throttle body carbon or binding (observe only)", "Sensor correlation mismatch"],
+    "diy_level": "advanced",
+    "safety_notes": "Unexpected throttle response is a stop-driving concern until verified."
+  },
+  {
+    "code": "P0122",
+    "title_en": "Throttle/Pedal Position Sensor A Circuit Low",
+    "summary_en": "Throttle or pedal position signal is low. Check connectors and related fuses before replacing parts.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Low reference or signal voltage", "Damaged connector", "Short to ground on the signal wire"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0123",
+    "title_en": "Throttle/Pedal Position Sensor A Circuit High",
+    "summary_en": "Throttle or pedal position signal is high. Educational checks start at wiring and live data, not a parts verdict.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Open ground", "Short to voltage on the signal wire", "Sensor internal fault"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0128",
+    "title_en": "Coolant Thermostat (Coolant Temp Below Thermostat Regulating Temperature)",
+    "summary_en": "Engine may be slow to reach operating temperature. Thermostat, coolant level, and sensor data should be verified — this is not a command to replace the thermostat today.",
+    "system": "powertrain",
+    "severity_hint": "low",
+    "common_causes": ["Thermostat stuck open (confirm with temp rise)", "Low coolant", "ECT sensor or wiring issue"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0135",
+    "title_en": "O2 Sensor Heater Circuit (Bank 1 Sensor 1)",
+    "summary_en": "Upstream O2/AFR heater circuit. Confirm fuse, connector, and heater operation before assuming the sensor is failed.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Blown fuse", "Heater circuit open", "Connector corrosion"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0141",
+    "title_en": "O2 Sensor Heater Circuit (Bank 1 Sensor 2)",
+    "summary_en": "Downstream O2 heater circuit. Educational only — verify heater power/ground and live data; do not assume the catalytic converter is failed.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Heater circuit open", "Fuse or relay", "Connector damage"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0171",
+    "title_en": "System Too Lean (Bank 1)",
+    "summary_en": "Fuel trim indicates a lean condition on bank 1. Confirm with fuel trims and leak checks — not a single-part verdict.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Vacuum or intake leak", "MAF reading issue", "Fuel delivery restriction"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0174",
+    "title_en": "System Too Lean (Bank 2)",
+    "summary_en": "Lean condition on bank 2. Same educational path as P0171; compare banks before replacing parts.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Vacuum or intake leak on bank 2", "MAF or fuel delivery issue", "Exhaust leak near an upstream sensor"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0300",
+    "title_en": "Random/Multiple Cylinder Misfire",
+    "summary_en": "Misfire detected on multiple cylinders. Educational checks (coils, plugs, intake leaks) are not a repair order.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Ignition coil or spark plug wear", "Intake vacuum leak", "Fuel quality or injector issue"],
+    "diy_level": "basic",
+    "safety_notes": "If the engine is shaking hard or the MIL is flashing, reduce load and consider a shop. Catalytic converter overheat risk."
+  },
+  {
+    "code": "P0301",
+    "title_en": "Cylinder 1 Misfire Detected",
+    "summary_en": "Misfire isolated to cylinder 1. Coil/plug swap tests can help; they are educational, not a parts mandate.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Coil or plug on cylinder 1", "Injector or wiring on that cylinder", "Compression or mechanical issue (shop)"],
+    "diy_level": "basic",
+    "safety_notes": "Flashing MIL: stop aggressive driving and verify professionally."
+  },
+  {
+    "code": "P0302",
+    "title_en": "Cylinder 2 Misfire Detected",
+    "summary_en": "Misfire isolated to cylinder 2. Same educational caution as other misfire codes.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Coil or plug on cylinder 2", "Injector or wiring on that cylinder", "Shared intake leak affecting several cylinders"],
+    "diy_level": "basic",
+    "safety_notes": "Flashing MIL: reduce load and verify professionally."
+  },
+  {
+    "code": "P0303",
+    "title_en": "Cylinder 3 Misfire Detected",
+    "summary_en": "Misfire isolated to cylinder 3. Same educational caution as other misfire codes.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Coil or plug on cylinder 3", "Injector or wiring on that cylinder", "Mechanical issue best confirmed at a shop"],
+    "diy_level": "basic",
+    "safety_notes": "Flashing MIL: reduce load and verify professionally."
+  },
+  {
+    "code": "P0304",
+    "title_en": "Cylinder 4 Misfire Detected",
+    "summary_en": "Misfire isolated to cylinder 4. Same educational caution as other misfire codes.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Coil or plug on cylinder 4", "Injector or wiring on that cylinder", "Mechanical issue best confirmed at a shop"],
+    "diy_level": "basic",
+    "safety_notes": "Flashing MIL: reduce load and verify professionally."
+  },
+  {
+    "code": "P0305",
+    "title_en": "Cylinder 5 Misfire Detected",
+    "summary_en": "Misfire isolated to cylinder 5. Educational swap tests can help identify coil vs plug vs other causes.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Coil or plug on cylinder 5", "Injector or wiring on that cylinder", "Mechanical issue best confirmed at a shop"],
+    "diy_level": "basic",
+    "safety_notes": "Flashing MIL: reduce load and verify professionally."
+  },
+  {
+    "code": "P0306",
+    "title_en": "Cylinder 6 Misfire Detected",
+    "summary_en": "Misfire isolated to cylinder 6. Same educational caution as other misfire codes.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Coil or plug on cylinder 6", "Injector or wiring on that cylinder", "Mechanical issue best confirmed at a shop"],
+    "diy_level": "basic",
+    "safety_notes": "Flashing MIL: reduce load and verify professionally."
+  },
+  {
+    "code": "P0307",
+    "title_en": "Cylinder 7 Misfire Detected",
+    "summary_en": "Misfire isolated to cylinder 7. Same educational caution as other misfire codes.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Coil or plug on cylinder 7", "Injector or wiring on that cylinder", "Mechanical issue best confirmed at a shop"],
+    "diy_level": "basic",
+    "safety_notes": "Flashing MIL: reduce load and verify professionally."
+  },
+  {
+    "code": "P0308",
+    "title_en": "Cylinder 8 Misfire Detected",
+    "summary_en": "Misfire isolated to cylinder 8. Same educational caution as other misfire codes.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Coil or plug on cylinder 8", "Injector or wiring on that cylinder", "Mechanical issue best confirmed at a shop"],
+    "diy_level": "basic",
+    "safety_notes": "Flashing MIL: reduce load and verify professionally."
+  },
+  {
+    "code": "P0335",
+    "title_en": "Crankshaft Position Sensor A Circuit",
+    "summary_en": "Crankshaft position circuit fault. The engine may crank without starting or stall. Confirm connector, air gap, and related fuses — not an automatic sensor replacement.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Sensor connector or wiring", "Damaged reluctor/tone ring (observe)", "Sensor internal fault"],
+    "diy_level": "advanced",
+    "safety_notes": "Stalling in traffic is a safety issue — verify before highway driving."
+  },
+  {
+    "code": "P0340",
+    "title_en": "Camshaft Position Sensor Circuit",
+    "summary_en": "Camshaft position circuit fault. Can cause hard start, rough running, or a no-start. Confirm wiring and correlation data with a scan tool.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Sensor connector or wiring", "Timing correlation issue (shop)", "Sensor internal fault"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0401",
+    "title_en": "EGR Flow Insufficient",
+    "summary_en": "EGR flow below expected. Passages, valve, and related sensors need confirmation — do not assume the EGR valve must be replaced from the code alone.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Carbon-restricted EGR passages", "EGR valve or solenoid not opening", "DPFE/MAP feedback issue"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0420",
+    "title_en": "Catalyst System Efficiency Below Threshold (Bank 1)",
+    "summary_en": "Downstream vs upstream O2 activity suggests catalytic converter efficiency may be low — or sensors/exhaust leaks can mimic it. Do not assert the converter must be replaced.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Exhaust leak ahead of the downstream sensor", "Aging downstream O2 sensor", "Catalyst efficiency concern (confirm with live data)"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0430",
+    "title_en": "Catalyst System Efficiency Below Threshold (Bank 2)",
+    "summary_en": "Same family as P0420 on bank 2. Educational only; exhaust leaks and O2 sensors can imitate catalyst failure.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Exhaust leak", "Downstream O2 sensor issue", "Catalyst efficiency concern (confirm, do not assume)"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0442",
+    "title_en": "EVAP System Small Leak Detected",
+    "summary_en": "Small evaporative-emissions leak. Gas cap, hoses, and purge/vent parts are educational starting points — a smoke test confirms.",
+    "system": "powertrain",
+    "severity_hint": "low",
+    "common_causes": ["Loose or worn gas cap", "Cracked EVAP hose", "Purge or vent valve sealing issue"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0455",
+    "title_en": "EVAP System Large Leak Detected",
+    "summary_en": "Large EVAP leak. Loose or missing cap is a common first check. Confirm before replacing canisters or valves.",
+    "system": "powertrain",
+    "severity_hint": "low",
+    "common_causes": ["Loose, missing, or damaged gas cap", "Disconnected EVAP hose", "Failed purge or vent valve"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0456",
+    "title_en": "EVAP System Very Small Leak",
+    "summary_en": "Very small EVAP leak. Often intermittent; a professional smoke test is the reliable confirmation path.",
+    "system": "powertrain",
+    "severity_hint": "low",
+    "common_causes": ["Cap seal", "Hairline hose crack", "Purge/vent sealing"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0457",
+    "title_en": "EVAP Leak (Fuel Cap Loose/Off)",
+    "summary_en": "Often associated with a loose fuel cap. Reseat the cap and retest — do not treat this as a failed EVAP canister by default.",
+    "system": "powertrain",
+    "severity_hint": "low",
+    "common_causes": ["Loose fuel cap", "Damaged cap seal", "Filler neck issue"],
+    "diy_level": "observe"
+  },
+  {
+    "code": "P0496",
+    "title_en": "EVAP Flow During Non-Purge",
+    "summary_en": "Evaporative system flow detected when purge should be closed. Educational checks: purge valve sealing and hose routing — not a canister replacement order.",
+    "system": "powertrain",
+    "severity_hint": "low",
+    "common_causes": ["Purge valve stuck open", "Misrouted EVAP hose", "Control circuit issue"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0500",
+    "title_en": "Vehicle Speed Sensor Malfunction",
+    "summary_en": "Vehicle speed signal issue. Can affect ABS or transmission behavior. Verify connectors and related module data.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Speed sensor connector", "Tone ring damage (observe)", "Related module communication"],
+    "diy_level": "advanced",
+    "safety_notes": "Verify before driving if the speedometer or ABS warnings are present."
+  },
+  {
+    "code": "P0507",
+    "title_en": "Idle Control System RPM Higher Than Expected",
+    "summary_en": "Idle higher than expected. Vacuum leaks and throttle-body cleanliness are educational checks, not a parts order.",
+    "system": "powertrain",
+    "severity_hint": "low",
+    "common_causes": ["Vacuum leak", "Throttle body deposit (observe/clean if specified in the manual)", "Idle control circuit"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0520",
+    "title_en": "Engine Oil Pressure Sensor/Switch Circuit",
+    "summary_en": "Oil pressure sensor/switch circuit fault. Confirm actual oil level and whether a mechanical gauge agrees — do not ignore a low-pressure warning light.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Low oil level (check first)", "Sensor connector or wiring", "Sensor vs true pressure mismatch (shop)"],
+    "diy_level": "basic",
+    "safety_notes": "If the oil-pressure warning is on, stop and check level. Continued driving with true low pressure can damage the engine."
+  },
+  {
+    "code": "P0521",
+    "title_en": "Engine Oil Pressure Sensor Range/Performance",
+    "summary_en": "Oil pressure sensor reading is out of expected range. Compare scan data with oil level and, if possible, a mechanical reading.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Oil level or viscosity concern", "Sensor performance", "Wiring intermittents"],
+    "diy_level": "advanced",
+    "safety_notes": "Treat a red oil-pressure lamp as urgent until proven otherwise."
+  },
+  {
+    "code": "P0522",
+    "title_en": "Engine Oil Pressure Sensor Low",
+    "summary_en": "Oil pressure sensor circuit low. Could be wiring or a true low-pressure condition — verify oil level immediately.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Low oil", "Sensor circuit low", "Connector damage"],
+    "diy_level": "basic",
+    "safety_notes": "Stop and check oil if a warning lamp is on."
+  },
+  {
+    "code": "P0523",
+    "title_en": "Engine Oil Pressure Sensor High",
+    "summary_en": "Oil pressure sensor circuit high. Confirm wiring and that the reading matches engine behavior; do not ignore conflicting warning lamps.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Open ground or high signal", "Sensor fault", "Connector issue"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0562",
+    "title_en": "System Voltage Low",
+    "summary_en": "Charging or battery voltage low. Check battery state and charging output with a meter. Electrical diagnosis first — do not assume an ECU replacement.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Weak battery", "Charging output low", "Poor ground or connection"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0627",
+    "title_en": "Fuel Pump A Control Circuit / Open",
+    "summary_en": "Fuel pump control circuit open or not responding as expected. Confirm inertia switch/fuse (if equipped), relay click, and pump power — not an automatic pump replacement.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Fuse or relay", "Open control/power circuit", "Pump or driver module issue (shop)"],
+    "diy_level": "advanced",
+    "safety_notes": "Fuel work: no sparks, cool system, and follow the owner's manual. A no-start on a live road is a safety issue."
+  },
+  {
+    "code": "P0700",
+    "title_en": "Transmission Control System Malfunction (request)",
+    "summary_en": "PCM request to check TCM/transmission codes. Read transmission-specific codes; P0700 alone is not a rebuild verdict.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Stored TCM codes not yet read", "Transmission range or sensor issue", "Network/comms with the TCM"],
+    "diy_level": "shop"
+  },
+  {
+    "code": "P0011",
+    "title_en": "Camshaft Position Timing Over-Advanced or System Performance (Bank 1)",
+    "summary_en": "Intake cam timing may be more advanced than expected. Confirm oil level/condition and VVT operation with live data — not a command to replace a cam phaser today.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Low or dirty engine oil", "VVT solenoid or oil-control valve", "Cam phaser or timing chain wear (shop)"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0138",
+    "title_en": "O2 Sensor Circuit High Voltage (Bank 1 Sensor 2)",
+    "summary_en": "Downstream oxygen sensor voltage high. Verify connector, wiring, and live data. Do not assume the catalytic converter has failed from this code alone.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Shorted signal or damaged harness", "Contaminated sensor", "Exhaust leak near the sensor (confirm, do not replace on guess)"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0325",
+    "title_en": "Knock Sensor 1 Circuit (Bank 1 or Single Sensor)",
+    "summary_en": "Knock sensor circuit. Confirm connector and harness condition. Unexpected spark knock under load is a stop-and-check concern — not an OEM part-number order.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Connector corrosion", "Open or shorted sensor circuit", "Sensor mounting or sensor fault (verify)"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0351",
+    "title_en": "Ignition Coil A Primary/Secondary Circuit",
+    "summary_en": "Ignition coil A circuit. Check the coil connector and related misfire codes. Do not invent an OEM coil number from the code alone.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Coil connector or wiring", "Failed coil on cylinder A (confirm swap test if safe)", "PCM driver issue (shop)"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0440",
+    "title_en": "Evaporative Emission Control System",
+    "summary_en": "EVAP system fault. Start with the gas cap and visible hoses. This is not a charcoal-canister replacement verdict.",
+    "system": "powertrain",
+    "severity_hint": "low",
+    "common_causes": ["Loose or leaking fuel cap", "EVAP hose or purge line", "Purge or vent control issue"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0446",
+    "title_en": "Evaporative Emission Vent Control Circuit",
+    "summary_en": "EVAP vent control circuit. Confirm vent valve connector and blocked vent path (aftermarket trays, debris) before parts. Educational checks only.",
+    "system": "powertrain",
+    "severity_hint": "low",
+    "common_causes": ["Vent valve connector", "Blocked charcoal-canister vent", "Control circuit open/short"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0506",
+    "title_en": "Idle Air Control System RPM Lower Than Expected",
+    "summary_en": "Idle speed lower than expected. Check for vacuum leaks, dirty throttle (observe only), and related idle codes. Not an automatic idle-air-valve replacement.",
+    "system": "powertrain",
+    "severity_hint": "low",
+    "common_causes": ["Vacuum leak", "Throttle body carbon (observe; follow manual if cleaning)", "IAC/idle control circuit"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0606",
+    "title_en": "PCM Processor Fault",
+    "summary_en": "Internal PCM/ECM processor fault reported. Record freeze frame, check battery/charging voltage, and use a dealer or specialist for module diagnosis — do not replace the PCM from this code alone.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Low system voltage / poor grounds", "PCM internal fault (shop)", "Software/module issue (dealer)"],
+    "diy_level": "shop"
+  },
+  {
+    "code": "P2111",
+    "title_en": "Throttle Actuator Control System - Stuck Open",
+    "summary_en": "Electronic throttle may be stuck open. Unexpected acceleration or a throttle warning is a stop-driving concern until verified. Do not 'clean and ignore'.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Throttle body carbon or binding (observe only)", "Actuator or position-sensor fault", "Wiring or PCM throttle control"],
+    "diy_level": "shop",
+    "safety_notes": "If the vehicle surges or will not return to idle, stop driving and use a qualified shop."
+  },
+  {
+    "code": "P2195",
+    "title_en": "O2 Sensor Signal Biased/Stuck Lean (Bank 1 Sensor 1)",
+    "summary_en": "Upstream O2/AFR signal looks stuck lean. Confirm exhaust leaks, fuel trim, and connector condition — not a single-sensor parts order.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Exhaust leak before the sensor", "Connector or wiring", "Sensor contamination or failure (verify live data)"],
+    "diy_level": "basic"
+  }
+]

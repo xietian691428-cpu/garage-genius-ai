@@ -15,6 +15,12 @@ import {
   vehicleInfoToRow,
   type UserVehicleRow,
 } from "@/lib/user-vehicles";
+import {
+  decodeVinValues,
+  isFreshVpicSnapshot,
+  mergeVpicIntoVehicle,
+} from "@/lib/vehicle-data/nhtsa-vpic";
+import { normalizeVin } from "@/lib/vehicle-data/vin";
 
 export const runtime = "nodejs";
 
@@ -67,7 +73,20 @@ export async function POST(req: NextRequest) {
     }
 
     const makeCurrent = body.makeCurrent !== false;
-    const payload = vehicleInfoToRow(vehicle, user.id, { isCurrent: makeCurrent });
+
+    let enriched = vehicle;
+    const vin = normalizeVin(vehicle.vin);
+    const hasFreshVpic = isFreshVpicSnapshot(vehicle.vpicDecode);
+    if (vin && !hasFreshVpic) {
+      const decoded = await decodeVinValues(vin);
+      if (decoded) {
+        enriched = mergeVpicIntoVehicle(vehicle, decoded);
+      }
+    }
+
+    const payload = vehicleInfoToRow(enriched, user.id, {
+      isCurrent: makeCurrent,
+    });
     const insertPayload: Record<string, unknown> = { ...payload };
     if (!isUuid(String(payload.id))) {
       delete insertPayload.id;
@@ -81,6 +100,17 @@ export async function POST(req: NextRequest) {
 
     if (error && /license_plate/i.test(error.message)) {
       delete insertPayload.license_plate;
+      const retry = await userClient
+        .from("user_vehicles")
+        .insert(insertPayload)
+        .select("*")
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
+    if (error && /vpic_decode|vpic_decoded_at/i.test(error.message)) {
+      delete insertPayload.vpic_decode;
+      delete insertPayload.vpic_decoded_at;
       const retry = await userClient
         .from("user_vehicles")
         .insert(insertPayload)

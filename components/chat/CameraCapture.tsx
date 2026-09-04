@@ -153,11 +153,7 @@ export default function CameraCapture({
     ctx.drawImage(video, 0, 0);
 
     const raw = canvas.toDataURL("image/jpeg", 0.92);
-    const compressed = await compressImageDataUrl(raw, {
-      maxWidth: 1600,
-      maxHeight: 1600,
-      quality: 0.82,
-    });
+    const compressed = await compressImageDataUrl(raw);
     setPreview(compressed);
     stopStream();
   };

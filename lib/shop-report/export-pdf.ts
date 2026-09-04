@@ -6,6 +6,10 @@
 import { jsPDF } from "jspdf";
 import type { ShopReportPayload } from "@/lib/types/shop-report";
 import { SHOP_REPORT_DISCLAIMER } from "@/lib/types/shop-report";
+import {
+  shopReportRecallEmptyCopy,
+  shopReportRecallUnavailableCopy,
+} from "@/lib/shop-report/recalls";
 
 const MARGIN = 54; // ~0.75"
 const PAGE_W = 612; // Letter
@@ -136,6 +140,32 @@ export function exportShopReportPdf(
   }
   if (payload.diagnosticData.dataSourceNote) {
     para(`Data source: ${payload.diagnosticData.dataSourceNote}`, 9);
+  }
+  if (payload.diagnosticData.codeNote) {
+    para(payload.diagnosticData.codeNote, 8);
+  }
+
+  const recall = payload.recallEducation;
+  if (recall) {
+    sectionTitle("NHTSA recall education (US)");
+    para("Source: NHTSA", 9);
+    para(
+      `For ${recall.ymm}. Campaigns may apply to some vehicles of this year/make/model. This is not a VIN repair status and does not mean a part must be replaced today.`,
+      9,
+    );
+    if (recall.status === "listed") {
+      bullets(
+        recall.hints.map(
+          (h) =>
+            `${h.campaignNumber} — ${h.component}${h.summary ? `: ${h.summary}` : ""}`,
+        ),
+      );
+    } else if (recall.status === "empty") {
+      para(shopReportRecallEmptyCopy());
+    } else {
+      para(shopReportRecallUnavailableCopy());
+    }
+    para(`${recall.lookupUrl}  ·  ${recall.footnote}`, 8);
   }
 
   sectionTitle("Checks Already Completed by Owner");

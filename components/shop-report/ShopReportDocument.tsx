@@ -1,5 +1,9 @@
 import type { ShopReportPayload } from "@/lib/types/shop-report";
 import { SHOP_REPORT_DISCLAIMER } from "@/lib/types/shop-report";
+import {
+  shopReportRecallEmptyCopy,
+  shopReportRecallUnavailableCopy,
+} from "@/lib/shop-report/recalls";
 
 /** Read-only HTML rendering for /r/[token] and history preview. */
 export default function ShopReportDocument({
@@ -86,7 +90,68 @@ export default function ShopReportDocument({
             Data source: {payload.diagnosticData.dataSourceNote}
           </p>
         ) : null}
+        {payload.diagnosticData.codeNote ? (
+          <p className="mt-2 text-xs text-slate-500">
+            {payload.diagnosticData.codeNote}
+          </p>
+        ) : null}
       </section>
+
+      {payload.recallEducation ? (
+        <section data-testid="shop-report-recall-education">
+          <h2 className="text-xs font-bold uppercase tracking-wide text-cyan-700">
+            NHTSA recall education (US)
+          </h2>
+          <p className="mt-1 text-[11px] text-slate-500">Source: NHTSA</p>
+          <p className="mt-2 text-xs text-slate-500">
+            For {payload.recallEducation.ymm}. Campaigns below may apply to some
+            vehicles of this year/make/model. This is not a VIN repair status and
+            does not mean a part must be replaced today.
+          </p>
+          {payload.recallEducation.status === "listed" ? (
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+              {payload.recallEducation.hints.map((h) => (
+                <li key={h.campaignNumber}>
+                  <details>
+                    <summary className="cursor-pointer font-semibold">
+                      {h.campaignNumber}
+                      {h.component ? ` — ${h.component}` : ""}
+                      <span className="ml-1.5 font-normal text-slate-500">
+                        Expand
+                      </span>
+                    </summary>
+                    {h.summary ? (
+                      <p className="mt-1 font-normal text-slate-600">
+                        {h.summary}
+                      </p>
+                    ) : null}
+                  </details>
+                </li>
+              ))}
+            </ul>
+          ) : payload.recallEducation.status === "empty" ? (
+            <p className="mt-2 text-sm text-slate-600">
+              {shopReportRecallEmptyCopy()}
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-slate-600">
+              {shopReportRecallUnavailableCopy()}
+            </p>
+          )}
+          <p className="mt-2 text-xs text-slate-500">
+            <a
+              href={payload.recallEducation.lookupUrl}
+              className="text-cyan-700 underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {payload.recallEducation.lookupUrl.replace(/^https:\/\//, "")}
+            </a>
+            {" · "}
+            {payload.recallEducation.footnote}
+          </p>
+        </section>
+      ) : null}
 
       <section>
         <h2 className="text-xs font-bold uppercase tracking-wide text-cyan-700">

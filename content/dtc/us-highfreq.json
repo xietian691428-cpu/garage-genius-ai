@@ -1,0 +1,270 @@
+[
+  {
+    "code": "P0010",
+    "title_en": "A Camshaft Position Actuator Circuit (Bank 1)",
+    "summary_en": "VVT/VCT actuator circuit on bank 1. Confirm oil level/condition and the connector before assuming the solenoid is failed.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Low or dirty engine oil", "Actuator connector or wiring", "Stuck or failed VVT solenoid (verify command vs actual)"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0016",
+    "title_en": "Crankshaft/Camshaft Correlation (Bank 1 Sensor A)",
+    "summary_en": "CKP and CMP signals do not agree. Timing chain/belt or a sensor correlation issue — educational only, not a parts order.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Stretched timing chain or jumped tooth (shop if engine noise)", "Cam or crank sensor correlation", "Reluctor wheel damage (observe)"],
+    "diy_level": "shop",
+    "safety_notes": "A rattling engine or no-start after this code is a stop-and-shop concern."
+  },
+  {
+    "code": "P0102",
+    "title_en": "MAF Circuit Low Input",
+    "summary_en": "Mass air flow signal is low. Intake leaks after the MAF and a dirty element are common educational checks.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Intake leak after the MAF", "Dirty MAF element", "Wiring or connector"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0106",
+    "title_en": "MAP Circuit Range/Performance",
+    "summary_en": "Manifold pressure reading is out of range. Vacuum leaks and live MAP vs RPM should be confirmed first.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Vacuum leak", "MAP sensor connector", "Blocked MAP port (observe)"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0117",
+    "title_en": "ECT Sensor Circuit Low Input",
+    "summary_en": "Engine coolant temperature signal is low. Confirm coolant level and the sensor connector — not an automatic thermostat replacement.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["ECT connector or short to ground", "Low coolant", "Failed ECT sensor (verify live temp)"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0118",
+    "title_en": "ECT Sensor Circuit High Input",
+    "summary_en": "Engine coolant temperature signal is high. Open circuit and connector checks come before parts.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Open ECT circuit", "Unplugged connector", "Failed sensor element"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0131",
+    "title_en": "O2 Sensor Circuit Low Voltage (Bank 1 Sensor 1)",
+    "summary_en": "Upstream O2/AFR voltage is low. Exhaust leaks before the sensor and connector condition are educational first checks.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Exhaust leak before the sensor", "Connector or wiring", "Sensor contamination (verify live data)"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0133",
+    "title_en": "O2 Sensor Circuit Slow Response (Bank 1 Sensor 1)",
+    "summary_en": "Upstream O2 response is slow. Aging sensor or exhaust leaks — confirm with live data, not a converter verdict.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Aged upstream O2/AFR sensor", "Exhaust leak", "Silicone or coolant contamination"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0134",
+    "title_en": "O2 Sensor Circuit No Activity (Bank 1 Sensor 1)",
+    "summary_en": "Upstream O2 shows no activity. Heater circuit and connector are educational checks before replacement.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Heater circuit", "Unplugged connector", "Open signal wire"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0137",
+    "title_en": "O2 Sensor Circuit Low Voltage (Bank 1 Sensor 2)",
+    "summary_en": "Downstream O2 voltage is low. Do not assume the catalytic converter has failed from this code alone.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Exhaust leak", "Downstream O2 connector", "Converter efficiency (verify after leaks/O2)"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0201",
+    "title_en": "Injector Circuit / Open - Cylinder 1",
+    "summary_en": "Cylinder 1 injector circuit. Confirm connector, fuse/power, and misfire correlation — not a PCM parts order.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Injector connector", "Open or shorted injector wiring", "Failed injector (verify resistance/live)"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0328",
+    "title_en": "Knock Sensor 1 Circuit High (Bank 1)",
+    "summary_en": "Knock sensor circuit high. Connector and harness routing are educational checks; engine knock in traffic is a shop concern.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Knock sensor connector", "Harness damage", "Sensor internal fault"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0341",
+    "title_en": "Camshaft Position Sensor Circuit Range/Performance",
+    "summary_en": "CMP signal is out of expected range. Correlation with crank sensor and connector checks come first.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["CMP connector", "Tone ring debris (observe)", "Sensor correlation vs CKP"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0352",
+    "title_en": "Ignition Coil B Primary/Secondary Circuit",
+    "summary_en": "Ignition coil B circuit. Swap/observe only if the manual allows; do not invent coil part numbers.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Coil connector", "Coil primary/secondary fault (verify)", "PCM driver circuit (shop)"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0400",
+    "title_en": "EGR Flow",
+    "summary_en": "EGR flow is not as expected. Carbon, passages, and the valve circuit are educational checks — not a converter diagnosis.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Carbon in EGR passages", "EGR valve circuit", "DPFE/pressure sensor (if equipped)"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0441",
+    "title_en": "EVAP Incorrect Purge Flow",
+    "summary_en": "EVAP purge flow is incorrect. Cap, hoses, and purge solenoid are educational checks.",
+    "system": "powertrain",
+    "severity_hint": "low",
+    "common_causes": ["Loose fuel cap", "Purge solenoid stuck", "EVAP hose leak"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0443",
+    "title_en": "EVAP Purge Control Valve Circuit",
+    "summary_en": "EVAP purge valve circuit. Connector and command vs click tests are educational — not a tank replacement.",
+    "system": "powertrain",
+    "severity_hint": "low",
+    "common_causes": ["Purge valve connector", "Open/short in the control wire", "Failed purge solenoid"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0463",
+    "title_en": "Fuel Level Sensor Circuit High Input",
+    "summary_en": "Fuel level signal is high. Gauge cluster vs sender circuit — educational, not a pump replacement.",
+    "system": "powertrain",
+    "severity_hint": "low",
+    "common_causes": ["Fuel sender connector", "Open ground on the sender", "Cluster/module input"],
+    "diy_level": "advanced"
+  },
+  {
+    "code": "P0505",
+    "title_en": "Idle Control System",
+    "summary_en": "Idle speed control is out of range. Vacuum leaks and throttle-body carbon (observe) before parts.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Vacuum leak", "Throttle-body carbon (observe; follow manual)", "IAC/idle control circuit"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0705",
+    "title_en": "Transmission Range Sensor Circuit (PRNDL)",
+    "summary_en": "Gear-range/PRNDL circuit. Confirm shifter position sensor and connector — unexpected gear display is a shop concern if the vehicle moves wrongly.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["Range sensor connector", "Adjustment/alignment (shop)", "Internal sensor fault"],
+    "diy_level": "shop",
+    "safety_notes": "If displayed gear does not match actual movement, stop driving and use a qualified shop."
+  },
+  {
+    "code": "P0741",
+    "title_en": "Torque Converter Clutch Circuit Performance/Stuck Off",
+    "summary_en": "TCC performance. Fluid condition and command vs slip are educational; internal trans work is shop-level.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["ATF level/condition (observe dipstick if equipped)", "TCC solenoid circuit", "Internal converter/clutch wear (shop)"],
+    "diy_level": "shop"
+  },
+  {
+    "code": "P2096",
+    "title_en": "Post Catalyst Fuel Trim Too Lean (Bank 1)",
+    "summary_en": "Downstream fuel trim is lean. Exhaust leaks and O2 data first — do not treat this as a confirmed converter failure.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Exhaust leak", "Downstream O2 connector", "Fuel trim from an upstream issue"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P2135",
+    "title_en": "Throttle/Pedal Position Sensor/Switch A/B Voltage Correlation",
+    "summary_en": "Throttle or pedal position sensors disagree. Unexpected throttle response is a stop-driving concern until verified.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["TP/APP connector", "Sensor correlation mismatch", "Electronic throttle body (shop if surge/idle will not return)"],
+    "diy_level": "shop",
+    "safety_notes": "If the vehicle surges or will not return to idle, stop driving."
+  },
+  {
+    "code": "P2138",
+    "title_en": "Throttle/Pedal Position Sensor/Switch D/E Voltage Correlation",
+    "summary_en": "Pedal position sensors disagree. Treat unexpected acceleration as a stop-driving concern.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["APP connector", "Pedal sensor correlation", "Wiring short/open"],
+    "diy_level": "shop",
+    "safety_notes": "Unexpected throttle response: stop driving until verified."
+  },
+  {
+    "code": "P2270",
+    "title_en": "O2 Sensor Signal Biased/Stuck Lean (Bank 1 Sensor 2)",
+    "summary_en": "Downstream O2 looks stuck lean. Exhaust leaks and connector checks first; not a converter parts order.",
+    "system": "powertrain",
+    "severity_hint": "medium",
+    "common_causes": ["Exhaust leak", "Downstream O2 connector", "Sensor bias (verify live data)"],
+    "diy_level": "basic"
+  },
+  {
+    "code": "P0A80",
+    "title_en": "Hybrid/EV Battery Pack Performance (P0A80)",
+    "summary_en": "Hybrid/EV battery pack performance code. High-voltage work is not DIY. Record the code and use a qualified hybrid shop or dealer — this title is SAE wording, not a command to replace the pack today.",
+    "system": "powertrain",
+    "severity_hint": "high",
+    "common_causes": ["HV battery degradation (shop)", "Cooling airflow blocked (observe only)", "Module/sensor correlation (dealer)"],
+    "diy_level": "shop",
+    "safety_notes": "Do not open orange-cable HV packs. Qualified high-voltage technician only."
+  },
+  {
+    "code": "U0073",
+    "title_en": "Control Module Communication Bus Off",
+    "summary_en": "CAN/network bus off. Battery voltage and grounds first. Lost comms can disable ABS/SRS messages until verified.",
+    "system": "network",
+    "severity_hint": "high",
+    "common_causes": ["Low battery voltage", "Poor grounds", "CAN wiring short"],
+    "diy_level": "advanced",
+    "safety_notes": "ABS or other modules may be unavailable — allow extra stopping distance until scanned."
+  },
+  {
+    "code": "U0140",
+    "title_en": "Lost Communication With Body Control Module",
+    "summary_en": "Lost BCM comms. Power/grounds and network integrity come before module replacement.",
+    "system": "network",
+    "severity_hint": "medium",
+    "common_causes": ["BCM power/ground", "Low system voltage", "Network wiring"],
+    "diy_level": "shop"
+  },
+  {
+    "code": "C0036",
+    "title_en": "Left Front Wheel Speed Sensor Circuit Range/Performance",
+    "summary_en": "LF wheel-speed performance. Harness and tone ring are educational checks. ABS may be limited.",
+    "system": "chassis",
+    "severity_hint": "medium",
+    "common_causes": ["Sensor harness", "Tone ring debris or cracks (observe)", "Connector corrosion"],
+    "diy_level": "basic",
+    "safety_notes": "ABS or traction control may be limited until verified."
+  }
+]

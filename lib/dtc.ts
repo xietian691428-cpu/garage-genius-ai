@@ -7,99 +7,43 @@ import type {
   DtcFamily,
   DtcLookupResult,
   DtcPlaybookMatch,
-  DtcSeverity,
   ParsedDtc,
 } from "@/lib/types/dtc";
+import {
+  extractDtcCodes,
+} from "@/lib/dtc-parse";
+import {
+  lookupLocalDtc,
+  severityHintToDtcSeverity,
+} from "@/lib/vehicle-data/dtc-local";
+import { getCoachPlaybook } from "@/lib/coach-scenarios/catalog";
+
+export {
+  DTC_CODE_REGEX,
+  compactDtcInput,
+  extractDtcCodes,
+  extractDtcCodesFromAny,
+  isValidDtcInput,
+  normalizeDtcCode,
+} from "@/lib/dtc-parse";
 
 /** Same shape as chat starter / follow-up chips (kept local to avoid circular imports). */
 export type DtcChip = {
   id: string;
   label: string;
   prompt: string;
+  /** Opens Coach Library to this production slug — does not change Player internals. */
+  playbookSlug?: string;
 };
-
-/** OBD-II style: P0300, C1234, B0001, U0100 (hex digits allowed). */
-export const DTC_CODE_REGEX = /\b([PCBU])([0-9A-Fa-f]{4})\b/g;
-
-const DTC_CATALOG: Record<
-  string,
-  { desc: string; severity: DtcSeverity }
-> = {
-  P0101: { desc: "MAF Circuit Range/Performance", severity: "Moderate" },
-  P0171: { desc: "System Too Lean (Bank 1)", severity: "Moderate" },
-  P0174: { desc: "System Too Lean (Bank 2)", severity: "Moderate" },
-  P0300: { desc: "Random/Multiple Cylinder Misfire", severity: "High" },
-  P0301: { desc: "Cylinder 1 Misfire Detected", severity: "High" },
-  P0302: { desc: "Cylinder 2 Misfire Detected", severity: "High" },
-  P0303: { desc: "Cylinder 3 Misfire Detected", severity: "High" },
-  P0304: { desc: "Cylinder 4 Misfire Detected", severity: "High" },
-  P0420: {
-    desc: "Catalyst System Efficiency Below Threshold (Bank 1)",
-    severity: "Moderate",
-  },
-  P0430: {
-    desc: "Catalyst System Efficiency Below Threshold (Bank 2)",
-    severity: "Moderate",
-  },
-  P0442: { desc: "EVAP System Small Leak Detected", severity: "Low" },
-  P0455: { desc: "EVAP System Large Leak Detected", severity: "Low" },
-  P0456: { desc: "EVAP System Very Small Leak", severity: "Low" },
-  P0457: { desc: "EVAP Leak (Fuel Cap Loose/Off)", severity: "Low" },
-  P0500: { desc: "Vehicle Speed Sensor Malfunction", severity: "Moderate" },
-  P0700: {
-    desc: "Transmission Control System Malfunction (request)",
-    severity: "Moderate",
-  },
-  P0128: { desc: "Coolant Thermostat (Coolant Temp Below Thermostat Regulating Temperature)", severity: "Low" },
-  P0401: { desc: "EGR Flow Insufficient", severity: "Moderate" },
-  P0113: { desc: "IAT Sensor Circuit High Input", severity: "Low" },
-  P0135: { desc: "O2 Sensor Heater Circuit (Bank 1 Sensor 1)", severity: "Moderate" },
-  P0141: { desc: "O2 Sensor Heater Circuit (Bank 1 Sensor 2)", severity: "Moderate" },
-  P0507: { desc: "Idle Control System RPM Higher Than Expected", severity: "Low" },
-  P0562: { desc: "System Voltage Low", severity: "Moderate" },
-  C0035: { desc: "Left Front Wheel Speed Sensor Circuit", severity: "Moderate" },
-  C0040: { desc: "Right Front Wheel Speed Sensor Circuit", severity: "Moderate" },
-  C0121: { desc: "ABS Module / Speed Sensor Related", severity: "Info" },
-  B0028: { desc: "Right Side Airbag Deployment Control", severity: "High" },
-  U0100: {
-    desc: "Lost Communication With ECM/PCM",
-    severity: "High",
-  },
-  U0101: {
-    desc: "Lost Communication With TCM",
-    severity: "High",
-  },
-  U0121: {
-    desc: "Lost Communication With ABS Control Module",
-    severity: "Moderate",
-  },
-};
-
-export function normalizeDtcCode(raw: string): string | null {
-  const m = raw.trim().toUpperCase().match(/^([PCBU])([0-9A-F]{4})$/);
-  if (!m) return null;
-  return `${m[1]}${m[2]}`;
-}
-
-export function extractDtcCodes(text: string): string[] {
-  if (!text) return [];
-  const found = new Set<string>();
-  const re = new RegExp(DTC_CODE_REGEX.source, "g");
-  for (const m of text.matchAll(re)) {
-    found.add(`${m[1].toUpperCase()}${m[2].toUpperCase()}`);
-  }
-  return [...found];
-}
 
 export function lookupDtc(code: string): ParsedDtc {
-  const normalized = normalizeDtcCode(code) || code.trim().toUpperCase();
-  const family = (normalized[0] as DtcFamily) || "P";
-  const hint = DTC_CATALOG[normalized];
+  const local = lookupLocalDtc(code);
+  const family = (local.code[0] as DtcFamily) || "P";
   return {
-    code: normalized,
+    code: local.code,
     family,
-    desc: hint?.desc ?? "Diagnostic trouble code (see OEM definition for this vehicle)",
-    severity: hint?.severity ?? "Moderate",
+    desc: local.title,
+    severity: severityHintToDtcSeverity(local.severityHint),
   };
 }
 
@@ -115,6 +59,38 @@ export function lookupDtcsFromText(text: string): DtcLookupResult {
 
 /** Soft playbook match — Chat can suggest opening the guide; no hard filter. */
 export function matchPlaybookForDtc(dtc: ParsedDtc): DtcPlaybookMatch {
+  const code = dtc.code.toUpperCase();
+  if (code === "P0420" || code === "P0430") {
+    return {
+      slug: "diagnosis_exhaust_emissions",
+      reason:
+        "Catalyst / efficiency code — exhaust & emissions guided checks fit better than brakes.",
+    };
+  }
+  if (/^P030[0-8]$/.test(code)) {
+    return {
+      slug: "diagnosis_check_engine",
+      reason: "Misfire family — Check Engine guided checks first (not brake pads).",
+    };
+  }
+  if (code === "P0171" || code === "P0174") {
+    return {
+      slug: "diagnosis_check_engine",
+      reason: "Fuel-trim / lean family — intake and fuel checks, not brake pads.",
+    };
+  }
+  if (code === "P0455" || code === "P0456" || code === "P0442" || code === "P0440" || code === "P0446" || code === "P0496") {
+    return {
+      slug: "diagnosis_check_engine",
+      reason: "EVAP family — leak checks and cap/hoses, not brake pads.",
+    };
+  }
+  if (code === "U0100" || code === "U0101" || code === "U0121") {
+    return {
+      slug: "diagnosis_electrical_lights_sensors",
+      reason: "Network / lost-comm code — battery, grounds, then module scan path.",
+    };
+  }
   if (dtc.family === "C") {
     return {
       slug: "maintenance_brakes",
@@ -124,16 +100,16 @@ export function matchPlaybookForDtc(dtc: ParsedDtc): DtcPlaybookMatch {
   if (dtc.family === "B") {
     return {
       slug: "diagnosis_check_engine",
-      reason: "Body module code — confirm with scan data; Check Engine flow still helps structure DIY checks.",
+      reason:
+        "Body module code — confirm with scan data; Check Engine flow still helps structure DIY checks.",
     };
   }
   if (dtc.family === "U") {
     return {
-      slug: "diagnosis_check_engine",
+      slug: "diagnosis_electrical_lights_sensors",
       reason: "Network/comms code — start with battery/grounds then module scan path.",
     };
   }
-  // Powertrain → Check Engine playbook
   return {
     slug: "diagnosis_check_engine",
     reason: "Powertrain DTC — Check Engine / OBD guided playbook fits best.",
@@ -178,12 +154,12 @@ export function buildDtcDiagnosisPrompt(options: {
   };
   const sourceLine =
     source === "obd_screenshot"
-      ? "Codes were read from an OBD scanner / dash photo (OCR)."
+      ? "Codes are user-provided from an OBD scanner / dash photo (OCR). This is not a live Bluetooth adapter feed."
       : source === "obd_bluetooth"
         ? "Codes and sensors were read live over Bluetooth OBD-II (ELM327 BLE)."
         : source === "manual"
-          ? "Codes were entered manually by the owner."
-          : "Codes appeared in the owner's message.";
+          ? "Codes are user-provided (typed or pasted by the owner). This is not live/realtime OBD data."
+          : "Codes are user-provided from the owner's message. This is not live/realtime OBD data.";
 
   return [
     confirm,
@@ -198,15 +174,22 @@ export function buildDtcDiagnosisPrompt(options: {
       : []),
     "",
     "Please diagnose with this structure:",
-    "1) Confirm the code meaning in plain English for a DIY owner (or explain a clean scan).",
-    "2) Top 3 most likely causes for THIS vehicle (ranked), with one safe DIY check each.",
-    "3) Solution path: what to verify before buying parts; when to stop DIY / see a shop.",
-    "4) Mention the best Coach playbook theme if relevant" +
-      (playbook ? ` (suggest: ${playbook.slug} — ${playbook.reason})` : "") +
-      ".",
-    "Do not invent OEM torque specs or freeze-frame data you do not have. Ask at most one clarifying question if critical.",
+    "Meaning: confirm each code in plain English from [DTC_REF] only (unknown codes stay generic — do not invent an OEM title).",
+    "Likely causes: a short list of educational possibilities, not a verdict. Never say Replace X now, It's definitely, or Must be the…",
+    "Checks: observe → basic → advanced → shop, matching diy_level.",
+    "When to go to a shop: flashing MIL, safety lights, diy_level=shop, or failed basic checks.",
+    codes.length > 1
+      ? "Multiple codes: list every local REF first, then check order. Safety (SRS/ABS/lost-comm, shop) before pure emissions (catalyst/EVAP)."
+      : "",
+    codes.some((c) => lookupLocalDtc(c.code).diyLevel === "shop")
+      ? "At least one code is diy_level=shop: prefer a shop path; DIY is observe-only."
+      : "",
+    playbook
+      ? `Mention the best Coach playbook theme if relevant (suggest: ${playbook.slug} — ${playbook.reason}).`
+      : "",
+    "Do not invent OEM torque specs, fluid quarts, or freeze-frame data you do not have. Ask at most one clarifying question if critical.",
   ]
-    .filter((line) => line !== undefined)
+    .filter((line) => Boolean(line))
     .join("\n");
 }
 
@@ -259,24 +242,84 @@ export const DTC_FOLLOW_UP_CHIPS: DtcChip[] = [
     id: "dtc-explain",
     label: "Explain this code",
     prompt:
-      "Explain this fault code in plain English for a DIY owner on THIS vehicle. What systems does it involve, how urgent is it, and what should I NOT ignore?",
+      "Explain this fault code in plain English for a DIY owner on THIS vehicle. What systems does it involve, how urgent is it, and what should I NOT ignore? Do not invent OEM definitions.",
   },
   {
     id: "dtc-checks",
     label: "Check steps",
     prompt:
-      "Give a prioritized DIY checklist for this fault code (safe order). For each step: what to look for and what it means. Problem → Checks → Solution path.",
+      "Give a prioritized DIY checklist for this fault code (observe → basic → advanced → shop). Educational only — do not say a specific part must be replaced now.",
   },
   {
-    id: "dtc-parts",
-    label: "Need parts?",
+    id: "dtc-shop",
+    label: "When to stop DIY",
     prompt:
-      "Based on this fault code and my vehicle, do I need parts yet? If yes, recommend fitment-aware parts with OEM/aftermarket notes and purchase links ([[PARTS_DATA]] when ready). If not, say what to verify first.",
+      "When should I stop DIY for this code and see a shop? Safety lights, flashing MIL, and what to record. Do not invent torque or OEM part numbers.",
   },
 ];
 
-export function getDtcFollowUpChips(): DtcChip[] {
-  return [...DTC_FOLLOW_UP_CHIPS];
+const UNKNOWN_DTC_CHIPS: DtcChip[] = [
+  {
+    id: "dtc-unknown-record",
+    label: "Record this code",
+    prompt:
+      "This code is not in the local catalog. Tell me to record it exactly, not ignore safety-related lights, and that a dealer/shop should interpret the OEM meaning. Do not invent a title, TSB, or root cause.",
+  },
+  {
+    id: "dtc-unknown-safety",
+    label: "Safety first",
+    prompt:
+      "For an unknown fault code: what warning lights or symptoms mean stop driving vs continue recording data? Educational only — no Replace X now.",
+  },
+  {
+    id: "dtc-unknown-shop",
+    label: "Shop interprets OEM",
+    prompt:
+      "Explain that an unknown code needs OEM-level interpretation at a shop or dealer. Do not invent a diagnosis from the code letters alone.",
+  },
+];
+
+function playbookChipForCode(code: string): DtcChip | null {
+  const parsed = lookupDtc(code);
+  const match = matchPlaybookForDtc(parsed);
+  const guide = getCoachPlaybook(match.slug);
+  if (!guide) return null;
+  const title = guide.title.replace(/^Coach:\s*/i, "").trim() || match.slug;
+  return {
+    id: `dtc-guide-${match.slug}`,
+    label: `Open ${title} guide`,
+    playbookSlug: match.slug,
+    prompt: `Open the ${match.slug} coach guide for ${parsed.code}. First safe checks only. Do not invent torque, fluid capacity, or OEM part numbers. Do not talk about brake pads unless this is a chassis/ABS code.`,
+  };
+}
+
+/**
+ * Follow-up chips after a DTC hit. Emissions codes never get brake-pad chips.
+ * Catalog hits can deep-link a production playbook; unknown codes stay generic.
+ */
+export function getDtcFollowUpChips(sourceText?: string | null): DtcChip[] {
+  const codes = extractDtcCodes(sourceText || "");
+  const primary = codes[0];
+  if (!primary) return [...DTC_FOLLOW_UP_CHIPS];
+
+  const local = lookupLocalDtc(primary);
+  if (!local.catalogHit) return [...UNKNOWN_DTC_CHIPS];
+
+  const guide = playbookChipForCode(primary);
+  const shopLean = local.diyLevel === "shop";
+  const checks: DtcChip = {
+    id: "dtc-checks",
+    label: shopLean ? "Shop path" : "Check order",
+    prompt: shopLean
+      ? `For ${primary} (${local.title}), diy_level is shop. Prefer a qualified shop. DIY is observe-only: record the code, lights, and symptoms. Do not invent a parts order, torque, or OEM number.`
+      : `For ${primary} (${local.title}), give an educational check order using diy_level ${local.diyLevel}: observe → basic → advanced → shop. Do not assert a part must be replaced now. Do not invent torque or OEM part numbers.`,
+  };
+  const explain: DtcChip = {
+    id: "dtc-explain",
+    label: "Explain this code",
+    prompt: `Explain ${primary} using the local catalog title and summary only. diy_level is ${local.diyLevel}. Do not invent a different OEM definition.`,
+  };
+  return [guide, checks, explain].filter((c): c is DtcChip => Boolean(c));
 }
 
 /** True if text looks like a DTC-focused reply / user message. */
@@ -284,9 +327,4 @@ export function textHasDtcSignal(text?: string | null): boolean {
   if (!text) return false;
   if (extractDtcCodes(text).length > 0) return true;
   return /fault code|dtc|check engine|obd|trouble code/i.test(text);
-}
-
-/** Validate a single typed code (for modal). */
-export function isValidDtcInput(raw: string): boolean {
-  return Boolean(normalizeDtcCode(raw));
 }

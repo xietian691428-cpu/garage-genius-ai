@@ -176,6 +176,20 @@ describe("detectIntentDrift edge cases", () => {
     expect(drift.reason).toBe("explicit_new_issue");
   });
 
+  it("treats Ask a new question as an explicit reset", () => {
+    const previous = buildTurnFocus(OIL, 0);
+    const next =
+      "New question — this is a different issue from the coach guide.";
+    const drift = detectIntentDrift(
+      next,
+      [{ role: "user", content: OIL }, { role: "user", content: next }],
+      previous,
+      matchDriftSafetyTopics(next),
+    );
+    expect(drift.shouldReset).toBe(true);
+    expect(drift.reason).toBe("explicit_new_issue");
+  });
+
   it("does not treat DIY 'instead' as an explicit new issue", () => {
     const previous = buildTurnFocus(OIL, 0);
     const next = "Use jack stands instead of the jack before going under.";
@@ -246,6 +260,52 @@ describe("prepareDriftForChatTurn + trimMessagesForApi", () => {
     expect(messageContent(conversation[0])).toBe(PB);
     expect(systemBlock).toMatch(/CONTEXT RESET/);
     expect(systemBlock).toMatch(/Ignore the Repair loop instruction/i);
+  });
+
+  it("P0: after vehicle A raised, vehicle B turn must not inherit A CRITICAL/raised/drain", () => {
+    const camryRaised = {
+      ...buildTurnFocus(PB, 1, matchDriftSafetyTopics(PB), buildTurnFocus(OIL, 0)),
+      vehicleRaised: true,
+      parkingBrakeState: "not_holding" as const,
+    };
+    expect(needsCriticalRaisedState(camryRaised)).toBe(true);
+
+    // Client switched to BMW: only BMW messages + no Camry focus payload.
+    const { drift, conversation, systemBlock } = prepareDriftForChatTurn({
+      messages: [
+        {
+          id: "bmw-u1",
+          role: "user",
+          content: "Any recalls on this car? What oil capacity should I use?",
+        },
+      ],
+      previousFocus: null,
+      vehicleId: "bmw-1",
+      apiHistoryFromId: null,
+    });
+
+    expect(drift.currentFocus.vehicleRaised).toBeFalsy();
+    expect(needsCriticalRaisedState(drift.currentFocus)).toBe(false);
+    expect(systemBlock).not.toMatch(/CRITICAL STATE/i);
+    expect(systemBlock).not.toMatch(/already raised|jack stands|drain plug/i);
+    expect(conversation).toHaveLength(1);
+    expect(messageContent(conversation[0])).toMatch(/recalls/i);
+    expect(messageContent(conversation[0])).not.toMatch(/Camry|drain plug|jack stands/i);
+  });
+
+  it("applies apiHistoryFromId so prior-vehicle turns are not sent", () => {
+    const { conversation } = prepareDriftForChatTurn({
+      messages: [
+        { id: "a1", role: "user", content: OIL },
+        { id: "a2", role: "assistant", content: "Drain the plug next." },
+        { id: "b1", role: "user", content: "Any recalls?" },
+      ],
+      previousFocus: null,
+      vehicleId: "bmw-1",
+      apiHistoryFromId: "b1",
+    });
+    expect(conversation).toHaveLength(1);
+    expect(messageContent(conversation[0])).toBe("Any recalls?");
   });
 
   it("latestUserOnly trim keeps only the current user turn", () => {
@@ -409,6 +469,50 @@ describe("multi-turn high-risk scripts", () => {
     expect(t3.systemBlock).toMatch(/CRITICAL STATE/);
     expect(t3.systemBlock).toMatch(/get clear from under/i);
     expect(needsCriticalRaisedState(t3.drift.currentFocus)).toBe(true);
+  });
+
+  it("US pack S1: oil → PB fail → roll — no drain plug in history; get-clear in system", () => {
+    const oilFocus = buildTurnFocus(OIL, 0);
+    const t2 = prepareDriftForChatTurn({
+      messages: [
+        { role: "user", content: OIL },
+        {
+          role: "assistant",
+          content:
+            "Next, remove the drain plug and spin off the oil filter. Front jack points are behind the subframe.",
+        },
+        { role: "user", content: PB },
+      ],
+      previousFocus: oilFocus,
+      vehicleId: "camry-se-us",
+    });
+    const historyBlob = JSON.stringify(t2.conversation);
+    expect(historyBlob).not.toMatch(/drain plug/i);
+    expect(t2.systemBlock).toMatch(/get clear from under/i);
+    expect(t2.systemBlock).toMatch(/CRITICAL STATE/);
+    expect(needsCriticalRaisedState(t2.drift.currentFocus)).toBe(true);
+
+    const t3 = prepareDriftForChatTurn({
+      messages: [
+        { role: "user", content: PB },
+        { role: "assistant", content: "Get clear from under the vehicle first." },
+        { role: "user", content: ROLL },
+      ],
+      previousFocus: t2.drift.currentFocus,
+      vehicleId: "camry-se-us",
+    });
+    expect(JSON.stringify(t3.conversation)).not.toMatch(/drain plug/i);
+    expect(t3.systemBlock).toMatch(/get clear from under/i);
+  });
+
+  it("does not treat jack stands as a stale phrase while still raised", () => {
+    const previous = buildTurnFocus(OIL, 0);
+    const current = buildTurnFocus(PB, 1);
+    expect(current.vehicleRaised).toBe(true);
+    expect(current.entities).toContain("jack_stands");
+    const phrases = staleFocusPhrases(previous, current);
+    expect(phrases.some((p) => /jack stands/i.test(p))).toBe(false);
+    expect(phrases.some((p) => /drain plug|oil filter/i.test(p))).toBe(true);
   });
 
   it("oil → worn parking-brake shoes found mid-job is a reset, not continue-the-oil", () => {

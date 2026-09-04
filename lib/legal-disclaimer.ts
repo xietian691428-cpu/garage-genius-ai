@@ -150,18 +150,17 @@ export function contentHasLegalDisclaimer(content: string): boolean {
   return KNOWN_DISCLAIMER_FRAGMENTS.some((f) => content.includes(f));
 }
 
-/** Append a liability disclaimer when missing (language follows optional hint). */
+/**
+ * Append a liability disclaimer when missing.
+ * Product assistant output is en/es only — never append the Chinese disclaimer.
+ */
 export function ensureLegalDisclaimer(
   content: string,
   replyLanguage: "zh" | "es" | "en" = "en",
 ): string {
   if (contentHasLegalDisclaimer(content)) return content;
   const disclaimer =
-    replyLanguage === "zh"
-      ? LEGAL_DISCLAIMER_ZH
-      : replyLanguage === "es"
-        ? LEGAL_DISCLAIMER_ES
-        : LEGAL_DISCLAIMER_EN;
+    replyLanguage === "es" ? LEGAL_DISCLAIMER_ES : LEGAL_DISCLAIMER_EN;
   return `${content.trim()}\n\n${disclaimer}`;
 }
 

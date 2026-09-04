@@ -263,6 +263,10 @@ function GarageAppInner() {
                   }}
                   onGoToInventory={() => setAppTab("parts")}
                   onFocusDetected={handleFocusFromChat}
+                  onOpenPlaybook={(slug) => {
+                    setCoachPlaybookSlug(slug);
+                    setAppTab("coach");
+                  }}
                   vehicles={vehicles}
                   currentVehicle={currentVehicle}
                   vehiclesLoading={vehiclesLoading}

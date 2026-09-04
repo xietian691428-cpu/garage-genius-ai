@@ -145,14 +145,184 @@ export default function TokenUsageDashboard() {
         ))}
       </div>
 
+      {data?.marginMonth && (
+        <section className="rounded-3xl border border-slate-800 bg-[#111827] p-5">
+          <h2 className="text-sm font-semibold text-white">
+            This UTC month — AI cost vs Stripe revenue
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">
+            {data.marginMonth.periodYm} · SQL view{" "}
+            <code className="text-slate-400">
+              admin_ai_cost_vs_revenue_by_plan
+            </code>
+            . Paid plans target AI COGS ≈ 30% of list price.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                label: "AI cost",
+                value: fmtUsd(data.marginMonth.totals.aiCostUsd),
+              },
+              {
+                label: "Stripe revenue",
+                value: fmtUsd(data.marginMonth.totals.revenueUsd),
+              },
+              {
+                label: "Margin",
+                value: fmtUsd(data.marginMonth.totals.marginUsd),
+              },
+              {
+                label: "Vision calls",
+                value: String(data.marginMonth.totals.visionCalls),
+              },
+            ].map((card) => (
+              <div
+                key={card.label}
+                className="rounded-2xl border border-slate-800 bg-slate-950/40 px-4 py-3"
+              >
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                  {card.label}
+                </p>
+                <p className="mt-1 text-lg font-semibold text-white">
+                  {card.value}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[420px] text-left text-sm">
+              <thead className="text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="pb-2 font-medium">Plan</th>
+                  <th className="pb-2 font-medium">Users</th>
+                  <th className="pb-2 font-medium">AI cost</th>
+                  <th className="pb-2 font-medium">Revenue</th>
+                  <th className="pb-2 font-medium">Margin</th>
+                  <th className="pb-2 font-medium">Vision</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.marginMonth.byPlan.map((row) => (
+                  <tr
+                    key={row.plan}
+                    className="border-t border-slate-800/80"
+                  >
+                    <td className="py-2 text-slate-200">{row.plan}</td>
+                    <td className="py-2 text-slate-400">{row.users}</td>
+                    <td className="py-2 text-amber-300">
+                      {fmtUsd(row.aiCostUsd)}
+                    </td>
+                    <td className="py-2 text-cyan-300">
+                      {fmtUsd(row.revenueUsd)}
+                    </td>
+                    <td className="py-2 text-emerald-300">
+                      {fmtUsd(row.marginUsd)}
+                    </td>
+                    <td className="py-2 text-slate-400">{row.visionCalls}</td>
+                  </tr>
+                ))}
+                {!data.marginMonth.byPlan.length && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="py-6 text-center text-slate-500"
+                    >
+                      No billed usage or Stripe events this month yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       {data?.costRates && (
         <p className="text-xs text-slate-500">
-          Cost model: ${data.costRates.promptPer1M}/1M prompt · $
-          {data.costRates.completionPer1M}/1M completion
+          DeepSeek: ${data.costRates.promptPer1M}/1M in · $
+          {data.costRates.completionPer1M}/1M out
+          {data.aiRates
+            ? ` · Kimi: $${data.aiRates.kimi.promptPer1M}/1M in · $${data.aiRates.kimi.completionPer1M}/1M out · $${data.aiRates.kimi.perCallFloorUsd}/call floor`
+            : ""}
           {summary
             ? ` · avg ${fmtTokens(summary.avgTokensPerCall)} tokens/call`
             : ""}
         </p>
+      )}
+
+      {data?.specGap && (
+        <section className="rounded-3xl border border-slate-800 bg-[#111827] p-5">
+          <h2 className="text-sm font-semibold text-white">
+            Spec-gap demand (oil / interval / torque)
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Chat LLM turns in this range, tagged on{" "}
+            <code className="text-slate-400">
+              token_usage_events.metadata.spec_gap
+            </code>{" "}
+            (no message text, no VIN). Paid repair data stays deferred until a
+            tag is ≥ {Math.round((data.specGap.revisitShare || 0.15) * 100)}% of
+            Chat turns <span className="text-slate-400">and</span> ≥ 20 hits,{" "}
+            <span className="text-slate-400">and</span> NHTSA + playbooks +
+            “check the manual” still cannot cover the ask. See{" "}
+            <code className="text-slate-400">docs/data-sources.md</code>.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {data.specGap.topics.map((topic) => (
+              <div
+                key={topic.tag}
+                className="rounded-2xl border border-slate-800 bg-slate-950/40 px-4 py-3"
+              >
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                  {topic.label}
+                </p>
+                <p className="mt-1 text-xl font-semibold text-white">
+                  {topic.hits}
+                  <span className="ml-2 text-sm font-normal text-slate-400">
+                    {(topic.share * 100).toFixed(1)}%
+                  </span>
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-slate-400">
+            {data.specGap.taggedCalls}/{data.specGap.chatCalls} Chat turns
+            tagged
+            {data.specGap.volumeTrigger
+              ? " · volume trigger ON — still confirm the coverage gap before any Auto.dev POC."
+              : " · volume trigger off — do not open a paid-data POC."}
+          </p>
+        </section>
+      )}
+
+      {data?.safetyObserve && data.safetyObserve.taggedCalls > 0 && (
+        <section className="rounded-3xl border border-slate-800 bg-[#111827] p-5">
+          <h2 className="text-sm font-semibold text-white">
+            Safety observe (read-only)
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Event names on{" "}
+            <code className="text-slate-400">
+              token_usage_events.metadata.safetyEvents
+            </code>
+            . No VIN, no prompts. Grep production logs for{" "}
+            <code className="text-slate-400">[safety-observe]</code>.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {Object.entries(data.safetyObserve.counts).map(([event, hits]) => (
+              <span
+                key={event}
+                className="rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-1.5 text-xs text-slate-300"
+              >
+                {event}
+                <span className="ml-2 font-semibold text-white">{hits}</span>
+              </span>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-slate-400">
+            {data.safetyObserve.taggedCalls} tagged call(s) in this range
+          </p>
+        </section>
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">

@@ -1,0 +1,31 @@
+[
+  {
+    "code": "U0100",
+    "title_en": "Lost Communication With ECM/PCM",
+    "summary_en": "Network/comms with the engine controller. Check battery voltage, grounds, and scan-tool connectivity first. Not an automatic PCM replacement.",
+    "system": "network",
+    "severity_hint": "high",
+    "common_causes": ["Low battery voltage", "Poor engine/body ground", "CAN/network wiring or connector"],
+    "diy_level": "advanced",
+    "safety_notes": "A no-start or stalling condition in traffic is a safety issue until verified."
+  },
+  {
+    "code": "U0101",
+    "title_en": "Lost Communication With TCM",
+    "summary_en": "Lost communication with the transmission controller. Power, grounds, and network integrity come before module replacement.",
+    "system": "network",
+    "severity_hint": "high",
+    "common_causes": ["Low voltage", "TCM power/ground", "Network wiring"],
+    "diy_level": "shop"
+  },
+  {
+    "code": "U0121",
+    "title_en": "Lost Communication With ABS Control Module",
+    "summary_en": "ABS module comms. Battery/grounds and ABS fuse are educational first checks. ABS may be unavailable until verified.",
+    "system": "network",
+    "severity_hint": "medium",
+    "common_causes": ["ABS fuse", "Module power/ground", "Network wiring"],
+    "diy_level": "advanced",
+    "safety_notes": "ABS may be unavailable — allow extra stopping distance until verified."
+  }
+]

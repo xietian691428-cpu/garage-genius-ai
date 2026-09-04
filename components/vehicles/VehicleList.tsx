@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Archive, Pencil, Trash2 } from "lucide-react";
+import { useUsRecallMarkers } from "@/hooks/useUsRecallMarkers";
 import { VehicleInfo } from "@/lib/types/chat";
 import {
   formatVehicleYmmDisplay,
@@ -38,6 +39,7 @@ export default function VehicleList({
 }: Props) {
   const [localFilter, setLocalFilter] = useState<MarketFilter>("ALL");
   const marketFilter = controlledFilter ?? localFilter;
+  const recallMarked = useUsRecallMarkers(vehicles);
 
   const marketsInGarage = useMemo(() => {
     const codes = new Set(
@@ -103,6 +105,19 @@ export default function VehicleList({
               <div className="flex items-start justify-between gap-2">
                 <div className="font-medium">{vehicle.name}</div>
                 <div className="flex shrink-0 items-center gap-1.5">
+                  {recallMarked.has(vehicle.id) ? (
+                    <span
+                      className="inline-flex items-center gap-1 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium text-amber-200"
+                      data-testid="vehicle-recall-marker"
+                      title="NHTSA listed campaigns for this year/make/model. Education only — verify with VIN."
+                    >
+                      <span
+                        className="h-1.5 w-1.5 rounded-full bg-amber-400"
+                        aria-hidden
+                      />
+                      Safety campaigns
+                    </span>
+                  ) : null}
                   <span className="rounded bg-cyan-500/15 px-1.5 py-0.5 text-[10px] font-medium text-cyan-300">
                     {normalizeVehicleMarket(vehicle.market)}
                   </span>

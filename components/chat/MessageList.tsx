@@ -18,6 +18,7 @@ interface Props {
   onRegenerate?: () => void;
   onEditUser?: (content: string) => void;
   onQuickPrompt?: (prompt: string) => void;
+  onOpenPlaybook?: (slug: string) => void;
   onGenerateShopReport?: () => void;
   onHideEmptyPhoto?: (id: string) => void;
   /** @deprecated kept for callers; elevated tip lives in Safety notes sheet */
@@ -37,6 +38,7 @@ export default function MessageList({
   onRegenerate,
   onEditUser,
   onQuickPrompt,
+  onOpenPlaybook,
   onGenerateShopReport,
   onHideEmptyPhoto,
   showDisclaimerBanner = false,
@@ -111,6 +113,11 @@ export default function MessageList({
             onQuickPrompt={
               msg.role === "assistant" && msg.id === lastAssistantId
                 ? onQuickPrompt
+                : undefined
+            }
+            onOpenPlaybook={
+              msg.role === "assistant" && msg.id === lastAssistantId
+                ? onOpenPlaybook
                 : undefined
             }
             onGenerateShopReport={

@@ -2,18 +2,27 @@ import { NextRequest } from "next/server";
 import {
   callDeepSeek,
   estimateTokensFromMessages,
-  normalizeImageUrl,
   trimDeepSeekConversation,
   type DeepSeekMessage,
 } from "@/lib/deepseek";
 import { callChatWithOptionalVision } from "@/lib/vision";
 import { ensureLegalDisclaimer } from "@/lib/legal-disclaimer";
 import { applyInsuranceSafetyGuards } from "@/lib/insurance-coverage-rewrite";
+import {
+  formatInsuranceEducationBlock,
+  isInsuranceOrModQuestion,
+} from "@/lib/insurance-safety-copy";
+import { applyDriveSafetyGuards, formatDriveSafetyBlock, isHighRiskDrivingSituation } from "@/lib/drive-safety";
+import { formatUnitPreferenceBlock } from "@/lib/unit-preference";
 import type { VehicleInfo } from "@/lib/types/chat";
 import { buildChatSystemPrompt } from "@/lib/chat-system-prompt";
 import {
+  containsCjkChars,
   detectReplyLanguageHint,
+  enforceNoCjkAssistantReply,
+  formatCjkRegenPrompt,
   latestUserPlainText,
+  productAssistantLanguage,
   turnReplyLanguageLock,
 } from "@/lib/reply-language";
 import { createSupabaseUserClient, createSupabaseAdmin } from "@/lib/supabase-admin";
@@ -22,6 +31,7 @@ import {
   AI_ROUTE_TOKEN_FLOOR,
   aiAbuseResponse,
   assertAiRateLimit,
+  assertAiSpendGate,
   assertAiTokenBudget,
   assertEmailVerified,
   consumeAiTokensBestEffort,
@@ -49,17 +59,54 @@ import {
 import { fitmentSearchString } from "@/lib/vcdb/format";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
 import { normalizeDiySkill } from "@/lib/diy-skill";
-import { parseObdAdapterPreference } from "@/lib/obd-preference";
+import {
+  applyObdHonestyGuards,
+  hasLiveObdAdapter,
+  parseObdAdapterPreference,
+} from "@/lib/obd-preference";
 import {
   assistantContinuesStaleFocus,
   formatStaleFocusRepairPrompt,
   logChatDrift,
   matchedStalePhrases,
+  needsCriticalRaisedState,
   parseTurnFocus,
   prepareDriftForChatTurn,
 } from "@/lib/chat-intent-drift";
 import { observeChatSafetyTurn } from "@/lib/pilot/observe-chat-safety";
+import {
+  logSafetyObserveEvents,
+  recallDegradedFromAnchorBlock,
+  safetyEventsMetadata,
+  type SafetyObserveEvent,
+} from "@/lib/safety-observe-events";
 import type { TurnFocus } from "@/lib/chat-intent-drift";
+import {
+  describeAnchorsForLog,
+  gatherVehicleFactAnchors,
+} from "@/lib/vehicle-data/anchors";
+import { isVehicleDataDebug } from "@/lib/vehicle-data/config";
+import { maskVin } from "@/lib/vehicle-data/vin";
+import { specGapMetadata, classifySpecGapIntents } from "@/lib/spec-gap-intent";
+import { applySpecOutputGate, inventedSpecFailures } from "@/lib/spec-discipline";
+import { applyDiagnosticToneGuards } from "@/lib/diagnostic-tone";
+import { analyzeChatImage } from "@/lib/vision/kimi-client";
+import { dtcTextFromAnalysis } from "@/lib/vision/format-analysis";
+import { CHAT_VISION_MAX_IMAGES, isLowTrustAnalysis } from "@/lib/vision/types";
+import { logTokenUsage } from "@/lib/log-token-usage";
+import {
+  bindChatVehicleIdentity,
+  bindConversationFocusToVehicle,
+  loadOwnedGarageVehicle,
+  vehicleSelectionMismatch,
+  VEHICLE_NOT_OWNED_CODE,
+  VEHICLE_SELECTION_MISMATCH_CODE,
+} from "@/lib/chat-vehicle-ownership";
+import { formatVehicleIdentityPrompt } from "@/lib/vehicle-data/ymm-conflict";
+import {
+  formatExitUnderRepairPrompt,
+  needsExitUnderRepair,
+} from "@/lib/pilot/safety-observe-phrases";
 
 export const runtime = "nodejs";
 /** Allow RAG + DeepSeek within Vercel serverless limits (no OpenAI fallback). */
@@ -68,54 +115,15 @@ export const maxDuration = 60;
 /** Ensure AI reply includes liability disclaimer + insurance soft rewrite. */
 function ensureDisclaimer(content: string, userPlainText?: string): string {
   const hint = detectReplyLanguageHint(userPlainText);
-  return ensureLegalDisclaimer(applyInsuranceSafetyGuards(content), hint);
+  const driven = applyDriveSafetyGuards(content, userPlainText);
+  return ensureLegalDisclaimer(
+    applyInsuranceSafetyGuards(driven, { userContext: userPlainText }),
+    productAssistantLanguage(hint),
+  );
 }
 
 function getAccessToken(req: NextRequest): string | null {
   return getBearerToken(req);
-}
-
-/**
- * 将当前用户消息转为 Vision 多模态格式（文字 + 1..N 张 base64 图片）
- * 只处理最后一条与 content 匹配的用户消息，避免历史重复消息被误改
- */
-function applyVisionToUserMessages(
-  messages: DeepSeekMessage[],
-  images: string[],
-  content: string,
-): DeepSeekMessage[] {
-  const urls = images
-    .filter(Boolean)
-    .slice(0, 4)
-    .map((img) => normalizeImageUrl(img));
-  if (!urls.length) return messages;
-
-  const userMessages = [...messages];
-
-  for (let i = userMessages.length - 1; i >= 0; i--) {
-    const msg = userMessages[i];
-    if (msg.role !== "user" || typeof msg.content !== "string") continue;
-    if (msg.content !== content) continue;
-
-    userMessages[i] = {
-      role: "user",
-      content: [
-        {
-          type: "text",
-          text:
-            content ||
-            "Analyze these vehicle photo(s). Describe visible clues, diagnose the likely issue, and emit a Focus Mode marker for the primary area.",
-        },
-        ...urls.map((url) => ({
-          type: "image_url" as const,
-          image_url: { url },
-        })),
-      ],
-    };
-    break;
-  }
-
-  return userMessages;
 }
 
 async function resolveRagLimit(userId: string): Promise<number> {
@@ -140,17 +148,19 @@ export async function POST(request: NextRequest) {
       messages,
       image,
       images,
-      currentVehicle,
+      selectedVehicleId,
       playbookSlug,
       coachSlug,
       maintenanceSummary,
-      conversationFocus,
+      conversationFocus: conversationFocusRaw,
     } = body as {
       messages?: DeepSeekMessage[];
       /** @deprecated prefer `images` */
       image?: string;
       images?: string[];
       currentVehicle?: VehicleInfo;
+      /** Header / switcher vehicle_id — must match currentVehicle.id when both set. */
+      selectedVehicleId?: string;
       /** Optional coach guide context for admin token analytics */
       playbookSlug?: string;
       coachSlug?: string;
@@ -164,10 +174,21 @@ export async function POST(request: NextRequest) {
         apiHistoryFromId?: string | null;
       } | null;
     };
+    let currentVehicle = (body as { currentVehicle?: VehicleInfo }).currentVehicle;
 
     if (!currentVehicle?.make || !currentVehicle?.model) {
       return Response.json(
         { error: "Vehicle information is required" },
+        { status: 400 },
+      );
+    }
+
+    if (!currentVehicle.id?.trim()) {
+      return Response.json(
+        {
+          error: "Select a garage vehicle before chatting.",
+          code: VEHICLE_NOT_OWNED_CODE,
+        },
         { status: 400 },
       );
     }
@@ -214,6 +235,53 @@ export async function POST(request: NextRequest) {
     // Anti-abuse: per-user hourly/daily request caps (before RAG / DeepSeek)
     await assertAiRateLimit(user.id, "chat", user.email);
 
+    if (vehicleSelectionMismatch(selectedVehicleId, currentVehicle.id)) {
+      return Response.json(
+        {
+          error:
+            "Vehicle in the header does not match this request. Refresh chat and try again.",
+          code: VEHICLE_SELECTION_MISMATCH_CODE,
+        },
+        { status: 409 },
+      );
+    }
+
+    let owned: VehicleInfo | null = null;
+    try {
+      owned = await loadOwnedGarageVehicle(
+        userClient,
+        user.id,
+        currentVehicle.id,
+      );
+    } catch (err) {
+      console.warn("[/api/chat] vehicle ownership lookup failed", {
+        message: err instanceof Error ? err.message : String(err),
+      });
+      return Response.json(
+        {
+          error: "Could not verify the selected vehicle. Refresh and try again.",
+          code: VEHICLE_NOT_OWNED_CODE,
+        },
+        { status: 503 },
+      );
+    }
+    if (!owned) {
+      return Response.json(
+        {
+          error:
+            "This vehicle is not in your garage. Refresh and select a saved vehicle.",
+          code: VEHICLE_NOT_OWNED_CODE,
+        },
+        { status: 403 },
+      );
+    }
+    currentVehicle = bindChatVehicleIdentity(currentVehicle, owned);
+
+    const conversationFocus = bindConversationFocusToVehicle(
+      conversationFocusRaw,
+      currentVehicle.id,
+    );
+
     const lastUserMessage = [...messages]
       .reverse()
       .find((m) => m.role === "user");
@@ -227,26 +295,51 @@ export async function POST(request: NextRequest) {
       ...(image ? [image] : []),
     ].filter(Boolean);
     // de-dupe while preserving order
-    const uniqueImages = [...new Set(visionImages)].slice(0, 4);
+    const uniqueImages = [...new Set(visionImages)].slice(
+      0,
+      CHAT_VISION_MAX_IMAGES,
+    );
+
+    await assertAiSpendGate(user.id, {
+      needsVision: uniqueImages.length > 0,
+      email: user.email,
+    });
 
     let userMessages = [...messages];
-    if (uniqueImages.length > 0) {
-      userMessages = applyVisionToUserMessages(
-        userMessages,
-        uniqueImages,
-        content,
-      );
+
+    let visionPrep: Awaited<ReturnType<typeof analyzeChatImage>> | null = null;
+    if (uniqueImages[0]) {
+      visionPrep = await analyzeChatImage(uniqueImages[0], content);
+      if (visionPrep.billed) {
+        await logTokenUsage({
+          userId: user.id,
+          route: "vision",
+          provider: "kimi",
+          model: visionPrep.model || "kimi-k3",
+          promptTokens: visionPrep.usage?.prompt_tokens,
+          completionTokens: visionPrep.usage?.completion_tokens,
+          totalTokens: Math.max(
+            1,
+            visionPrep.usage?.total_tokens || 1,
+          ),
+          feature: "Chat photo",
+          metadata: { kind: "chat_photo", requestId: visionPrep.requestId },
+        });
+      }
     }
+
+    const visionDtcBlob = dtcTextFromAnalysis(visionPrep?.analysis ?? null);
+    const textForFacts = [content, visionDtcBlob].filter(Boolean).join("\n");
 
     // ── RAG retrieval (plan depth → match limit) ─────────
     const ragLimit = await resolveRagLimit(user.id);
-    const conflicts = detectConfigConflicts(currentVehicle, content);
+    const conflicts = detectConfigConflicts(currentVehicle, textForFacts);
     const conflictContext = formatConflictsForPrompt(conflicts);
 
     const ragQuery =
-      content.trim().length < 24
-        ? `${fitmentSearchString(currentVehicle)} ${content}`.trim()
-        : content.trim() ||
+      textForFacts.trim().length < 24
+        ? `${fitmentSearchString(currentVehicle)} ${textForFacts}`.trim()
+        : textForFacts.trim() ||
           `${fitmentSearchString(currentVehicle)} diagnosis`;
 
     // DIY skill band + OBD adapter preference (profiles)
@@ -343,6 +436,44 @@ export async function POST(request: NextRequest) {
     const userPlainForLang = latestUserPlainText(userMessages) || content;
     const replyLangHint = detectReplyLanguageHint(userPlainForLang);
 
+    let factAnchors: string | null = null;
+    try {
+      factAnchors = await gatherVehicleFactAnchors(
+        currentVehicle,
+        textForFacts,
+      );
+      if (isVehicleDataDebug()) {
+        console.log("[vehicle-data] chat.anchors", {
+          vin: maskVin(currentVehicle.vin),
+          ...describeAnchorsForLog(factAnchors),
+        });
+      }
+    } catch {
+      factAnchors = null;
+    }
+
+    const identityPrompt = formatVehicleIdentityPrompt(currentVehicle);
+    if (identityPrompt) {
+      factAnchors = factAnchors
+        ? `${identityPrompt}\n\n${factAnchors}`
+        : identityPrompt;
+    }
+
+    const turnBlocks = [
+      formatUnitPreferenceBlock(currentVehicle.market, userPlainForLang),
+      isInsuranceOrModQuestion(userPlainForLang)
+        ? formatInsuranceEducationBlock()
+        : null,
+      isHighRiskDrivingSituation(userPlainForLang)
+        ? formatDriveSafetyBlock()
+        : null,
+    ].filter(Boolean);
+    if (turnBlocks.length) {
+      factAnchors = factAnchors
+        ? `${factAnchors}\n\n${turnBlocks.join("\n\n")}`
+        : turnBlocks.join("\n\n");
+    }
+
     // Intent reset: after vehicle gate + language lock inputs, before DeepSeek.
     const focusVehicleOk =
       !conversationFocus?.vehicleId ||
@@ -368,6 +499,7 @@ export async function POST(request: NextRequest) {
           maintenanceCap,
           diySkill,
           obdPreference,
+          factAnchors,
         ),
         // Hard lock after history bias: mid-thread ZH→EN (or reverse) must follow latest user msg.
         {
@@ -393,7 +525,13 @@ export async function POST(request: NextRequest) {
       usage,
       model: pipelineModel,
       visionProvider,
-    } = await callChatWithOptionalVision(fullMessages);
+      imageAnalysisSummary,
+    } = await callChatWithOptionalVision(fullMessages, {
+      analysis: visionPrep?.analysis ?? null,
+      analysisModel: visionPrep?.model,
+      perceptionFailed: Boolean(visionPrep?.failed),
+      perceptionDisabled: Boolean(visionPrep?.disabled),
+    });
     let actualTokensUsed = Math.max(1, usage.total_tokens);
     let promptTokens = usage.prompt_tokens;
     let completionTokens = usage.completion_tokens;
@@ -407,27 +545,43 @@ export async function POST(request: NextRequest) {
       abandonedFocus,
       drift.currentFocus,
     );
-    const shouldRepair =
+    const shouldStaleRepair =
       uniqueImages.length === 0 &&
       assistantContinuesStaleFocus(reply, abandonedFocus, drift.currentFocus);
+    const shouldExitUnderRepair = needsExitUnderRepair(
+      reply,
+      needsCriticalRaisedState(drift.currentFocus),
+      Boolean(drift.currentFocus.vehicleRaised) ||
+        /\[CRITICAL STATE\]/i.test(systemBlock || ""),
+    );
+    const shouldRepair = shouldStaleRepair || shouldExitUnderRepair;
     logChatDrift(
       {
         historySentToDeepSeek: userMessages.length,
         apiHistoryFromId: conversationFocus?.apiHistoryFromId ?? null,
         repairTriggered: shouldRepair,
         staleHits,
+        exitUnderRepair: shouldExitUnderRepair,
       },
       currentVehicle.id,
     );
     if (shouldRepair) {
       try {
+        const repairBlocks = [
+          shouldStaleRepair
+            ? formatStaleFocusRepairPrompt(drift, abandonedFocus)
+            : "",
+          shouldExitUnderRepair ? formatExitUnderRepairPrompt() : "",
+        ]
+          .filter(Boolean)
+          .join("\n\n");
         const repaired = await callDeepSeek(
           trimDeepSeekConversation(
             [
               ...fullMessages,
               {
                 role: "system",
-                content: formatStaleFocusRepairPrompt(drift, abandonedFocus),
+                content: repairBlocks,
               },
             ],
             { imageHeavy: false },
@@ -443,12 +597,101 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+
+    // CJK leak: one English/Spanish regen before safety observe + output gates.
+    // Deterministic strip still runs on finalContent so no CJK reaches the user.
+    const assistantLang = productAssistantLanguage(replyLangHint);
+    if (containsCjkChars(reply)) {
+      try {
+        const regenerated = await callDeepSeek(
+          trimDeepSeekConversation(
+            [
+              ...fullMessages,
+              { role: "assistant", content: reply },
+              {
+                role: "system",
+                content: formatCjkRegenPrompt(assistantLang),
+              },
+            ],
+            { imageHeavy: false },
+          ),
+        );
+        reply = regenerated.content;
+        actualTokensUsed += Math.max(1, regenerated.usage.total_tokens);
+        promptTokens += regenerated.usage.prompt_tokens;
+        completionTokens += regenerated.usage.completion_tokens;
+        // Regen can reintroduce stay-under coaching — re-run exit-under only if needed.
+        if (
+          needsExitUnderRepair(
+            reply,
+            needsCriticalRaisedState(drift.currentFocus),
+            Boolean(drift.currentFocus.vehicleRaised) ||
+              /\[CRITICAL STATE\]/i.test(systemBlock || ""),
+          )
+        ) {
+          try {
+            const repaired = await callDeepSeek(
+              trimDeepSeekConversation(
+                [
+                  ...fullMessages,
+                  {
+                    role: "system",
+                    content: formatExitUnderRepairPrompt(),
+                  },
+                ],
+                { imageHeavy: false },
+              ),
+            );
+            reply = repaired.content;
+            actualTokensUsed += Math.max(1, repaired.usage.total_tokens);
+            promptTokens += repaired.usage.prompt_tokens;
+            completionTokens += repaired.usage.completion_tokens;
+          } catch (err) {
+            console.warn("[/api/chat] exit-under after CJK regen skipped", {
+              message: err instanceof Error ? err.message : String(err),
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("[/api/chat] CJK language regen skipped", {
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
     observeChatSafetyTurn({
       vehicleId: currentVehicle.id,
       userMessage: userPlainForLang,
       reply,
       currentFocus: drift.currentFocus,
     });
+
+    const specCtx = {
+      oilCapacity: currentVehicle.oilCapacity,
+      oilViscosity: currentVehicle.oilViscosity,
+      oemNumbers: prioritized.map((p) => p.oem_number),
+    };
+    const safetyEvents: SafetyObserveEvent[] = [];
+    if (drift.shouldReset) safetyEvents.push("drift_reset");
+    if (shouldExitUnderRepair) safetyEvents.push("exit_under_repair");
+    if (
+      visionPrep?.analysis &&
+      isLowTrustAnalysis(visionPrep.analysis)
+    ) {
+      safetyEvents.push("vision_reject");
+    }
+    if (recallDegradedFromAnchorBlock(factAnchors)) {
+      safetyEvents.push("recall_degraded");
+    }
+    if (inventedSpecFailures(reply, specCtx).length > 0) {
+      safetyEvents.push("spec_block");
+    }
+    logSafetyObserveEvents(
+      safetyEvents,
+      { route: "chat" },
+      { userId: user.id },
+    );
+
     const resolvedPlaybook =
       (typeof playbookSlug === "string" && playbookSlug.trim()) ||
       (typeof coachSlug === "string" && coachSlug.trim()) ||
@@ -459,7 +702,8 @@ export async function POST(request: NextRequest) {
       actualTokensUsed,
       {
         route: "chat",
-        model: pipelineModel || "deepseek-chat",
+        model: "deepseek-chat",
+        provider: "deepseek",
         promptTokens,
         completionTokens,
         playbookSlug: resolvedPlaybook,
@@ -467,18 +711,36 @@ export async function POST(request: NextRequest) {
         metadata: {
           make: currentVehicle.make,
           model: currentVehicle.model,
+          pipelineModel: pipelineModel || "deepseek-chat",
           visionProvider,
           hasImages: uniqueImages.length > 0,
+          imageCondition: imageAnalysisSummary?.condition ?? null,
+          imageConfidence: imageAnalysisSummary?.confidence ?? null,
+          ...specGapMetadata(classifySpecGapIntents(userPlainForLang)),
+          ...safetyEventsMetadata(safetyEvents),
         },
       },
       "[/api/chat]",
     );
 
-    const finalContent = ensureDisclaimer(
-      applyAffiliatePartsToReply(reply, prioritized, currentVehicle),
+    const gatedContent = ensureDisclaimer(
+      applyObdHonestyGuards(
+        applyDiagnosticToneGuards(
+          applySpecOutputGate(
+            applyAffiliatePartsToReply(reply, prioritized, currentVehicle),
+            specCtx,
+          ),
+        ),
+        hasLiveObdAdapter(obdPreference),
+      ),
       typeof content === "string" && content.trim()
         ? content
         : latestUserPlainText(fullMessages),
+    );
+    // After W1–W6 output gates: never leave CJK paragraphs for the user.
+    const finalContent = ensureLegalDisclaimer(
+      enforceNoCjkAssistantReply(gatedContent, replyLangHint),
+      productAssistantLanguage(replyLangHint),
     );
     const suggestedFocus = resolveFocusCommand(finalContent, ragHits);
 
@@ -523,6 +785,7 @@ export async function POST(request: NextRequest) {
         summary: drift.currentFocus.summary,
       },
       conversationFocus: drift.currentFocus,
+      imageAnalysis: imageAnalysisSummary,
     });
   } catch (error: unknown) {
     const abuse = aiAbuseResponse(error);

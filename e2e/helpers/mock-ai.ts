@@ -62,10 +62,13 @@ export async function mockAiRoutes(page: Page): Promise<void> {
             code: FIXTURE.dtc,
             definition: "Catalyst System Efficiency Below Threshold (Bank 1)",
             severity: "moderate",
+            catalogHit: true,
           },
         ],
         liveDataSummary: null,
         dataSourceNote: "Chat / manual DTC entry",
+        codeNote:
+          "Fault codes and titles come from a local SAE-style catalog for communication with a technician. They are not a root-cause diagnosis and do not mean a part must be replaced.",
       },
       contributingFactors: [
         {
@@ -81,6 +84,22 @@ export async function mockAiRoutes(page: Page): Promise<void> {
       ],
       ownerNotes: null,
       disclaimer: "Education only — not a certified diagnosis.",
+      recallEducation: {
+        source: "nhtsa-recalls",
+        ymm: `${req.vehicle?.year ?? 2019} ${req.vehicle?.make ?? FIXTURE.vehicle.make} ${req.vehicle?.model ?? FIXTURE.vehicle.model}`,
+        lookupUrl: "https://www.nhtsa.gov/recalls",
+        footnote:
+          "NHTSA data for education only. Verify open recalls with your VIN at nhtsa.gov/recalls or a dealer. This is not proof a recall was completed.",
+        status: "listed",
+        total: 1,
+        hints: [
+          {
+            campaignNumber: "21V123000",
+            component: "FUEL SYSTEM, GASOLINE",
+            summary: "Fuel pump impeller may crack.",
+          },
+        ],
+      },
     };
 
     // Archive is skipped in mock — still return a public_token shape the UI expects.

@@ -25,6 +25,13 @@ export type TokenUsageView = {
   percentage: number;
   percentLeft: number;
   unlimited: boolean;
+  visionUsed: number;
+  visionLimit: number;
+  visionRemaining: number;
+  aiSpendUsd: number;
+  aiBudgetUsd: number;
+  spendRemainingUsd: number;
+  hardCapEnabled: boolean;
 };
 
 const DEFAULT_VIEW: TokenUsageView = {
@@ -40,6 +47,13 @@ const DEFAULT_VIEW: TokenUsageView = {
   percentage: 0,
   percentLeft: 100,
   unlimited: false,
+  visionUsed: 0,
+  visionLimit: 3,
+  visionRemaining: 3,
+  aiSpendUsd: 0,
+  aiBudgetUsd: 0.25,
+  spendRemainingUsd: 0.25,
+  hardCapEnabled: true,
 };
 
 type TokenUsageApi = {
@@ -106,6 +120,14 @@ function useTokenUsageState(): TokenUsageApi {
         percentage,
         percentLeft,
         unlimited,
+        visionUsed: data.visionUsed ?? 0,
+        visionLimit: data.visionLimit ?? 3,
+        visionRemaining:
+          data.visionRemaining ?? data.visionLimit ?? 3,
+        aiSpendUsd: data.aiSpendUsd ?? 0,
+        aiBudgetUsd: data.aiBudgetUsd ?? 0.25,
+        spendRemainingUsd: data.spendRemainingUsd ?? 0.25,
+        hardCapEnabled: data.hardCapEnabled !== false,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load tokens");

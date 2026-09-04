@@ -1,9 +1,10 @@
 /**
  * Token billing types — PROJECT.md「收费与 Token 策略」
  *
- * Free: 15k / month
- * Pro: $9.99 / 150k included, monthly hard cap 500k
- * Pro Heavy: $19.99 / 400k included, monthly hard cap 1M
+ * Free: 15k / month · 3 photo analyses
+ * Pro: $9.99 / 150k included, monthly hard cap 500k · 30 photos
+ * Pro Heavy: $19.99 / 400k included, monthly hard cap 1M · 80 photos
+ * AI USD budgets: Free $0.25 · Pro $3.00 · Heavy $6.50 (see lib/ai-cost/plan-limits.ts)
  * Top-up: ~$0.07–$0.08 per 1k tokens (stored as bonus_tokens_remaining)
  */
 

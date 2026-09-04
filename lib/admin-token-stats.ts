@@ -4,6 +4,21 @@
 
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { getTokenCostRates } from "@/lib/token-cost";
+import { aiCostRateSummary } from "@/lib/ai-cost/prices";
+import {
+  getAdminAiMarginMonth,
+  type AiMarginMonth,
+} from "@/lib/admin-ai-margin";
+import {
+  aggregateSpecGapStats,
+  emptySpecGapStats,
+  parseSpecGapTags,
+  type SpecGapStats,
+} from "@/lib/spec-gap-intent";
+import {
+  aggregateSafetyObserveStats,
+  type SafetyObserveCounts,
+} from "@/lib/safety-observe-events";
 
 export type TokenStatsRange = "day" | "week" | "month";
 
@@ -43,6 +58,8 @@ export type TokenStatsResponse = {
     avgTokensPerCall: number;
   };
   costRates: ReturnType<typeof getTokenCostRates>;
+  aiRates: ReturnType<typeof aiCostRateSummary>;
+  marginMonth: AiMarginMonth | null;
   trend: TokenTrendPoint[];
   byRoute: TokenRouteBreakdown[];
   topPlaybooks: TokenPlaybookBreakdown[];
@@ -57,6 +74,10 @@ export type TokenStatsResponse = {
     costUsd: number;
     userId: string | null;
   }>;
+  /** Chat turns tagged oil/interval/torque — tags only, no message text. */
+  specGap: SpecGapStats;
+  /** Compact safety/cost observe names on Chat/vision rows — no VIN. */
+  safetyObserve: { counts: SafetyObserveCounts; taggedCalls: number };
 };
 
 function rangeStart(range: TokenStatsRange, now = new Date()): Date {
@@ -87,6 +108,7 @@ type EventRow = {
   playbook_slug: string | null;
   feature: string | null;
   created_at: string;
+  metadata?: Record<string, unknown> | null;
 };
 
 export async function getAdminTokenStats(
@@ -96,20 +118,31 @@ export async function getAdminTokenStats(
   const since = rangeStart(range, until);
   const admin = createSupabaseAdmin();
 
-  const { data, error } = await admin
-    .from("token_usage_events")
-    .select(
-      "id, user_id, route, model, prompt_tokens, completion_tokens, total_tokens, cost_usd, playbook_slug, feature, created_at",
-    )
-    .gte("created_at", since.toISOString())
-    .lte("created_at", until.toISOString())
-    .order("created_at", { ascending: true })
-    .limit(20_000);
+  const [eventsRes, marginMonth] = await Promise.all([
+    admin
+      .from("token_usage_events")
+      .select(
+        "id, user_id, route, model, prompt_tokens, completion_tokens, total_tokens, cost_usd, playbook_slug, feature, created_at, metadata",
+      )
+      .gte("created_at", since.toISOString())
+      .lte("created_at", until.toISOString())
+      .order("created_at", { ascending: true })
+      .limit(20_000),
+    getAdminAiMarginMonth().catch((err) => {
+      console.warn(
+        "[admin-token-stats] margin month",
+        err instanceof Error ? err.message : err,
+      );
+      return null;
+    }),
+  ]);
+
+  const { data, error } = eventsRes;
 
   if (error) {
     // Table missing before migration — return empty shell
     if (/token_usage_events|does not exist|schema cache/i.test(error.message)) {
-      return emptyStats(range, since, until);
+      return emptyStats(range, since, until, marginMonth);
     }
     throw error;
   }
@@ -238,6 +271,8 @@ export async function getAdminTokenStats(
         rows.length > 0 ? Math.round(totalTokens / rows.length) : 0,
     },
     costRates: getTokenCostRates(),
+    aiRates: aiCostRateSummary(),
+    marginMonth,
     trend: trend.map((t) => ({
       ...t,
       costUsd: Math.round(t.costUsd * 1_000_000) / 1_000_000,
@@ -251,6 +286,18 @@ export async function getAdminTokenStats(
       costUsd: Math.round(p.costUsd * 1_000_000) / 1_000_000,
     })),
     recent,
+    specGap: aggregateSpecGapStats(
+      rows
+        .filter((row) => row.route === "chat")
+        .map((row) => ({
+          tags: parseSpecGapTags(row.metadata?.spec_gap),
+        })),
+    ),
+    safetyObserve: aggregateSafetyObserveStats(
+      rows.map((row) => ({
+        events: row.metadata?.safetyEvents,
+      })),
+    ),
   };
 }
 
@@ -258,6 +305,7 @@ function emptyStats(
   range: TokenStatsRange,
   since: Date,
   until: Date,
+  marginMonth: AiMarginMonth | null = null,
 ): TokenStatsResponse {
   return {
     range,
@@ -273,9 +321,13 @@ function emptyStats(
       avgTokensPerCall: 0,
     },
     costRates: getTokenCostRates(),
+    aiRates: aiCostRateSummary(),
+    marginMonth,
     trend: [],
     byRoute: [],
     topPlaybooks: [],
     recent: [],
+    specGap: emptySpecGapStats(),
+    safetyObserve: { counts: {}, taggedCalls: 0 },
   };
 }

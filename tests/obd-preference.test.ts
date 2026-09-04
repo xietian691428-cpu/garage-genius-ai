@@ -4,6 +4,10 @@ import {
   shouldShowObdConnectEntry,
   canStartObdBleConnect,
   refreshSensorsAction,
+  formatObdPreferencePromptBlock,
+  applyObdHonestyGuards,
+  obdReplyClaimsLiveData,
+  hasLiveObdAdapter,
 } from "@/lib/obd-preference";
 
 describe("has_obd_adapter preference", () => {
@@ -48,5 +52,33 @@ describe("has_obd_adapter preference", () => {
     expect(
       refreshSensorsAction({ hasObdAdapter: true, isConnected: true }),
     ).toBe("read");
+  });
+});
+
+describe("OBD honesty when adapter is off", () => {
+  const noAdapter = parseObdAdapterPreference({
+    has_obd_adapter: false,
+    has_obd_adapter_source: "self",
+  });
+  const unset = parseObdAdapterPreference(null);
+
+  it("prompt forbids pretending live/realtime OBD readings", () => {
+    for (const pref of [noAdapter, unset]) {
+      expect(hasLiveObdAdapter(pref)).toBe(false);
+      const block = formatObdPreferencePromptBlock(pref);
+      expect(block).toMatch(/user-provided/i);
+      expect(block).toMatch(/Do not claim "live OBD data"/i);
+      expect(block).not.toMatch(/You may mention reading codes with their scanner/);
+    }
+  });
+
+  it("rewrites model output that claims live/realtime OBD", () => {
+    const fake =
+      "Based on live OBD readings and realtime OBD data, coolant is 210F.";
+    expect(obdReplyClaimsLiveData(fake)).toBe(true);
+    const out = applyObdHonestyGuards(fake, false);
+    expect(obdReplyClaimsLiveData(out)).toBe(false);
+    expect(out.toLowerCase()).toMatch(/user-provided/);
+    expect(applyObdHonestyGuards(fake, true)).toBe(fake);
   });
 });

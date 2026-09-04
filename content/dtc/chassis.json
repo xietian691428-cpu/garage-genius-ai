@@ -1,0 +1,31 @@
+[
+  {
+    "code": "C0035",
+    "title_en": "Left Front Wheel Speed Sensor Circuit",
+    "summary_en": "ABS/wheel-speed circuit (LF). Educational: inspect harness and tone ring. ABS may be degraded — verify before hard driving.",
+    "system": "chassis",
+    "severity_hint": "medium",
+    "common_causes": ["Sensor harness damage", "Tone ring debris or cracks (observe)", "Connector corrosion"],
+    "diy_level": "basic",
+    "safety_notes": "ABS or traction control may be limited until verified."
+  },
+  {
+    "code": "C0040",
+    "title_en": "Right Front Wheel Speed Sensor Circuit",
+    "summary_en": "ABS/wheel-speed circuit (RF). Same educational caution as other wheel-speed codes.",
+    "system": "chassis",
+    "severity_hint": "medium",
+    "common_causes": ["Sensor harness damage", "Tone ring debris or cracks (observe)", "Connector corrosion"],
+    "diy_level": "basic",
+    "safety_notes": "ABS or traction control may be limited until verified."
+  },
+  {
+    "code": "C0121",
+    "title_en": "ABS Module / Speed Sensor Related",
+    "summary_en": "ABS-related code family. Confirm the exact OEM definition with a scan tool; this local title is generic.",
+    "system": "chassis",
+    "severity_hint": "info",
+    "common_causes": ["Wheel-speed sensor circuit", "ABS module power/ground", "Related wiring"],
+    "diy_level": "shop"
+  }
+]

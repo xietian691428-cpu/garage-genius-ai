@@ -124,6 +124,29 @@ describe("resolveChatVehicleGate", () => {
     if (r.code === "ok") expect(r.vehicle.id).toBe("bmw-1");
   });
 
+  it("forces pick when two same-year Camrys share a model (never first Camry)", () => {
+    const camryC = v({
+      id: "camry-c",
+      name: "Wife Camry",
+      year: 2021,
+      make: "Toyota",
+      model: "Camry",
+    });
+    const r = resolveChatVehicleGate({
+      text: "oil spec for the Camry",
+      garage: [bmw, camryA, camryC],
+      current: bmw,
+      canAddVehicle: true,
+      maxVehicles: 5,
+    });
+    expect(r.code).toBe("ambiguous");
+    if (r.code === "ambiguous") {
+      expect(r.candidates.map((c) => c.id).sort()).toEqual(
+        ["camry-a", "camry-c"].sort(),
+      );
+    }
+  });
+
   it("does not gate Camry DIY brake text as a missing Ram (C3)", () => {
     const r = resolveChatVehicleGate({
       text: "手刹没事，行车制动绵",

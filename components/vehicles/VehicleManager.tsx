@@ -7,6 +7,13 @@ import VehiclePanel from "@/components/chat/VehiclePanel";
 import VehicleList from "./VehicleList";
 import AddVehicleModal from "./AddVehicleModal";
 import { hideStorePurchaseUi } from "@/lib/native-platform";
+import { isNhtsaRecallMarket } from "@/lib/vehicle-data/recall-copy";
+import {
+  dismissRecallBanner,
+  fetchSafetyHintsClient,
+  isRecallBannerDismissed,
+} from "@/lib/vehicle-data/safety-hints-client";
+import { supabase } from "@/lib/supabase";
 
 interface Props {
   vehicles: VehicleInfo[];
@@ -35,6 +42,34 @@ export default function VehicleManager({
   const { t } = useTranslation();
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<VehicleInfo | null>(null);
+  const [recallToast, setRecallToast] = useState<VehicleInfo | null>(null);
+
+  const maybeShowRecallToast = async (vehicle: VehicleInfo) => {
+    if (!isNhtsaRecallMarket(vehicle.market)) return;
+    if (isRecallBannerDismissed(vehicle.id)) return;
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+      const payload = await fetchSafetyHintsClient({
+        year: vehicle.year,
+        make: vehicle.make,
+        model: vehicle.model,
+        market: vehicle.market,
+        accessToken: session.access_token,
+      });
+      if (
+        !payload.skipped &&
+        !payload.unavailable &&
+        (payload.total > 0 || payload.hints.length > 0)
+      ) {
+        setRecallToast(vehicle);
+      }
+    } catch {
+      /* fail-open */
+    }
+  };
 
   const limitLabel =
     typeof maxVehicles === "number"
@@ -61,6 +96,27 @@ export default function VehicleManager({
               : undefined
           }
         />
+        {recallToast && currentVehicle?.id === recallToast.id ? (
+          <div
+            className="flex items-start justify-between gap-2 border-t border-amber-500/25 bg-amber-500/10 px-4 py-2.5"
+            data-testid="vehicle-recall-toast"
+          >
+            <p className="text-[11px] leading-snug text-amber-100">
+              Safety campaigns may apply—view details. Education only; verify
+              with your VIN on NHTSA or a dealer.
+            </p>
+            <button
+              type="button"
+              className="shrink-0 text-[11px] font-semibold text-amber-200 underline-offset-2 hover:underline"
+              onClick={() => {
+                dismissRecallBanner(recallToast.id);
+                setRecallToast(null);
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <div className="flex-1 p-4 sm:p-5 lg:p-6">
@@ -115,7 +171,11 @@ export default function VehicleManager({
       <AddVehicleModal
         open={showAdd && canAdd}
         onClose={() => setShowAdd(false)}
-        onAdd={onAddVehicle}
+        onAdd={async (vehicle) => {
+          await onAddVehicle(vehicle);
+          setShowAdd(false);
+          void maybeShowRecallToast(vehicle);
+        }}
       />
 
       <AddVehicleModal
@@ -125,6 +185,7 @@ export default function VehicleManager({
         onSave={async (vehicle) => {
           if (onUpdateVehicle) await onUpdateVehicle(vehicle);
           setEditing(null);
+          void maybeShowRecallToast(vehicle);
         }}
       />
     </div>

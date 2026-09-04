@@ -32,7 +32,7 @@ In-App Purchase product IDs (attach all four to this version):
 
 How to review (iPhone or iPad):
 1. Tap Sign in with Apple (system sheet — not Safari). After success you should land on Home and stay signed in. Email/password also works.
-2. After login, an AI processing consent dialog names DeepSeek. Tap Agree to continue, or Not now to skip AI features.
+2. After login, an AI processing consent dialog names DeepSeek (chat) and Kimi (photos). Tap Agree to continue, or Not now to skip AI features.
 3. Open Account → View plans & subscribe (or open Subscribe with Apple). Localized App Store prices load from StoreKit. Tap Subscribe to Pro or Heavy to present the system purchase sheet.
 4. Restore purchases is on the same subscription page and on Account.
 5. Manage or cancel: Account → Manage Apple subscription, or Settings → Apple ID → Subscriptions.

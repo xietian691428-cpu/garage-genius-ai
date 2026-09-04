@@ -30,7 +30,7 @@ import CameraCapture from "@/components/chat/CameraCapture";
 import DtcEntryBar from "@/components/chat/DtcEntryBar";
 import { compressImageDataUrl } from "@/lib/image";
 import { DEFAULT_PHOTO_PROMPT } from "@/lib/chat-empty-photo";
-import { MAX_PHOTO_DIAGNOSE_IMAGES } from "@/lib/types/subscription";
+import { CHAT_VISION_MAX_IMAGES } from "@/lib/vision/types";
 import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
 import type { MileageUnit } from "@/lib/obd-mileage";
 
@@ -123,7 +123,7 @@ export default function ChatInput({
     useState<UpgradeReason>("generic");
   const [toolsOpen, setToolsOpen] = useState(false);
 
-  const { isFree, features, recordVoiceUse, recordPhotoDiagnose } =
+  const { features, recordVoiceUse, recordPhotoDiagnose } =
     useSubscription();
   const { usage } = useTokenUsage();
 
@@ -154,6 +154,13 @@ export default function ChatInput({
     !isQaUnlockEnabled() &&
     usage.signedIn &&
     usage.remainingThisMonth <= 0;
+  const budgetExhausted =
+    !usage.unlimited &&
+    !isQaUnlockEnabled() &&
+    usage.signedIn &&
+    usage.hardCapEnabled &&
+    usage.spendRemainingUsd <= 0;
+  const allowanceExhausted = tokensExhausted || budgetExhausted;
 
   useEffect(() => {
     onSendRef.current = onSend;
@@ -279,7 +286,23 @@ export default function ChatInput({
     if (!next) stopSpeaking();
   };
 
+  const canAttachPhoto =
+    isQaUnlockEnabled() ||
+    usage.unlimited ||
+    (usage.signedIn && usage.hardCapEnabled
+      ? usage.visionRemaining > 0
+      : features.canUsePhotoDiagnose);
+
   const ensurePhotoQuota = (): boolean => {
+    if (isQaUnlockEnabled() || usage.unlimited) return true;
+    if (usage.signedIn && usage.hardCapEnabled) {
+      if (usage.visionRemaining <= 0) {
+        showUpgrade("photo");
+        return false;
+      }
+      recordPhotoDiagnose();
+      return true;
+    }
     if (features.canUsePhotoDiagnose && recordPhotoDiagnose()) return true;
     showUpgrade("photo");
     return false;
@@ -287,7 +310,7 @@ export default function ChatInput({
 
   const sendWithPhotos = (photos: string[], note?: string) => {
     if (busy) return;
-    if (isFree && tokensExhausted) {
+    if (allowanceExhausted) {
       showUpgrade("tokens");
       return;
     }
@@ -309,11 +332,7 @@ export default function ChatInput({
   };
 
   const addCompressedPhoto = async (raw: string, autoSend: boolean) => {
-    const compressed = await compressImageDataUrl(raw, {
-      maxWidth: 1600,
-      maxHeight: 1600,
-      quality: 0.82,
-    });
+    const compressed = await compressImageDataUrl(raw);
 
     if (autoSend) {
       // Camera → send immediately (garage one-handed flow)
@@ -323,9 +342,9 @@ export default function ChatInput({
     }
 
     setImages((prev) => {
-      if (prev.length >= MAX_PHOTO_DIAGNOSE_IMAGES) {
+      if (prev.length >= CHAT_VISION_MAX_IMAGES) {
         alert(
-          `You can attach up to ${MAX_PHOTO_DIAGNOSE_IMAGES} photos per diagnose. Remove one, or send these to AI first.`,
+          "This turn uses one photo for AI vision. Remove it, or send it first.",
         );
         return prev;
       }
@@ -338,11 +357,9 @@ export default function ChatInput({
     e.target.value = "";
     if (!files.length) return;
 
-    const room = MAX_PHOTO_DIAGNOSE_IMAGES - images.length;
+    const room = CHAT_VISION_MAX_IMAGES - images.length;
     if (room <= 0) {
-      alert(
-        `You can attach up to ${MAX_PHOTO_DIAGNOSE_IMAGES} photos per diagnose.`,
-      );
+      alert("This turn uses one photo for AI vision. Remove it, or send it first.");
       return;
     }
 
@@ -360,12 +377,16 @@ export default function ChatInput({
   };
 
   const openGallery = () => {
+    if (!canAttachPhoto) {
+      showUpgrade("photo");
+      return;
+    }
     galleryInputRef.current?.click();
   };
 
   const openCamera = () => {
     if (busy) return;
-    if (!features.canUsePhotoDiagnose) {
+    if (!canAttachPhoto) {
       showUpgrade("photo");
       return;
     }
@@ -385,12 +406,24 @@ export default function ChatInput({
 
   const showMic = voiceSupported;
   const showTts = ttsSupported;
-  const photoRemainingLabel =
-    features.photoRemainingToday == null
+  const photoLeft =
+    isQaUnlockEnabled() || usage.unlimited
       ? null
-      : `${features.photoRemainingToday} photo diagnose${
-          features.photoRemainingToday === 1 ? "" : "s"
-        } left today`;
+      : usage.signedIn
+        ? usage.visionRemaining
+        : features.photoRemainingToday;
+  const photoRemainingLabel =
+    photoLeft == null
+      ? null
+      : `${photoLeft} photo ${photoLeft === 1 ? "analysis" : "analyses"} left this month`;
+  const quotaLine = [
+    usage.signedIn && !usage.unlimited
+      ? `${usage.remainingThisMonth.toLocaleString()} tokens left this month`
+      : null,
+    photoRemainingLabel,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div className="panel-scroll max-h-[min(42dvh,24rem)] shrink-0 overflow-y-auto overscroll-y-contain border-t border-slate-800 bg-[#111827] p-3 pb-[max(0.75rem,var(--content-pad-bottom))] sm:p-4 xl:max-h-none xl:overflow-visible xl:pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -413,7 +446,6 @@ export default function ChatInput({
         ref={galleryInputRef}
         type="file"
         accept="image/*"
-        multiple
         className="hidden"
         onChange={handleImageUpload}
       />
@@ -469,7 +501,7 @@ export default function ChatInput({
         <div className="mb-3">
           <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
             <span>
-              {images.length}/{MAX_PHOTO_DIAGNOSE_IMAGES} photos ready
+              {images.length}/{CHAT_VISION_MAX_IMAGES} photo ready
             </span>
             <button
               type="button"
@@ -499,7 +531,7 @@ export default function ChatInput({
                 </button>
               </div>
             ))}
-            {images.length < MAX_PHOTO_DIAGNOSE_IMAGES && (
+            {images.length < CHAT_VISION_MAX_IMAGES && (
               <button
                 type="button"
                 onClick={openGallery}
@@ -514,9 +546,13 @@ export default function ChatInput({
         </div>
       )}
 
-      {isFree && tokensExhausted && (
-        <p className="mb-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs text-amber-200">
-          Monthly AI quota used up.
+      {allowanceExhausted && (
+        <p
+          className="mb-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs text-amber-200"
+          data-testid="chat-quota-exceeded"
+        >
+          Limited — quota exceeded. This month&apos;s AI allowance is used up
+          {usage.visionRemaining <= 0 ? " (including photo analyses)." : "."}
           {!hideStorePurchaseUi() && (
             <>
               {" "}
@@ -527,7 +563,7 @@ export default function ChatInput({
               >
                 Upgrade
               </button>{" "}
-              to keep chatting.
+              to keep chatting. This is not a full coaching reply.
             </>
           )}
         </p>
@@ -575,8 +611,8 @@ export default function ChatInput({
             placeholder={
               isListening
                 ? "Listening… speak now (text appears for review)"
-                : tokensExhausted && isFree
-                  ? "Token quota used — try again next month…"
+                : allowanceExhausted
+                  ? "Quota exceeded — try again next month…"
                   : images.length > 0
                     ? "Optional note about these photos…"
                     : "Ask about your car…"
@@ -681,9 +717,12 @@ export default function ChatInput({
             Safety notes
           </button>
         ) : null}
-        {photoRemainingLabel ? (
-          <p className="text-[11px] leading-relaxed text-slate-500">
-            {photoRemainingLabel}
+        {quotaLine ? (
+          <p
+            className="text-[11px] leading-relaxed text-slate-500"
+            data-testid="chat-quota-left"
+          >
+            {quotaLine}
           </p>
         ) : null}
       </div>

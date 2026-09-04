@@ -19,6 +19,10 @@ describe("subscription entitlements (catalog)", () => {
 
     expect(PLAN_ENTITLEMENTS.free.shopReportsPerMonth).toBe(3);
     expect(PLAN_ENTITLEMENTS.pro.shopReportsPerMonth).toBeNull();
+
+    expect(PLAN_ENTITLEMENTS.free.visionCallsPerMonth).toBe(3);
+    expect(PLAN_ENTITLEMENTS.pro.visionCallsPerMonth).toBe(30);
+    expect(PLAN_ENTITLEMENTS.pro_heavy.visionCallsPerMonth).toBe(80);
   });
 
   it("treats active trial as Pro (5 vehicles)", () => {
@@ -53,6 +57,22 @@ describe("formatAiHttpError", () => {
     expect(
       formatAiHttpError({ status: 429, code: "rate_limit_day" }),
     ).toBe("Too many requests. Please wait a moment and try again.");
+  });
+
+  it("maps vehicle identity gate codes", () => {
+    expect(
+      formatAiHttpError({
+        status: 403,
+        code: "VEHICLE_NOT_OWNED",
+        error: "This vehicle is not in your garage. Refresh and select a saved vehicle.",
+      }),
+    ).toMatch(/not in your garage/i);
+    expect(
+      formatAiHttpError({
+        status: 409,
+        code: "vehicle_selection_mismatch",
+      }),
+    ).toMatch(/Vehicle selection changed/i);
   });
 });
 

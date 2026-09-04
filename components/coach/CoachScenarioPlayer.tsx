@@ -34,6 +34,9 @@ type Props = {
   vehicle: CoachVehicleContext;
   onClose: () => void;
   onOpenChat?: (prompt: string) => void;
+  /** Completion / return-to-Chat chips — not part of the step engine. */
+  onContinueInChat?: () => void;
+  onAskNewQuestion?: () => void;
   onOpenParts?: (payload?: string) => void;
   onOpenShop?: () => void;
   onLogMaintenance?: (category: string) => void;
@@ -55,6 +58,8 @@ export default function CoachScenarioPlayer({
   vehicle,
   onClose,
   onOpenChat,
+  onContinueInChat,
+  onAskNewQuestion,
   onOpenParts,
   onOpenShop,
   onLogMaintenance,
@@ -228,11 +233,35 @@ export default function CoachScenarioPlayer({
               vehicle_model: vehicle.model ?? null,
             }}
           />
+          {(onContinueInChat || onAskNewQuestion) && (
+            <div className="flex flex-col gap-2" data-testid="coach-completion-chat-handoff">
+              {onContinueInChat ? (
+                <button
+                  type="button"
+                  data-testid="continue-this-guide"
+                  onClick={onContinueInChat}
+                  className="rounded-2xl bg-cyan-500 px-4 py-3.5 text-sm font-semibold text-black hover:bg-cyan-400"
+                >
+                  {t("coach.continueThisGuide")}
+                </button>
+              ) : null}
+              {onAskNewQuestion ? (
+                <button
+                  type="button"
+                  data-testid="ask-a-new-question"
+                  onClick={onAskNewQuestion}
+                  className="rounded-2xl border border-slate-600 px-4 py-3.5 text-sm font-semibold text-slate-100 hover:bg-slate-800"
+                >
+                  {t("coach.askNewQuestion")}
+                </button>
+              ) : null}
+            </div>
+          )}
           <button
             type="button"
             data-testid="coach-export-for-shop"
             onClick={() => setShopReportOpen(true)}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-4 py-3.5 text-sm font-semibold text-black hover:bg-cyan-400"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-500/50 bg-cyan-500/10 px-4 py-3.5 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/20"
           >
             <FileText className="h-4 w-4" />
             Export for Shop

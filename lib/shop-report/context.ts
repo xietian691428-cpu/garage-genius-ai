@@ -1,4 +1,5 @@
-import { extractDtcCodes, lookupDtc } from "@/lib/dtc";
+import { extractDtcCodes } from "@/lib/dtc-parse";
+import { lookupLocalDtc } from "@/lib/vehicle-data/dtc-local";
 import type { VehicleInfo } from "@/lib/types/chat";
 import type {
   ShopReportChatMessage,
@@ -23,16 +24,26 @@ export function collectCodesFromMessages(
 ): ShopReportDtc[] {
   const seen = new Set<string>();
   const out: ShopReportDtc[] = [];
+
+  const push = (raw: string) => {
+    const hit = lookupLocalDtc(raw);
+    const code = hit.code;
+    if (!code || seen.has(code)) return;
+    seen.add(code);
+    out.push({
+      code,
+      definition: hit.title,
+      severity: hit.severity,
+      catalogHit: hit.catalogHit,
+    });
+  };
+
   for (const m of messages) {
     for (const code of extractDtcCodes(m.content || "")) {
-      if (seen.has(code)) continue;
-      seen.add(code);
-      const d = lookupDtc(code);
-      out.push({
-        code: d.code,
-        definition: d.desc,
-        severity: d.severity,
-      });
+      push(code);
+    }
+    for (const code of m.imageAnalysis?.dtc_codes ?? []) {
+      push(code);
     }
   }
   return out;

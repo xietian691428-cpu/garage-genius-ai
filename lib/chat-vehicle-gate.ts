@@ -1,6 +1,9 @@
 /**
  * Chat send gate — ordered: parse mention → garage / quota / selection → vehicle_id.
  * Keeps AI calls off until a concrete garage vehicle is chosen.
+ *
+ * FREEZE: changing gate codes / order requires tests/chat-vehicle-gate.test.ts
+ * and tests/chat-vehicle-ownership.test.ts (切车 / 错车).
  */
 
 import type { VehicleInfo } from "@/lib/types/chat";

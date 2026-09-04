@@ -26,7 +26,7 @@ import {
   hideStorePurchaseUi,
   NATIVE_ACCOUNT_LIMITS_TITLE,
 } from "@/lib/native-platform";
-import { useAiConsentGate } from "@/components/legal/AiConsentProvider";
+import { isNhtsaRecallMarket } from "@/lib/vehicle-data/recall-copy";
 
 type ShopReportQuotaState = {
   limit: number | null;
@@ -63,6 +63,7 @@ export default function ShopReportModal({
   const [includeFullVin, setIncludeFullVin] = useState(false);
   const [includeImages, setIncludeImages] = useState(false);
   const [includeInventory, setIncludeInventory] = useState(false);
+  const [includeRecalls, setIncludeRecalls] = useState(true);
   const [ownerNotes, setOwnerNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,11 +125,14 @@ export default function ShopReportModal({
 
   if (!open) return null;
 
+  const usRecalls = isNhtsaRecallMarket(vehicle.market);
+
   const options: ShopReportGenerateOptions = {
     includeFullVin,
     includeImages,
     includeInventory,
     ownerNotes,
+    includeRecalls: usRecalls && includeRecalls,
   };
 
   const quotaExhausted =
@@ -418,6 +422,23 @@ export default function ShopReportModal({
                 </span>
               </span>
             </label>
+            {usRecalls ? (
+              <label className="flex items-start gap-2 text-sm text-slate-300">
+                <input
+                  type="checkbox"
+                  data-testid="shop-report-include-recalls"
+                  className="mt-1"
+                  checked={includeRecalls}
+                  onChange={(e) => setIncludeRecalls(e.target.checked)}
+                />
+                <span>
+                  {t("shopReport.includeRecalls")}
+                  <span className="block text-xs text-slate-500">
+                    {t("shopReport.includeRecallsHint")}
+                  </span>
+                </span>
+              </label>
+            ) : null}
             <label className="flex items-start gap-2 text-sm text-slate-300">
               <input
                 type="checkbox"

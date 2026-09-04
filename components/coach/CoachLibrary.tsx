@@ -23,6 +23,19 @@ import {
 } from "@/lib/coach-scenarios/catalog";
 import { toCoachVehicleContext } from "@/lib/coach-scenarios/vehicle-context";
 import CoachScenarioPlayer from "@/components/coach/CoachScenarioPlayer";
+import CoachGuideChatHandoff from "@/components/coach/CoachGuideChatHandoff";
+import {
+  continueGuideChatPrompt,
+  guideSafetyMatchText,
+  newQuestionChatPrompt,
+} from "@/lib/coach-guide-chat";
+import {
+  loadChatFocus,
+  previousFocusFromStore,
+} from "@/lib/chat-focus-storage";
+import type { TurnFocus } from "@/lib/chat-intent-drift";
+import { matchSafetyTopics } from "@/lib/safety-topics";
+import { detectReplyLanguageHint } from "@/lib/reply-language";
 import { formatAppDate } from "@/lib/format-app-date";
 import DtcEntryBar from "@/components/chat/DtcEntryBar";
 import InsuranceModTip from "@/components/legal/InsuranceModTip";
@@ -35,6 +48,8 @@ import {
 import type { ObdVisionAnalysis } from "@/lib/types/dtc";
 import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useTokenUsage } from "@/hooks/useTokenUsage";
+import { isQaUnlockEnabled } from "@/lib/qa-mode";
 import UpgradeButton from "@/components/ui/UpgradeButton";
 import UpgradeModal, {
   type UpgradeReason,
@@ -99,6 +114,7 @@ export default function CoachLibrary({
   onInitialPlaybookConsumed,
 }: Props) {
   const { features, isFree, recordPhotoDiagnose } = useSubscription();
+  const { usage } = useTokenUsage();
   const { t } = useTranslation();
   const { ensureConsent } = useAiConsentGate();
   const [activeSlug, setActiveSlug] = useState<CoachPlaybookSlug | null>(null);
@@ -123,8 +139,17 @@ export default function CoachLibrary({
     cancelPending,
   } = useSafetyAdviceAck();
   const scenario = activeSlug ? getCoachPlaybook(activeSlug) : null;
+  const [chatFocus, setChatFocus] = useState<TurnFocus | null>(null);
 
   const vehicleCtx = toCoachVehicleContext(currentVehicle);
+
+  useEffect(() => {
+    if (!currentVehicle?.id) {
+      setChatFocus(null);
+      return;
+    }
+    setChatFocus(previousFocusFromStore(loadChatFocus(currentVehicle.id)));
+  }, [currentVehicle?.id, activeSlug]);
 
   useEffect(() => {
     void (async () => {
@@ -246,6 +271,38 @@ export default function CoachLibrary({
     ? `${currentVehicle.year} ${currentVehicle.make} ${currentVehicle.model}`
     : null;
 
+  const openContinueInChat = () => {
+    onAskAI(
+      continueGuideChatPrompt({
+        guideTitle: scenario?.title || activeSlug || "this guide",
+        vehicle: currentVehicle,
+        focus: chatFocus,
+      }),
+      { playbookSlug: activeSlug || undefined },
+    );
+  };
+
+  const openNewQuestionInChat = () => {
+    onAskAI(newQuestionChatPrompt());
+  };
+
+  const guideSafetyHits = useMemo(
+    () =>
+      matchSafetyTopics(
+        guideSafetyMatchText({
+          guideTitle: scenario?.title,
+          guideDescription: scenario?.subtitle,
+          focus: chatFocus,
+        }),
+        {
+          lang: detectReplyLanguageHint(
+            `${scenario?.title || ""} ${chatFocus?.summary || ""}`,
+          ),
+        },
+      ),
+    [scenario?.title, scenario?.subtitle, chatFocus],
+  );
+
   const runDtcToChat = (code: string) => {
     const parsed = lookupDtc(code);
     onAskAI(
@@ -278,8 +335,14 @@ export default function CoachLibrary({
       return;
     }
     if (!(await ensureConsent())) return;
-    // Same Free daily photo-diagnose soft-cap as Chat
-    if (!features.canUsePhotoDiagnose || !recordPhotoDiagnose()) {
+    // Monthly vision cap (server remaining when signed in)
+    const visionBlocked =
+      !isQaUnlockEnabled() &&
+      !usage.unlimited &&
+      (usage.signedIn && usage.hardCapEnabled
+        ? usage.visionRemaining <= 0
+        : !features.canUsePhotoDiagnose);
+    if (visionBlocked || !recordPhotoDiagnose()) {
       setUpgradeReason("photo");
       setShowUpgrade(true);
       return;
@@ -410,6 +473,13 @@ export default function CoachLibrary({
               )
             }
           />
+          <div className="mt-2">
+            <CoachGuideChatHandoff
+              safetyHits={guideSafetyHits}
+              onContinue={openContinueInChat}
+              onNewQuestion={openNewQuestionInChat}
+            />
+          </div>
         </div>
         <div className="min-h-0 flex-1">
           <CoachScenarioPlayer
@@ -419,6 +489,8 @@ export default function CoachLibrary({
             onOpenChat={(prompt) =>
               onAskAI(prompt, { playbookSlug: activeSlug || undefined })
             }
+            onContinueInChat={openContinueInChat}
+            onAskNewQuestion={openNewQuestionInChat}
             onOpenParts={() => onGoToParts?.()}
             onOpenShop={() =>
               onAskAI(

@@ -4,13 +4,18 @@
  */
 
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
-import { estimateLlmCostUsd } from "@/lib/token-cost";
 import type { AiRouteName } from "@/lib/ai-abuse";
+import {
+  estimateAiCostUsd,
+  inferAiProvider,
+  type AiProvider,
+} from "@/lib/ai-cost/prices";
 
 export type LogTokenUsageInput = {
   userId: string;
   route: AiRouteName | "other";
   model?: string;
+  provider?: AiProvider;
   promptTokens?: number;
   completionTokens?: number;
   totalTokens: number;
@@ -29,7 +34,7 @@ const ROUTE_FEATURE: Record<string, string> = {
 };
 
 /**
- * Insert one row into token_usage_events.
+ * Insert one row into token_usage_events (also exposed as view ai_usage_events).
  * Best-effort: never throws to the caller (billing already succeeded).
  */
 export async function logTokenUsage(input: LogTokenUsageInput): Promise<void> {
@@ -39,9 +44,15 @@ export async function logTokenUsage(input: LogTokenUsageInput): Promise<void> {
     let total = Math.max(0, Math.floor(input.totalTokens));
     if (total <= 0) total = Math.max(1, prompt + completion);
 
-    const costUsd = estimateLlmCostUsd({
-      promptTokens: prompt || Math.round(total * 0.7),
-      completionTokens: completion || Math.max(0, total - Math.round(total * 0.7)),
+    const promptForCost = prompt || Math.round(total * 0.7);
+    const completionForCost =
+      completion || Math.max(0, total - Math.round(total * 0.7));
+    const provider = input.provider || inferAiProvider(input.model);
+    const costUsd = estimateAiCostUsd({
+      provider,
+      model: input.model,
+      promptTokens: promptForCost,
+      completionTokens: completionForCost,
     });
 
     const feature =
@@ -55,6 +66,7 @@ export async function logTokenUsage(input: LogTokenUsageInput): Promise<void> {
       user_id: input.userId,
       route: input.route,
       model: input.model ?? null,
+      provider,
       prompt_tokens: prompt,
       completion_tokens: completion,
       total_tokens: total,

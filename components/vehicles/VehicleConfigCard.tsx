@@ -10,6 +10,11 @@ import {
   resolveFluidFields,
   vehicleIdentityLine,
 } from "@/lib/vcdb/format";
+import VehicleSafetyHints from "./VehicleSafetyHints";
+import {
+  detectVehicleVpicYmmConflict,
+  hasYmmUnverifiedTag,
+} from "@/lib/vehicle-data/ymm-conflict";
 
 type CardSource = {
   year: number;
@@ -79,6 +84,12 @@ export default function VehicleConfigCard({
 
   const verified = src.vcdb?.source === "vcdb";
   const fluids = resolveFluidFields(src);
+  const ymmConflict = vehicle
+    ? detectVehicleVpicYmmConflict(vehicle)
+    : null;
+  const ymmUnverified = Boolean(
+    vehicle?.ymmUnverified || hasYmmUnverifiedTag(vehicle?.tags),
+  );
 
   /** Engine line with inline fuel/oil when known — easy for DIY users to scan */
   const engineDisplay = (() => {
@@ -153,6 +164,23 @@ export default function VehicleConfigCard({
           </div>
         )}
       </div>
+      {ymmConflict ? (
+        <p
+          data-testid="vehicle-vpic-ymm-conflict"
+          className="mb-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-[11px] leading-snug text-amber-100"
+        >
+          Saved {ymmConflict.garageYmm} does not match VIN decode{" "}
+          {ymmConflict.snapshotYmm}. Confirm the vehicle before coaching.
+        </p>
+      ) : ymmUnverified ? (
+        <p
+          data-testid="vehicle-ymm-unverified"
+          className="mb-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-[11px] leading-snug text-amber-100"
+        >
+          Year / make / model were entered by hand (VIN decode unavailable).
+          Confirm before quoting specs.
+        </p>
+      ) : null}
 
       <dl className={`grid gap-1.5 ${compact ? "text-xs" : "text-sm"}`}>
         {rows.map((row) => (
@@ -176,6 +204,15 @@ export default function VehicleConfigCard({
           </div>
         ))}
       </dl>
+      {vehicle ? (
+        <VehicleSafetyHints
+          year={vehicle.year}
+          make={vehicle.make}
+          model={vehicle.model}
+          market={vehicle.market}
+          compact={compact}
+        />
+      ) : null}
     </div>
   );
 }

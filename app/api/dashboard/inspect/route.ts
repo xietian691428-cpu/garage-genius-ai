@@ -23,6 +23,7 @@ import {
   AI_ROUTE_TOKEN_FLOOR,
   aiAbuseResponse,
   assertAiRateLimit,
+  assertAiSpendGate,
   assertAiTokenBudget,
   consumeAiTokensBestEffort,
   requireVerifiedAiUser,
@@ -141,6 +142,10 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireVerifiedAiUser(request);
     await assertAiRateLimit(user.id, "inspect", user.email);
+    await assertAiSpendGate(user.id, {
+      needsVision: false,
+      email: user.email,
+    });
 
     const body = await request.json();
     const { regionId, symptoms, currentVehicle, allowGeneral } = body as {
@@ -263,6 +268,7 @@ export async function POST(request: NextRequest) {
       {
         route: "inspect",
         model: "deepseek-chat",
+        provider: "deepseek",
         promptTokens: usage.prompt_tokens,
         completionTokens: usage.completion_tokens,
         email: user.email,

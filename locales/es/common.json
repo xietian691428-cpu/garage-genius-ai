@@ -37,7 +37,10 @@
     "adoptFailed": "No se pudo guardar. Inténtalo de nuevo.",
     "adoptSignInPrompt": "Inicia sesión para adoptar este paso en la base de conocimiento.",
     "adoptSignInLink": "Iniciar sesión",
-    "adoptNeedYes": "Marca este paso como útil (Sí) para desbloquear Adoptar."
+    "adoptNeedYes": "Marca este paso como útil (Sí) para desbloquear Adoptar.",
+    "continueThisGuide": "Continuar esta guía",
+    "askNewQuestion": "Hacer una pregunta nueva",
+    "guideChatHandoffHint": "El Chat usa el mismo vehículo y estado de seguridad que esta guía."
   },
   "onboarding": {
     "welcomeEyebrow": "Bienvenido a Garage Genius",
@@ -140,7 +143,12 @@
     "gateAddVehicle": "Añadir vehículo",
     "gateUpgrade": "Mejorar plan",
     "gateManageGarage": "Gestionar garaje",
-    "gatePickVehicle": "Elegir vehículo"
+    "gatePickVehicle": "Elegir vehículo",
+    "vehicleNotOwned": "Este vehículo no está en tu garaje. Actualiza y selecciona un vehículo guardado.",
+    "vehicleSelectionMismatch": "La selección del vehículo cambió. Actualiza el chat e inténtalo de nuevo.",
+    "budgetExceeded": "La asignación de IA de este mes se agotó. Mejora el plan para un presupuesto mayor.",
+    "visionQuotaExceeded": "Se alcanzó el límite mensual de análisis de fotos. Mejora el plan para más fotos.",
+    "limitedMode": "Limitado — cuota agotada. Esto no es una respuesta completa de coaching."
   },
   "dtc": {
     "enterCode": "Introducir código de fallo",
@@ -153,6 +161,23 @@
     "invalidCode": "Usa un código válido como P0420 o U0100.",
     "submit": "Diagnosticar código",
     "signInForObdPhoto": "Inicia sesión para analizar una captura OBD."
+  },
+  "recalls": {
+    "usTitle": "Campañas de seguridad NHTSA (solo educativas)",
+    "usFootnote": "Datos NHTSA solo para educación. Verifique recalls abiertos con su VIN en nhtsa.gov/recalls o en un concesionario. Esto no prueba que un recall se haya completado.",
+    "nhtsaLink": "nhtsa.gov/recalls",
+    "usUnavailable": "No pudimos verificar los recalls ahora. Consulte NHTSA con su VIN en nhtsa.gov/recalls o en un concesionario.",
+    "usEmpty": "NHTSA no devolvió campañas abiertas para este YMM. Aún verifique con su VIN en nhtsa.gov/recalls o en un concesionario. Eso no prueba que el vehículo nunca haya tenido una campaña.",
+    "sourceNhtsa": "Fuente: NHTSA",
+    "sourceRegional": "Fuente: regional (no NHTSA)",
+    "expand": "Expandir",
+    "mayBeAffected": "Este año/marca/modelo puede verse afectado. Verifique con su VIN en NHTSA o en un concesionario.",
+    "showingOf": "Mostrando {{shown}} de {{total}} campañas NHTSA registradas para este año/marca/modelo.",
+    "regionalTitle": "Comprobaciones de seguridad regionales",
+    "regionalTitleGB": "Comprobaciones de seguridad regionales (Reino Unido)",
+    "regionalTitleEU": "Comprobaciones de seguridad regionales (UE / EEE)",
+    "regionalBody": "Las campañas de seguridad las gestionan autoridades nacionales y fabricantes en su región. Aquí no listamos una base de datos local completa: consulte el sitio del fabricante o un concesionario con su VIN.",
+    "regionalBodyGB": "Las campañas de seguridad las gestionan autoridades nacionales y fabricantes en su región. Aquí no listamos una base de datos local completa: consulte el sitio del fabricante o un concesionario con su VIN. En el Reino Unido también puede consultar DVSA y el fabricante. En esta versión no consultamos el historial MOT."
   },
   "obd": {
     "connectEntry": "Conectar OBD",
@@ -204,7 +229,9 @@
     "refreshSensorsReading": "Leyendo…",
     "enableAdapterCta": "Activar OBD en Ajustes",
     "bleBlockedByPref": "Activa “Tengo un adaptador OBD-II” en Ajustes antes de conectar Bluetooth OBD.",
-    "mileageUpdated": "Kilometraje del vehículo actualizado a {{value}} {{unit}}"
+    "mileageUpdated": "Kilometraje del vehículo actualizado a {{value}} {{unit}}",
+    "mileageSkippedDecrease": "El odómetro OBD no es mayor que el archivo. No se redujo el kilometraje.",
+    "mileageSkippedJump": "El odómetro OBD saltó demasiado respecto al archivo. No se sobrescribió el kilometraje."
   },
   "parts": {
     "searchOnAmazon": "Buscar en Amazon",
@@ -327,7 +354,9 @@
     "planLimitStore": "Límite del plan: {{count}} vehículo(s).",
     "limitReached": "Límite de vehículos alcanzado. Mejora para más.",
     "limitReachedStore": "Límite de vehículos alcanzado.",
-    "couldNotSave": "No se pudo guardar el vehículo."
+    "couldNotSave": "No se pudo guardar el vehículo.",
+    "vpicYmmConflict": "El año/marca/modelo guardado no coincide con el VIN. Confirma el vehículo antes de continuar.",
+    "ymmUnverified": "Año/marca/modelo se introdujeron a mano (VIN no disponible). Confírmalos antes de citar especificaciones."
   },
   "shopReport": {
     "eyebrow": "Entrega al taller",
@@ -335,6 +364,8 @@
     "subtitle": "Resumen educativo para tu técnico — no es un diagnóstico final.",
     "includeFullVin": "Incluir VIN completo en el PDF",
     "includeFullVinHint": "Por defecto / enlace público solo muestran los últimos 8.",
+    "includeRecalls": "Incluir educación de recalls NHTSA (EE. UU.)",
+    "includeRecallsHint": "Hasta 3 campañas + nhtsa.gov/recalls. Solo educación — no es el estado de reparación del VIN.",
     "includeScreenshots": "Incluir capturas",
     "noPhotosYet": "Aún no hay fotos en este chat.",
     "photosOnPdf": "Hasta {{count}} imagen(es) en la página 2 del PDF.",

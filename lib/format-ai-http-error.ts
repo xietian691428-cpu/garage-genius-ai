@@ -1,7 +1,4 @@
-/**
- * Map API failure payloads to short, retryable user-facing copy.
- * Prefer the server message when present; guarantee a wait/retry hint for 429.
- */
+import { formatLimitedQuotaReply } from "@/lib/ai-cost/gate";
 
 export function formatAiHttpError(input: {
   status: number;
@@ -23,7 +20,20 @@ export function formatAiHttpError(input: {
     code === "report_limit_reached" || code === "report_limit";
   const isTokenLimit =
     input.status === 402 &&
-    (code === "insufficient_tokens" || code === "token_limit");
+    (code === "insufficient_tokens" ||
+      code === "token_limit" ||
+      code === "ai_budget_exceeded");
+  const isVisionQuota =
+    code === "vision_quota_exceeded" ||
+    (input.status === 429 && code === "vision_quota_exceeded");
+
+  if (isVisionQuota) {
+    const raw =
+      server ||
+      input.fallback ||
+      "Monthly photo analysis limit reached. Upgrade for a higher photo quota.";
+    return formatLimitedQuotaReply(raw);
+  }
 
   if (isRateLimit) {
     if (server) {
@@ -49,10 +59,28 @@ export function formatAiHttpError(input: {
   }
 
   if (isTokenLimit) {
+    if (code === "ai_budget_exceeded") {
+      const raw =
+        server ||
+        input.fallback ||
+        "This month's AI allowance is used up. Upgrade for a larger budget.";
+      return formatLimitedQuotaReply(raw);
+    }
     return (
       server ||
       input.fallback ||
       "Insufficient tokens this month. Try again next month."
+    );
+  }
+
+  if (
+    code === "vehicle_not_owned" ||
+    code === "vehicle_selection_mismatch"
+  ) {
+    return (
+      server ||
+      input.fallback ||
+      "Vehicle selection changed. Refresh chat and try again."
     );
   }
 

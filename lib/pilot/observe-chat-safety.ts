@@ -12,9 +12,10 @@ import {
 } from "@/lib/chat-intent-drift";
 import { matchSafetyTopicIds } from "@/lib/safety-topics";
 import {
-  CRITICAL_EXIT_FROM_UNDER_PHRASE,
   OIL_STEP_LEAK_PHRASES,
+  needsExitUnderRepair,
   replyEncouragesStayUnder,
+  replyMissingCriticalExitFromUnder,
 } from "@/lib/pilot/safety-observe-phrases";
 
 export function observeChatSafetyTurn(input: {
@@ -38,7 +39,7 @@ export function observeChatSafetyTurn(input: {
     const missingExitFromUnder =
       Boolean(
         input.currentFocus && needsCriticalRaisedState(input.currentFocus),
-      ) && !lower.includes(CRITICAL_EXIT_FROM_UNDER_PHRASE);
+      ) && replyMissingCriticalExitFromUnder(input.reply);
     logChatDrift(
       {
         observe: "chat_safety",
@@ -47,6 +48,14 @@ export function observeChatSafetyTurn(input: {
         oilStepLeakHits,
         missingExitFromUnder,
         encouragesStayUnder: replyEncouragesStayUnder(input.reply),
+        needsExitUnderRepair: needsExitUnderRepair(
+          input.reply,
+          Boolean(
+            input.currentFocus &&
+              needsCriticalRaisedState(input.currentFocus),
+          ),
+          Boolean(input.currentFocus?.vehicleRaised),
+        ),
       },
       input.vehicleId,
     );

@@ -45,6 +45,7 @@ interface Props {
   onRegenerate?: () => void;
   onEditUser?: (content: string) => void;
   onQuickPrompt?: (prompt: string) => void;
+  onOpenPlaybook?: (slug: string) => void;
   onGenerateShopReport?: () => void;
   onHideEmptyPhoto?: () => void;
 }
@@ -61,6 +62,7 @@ export default function MessageBubble({
   onRegenerate,
   onEditUser,
   onQuickPrompt,
+  onOpenPlaybook,
   onGenerateShopReport,
   onHideEmptyPhoto,
 }: Props) {
@@ -178,6 +180,39 @@ export default function MessageBubble({
             ))}
           </div>
         )}
+
+        {!isUser && message.imageAnalysis ? (
+          <details
+            className="mb-3 rounded-xl border border-slate-700/80 bg-slate-900/60 px-3 py-2"
+            data-testid="image-recognition-summary"
+          >
+            <summary className="cursor-pointer text-xs font-medium text-cyan-300">
+              Image recognition summary
+            </summary>
+            <div className="mt-2 space-y-1 text-[11px] leading-relaxed text-slate-300">
+              <p>
+                {message.imageAnalysis.condition} · confidence{" "}
+                {Math.round(message.imageAnalysis.confidence * 100)}% ·{" "}
+                {message.imageAnalysis.scene.replace(/_/g, " ")}
+              </p>
+              {message.imageAnalysis.dtc_codes.length > 0 ? (
+                <p>Codes: {message.imageAnalysis.dtc_codes.join(", ")}</p>
+              ) : null}
+              {message.imageAnalysis.objects.length > 0 ? (
+                <p>Visible: {message.imageAnalysis.objects.join(", ")}</p>
+              ) : null}
+              {message.imageAnalysis.notes ? (
+                <p>{message.imageAnalysis.notes}</p>
+              ) : null}
+              {message.imageAnalysis.askRetake ? (
+                <p className="text-amber-200">
+                  Photo looks unclear — retake in better light if you can. Do not
+                  treat guessed readings as facts.
+                </p>
+              ) : null}
+            </div>
+          </details>
+        ) : null}
 
         {isUser && onEditUser && (
           <div className="mb-2 flex justify-end">
@@ -297,7 +332,13 @@ export default function MessageBubble({
             <button
               key={chip.id}
               type="button"
-              onClick={() => onQuickPrompt?.(chip.prompt)}
+              onClick={() => {
+                if (chip.playbookSlug && onOpenPlaybook) {
+                  onOpenPlaybook(chip.playbookSlug);
+                  return;
+                }
+                onQuickPrompt?.(chip.prompt);
+              }}
               className="shrink-0 whitespace-nowrap rounded-full border border-slate-600 bg-slate-800 px-3 py-2 text-[12px] text-slate-200 transition hover:border-cyan-500/50 hover:text-cyan-200"
             >
               {chip.label}

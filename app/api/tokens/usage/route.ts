@@ -9,6 +9,9 @@ import {
   qaTokenAvailabilityView,
 } from "@/lib/qa-mode";
 import { isUnlimitedTokenUser } from "@/lib/test-token-bypass";
+import { PLAN_AI_LIMITS } from "@/lib/ai-cost/plan-limits";
+import { getAiSpendSnapshot } from "@/lib/ai-cost/meter";
+import { isAiCostHardCapEnabled } from "@/lib/ai-cost/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,6 +30,7 @@ export async function GET(req: NextRequest) {
     if (!token) {
       // Guest / not signed in — show Free plan defaults (no server tracking yet)
       const free = TOKEN_PLAN_LIMITS.free;
+      const ai = PLAN_AI_LIMITS.free;
       return NextResponse.json({
         signedIn: false,
         plan: "free",
@@ -40,6 +44,13 @@ export async function GET(req: NextRequest) {
         percentage: 0,
         percentLeft: 100,
         unlimited: false,
+        visionUsed: 0,
+        visionLimit: ai.visionCallsPerPeriod,
+        visionRemaining: ai.visionCallsPerPeriod,
+        aiSpendUsd: 0,
+        aiBudgetUsd: ai.aiBudgetUsd,
+        spendRemainingUsd: ai.aiBudgetUsd,
+        hardCapEnabled: isAiCostHardCapEnabled(),
       });
     }
 
@@ -74,6 +85,37 @@ export async function GET(req: NextRequest) {
     const limit = availability.includedMonthly;
     const percentage = tokenPercentUsed(used, limit);
 
+    let spend = {
+      visionUsed: 0,
+      visionLimit: PLAN_AI_LIMITS[availability.plan].visionCallsPerPeriod,
+      visionRemaining: PLAN_AI_LIMITS[availability.plan].visionCallsPerPeriod,
+      aiSpendUsd: 0,
+      aiBudgetUsd: PLAN_AI_LIMITS[availability.plan].aiBudgetUsd,
+      spendRemainingUsd: PLAN_AI_LIMITS[availability.plan].aiBudgetUsd,
+      hardCapEnabled: isAiCostHardCapEnabled(),
+    };
+    try {
+      const snap = await getAiSpendSnapshot(user.id, user.email);
+      spend = {
+        visionUsed: snap.visionUsed,
+        visionLimit: snap.visionLimit,
+        visionRemaining: snap.hardCapEnabled
+          ? snap.visionRemaining
+          : snap.visionLimit,
+        aiSpendUsd: snap.spentUsd,
+        aiBudgetUsd: snap.budgetUsd,
+        spendRemainingUsd: snap.hardCapEnabled
+          ? snap.spendRemainingUsd
+          : snap.budgetUsd,
+        hardCapEnabled: snap.hardCapEnabled,
+      };
+    } catch (err) {
+      console.warn(
+        "[/api/tokens/usage] spend snapshot",
+        err instanceof Error ? err.message : err,
+      );
+    }
+
     return NextResponse.json({
       signedIn: true,
       plan: availability.plan,
@@ -87,6 +129,7 @@ export async function GET(req: NextRequest) {
       percentage,
       percentLeft: Math.max(0, 100 - percentage),
       unlimited: false,
+      ...spend,
     });
   } catch (err) {
     console.error("[/api/tokens/usage]", err);

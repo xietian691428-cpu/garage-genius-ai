@@ -127,17 +127,19 @@ export default async function PrivacyPage() {
         </h2>
         <p className="mt-2">
           When you use Chat, Coach-related AI, Dashboard inspect, or vision
-          features (vehicle photo, OBD photo, receipt scan), relevant text is
-          sent to DeepSeek for coaching and diagnosis, and photos or screenshots
-          are sent to Kimi (Moonshot) for image recognition before coaching.
-          We send only what is needed for that request. Before the first AI
-          request, the app shows a consent screen that names DeepSeek and Kimi,
-          lists the data categories that may be sent, and requires your active
-          agreement; if you decline, we do not call these providers. You can
-          review details anytime in this Privacy Policy. AI outputs can be wrong
-          or incomplete — treat them as DIY education, not certified repair
-          advice. Providers may process data on servers outside your country; see
-          their policies for retention details.
+          features (vehicle photo, OBD photo, receipt scan), chat and coaching
+          text are sent to DeepSeek. Photos or screenshots you attach are sent
+          to Kimi (Moonshot) for image recognition only; DeepSeek then writes
+          the educational reply from that structured description. We do not
+          send photos until you agree. We send only what is needed for that
+          request. Before the first AI request, the app shows a consent screen
+          that names DeepSeek and Kimi, lists the data categories that may be
+          sent, and requires your active agreement; if you decline, we do not
+          call these providers and we do not upload photos. You can review
+          details anytime in this Privacy Policy. AI outputs can be wrong or
+          incomplete — treat them as DIY education, not certified repair
+          advice. Providers may process data on servers outside your country;
+          see their policies for retention details.
         </p>
       </section>
 

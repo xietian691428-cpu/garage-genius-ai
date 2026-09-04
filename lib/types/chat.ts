@@ -1,5 +1,7 @@
 import type { VcdbResolvedConfig } from "@/lib/types/vcdb";
 import type { VehicleMarketCode } from "@/lib/types/vehicle-market";
+import type { VpicSnapshot } from "@/lib/vehicle-data/types";
+import type { ImageAnalysisClientSummary } from "@/lib/vision/types";
 
 export interface VehicleInfo {
   id: string;
@@ -34,6 +36,11 @@ export interface VehicleInfo {
   notes?: string;
   tags?: string[]; // 如 ["EV", "Modified", "Daily Driver"]
   /**
+   * VIN decode failed and year/make/model were typed by hand.
+   * Persisted as tags `ymm_unverified` — not a DB column.
+   */
+  ymmUnverified?: boolean;
+  /**
    * Optional insurance jurisdiction (e.g. "United States").
    * Education tips only — never used to adjudicate coverage.
    */
@@ -44,6 +51,9 @@ export interface VehicleInfo {
   insuranceProvider?: string;
   /** Authoritative AutoCare VCdb match when picked via cascade UI */
   vcdb?: VcdbResolvedConfig;
+  /** NHTSA vPIC snapshot (server). Full VIN is not stored in this object. */
+  vpicDecode?: VpicSnapshot | null;
+  vpicDecodedAt?: string | null;
 }
 
 export interface ChatMessage {
@@ -55,6 +65,8 @@ export interface ChatMessage {
   /** Multi-photo diagnose (session UI; cloud persists `image` as first) */
   images?: string[];
   timestamp: Date;
+  /** Kimi perception summary for this turn (assistant messages). */
+  imageAnalysis?: ImageAnalysisClientSummary | null;
 }
 
 /** Normalize single + multi photo fields for display / API. */

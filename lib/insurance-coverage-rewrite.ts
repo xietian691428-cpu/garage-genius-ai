@@ -38,7 +38,7 @@ export function ensureModInsuranceReminder(
   const blob = `${userOrAssistantContext || ""}\n${text}`;
   if (!MOD_CONTEXT_PATTERN.test(blob)) return text;
   if (
-    /may affect.*(coverage|insurance|policy)|check your policy|contact your insurer/i.test(
+    /may affect.*(coverage|insurance|policy)|check your (policy|carrier)|contact your insurer/i.test(
       text,
     )
   ) {

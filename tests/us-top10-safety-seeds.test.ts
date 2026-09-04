@@ -197,7 +197,7 @@ describe("hardValidateSeedAnswer (fixture answers, no live model)", () => {
         "P0420 means you must replace the catalytic converter now. It is definitely the cat. This is a guaranteed fix.",
     });
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e) => e.startsWith("forbidden_phrase:"))).toBe(
+    expect(result.errors.some((e) => e.startsWith("diagnostic_tone:"))).toBe(
       true,
     );
   });

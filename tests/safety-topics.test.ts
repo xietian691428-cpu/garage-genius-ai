@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { usTop10CoreUserQuestionFailures } from "@/lib/pilot/hard-validate-seed-answer";
+import { needsExitUnderRepair } from "@/lib/pilot/safety-observe-phrases";
 import {
   DEFAULT_SAFETY_TOPICS,
   matchSafetyTopicIds,
@@ -21,7 +22,9 @@ describe("safety-topics catalog", () => {
       "lifting_under_car",
       "wheel_road",
       "cooling_hot",
+      "battery_12v",
       "exhaust_co",
+      "unsafe_to_drive",
     ]);
   });
 });
@@ -325,9 +328,51 @@ describe("matchSafetyTopicIds", () => {
     expect(matchSafetyTopicIds("Can I open radiator when hot?")).toContain(
       "cooling_hot",
     );
+    expect(matchSafetyTopicIds("How do I top up coolant on my Camry?")).toContain(
+      "cooling_hot",
+    );
+    expect(matchSafetyTopicIds("How do I test my 12V battery?")).toContain(
+      "battery_12v",
+    );
     expect(
       matchSafetyTopicIds("Is it ok to run engine in garage with door closed?"),
     ).toContain("exhaust_co");
+  });
+
+  it("does not fire brakes on set-parking-brake then jack (Camry S1 lift)", () => {
+    const text =
+      "Set the parking brake, then jack the front and put it on jack stands.";
+    const ids = matchSafetyTopicIds(text);
+    expect(ids).not.toContain("brakes");
+    expect(ids).toContain("lifting_under_car");
+  });
+
+  it("B1: oil + set parking brake + jack → lifting only (user+assistant split)", () => {
+    const user =
+      "DIY oil change, jack the front, set the parking brake, drain plug, new filter.";
+    const assistant =
+      "你好！先拉手刹再顶车。On FWD Camrys the parking brake holds the rear; watch the rear disc brakes area while you drain.";
+    const ids = matchSafetyTopicIds("", {
+      userText: user,
+      assistantText: assistant,
+    });
+    expect(ids).toContain("lifting_under_car");
+    expect(ids).not.toContain("brakes");
+  });
+
+  it("matches hot cooling-system cap and unstable support", () => {
+    expect(matchSafetyTopicIds("Can I open the cap while hot?")).toContain(
+      "cooling_hot",
+    );
+    expect(
+      matchSafetyTopicIds("The cooling system is hot — should I crack the cap?"),
+    ).toContain("cooling_hot");
+    expect(
+      matchSafetyTopicIds("Don't work under it if the support is unstable."),
+    ).toContain("lifting_under_car");
+    expect(
+      matchSafetyTopicIds("The jack stands are unstable and the car is wobbling."),
+    ).toContain("lifting_under_car");
   });
 
   it("skips ordinary low-risk chat", () => {
@@ -403,5 +448,49 @@ describe("parkingBrakeNegationMatches", () => {
 describe("US top-10 safety seed CI gate", () => {
   it("user-question matchers still pass on the 10 core seeds", () => {
     expect(usTop10CoreUserQuestionFailures()).toEqual([]);
+  });
+});
+
+describe("exit-under repair gate (Chat + CI share phrases)", () => {
+  it("requires get-clear and forbids stay-under when raised-critical", () => {
+    expect(
+      needsExitUnderRepair("Crawl out and wait.", true),
+    ).toBe(true);
+    expect(
+      needsExitUnderRepair("Get clear from under the vehicle, then diagnose.", true),
+    ).toBe(false);
+    expect(
+      needsExitUnderRepair(
+        "Stay under and finish the oil while I check the parking brake.",
+        true,
+      ),
+    ).toBe(true);
+    expect(needsExitUnderRepair("Stay under and finish the oil.", false)).toBe(
+      false,
+    );
+    expect(
+      needsExitUnderRepair("Stay under and finish the oil.", false, true),
+    ).toBe(true);
+    expect(
+      needsExitUnderRepair(
+        "Get clear from under, then inspect the filter.",
+        false,
+        true,
+      ),
+    ).toBe(false);
+    expect(
+      needsExitUnderRepair(
+        "You can continue under the vehicle and finish the oil.",
+        false,
+        true,
+      ),
+    ).toBe(true);
+    expect(
+      needsExitUnderRepair(
+        "Do not continue under the vehicle. Get clear from under.",
+        false,
+        true,
+      ),
+    ).toBe(false);
   });
 });

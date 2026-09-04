@@ -25,6 +25,15 @@ import {
   US_STATE_OPTIONS,
 } from "@/lib/insurance-tips";
 import { useTranslation } from "react-i18next";
+import { supabase } from "@/lib/supabase";
+import type { VpicSnapshot } from "@/lib/vehicle-data/types";
+import { describeVinClientIssue } from "@/lib/vehicle-data/vin";
+import { isNhtsaRecallMarket } from "@/lib/vehicle-data/recall-copy";
+import {
+  YMM_UNVERIFIED_TAG,
+  detectVpicYmmConflict,
+  tagsWithYmmUnverified,
+} from "@/lib/vehicle-data/ymm-conflict";
 
 interface Props {
   open: boolean;
@@ -96,6 +105,10 @@ export default function AddVehicleModal({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showTagUpgrade, setShowTagUpgrade] = useState(false);
+  const [decoding, setDecoding] = useState(false);
+  const [decodeHint, setDecodeHint] = useState<string | null>(null);
+  const [vpicSnapshot, setVpicSnapshot] = useState<VpicSnapshot | null>(null);
+  const [decodeFailedHandFill, setDecodeFailedHandFill] = useState(false);
 
   useBodyScrollLock(open);
 
@@ -125,6 +138,9 @@ export default function AddVehicleModal({
       setMileage(
         initialVehicle.mileage > 0 ? String(initialVehicle.mileage) : "",
       );
+      setVpicSnapshot(initialVehicle.vpicDecode ?? null);
+      setDecodeFailedHandFill(Boolean(initialVehicle.ymmUnverified));
+      setDecodeHint(null);
     } else {
       const hintMake = seedHint?.make?.trim() || "";
       const hintModel = seedHint?.model?.trim() || "";
@@ -146,6 +162,9 @@ export default function AddVehicleModal({
       setLicensePlate("");
       setVin("");
       setMileage("");
+      setVpicSnapshot(null);
+      setDecodeFailedHandFill(false);
+      setDecodeHint(null);
     }
     setSaveError(null);
     setSaving(false);
@@ -161,6 +180,81 @@ export default function AddVehicleModal({
   );
   const manualReady = Boolean(manualMake.trim() && manualModel.trim());
   const canSubmit = (catalogReady || manualReady) && !saving && Boolean(market);
+  const liveMake = catalogReady ? picker.make : manualMake.trim();
+  const liveModel = catalogReady ? picker.model : manualModel.trim();
+  const liveConflict = detectVpicYmmConflict({
+    year: picker.year,
+    make: liveMake,
+    model: liveModel,
+    vpicDecode: vpicSnapshot,
+  });
+
+  const handleDecodeVin = async () => {
+    const cleaned = vin.trim().toUpperCase();
+    setVin(cleaned);
+    setDecodeHint(null);
+    setDecoding(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setDecodeHint("Sign in to decode a VIN with NHTSA vPIC.");
+        return;
+      }
+      const res = await fetch("/api/vehicles/vin-decode", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          vin: cleaned,
+          vehicleId: initialVehicle?.id,
+        }),
+      });
+      const json = (await res.json()) as {
+        decode?: VpicSnapshot | null;
+        error?: string;
+        unavailable?: boolean;
+      };
+      if (res.status === 400) {
+        setDecodeHint(
+          json.error || "Enter a 17-character VIN (no I, O, or Q).",
+        );
+        return;
+      }
+      if (!json.decode) {
+        setDecodeFailedHandFill(true);
+        setDecodeHint(
+          "NHTSA vPIC is unavailable. Year / make / model you already entered are kept — fill them by hand.",
+        );
+        return;
+      }
+      const d = json.decode;
+      setVpicSnapshot(d);
+      setDecodeFailedHandFill(false);
+      if (d.year) {
+        setPicker((prev) => ({ ...prev, year: d.year as number }));
+      }
+      if (d.make) setManualMake(d.make);
+      if (d.model) setManualModel(d.model);
+      if (d.engine) setManualEngine(d.engine);
+      const ymm = [d.year, d.make, d.model].filter(Boolean).join(" ");
+      setDecodeHint(
+        ymm
+          ? `NHTSA vPIC: ${ymm}${d.engine ? ` · ${d.engine}` : ""}. Confirm with the owner's manual, then save.`
+          : "VIN decoded. Confirm year / make / model before saving.",
+      );
+    } catch {
+      setDecodeFailedHandFill(true);
+      setDecodeHint(
+        "NHTSA vPIC is unavailable. Year / make / model you already entered are kept — fill them by hand.",
+      );
+    } finally {
+      setDecoding(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -203,15 +297,18 @@ export default function AddVehicleModal({
           : (initialVehicle?.tags || []).filter(
               (t) => !(PROFILE_TAG_OPTIONS as readonly string[]).includes(t),
             );
-      const nextTags = Array.from(
-        new Set([
-          ...systemTags,
-          ...(canEditTags
-            ? profileTags
-            : (initialVehicle?.tags || []).filter((t) =>
-                (PROFILE_TAG_OPTIONS as readonly string[]).includes(t),
-              )),
-        ]),
+      const nextTags = tagsWithYmmUnverified(
+        Array.from(
+          new Set([
+            ...systemTags.filter((t) => t !== YMM_UNVERIFIED_TAG),
+            ...(canEditTags
+              ? profileTags
+              : (initialVehicle?.tags || []).filter((t) =>
+                  (PROFILE_TAG_OPTIONS as readonly string[]).includes(t),
+                )),
+          ]),
+        ),
+        decodeFailedHandFill && !vpicSnapshot,
       );
 
       const base: VehicleInfo = {
@@ -248,10 +345,13 @@ export default function AddVehicleModal({
           ? vcdb?.oilViscosity ?? undefined
           : initialVehicle?.oilViscosity,
         vin: vin.trim().toUpperCase() || undefined,
+        vpicDecode: vpicSnapshot,
+        vpicDecodedAt: vpicSnapshot?.decodedAt ?? undefined,
         licensePlate: licensePlate.trim().toUpperCase() || undefined,
         lastMaintenance: initialVehicle?.lastMaintenance,
         notes: initialVehicle?.notes,
         tags: nextTags,
+        ymmUnverified: decodeFailedHandFill && !vpicSnapshot,
         vcdb: useCatalog ? vcdb ?? undefined : initialVehicle?.vcdb,
         countryRegion: countryRegion.trim() || undefined,
         countryState:
@@ -300,6 +400,23 @@ export default function AddVehicleModal({
           Market version is required — manuals and specs differ by country even
           for the same year / make / model.
         </p>
+        {liveConflict ? (
+          <p
+            data-testid="add-vehicle-vpic-conflict"
+            className="mb-4 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[12px] leading-snug text-amber-100"
+          >
+            Year / make / model ({liveConflict.garageYmm}) does not match VIN
+            decode ({liveConflict.snapshotYmm}). Confirm before saving.
+          </p>
+        ) : decodeFailedHandFill && !vpicSnapshot ? (
+          <p
+            data-testid="add-vehicle-ymm-unverified"
+            className="mb-4 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[12px] leading-snug text-amber-100"
+          >
+            VIN decode failed. You can fill year / make / model by hand — Chat
+            will treat them as unverified until you confirm.
+          </p>
+        ) : null}
 
         {!isEdit && seedHint?.label ? (
           <div
@@ -326,6 +443,101 @@ export default function AddVehicleModal({
             }}
           />
         </div>
+
+        {isNhtsaRecallMarket(market) ? (
+          <div
+            className="mb-4 rounded-2xl border border-cyan-500/35 bg-cyan-950/30 p-3"
+            data-testid="vehicle-vin-us-card"
+          >
+            <p className="text-sm font-semibold text-cyan-100">Decode VIN</p>
+            <p className="mt-0.5 text-[11px] text-cyan-200/80">
+              US vehicles: paste the 17-character VIN to fill year / make / model
+              / engine from NHTSA vPIC. You can always edit by hand.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <input
+                type="text"
+                data-testid="vehicle-vin"
+                value={vin}
+                onChange={(e) => {
+                  setVin(e.target.value.toUpperCase().slice(0, 17));
+                }}
+                placeholder="17-character VIN"
+                className={inputClass}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <button
+                type="button"
+                data-testid="vehicle-vin-decode"
+                onClick={() => void handleDecodeVin()}
+                disabled={decoding || vin.trim().length < 17}
+                className="inline-flex shrink-0 items-center justify-center rounded-xl bg-cyan-500 px-3 text-sm font-semibold text-black disabled:opacity-40"
+              >
+                {decoding ? "Decoding…" : "Decode VIN"}
+              </button>
+            </div>
+            {describeVinClientIssue(vin) ? (
+              <p
+                className="mt-1.5 text-[11px] text-amber-200/90"
+                data-testid="vehicle-vin-check-digit"
+              >
+                {describeVinClientIssue(vin)?.message}
+              </p>
+            ) : null}
+            {decodeHint ? (
+              <p
+                className="mt-1.5 text-[11px] text-cyan-200/90"
+                data-testid="vehicle-vin-decode-hint"
+              >
+                {decodeHint}
+              </p>
+            ) : (
+              <p className="mt-1.5 text-[11px] text-slate-500">
+                Full VIN stays in your garage. Chat and share links use the last 8
+                characters only.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="mb-4">
+            <p className="mb-1.5 text-xs text-slate-400">
+              VIN (optional) — decode can still fill year / make / model. Recalls
+              stay regional for this market.
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                data-testid="vehicle-vin"
+                value={vin}
+                onChange={(e) => {
+                  setVin(e.target.value.toUpperCase().slice(0, 17));
+                }}
+                placeholder="17-character VIN"
+                className={inputClass}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <button
+                type="button"
+                data-testid="vehicle-vin-decode"
+                onClick={() => void handleDecodeVin()}
+                disabled={decoding || vin.trim().length < 17}
+                className="inline-flex shrink-0 items-center justify-center rounded-xl border border-cyan-600/50 bg-cyan-950/40 px-3 text-sm text-cyan-200 disabled:opacity-40"
+              >
+                {decoding ? "Decoding…" : "Decode VIN"}
+              </button>
+            </div>
+            {decodeHint ? (
+              <p
+                className="mt-1.5 text-[11px] text-cyan-200/90"
+                data-testid="vehicle-vin-decode-hint"
+              >
+                {decodeHint}
+              </p>
+            ) : null}
+          </div>
+        )}
 
         <input
           type="text"
@@ -368,8 +580,8 @@ export default function AddVehicleModal({
             <span className="text-slate-500">(optional)</span>
           </summary>
           <p className="mt-2 text-xs text-slate-400">
-            License plate and VIN help shop handoff reports. Full VIN is never
-            required on share links.
+            License plate helps shop handoff reports. Full VIN is never required
+            on share links.
           </p>
           <div className="mt-3 space-y-3">
             <input
@@ -378,15 +590,6 @@ export default function AddVehicleModal({
               value={licensePlate}
               onChange={(e) => setLicensePlate(e.target.value.slice(0, 16))}
               placeholder="License plate"
-              className={inputClass}
-              autoComplete="off"
-            />
-            <input
-              type="text"
-              data-testid="vehicle-vin"
-              value={vin}
-              onChange={(e) => setVin(e.target.value.slice(0, 17))}
-              placeholder="VIN (optional)"
               className={inputClass}
               autoComplete="off"
             />

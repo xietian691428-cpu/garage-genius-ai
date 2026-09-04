@@ -47,8 +47,12 @@ export type PlanEntitlements = {
   /** Soft daily voice turns for free (0 = locked) */
   voiceDailyLimit: number;
   /**
-   * Soft daily photo-diagnose sends.
-   * 0 = unlimited (Pro+); Free uses a small daily cap.
+   * Photo analyses per UTC month (Kimi vision). Not unlimited on paid plans.
+   */
+  visionCallsPerMonth: number;
+  /**
+   * @deprecated Use visionCallsPerMonth. Kept as the same monthly cap
+   * (0 no longer means unlimited).
    */
   photoDailyLimit: number;
   ragDepth: RagDepth;
@@ -90,7 +94,8 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
     maxVehicles: 1,
     voiceEnabled: false,
     voiceDailyLimit: 0,
-    photoDailyLimit: 5,
+    visionCallsPerMonth: 3,
+    photoDailyLimit: 3,
     ragDepth: "basic",
     maintenanceHistory: false,
     annualHealthReport: false,
@@ -102,7 +107,9 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
       "15k tokens / month",
       "1 vehicle",
       "Dashboard + basic AI chat",
-      "5 photo diagnoses / day",
+      "3 photo analyses / month",
+      "US VIN decode + recall education",
+      "OBD code coaching (not a diagnosis)",
       "5 coach playbook starts / 30 days",
       "3 shop reports / calendar month",
       "Parts inventory (basic)",
@@ -120,7 +127,8 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
     maxVehicles: 5,
     voiceEnabled: true,
     voiceDailyLimit: 200,
-    photoDailyLimit: 0,
+    visionCallsPerMonth: 30,
+    photoDailyLimit: 30,
     ragDepth: "standard",
     maintenanceHistory: true,
     annualHealthReport: true,
@@ -132,7 +140,9 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
     features: [
       "150k tokens / month (cap 500k)",
       "Up to 5 vehicles",
-      "Unlimited photo diagnoses",
+      "30 photo analyses / month",
+      "US VIN decode + NHTSA recall education",
+      "OBD code coaching (education, not a guaranteed repair)",
       "Unlimited coach playbooks",
       "Unlimited shop reports",
       "Custom profile tags (Modified, Tow, Classic…)",
@@ -153,7 +163,8 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
     maxVehicles: 10,
     voiceEnabled: true,
     voiceDailyLimit: 1000,
-    photoDailyLimit: 0,
+    visionCallsPerMonth: 80,
+    photoDailyLimit: 80,
     ragDepth: "deep",
     maintenanceHistory: true,
     annualHealthReport: true,
@@ -165,7 +176,9 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
     features: [
       "400k tokens / month (cap 1M)",
       "Up to 10 vehicles",
-      "Unlimited photo diagnoses",
+      "80 photo analyses / month",
+      "US VIN decode + NHTSA recall education",
+      "OBD code coaching (education, not a guaranteed repair)",
       "Unlimited coach playbooks",
       "Unlimited shop reports",
       "Custom profile tags + deep RAG",
@@ -213,7 +226,10 @@ export function tokenPlanFromTier(tier: SubscriptionTier): TokenPlan {
 /** LocalStorage key for soft free voice attempt counting (until server metering). */
 export const VOICE_DAILY_COUNT_KEY = "garageGenius_voiceDaily";
 
-/** Soft daily photo-diagnose sends (Free tier). */
+/** Soft monthly photo-diagnose sends (UTC month; all plans). */
+export const PHOTO_MONTHLY_COUNT_KEY = "garageGenius_photoMonthly";
+
+/** @deprecated daily key — monthly key is source of truth */
 export const PHOTO_DAILY_COUNT_KEY = "garageGenius_photoDaily";
 
 /** Max photos attached to one garage diagnose turn. */

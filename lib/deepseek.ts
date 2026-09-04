@@ -100,10 +100,28 @@ function truncateTextContent(text: string, maxChars: number): string {
   return `${trimmed.slice(0, maxChars)}\n…[truncated for length]`;
 }
 
+function messageText(m: DeepSeekMessage): string {
+  if (typeof m.content === "string") return m.content;
+  if (!Array.isArray(m.content)) return "";
+  return m.content
+    .filter((p): p is TextContentPart => p.type === "text")
+    .map((p) => p.text)
+    .join("\n");
+}
+
+/** Keep raised-vehicle / parking-brake / CRITICAL system lines when trimming. */
+export function isProtectedSystemMessage(m: DeepSeekMessage): boolean {
+  if (m.role !== "system") return false;
+  return /CRITICAL STATE|vehicleRaised|parkingBrakeState|vehicle may already be raised/i.test(
+    messageText(m),
+  );
+}
+
 /**
  * Server-side defense: cap conversation window + per-message text so long
  * chats / multi-image turns are less likely to blow context or time out.
- * Keeps system messages; trims user/assistant text; preserves image parts.
+ * Keeps system messages; never truncates CRITICAL STATE / vehicleRaised /
+ * parkingBrake lines; trims user/assistant text; preserves image parts.
  */
 export function trimDeepSeekConversation(
   messages: DeepSeekMessage[],
@@ -122,7 +140,8 @@ export function trimDeepSeekConversation(
   const rest = messages.filter((m) => m.role !== "system");
   const sliced = rest.slice(-windowSize);
 
-  const trimmed = sliced.map((m) => {
+  const trimOne = (m: DeepSeekMessage): DeepSeekMessage => {
+    if (isProtectedSystemMessage(m)) return m;
     if (typeof m.content === "string") {
       return { ...m, content: truncateTextContent(m.content, maxChars) };
     }
@@ -135,9 +154,9 @@ export function trimDeepSeekConversation(
           : part,
       ),
     };
-  });
+  };
 
-  return [...system, ...trimmed];
+  return [...system.map(trimOne), ...sliced.map(trimOne)];
 }
 
 /**

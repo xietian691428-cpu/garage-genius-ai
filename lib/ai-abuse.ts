@@ -21,6 +21,10 @@ import {
   isEmailVerificationRequired,
   isUserEmailVerified,
 } from "@/lib/email-verification";
+import { isAiCostHardCapEnabled } from "@/lib/ai-cost/config";
+import { evaluateAiSpendGate } from "@/lib/ai-cost/gate";
+import { getAiSpendSnapshot } from "@/lib/ai-cost/meter";
+import { logSafetyObserveEvent } from "@/lib/safety-observe-events";
 
 export type AiRouteName = "chat" | "vision" | "inspect";
 
@@ -68,12 +72,19 @@ export function getBearerToken(req: NextRequest): string | null {
 export class AiAbuseError extends Error {
   status: number;
   code: string;
+  payload?: Record<string, unknown>;
 
-  constructor(message: string, status: number, code: string) {
+  constructor(
+    message: string,
+    status: number,
+    code: string,
+    payload?: Record<string, unknown>,
+  ) {
     super(message);
     this.name = "AiAbuseError";
     this.status = status;
     this.code = code;
+    this.payload = payload;
   }
 }
 
@@ -155,7 +166,7 @@ export async function assertAiProviderConsent(userId: string): Promise<void> {
 
   if (data?.has_acknowledged_ai_consent !== true) {
     throw new AiAbuseError(
-      "Please agree to DeepSeek AI processing before using this feature.",
+      "Please agree to AI processing (DeepSeek for chat, Kimi for photos) before using this feature.",
       403,
       "ai_consent_required",
     );
@@ -264,6 +275,68 @@ export async function assertAiTokenBudget(
   }
 }
 
+/**
+ * UTC-month USD budget + vision call cap. No-op when AI_COST_HARD_CAP=0.
+ * Call before Kimi/DeepSeek. Does not change Coach playbook logic.
+ */
+export async function assertAiSpendGate(
+  userId: string,
+  options: { needsVision?: boolean; email?: string | null } = {},
+): Promise<void> {
+  if (!isAiCostHardCapEnabled()) return;
+  if (
+    shouldBypassAiMetering({
+      email: options.email,
+      qaUnlock: isQaUnlockEnabled(),
+    })
+  ) {
+    return;
+  }
+  if (await isUnlimitedTokenUser(userId, options.email)) return;
+
+  let snapshot;
+  try {
+    snapshot = await getAiSpendSnapshot(userId, options.email);
+  } catch (err) {
+    const code =
+      err && typeof err === "object" && "code" in err
+        ? String((err as { code?: string }).code)
+        : "";
+    const status =
+      err && typeof err === "object" && "status" in err
+        ? Number((err as { status?: number }).status)
+        : 503;
+    throw new AiAbuseError(
+      err instanceof Error
+        ? err.message
+        : "Could not verify AI usage allowance. Please try again in a moment.",
+      status === 503 ? 503 : 503,
+      code || "ai_spend_unavailable",
+    );
+  }
+
+  const decision = evaluateAiSpendGate({
+    plan: snapshot.plan,
+    spentUsd: snapshot.spentUsd,
+    visionUsed: snapshot.visionUsed,
+    needsVision: Boolean(options.needsVision),
+  });
+
+  if (!decision.ok) {
+    logSafetyObserveEvent(
+      decision.code,
+      { status: decision.status, limited: true },
+      { userId },
+    );
+    throw new AiAbuseError(decision.message, decision.status, decision.code, {
+      limited: true,
+      remaining: decision.remaining,
+      used: decision.used,
+      limit: decision.limit,
+    });
+  }
+}
+
 /** Deduct after a successful model call. Throws on failure (do not swallow). */
 export async function consumeAiTokens(
   userId: string,
@@ -277,6 +350,13 @@ export async function consumeAiTokens(
     feature?: string | null;
     metadata?: Record<string, unknown>;
     email?: string | null;
+    /** deepseek | kimi — used to stamp cost_usd */
+    provider?: "deepseek" | "kimi" | "other";
+    /**
+     * Kimi vision tokens must not eat the monthly text quota.
+     * Still writes token_usage_events for cost accounting.
+     */
+    skipMonthlyQuota?: boolean;
   },
 ): Promise<void> {
   const unlimitedTester = await isUnlimitedTokenUser(
@@ -284,14 +364,20 @@ export async function consumeAiTokens(
     options?.email,
   );
 
-  if (isQaUnlockEnabled() || unlimitedTester) {
-    // Still record usage for admin visibility during QA / tester unlock.
+  const shouldSkipQuota =
+    Boolean(options?.skipMonthlyQuota) ||
+    isQaUnlockEnabled() ||
+    unlimitedTester;
+
+  if (shouldSkipQuota) {
+    // Still record usage for admin cost vs revenue.
     if (options?.route) {
       const { logTokenUsage } = await import("@/lib/log-token-usage");
       await logTokenUsage({
         userId,
         route: options.route,
         model: options.model,
+        provider: options.provider,
         promptTokens: options.promptTokens,
         completionTokens: options.completionTokens,
         totalTokens: Math.max(1, Math.ceil(actualTokens)),
@@ -299,6 +385,7 @@ export async function consumeAiTokens(
         feature: options.feature,
         metadata: {
           ...(options.metadata || {}),
+          ...(options.skipMonthlyQuota ? { skip_monthly_quota: true } : {}),
           ...(isQaUnlockEnabled() ? { qa_unlock: true } : {}),
           ...(unlimitedTester ? { test_unlimited_tokens: true } : {}),
         },
@@ -336,6 +423,7 @@ export async function consumeAiTokens(
       userId,
       route: options.route,
       model: options.model,
+      provider: options.provider,
       promptTokens: options.promptTokens,
       completionTokens: options.completionTokens,
       totalTokens: used,
@@ -366,7 +454,11 @@ export async function consumeAiTokensBestEffort(
 export function aiAbuseResponse(err: unknown): Response | null {
   if (!(err instanceof AiAbuseError)) return null;
   return Response.json(
-    { error: err.message, code: err.code },
+    {
+      error: err.message,
+      code: err.code,
+      ...(err.payload || {}),
+    },
     { status: err.status },
   );
 }

@@ -3,6 +3,10 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { ChatMessage, VehicleInfo } from "@/lib/types/chat";
 import { isPhotoPromptWithoutImages } from "@/lib/chat-empty-photo";
+import {
+  CHAT_VISION_MAX_IMAGES,
+  type ImageAnalysisClientSummary,
+} from "@/lib/vision/types";
 import { createWelcomeMessage } from "@/lib/constants";
 import { loadChatMessages, saveCurrentVehicleId } from "@/lib/chat-storage";
 import { chatCloudService, resolveLoadedChat } from "@/lib/chat-cloud";
@@ -65,6 +69,10 @@ import { vehicleHasModifiedTag } from "@/lib/insurance-tips";
 import { MOD_CONTEXT_PATTERN } from "@/lib/insurance-safety-copy";
 import ShopReportModal from "@/components/shop-report/ShopReportModal";
 import { formatAiHttpError } from "@/lib/format-ai-http-error";
+import {
+  detectVehicleVpicYmmConflict,
+  hasYmmUnverifiedTag,
+} from "@/lib/vehicle-data/ymm-conflict";
 import type { MaintenanceRecord } from "@/lib/types/maintenance";
 import {
   buildDtcDiagnosisPrompt,
@@ -114,6 +122,7 @@ interface Props {
   onPromptUsed?: () => void;
   onGoToInventory?: () => void;
   onFocusDetected?: (command: FocusCommand) => void;
+  onOpenPlaybook?: (slug: string) => void;
   /** Shared garage from useVehicles (cloud) */
   vehicles: VehicleInfo[];
   currentVehicle: VehicleInfo | null;
@@ -137,6 +146,7 @@ export default function ChatApp({
   onPromptUsed,
   onGoToInventory,
   onFocusDetected,
+  onOpenPlaybook,
   vehicles,
   currentVehicle,
   vehiclesLoading = false,
@@ -202,8 +212,11 @@ export default function ChatApp({
   const playbookSlugRef = useRef<string | null>(playbookSlug ?? null);
   const abortRef = useRef<AbortController | null>(null);
   const stoppedByUserRef = useRef(false);
-  /** One-shot vehicle for API after user confirms a garage switch. */
-  const chatVehicleOverrideRef = useRef<VehicleInfo | null>(null);
+  const abortReasonRef = useRef<"none" | "user" | "timeout" | "vehicle_switch">(
+    "none",
+  );
+  const currentVehicleIdRef = useRef<string | null>(null);
+  const inFlightVehicleIdRef = useRef<string | null>(null);
   /** After vehicle switch/add, send only once the new vehicle's history is loaded. */
   const pendingSendAfterLoadRef = useRef<{
     vehicleId: string;
@@ -243,7 +256,11 @@ export default function ChatApp({
   }, [messages]);
 
   useEffect(() => {
-    if (playbookSlug) playbookSlugRef.current = playbookSlug;
+    currentVehicleIdRef.current = currentVehicle?.id ?? null;
+  }, [currentVehicle?.id]);
+
+  useEffect(() => {
+    playbookSlugRef.current = playbookSlug ?? null;
   }, [playbookSlug]);
 
   // One-time localStorage → Supabase migrate once garage UUIDs exist
@@ -322,7 +339,7 @@ export default function ChatApp({
     pendingSendAfterLoadRef.current = null;
     const { content, images } = pending;
     void (async () => {
-      const photoList = images.filter(Boolean).slice(0, 4);
+      const photoList = images.filter(Boolean).slice(0, CHAT_VISION_MAX_IMAGES);
       const userMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: "user",
@@ -502,7 +519,17 @@ export default function ChatApp({
     }
   };
 
+  const abortInFlightForVehicleSwitch = () => {
+    abortReasonRef.current = "vehicle_switch";
+    abortRef.current?.abort();
+    abortRef.current = null;
+    stoppedByUserRef.current = false;
+    setIsLoading(false);
+    stopSpeaking();
+  };
+
   const handleVehicleChange = async (vehicle: VehicleInfo) => {
+    abortInFlightForVehicleSwitch();
     if (
       pendingSendAfterLoadRef.current &&
       pendingSendAfterLoadRef.current.vehicleId !== vehicle.id
@@ -512,6 +539,11 @@ export default function ChatApp({
     if (currentVehicle) {
       await persistNow(currentVehicle.id, messages);
     }
+    // Do not keep the previous vehicle's transcript/focus on screen while the
+    // next garage row loads — prevents Regenerate / chips from mixing cars.
+    setReady(false);
+    loadedKeyRef.current = null;
+    setMessages([createWelcomeMessage()]);
     await onVehicleChange(vehicle);
     saveCurrentVehicleId(vehicle.id);
     // load effect will run for new vehicle id
@@ -530,9 +562,13 @@ export default function ChatApp({
       return;
     }
 
+    abortInFlightForVehicleSwitch();
     if (currentVehicle) {
       await persistNow(currentVehicle.id, messages);
     }
+    setReady(false);
+    loadedKeyRef.current = null;
+    setMessages([createWelcomeMessage()]);
     try {
       await onAddVehicle(newVehicle);
       // load effect picks up new current vehicle
@@ -561,6 +597,7 @@ export default function ChatApp({
   };
 
   const handleStop = () => {
+    abortReasonRef.current = "user";
     stoppedByUserRef.current = true;
     abortRef.current?.abort();
     abortRef.current = null;
@@ -572,9 +609,7 @@ export default function ChatApp({
     nextMessages: ChatMessage[],
     photoList: string[],
   ) => {
-    const activeVehicle =
-      chatVehicleOverrideRef.current || currentVehicle;
-    chatVehicleOverrideRef.current = null;
+    const activeVehicle = currentVehicle;
 
     if (!activeVehicle) {
       alert("Add a vehicle to your garage before chatting.");
@@ -585,6 +620,8 @@ export default function ChatApp({
     const controller = new AbortController();
     abortRef.current = controller;
     stoppedByUserRef.current = false;
+    abortReasonRef.current = "none";
+    inFlightVehicleIdRef.current = activeVehicle.id;
 
     shouldSpeakNextAssistantRef.current = Boolean(
       autoSpeak && features.voiceEnabled,
@@ -595,6 +632,7 @@ export default function ChatApp({
     const CLIENT_TIMEOUT_MS = 90_000;
     const timeoutId = window.setTimeout(() => {
       if (abortRef.current === controller && !stoppedByUserRef.current) {
+        abortReasonRef.current = "timeout";
         controller.abort();
       }
     }, CLIENT_TIMEOUT_MS);
@@ -658,6 +696,7 @@ export default function ChatApp({
           images: imagePayloads,
           image: imagePayloads[0],
           currentVehicle: activeVehicle,
+          selectedVehicleId: activeVehicle.id,
           playbookSlug: playbookSlugRef.current || undefined,
           maintenanceSummary: maintenanceSummary || undefined,
           conversationFocus: {
@@ -682,6 +721,7 @@ export default function ChatApp({
           summary: string;
         };
         conversationFocus?: TurnFocus;
+        imageAnalysis?: ImageAnalysisClientSummary | null;
       };
       try {
         data = (await response.json()) as typeof data;
@@ -715,11 +755,15 @@ export default function ChatApp({
       }
 
       const assistantContent = data.content.trim();
+      if (currentVehicleIdRef.current !== inFlightVehicleIdRef.current) {
+        return;
+      }
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
         content: assistantContent,
         timestamp: new Date(),
+        imageAnalysis: data.imageAnalysis ?? null,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -755,6 +799,12 @@ export default function ChatApp({
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
+        if (abortReasonRef.current === "vehicle_switch") {
+          return;
+        }
+        if (currentVehicleIdRef.current !== inFlightVehicleIdRef.current) {
+          return;
+        }
         if (stoppedByUserRef.current) {
           setMessages((prev) => [
             ...prev,
@@ -778,6 +828,9 @@ export default function ChatApp({
             },
           ]);
         }
+        return;
+      }
+      if (currentVehicleIdRef.current !== inFlightVehicleIdRef.current) {
         return;
       }
       const classified = classifyChatFetchError(err);
@@ -805,6 +858,14 @@ export default function ChatApp({
   const vehicleLabel = currentVehicle
     ? `${currentVehicle.year} ${currentVehicle.make} ${currentVehicle.model}`
     : undefined;
+
+  const vehicleIdentityWarning = currentVehicle
+    ? detectVehicleVpicYmmConflict(currentVehicle)
+      ? t("vehicles.vpicYmmConflict")
+      : currentVehicle.ymmUnverified || hasYmmUnverifiedTag(currentVehicle.tags)
+        ? t("vehicles.ymmUnverified")
+        : null
+    : null;
 
   /** Expand a short message that is mostly just DTC codes into a diagnosis prompt. */
   const expandDtcIfNeeded = (content: string): string => {
@@ -840,12 +901,13 @@ export default function ChatApp({
       return;
     }
 
-    const photoList = (images ?? []).filter(Boolean).slice(0, 4);
+    const photoList = (images ?? []).filter(Boolean).slice(0, CHAT_VISION_MAX_IMAGES);
     const finalContent = expandDtcIfNeeded(content.trim());
     if (!finalContent && photoList.length === 0) return;
 
-    if (vehicleOverride) {
-      chatVehicleOverrideRef.current = vehicleOverride;
+    if (vehicleOverride && currentVehicle && vehicleOverride.id !== currentVehicle.id) {
+      await queueSendAfterVehicleSwitch(vehicleOverride, finalContent, photoList);
+      return;
     }
 
     const userMessage: ChatMessage = {
@@ -871,10 +933,7 @@ export default function ChatApp({
     content: string,
     images: string[],
   ) => {
-    abortRef.current?.abort();
-    abortRef.current = null;
-    stoppedByUserRef.current = false;
-    setIsLoading(false);
+    abortInFlightForVehicleSwitch();
 
     if (currentVehicle) {
       await persistNow(currentVehicle.id, messagesRef.current);
@@ -894,7 +953,7 @@ export default function ChatApp({
   const handleSend = async (content: string, images?: string[]) => {
     if (isLoading) return;
 
-    const photoList = (images ?? []).filter(Boolean).slice(0, 4);
+    const photoList = (images ?? []).filter(Boolean).slice(0, CHAT_VISION_MAX_IMAGES);
     const finalContent = expandDtcIfNeeded(content.trim());
     if (!finalContent && photoList.length === 0) return;
     if (isPhotoPromptWithoutImages(finalContent, photoList)) return;
@@ -1193,6 +1252,7 @@ export default function ChatApp({
   };
 
   const handleRegenerate = async () => {
+    if (!ready || !currentVehicle || isLoading) return;
     const msgs = messagesRef.current;
     let cut = msgs.length;
     while (cut > 0 && msgs[cut - 1]?.role === "assistant") cut -= 1;
@@ -1202,7 +1262,7 @@ export default function ChatApp({
     const lastUser = base[base.length - 1];
     const photos = (lastUser.images ?? (lastUser.image ? [lastUser.image] : []))
       .filter(Boolean)
-      .slice(0, 4);
+      .slice(0, CHAT_VISION_MAX_IMAGES);
     await runChatRequest(base, photos);
   };
 
@@ -1268,6 +1328,14 @@ export default function ChatApp({
             {isFree && <UpgradeButton size="sm" label="Pro" />}
           </div>
         </div>
+        {vehicleIdentityWarning ? (
+          <p
+            data-testid="chat-vehicle-identity-warning"
+            className="border-b border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-[11px] leading-snug text-amber-100 xl:hidden"
+          >
+            {vehicleIdentityWarning}
+          </p>
+        ) : null}
 
         <div className="hidden items-center justify-between gap-3 border-b border-slate-800 bg-[#111827] px-4 py-3 xl:flex">
           <div className="min-w-0 flex-1 truncate text-sm text-slate-400">
@@ -1283,6 +1351,14 @@ export default function ChatApp({
                 {currentVehicle.name ? (
                   <span className="ml-2 hidden text-xs text-slate-500 2xl:inline">
                     · {currentVehicle.name}
+                  </span>
+                ) : null}
+                {vehicleIdentityWarning ? (
+                  <span
+                    data-testid="chat-vehicle-identity-warning-desktop"
+                    className="mt-1 block truncate text-[11px] text-amber-200/90"
+                  >
+                    {vehicleIdentityWarning}
                   </span>
                 ) : null}
               </>
@@ -1315,6 +1391,7 @@ export default function ChatApp({
           onRegenerate={() => void handleRegenerate()}
           onEditUser={handleEditUser}
           onQuickPrompt={handleQuickPrompt}
+          onOpenPlaybook={onOpenPlaybook}
           onGenerateShopReport={() => setShopReportOpen(true)}
           onHideEmptyPhoto={(id) =>
             setHiddenEmptyPhotoIds((prev) =>
@@ -1533,6 +1610,9 @@ export default function ChatApp({
               content: m.content,
               image: m.image,
               images: m.images,
+              imageAnalysis: m.imageAnalysis
+                ? { dtc_codes: m.imageAnalysis.dtc_codes }
+                : null,
             }))}
         />
       )}

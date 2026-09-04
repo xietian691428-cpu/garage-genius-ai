@@ -55,8 +55,9 @@ describe("Kimi vision helpers", () => {
     );
     expect(typeof next[0].content).toBe("string");
     expect(String(next[0].content)).toContain("Brake fluid low?");
-    expect(String(next[0].content)).toContain("Photo analysis from Kimi");
+    expect(String(next[0].content)).toContain("[IMAGE_ANALYSIS");
     expect(String(next[0].content)).toContain("below MIN");
+    expect(String(next[0].content)).not.toContain("data:image");
   });
 });
 
@@ -69,9 +70,13 @@ describe("vision pipeline wiring", () => {
     ]) {
       const src = readFileSync(file, "utf8");
       expect(src, file).toContain("callVisionJson");
+      expect(src, file).toContain("assertAiSpendGate");
       expect(src, file).not.toContain("callDeepSeekVisionJson");
     }
     const chat = readFileSync("app/api/chat/route.ts", "utf8");
     expect(chat).toContain("callChatWithOptionalVision");
+    expect(chat).toContain("analyzeChatImage");
+    expect(chat).toContain("assertAiSpendGate");
+    expect(chat).not.toContain("callDeepSeekVisionJson");
   });
 });

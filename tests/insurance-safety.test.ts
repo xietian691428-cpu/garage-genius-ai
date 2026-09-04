@@ -5,7 +5,11 @@ import {
 } from "@/lib/insurance-coverage-rewrite";
 import { safetyTierForPlaybook, inferSafetyTierFromText } from "@/lib/safety-tier";
 import { SHOP_REPORT_DISCLAIMER } from "@/lib/types/shop-report";
-import { INSURANCE_SAFETY_COPY } from "@/lib/insurance-safety-copy";
+import {
+  formatInsuranceEducationBlock,
+  INSURANCE_SAFETY_COPY,
+  isInsuranceOrModQuestion,
+} from "@/lib/insurance-safety-copy";
 
 describe("insurance coverage rewrite", () => {
   it("rewrites will be covered assertions", () => {
@@ -29,6 +33,33 @@ describe("insurance coverage rewrite", () => {
       );
       expect(out).toMatch(/may affect coverage|depends on your policy|check your policy/i);
     }
+  });
+
+  it("rewrites will not be covered / insurance will pay / definitely covered", () => {
+    const samples = [
+      "This will not be covered by insurance.",
+      "Insurance will pay for the catalytic converter.",
+      "The claim is definitely covered.",
+    ];
+    for (const sample of samples) {
+      const out = rewriteInsuranceCoverageClaims(sample);
+      expect(out.toLowerCase()).not.toMatch(
+        /will not be covered|insurance will pay|definitely covered/,
+      );
+      expect(out).toMatch(/may affect|depends on your policy|carrier and applicable law/i);
+    }
+  });
+
+  it("injects a fixed education block for insurance / mod questions", () => {
+    expect(isInsuranceOrModQuestion("will it void my insurance if I install a catless downpipe?")).toBe(
+      true,
+    );
+    const block = formatInsuranceEducationBlock();
+    expect(block).toContain("[INSURANCE_EDU]");
+    expect(block).toMatch(/check your carrier and applicable law/i);
+    expect(block.toLowerCase()).not.toMatch(
+      /\bwill not be covered\b|\binsurance will pay\b|\bdefinitely covered\b/,
+    );
   });
 
   it("appends mod reminder when aftermarket mentioned", () => {

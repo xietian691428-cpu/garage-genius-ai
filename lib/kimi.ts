@@ -15,11 +15,16 @@ import type {
 } from "@/lib/deepseek";
 import { normalizeImageUrl } from "@/lib/deepseek";
 
-export const KIMI_VISION_TIMEOUT_MS = 90_000;
-export const KIMI_MAX_RETRIES = 2;
+export const KIMI_MAX_RETRIES = 1;
 
-/** kimi-k3 spends tokens on reasoning first — keep a healthy completion budget. */
-export const DEFAULT_VISION_MAX_TOKENS = 1600;
+/** Keep vision completions short — JSON only, no repair plan. */
+export const DEFAULT_VISION_MAX_TOKENS = 800;
+
+function envFlag(name: string, defaultOn: boolean): boolean {
+  const raw = process.env[name];
+  if (raw == null || raw.trim() === "") return defaultOn;
+  return !["0", "false", "off", "no"].includes(raw.trim().toLowerCase());
+}
 
 function kimiApiKey(): string {
   return (
@@ -32,9 +37,25 @@ function kimiApiKey(): string {
 /** China keys use api.moonshot.cn; international keys use api.moonshot.ai. */
 export function kimiBaseUrl(): string {
   return (
-    process.env.KIMI_BASE_URL?.trim() || "https://api.moonshot.cn/v1"
+    process.env.KIMI_BASE_URL?.trim() ||
+    process.env.MOONSHOT_BASE_URL?.trim() ||
+    "https://api.moonshot.cn/v1"
   ).replace(/\/$/, "");
 }
+
+export function kimiVisionTimeoutMs(): number {
+  const n = Number(process.env.KIMI_VISION_TIMEOUT_MS);
+  if (Number.isFinite(n) && n >= 5_000 && n <= 120_000) return Math.floor(n);
+  return 28_000;
+}
+
+/** Default on when a key exists; KIMI_VISION_ENABLED=0 forces off. */
+export function isKimiVisionEnabled(): boolean {
+  if (!kimiApiKey()) return false;
+  return envFlag("KIMI_VISION_ENABLED", true);
+}
+
+export const KIMI_VISION_TIMEOUT_MS = 28_000;
 
 export function kimiVisionModels(): string[] {
   return [
@@ -276,7 +297,7 @@ async function requestKimi(
     maxRetries?: number;
   },
 ): Promise<DeepSeekResult & { model: string }> {
-  const timeoutMs = options?.timeoutMs ?? KIMI_VISION_TIMEOUT_MS;
+  const timeoutMs = options?.timeoutMs ?? kimiVisionTimeoutMs();
   const maxRetries = options?.maxRetries ?? KIMI_MAX_RETRIES;
   let lastError: DeepSeekRequestError | null = null;
 
@@ -347,7 +368,12 @@ async function requestKimi(
 
 async function requestKimiWithModelFallback(
   messages: DeepSeekMessage[],
-  options?: { json?: boolean; maxTokens?: number },
+  options?: {
+    json?: boolean;
+    maxTokens?: number;
+    timeoutMs?: number;
+    maxRetries?: number;
+  },
 ): Promise<DeepSeekResult & { model: string }> {
   let lastError: unknown = null;
   for (const model of kimiVisionModels()) {
@@ -355,11 +381,16 @@ async function requestKimiWithModelFallback(
       return await requestKimi(messages, model, {
         json: options?.json,
         maxTokens: options?.maxTokens,
-        timeoutMs: KIMI_VISION_TIMEOUT_MS,
+        timeoutMs: options?.timeoutMs ?? kimiVisionTimeoutMs(),
+        maxRetries: options?.maxRetries,
       });
     } catch (error) {
       lastError = error;
-      console.warn(`[kimi] model "${model}" failed:`, error);
+      const code =
+        error && typeof error === "object" && "code" in error
+          ? String((error as { code?: string }).code)
+          : "unknown";
+      console.warn("[kimi] model failed", { model, code });
     }
   }
   throw (
@@ -372,11 +403,12 @@ async function requestKimiWithModelFallback(
 }
 
 /**
- * Structured JSON from photos (vehicle / OBD / receipt).
+ * Structured JSON from photos (vehicle / OBD / receipt / chat perception).
  */
 export async function callKimiVisionJson(
   messages: DeepSeekMessage[],
   maxTokens = DEFAULT_VISION_MAX_TOKENS,
+  requestOptions?: { timeoutMs?: number; maxRetries?: number },
 ): Promise<DeepSeekResult & { model: string }> {
   if (!messageHasImage(messages)) {
     throw new DeepSeekRequestError(
@@ -384,7 +416,12 @@ export async function callKimiVisionJson(
       { code: "bad_request", retryable: false },
     );
   }
-  return requestKimiWithModelFallback(messages, { json: true, maxTokens });
+  return requestKimiWithModelFallback(messages, {
+    json: true,
+    maxTokens,
+    timeoutMs: requestOptions?.timeoutMs ?? kimiVisionTimeoutMs(),
+    maxRetries: requestOptions?.maxRetries,
+  });
 }
 
 /**
@@ -417,7 +454,7 @@ export async function callKimiVisionDescribe(
 }
 
 /**
- * Replace image parts with a Kimi visual note so DeepSeek can coach from text.
+ * Replace image parts with a perception block so DeepSeek coaches from text only.
  */
 export function attachKimiVisionNoteToMessages(
   messages: DeepSeekMessage[],
@@ -427,6 +464,10 @@ export function attachKimiVisionNoteToMessages(
   let attached = false;
 
   return messages.map((message) => {
+    if (typeof message.content === "string") {
+      if (attached || !note) return message;
+      return message;
+    }
     if (!Array.isArray(message.content)) return message;
     const hasImage = message.content.some((part) => part.type === "image_url");
     if (!hasImage) return message;
@@ -440,12 +481,43 @@ export function attachKimiVisionNoteToMessages(
       return { ...message, content: userText };
     }
     attached = true;
+    const block = note.startsWith("[IMAGE_ANALYSIS")
+      ? note
+      : `[IMAGE_ANALYSIS source=kimi-k3]
+Treat IMAGE_ANALYSIS as perception only, not a diagnosis.
+${note}`;
     return {
       ...message,
       content: `${userText}
 
-[Photo analysis from Kimi vision]
-${note}`,
+${block}`,
     };
   });
+}
+
+/** Attach a perception block to the latest user text message (images already stripped). */
+export function attachImageAnalysisBlockToUserText(
+  messages: DeepSeekMessage[],
+  block: string,
+): DeepSeekMessage[] {
+  const note = block.trim();
+  if (!note) return messages;
+  const next = [...messages];
+  for (let i = next.length - 1; i >= 0; i--) {
+    const msg = next[i];
+    if (msg.role !== "user") continue;
+    if (typeof msg.content === "string") {
+      next[i] = { ...msg, content: `${msg.content}\n\n${note}` };
+      return next;
+    }
+    if (Array.isArray(msg.content)) {
+      const textPart = msg.content.find(
+        (part): part is TextContentPart => part.type === "text",
+      );
+      const userText = textPart?.text?.trim() || "Please diagnose from this photo.";
+      next[i] = { ...msg, content: `${userText}\n\n${note}` };
+      return next;
+    }
+  }
+  return next;
 }

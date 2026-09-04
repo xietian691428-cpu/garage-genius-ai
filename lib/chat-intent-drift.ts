@@ -137,6 +137,7 @@ const ENTITY_DEFS: EntityDef[] = [
       "drain plug",
       "oil drain",
       "oil filter",
+      "jack points",
       "engine oil",
       "换机油",
       "放油螺丝",
@@ -207,6 +208,7 @@ const ENTITY_STALE_PHRASES: Record<string, string[]> = {
     "next, remove the drain",
     "front jack points",
     "front jack point",
+    "jack points",
     "jack the front",
     "换机油",
     "放油螺丝",
@@ -218,6 +220,7 @@ const ENTITY_STALE_PHRASES: Record<string, string[]> = {
   jack: [
     "front jack points",
     "front jack point",
+    "jack points",
     "front jack",
     "jack the front",
     "前顶车点",
@@ -236,6 +239,8 @@ const ENTITY_STALE_PHRASES: Record<string, string[]> = {
 /** Explicit topic-change cues — avoid bald "instead" / "另外" (too common in DIY steps). */
 const EXPLICIT_NEW_ISSUE = [
   "new issue",
+  "new question",
+  "ask a new question",
   "different problem",
   "another problem",
   "different issue",
@@ -910,13 +915,19 @@ export function lastUserMessage<T extends { role?: string }>(
  * Hard reset: send only the latest user turn (keeping the last assistant
  * re-injects the abandoned job). topic_shift keeps the client-sliced window.
  */
-export function applyHistoryForDrift<T extends { role?: string }>(
+export function applyHistoryForDrift<T extends { role?: string; id?: string }>(
   messages: T[],
   drift: DriftCheckResult,
+  apiHistoryFromId?: string | null,
 ): T[] {
-  if (!isHardReset(drift)) return messages;
-  const latest = lastUserMessage(messages);
-  return latest ? [latest] : messages;
+  let window = messages;
+  if (apiHistoryFromId) {
+    const start = window.findIndex((m) => m.id === apiHistoryFromId);
+    if (start >= 0) window = window.slice(start);
+  }
+  if (!isHardReset(drift)) return window;
+  const latest = lastUserMessage(window);
+  return latest ? [latest] : window;
 }
 
 function previousUserTexts(
@@ -1046,7 +1057,11 @@ export function prepareDriftForChatTurn(opts: {
     previousFocus,
     topics,
   );
-  const conversation = applyHistoryForDrift(opts.messages, drift);
+  const conversation = applyHistoryForDrift(
+    opts.messages,
+    drift,
+    opts.apiHistoryFromId,
+  );
   const systemBlock = buildDriftSystemBlock(drift);
 
   logChatDrift(

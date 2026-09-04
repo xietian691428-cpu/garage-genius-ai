@@ -11,6 +11,10 @@
  *
  * Users may dismiss the general Chat disclaimer banner; they cannot disable
  * high-risk callouts for matched turns.
+ *
+ * FREEZE: changing keywords / callouts / ids requires tests/safety-topics.test.ts
+ * and the pack in tests/README.md (S1). Do not weaken exit-under phrases in
+ * lib/pilot/safety-observe-phrases.ts without those tests.
  */
 
 import { detectReplyLanguageHint, type ReplyLanguageHint } from "@/lib/reply-language";
@@ -147,10 +151,31 @@ export const DEFAULT_SAFETY_TOPICS: readonly SafetyTopic[] = [
       "crawl under",
       "floor jack",
       "floor jack only",
+      "jack slipped",
+      "stand slipped",
+      "wobbly jack",
+      "wobbly stand",
+      "unstable jack",
+      "unstable stand",
+      "unstable support",
+      "support is unstable",
+      "jack is unstable",
+      "stands are unstable",
+      "only the jack",
+      "only on the jack",
+      "relying on the jack",
     ],
-    keywordsZh: ["千斤顶", "顶车", "车底下", "举升"],
+    keywordsZh: [
+      "千斤顶",
+      "顶车",
+      "车底下",
+      "举升",
+      "支撑不稳",
+      "支架晃",
+      "只靠千斤顶",
+    ],
     calloutEn:
-      "Safety: Never rely on a jack alone. Use rated jack stands on solid ground before working under a vehicle.",
+      "Safety: Never rely on a jack alone. Do not work under the vehicle if the support is unstable. Use rated jack stands on solid ground before working under a vehicle.",
     calloutZh:
       "安全提示：切勿仅依赖千斤顶支撑。在车下作业前，请在坚实地面使用额定千斤顶支架。",
   },
@@ -176,15 +201,50 @@ export const DEFAULT_SAFETY_TOPICS: readonly SafetyTopic[] = [
     keywords: [
       "radiator cap hot",
       "open radiator when hot",
+      "open the cap while hot",
+      "open cap when hot",
+      "hot cooling system",
+      "cooling system is hot",
       "cooling system pressure",
       "scalding coolant",
       "hot radiator",
+      "top up coolant",
+      "top off coolant",
+      "add coolant",
+      "coolant reservoir",
+      "coolant is low",
+      "low coolant",
+      "radiator cap",
     ],
     keywordsZh: ["开水箱盖", "热车开水壶", "冷却液喷"],
     calloutEn:
       "Safety: Hot coolant is under pressure and can cause severe burns. Only open cooling systems when cool.",
     calloutZh:
       "安全提示：热冷却液带压，可能导致严重烫伤。请待系统冷却后再打开。",
+  },
+  {
+    id: "battery_12v",
+    severity: "high",
+    keywords: [
+      "12v battery",
+      "12-volt battery",
+      "12 volt battery",
+      "jump start",
+      "jumper cables",
+      "battery terminals",
+      "battery replacement",
+      "replace the battery",
+      "battery test",
+      "battery load test",
+      "battery acid",
+      "dead battery",
+      "car battery",
+    ],
+    keywordsZh: ["电瓶", "蓄电池", "搭电", "电瓶夹"],
+    calloutEn:
+      "Safety: 12V batteries can spark and leak acid. Wear eye protection. Do not jump or load-test a swollen or cracked case. Hybrid/EV orange cables are not DIY.",
+    calloutZh:
+      "安全提示：12V 电瓶可能打火并泄漏电解液。请戴护目镜。壳体鼓包或开裂时不要搭电或负载测试。混合动力/电动车橙色高压线缆禁止 DIY。",
   },
   {
     id: "exhaust_co",
@@ -199,6 +259,34 @@ export const DEFAULT_SAFETY_TOPICS: readonly SafetyTopic[] = [
     calloutEn:
       "Safety: Never run the engine in a closed garage—carbon monoxide is deadly.",
     calloutZh: "安全提示：切勿在密闭车库内怠速运转发动机——一氧化碳可致命。",
+  },
+  {
+    id: "unsafe_to_drive",
+    severity: "critical",
+    keywords: [
+      "brake failure",
+      "brakes failed",
+      "no brakes",
+      "pedal to the floor",
+      "won't stop",
+      "lost steering",
+      "steering failed",
+      "won't steer",
+      "pouring oil",
+      "oil gushing",
+      "spraying oil",
+      "active leak",
+    ],
+    keywordsEs: [
+      "fallo de frenos",
+      "sin frenos",
+      "dirección perdida",
+      "fuga activa",
+    ],
+    calloutEn:
+      "Safety: If brakes, steering, or an active leak may be failing, do not drive. Arrange a tow. Do not limp or slowly drive to a shop.",
+    calloutEs:
+      "Seguridad: si pueden fallar los frenos, la dirección o hay una fuga activa, no conduzca. Organice un remolque. No intente llegar despacio al taller.",
   },
 ] as const;
 
@@ -819,6 +907,20 @@ export function matchSafetyTopics(
     hits = catalog.filter((t) => {
       if (topicMatchesText(t, userBlob)) return true;
       if (!asstBlob.trim()) return false;
+      // Brakes: assistant-only must not fire on set-parking-brake coaching or
+      // generic 刹车 mentions after an oil/jack turn (B1 false positive).
+      if (t.id === "brakes") {
+        if (parkingBrakeFaultMatches(asstBlob)) return true;
+        const kw = firstMatchingKeyword(t, asstBlob);
+        if (!kw) return false;
+        const weakAlone = /^(brake|brakes|刹车|制动)$/i.test(kw.trim());
+        if (weakAlone) return false;
+        if (userIds.has(t.id)) return true;
+        return (
+          isStrongKeyword(kw) &&
+          /pad|rotor|fluid|caliper|abs|片|盘|油|module/i.test(kw)
+        );
+      }
       const kw = firstMatchingKeyword(t, asstBlob);
       if (!kw) return false;
       // Critical always; otherwise need strong phrase or user already on topic.

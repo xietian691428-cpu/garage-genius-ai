@@ -9,6 +9,7 @@ import {
 } from "@/lib/chat-storage";
 import type { VehicleInfo } from "@/lib/types/chat";
 import type { VcdbResolvedConfig } from "@/lib/types/vcdb";
+import type { VpicSnapshot } from "@/lib/vehicle-data/types";
 import {
   DEFAULT_VEHICLE_MARKET,
   normalizeVehicleMarket,
@@ -18,6 +19,10 @@ import {
   normalizeMileageUnit,
   type MileageUnit,
 } from "@/lib/obd-mileage";
+import {
+  hasYmmUnverifiedTag,
+  tagsWithYmmUnverified,
+} from "@/lib/vehicle-data/ymm-conflict";
 
 const LOCAL_VEHICLES_KEY = "garageGenius_vehicles";
 const MIGRATED_KEY_PREFIX = "garageGenius_vehicles_migrated_";
@@ -47,6 +52,9 @@ export type UserVehicleRow = {
   notes: string | null;
   tags: string[] | null;
   vcdb: VcdbResolvedConfig | null;
+  /** NHTSA vPIC DecodeVinValues compact snapshot (no full VIN) */
+  vpic_decode?: VpicSnapshot | null;
+  vpic_decoded_at?: string | null;
   /** Sales-market / owner-manual version (defaults to US if column missing) */
   market?: string | null;
   /** Optional insurance jurisdiction — education tips only */
@@ -89,7 +97,10 @@ export function rowToVehicleInfo(row: UserVehicleRow): VehicleInfo {
     lastMaintenance: row.last_maintenance ?? undefined,
     notes: row.notes ?? undefined,
     tags: row.tags ?? undefined,
+    ymmUnverified: hasYmmUnverifiedTag(row.tags),
     vcdb: row.vcdb ?? undefined,
+    vpicDecode: row.vpic_decode ?? undefined,
+    vpicDecodedAt: row.vpic_decoded_at ?? undefined,
     market: normalizeVehicleMarket(row.market),
     countryRegion: row.country_region?.trim() || undefined,
     countryState: row.country_state?.trim() || undefined,
@@ -126,8 +137,10 @@ export function vehicleInfoToRow(
     license_plate: vehicle.licensePlate?.trim() || null,
     last_maintenance: vehicle.lastMaintenance ?? null,
     notes: vehicle.notes ?? null,
-    tags: vehicle.tags ?? [],
+    tags: tagsWithYmmUnverified(vehicle.tags, vehicle.ymmUnverified),
     vcdb: vehicle.vcdb ?? null,
+    vpic_decode: vehicle.vpicDecode ?? null,
+    vpic_decoded_at: vehicle.vpicDecodedAt ?? null,
     market: normalizeVehicleMarket(
       vehicle.market,
       DEFAULT_VEHICLE_MARKET,
@@ -291,6 +304,21 @@ export const userVehiclesService = {
 
     if (error && /license_plate/i.test(error.message)) {
       const { license_plate: _lp, ...rest } = fields as Record<string, unknown>;
+      const retry = await supabase
+        .from("user_vehicles")
+        .update(rest)
+        .eq("id", vehicle.id)
+        .select("*")
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
+    if (error && /vpic_decode|vpic_decoded_at/i.test(error.message)) {
+      const {
+        vpic_decode: _vd,
+        vpic_decoded_at: _vda,
+        ...rest
+      } = fields as Record<string, unknown>;
       const retry = await supabase
         .from("user_vehicles")
         .update(rest)

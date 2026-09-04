@@ -22,6 +22,9 @@ export function extractBase64Payload(image: string): string {
   return image;
 }
 
+export const CHAT_PHOTO_MAX_EDGE = 1600;
+export const CHAT_PHOTO_JPEG_QUALITY = 0.72;
+
 /**
  * Downscale garage phone photos before Vision API (token + payload size).
  * Keeps aspect ratio; returns JPEG data URL.
@@ -30,9 +33,9 @@ export async function compressImageDataUrl(
   dataUrl: string,
   options?: { maxWidth?: number; maxHeight?: number; quality?: number },
 ): Promise<string> {
-  const maxWidth = options?.maxWidth ?? 1600;
-  const maxHeight = options?.maxHeight ?? 1600;
-  const quality = options?.quality ?? 0.82;
+  const maxWidth = options?.maxWidth ?? CHAT_PHOTO_MAX_EDGE;
+  const maxHeight = options?.maxHeight ?? CHAT_PHOTO_MAX_EDGE;
+  const quality = options?.quality ?? CHAT_PHOTO_JPEG_QUALITY;
 
   if (typeof window === "undefined") return dataUrl;
 

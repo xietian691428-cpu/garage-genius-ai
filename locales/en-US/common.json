@@ -37,7 +37,10 @@
     "adoptFailed": "Couldn’t save. Try again.",
     "adoptSignInPrompt": "Sign in to adopt this step into the knowledge base.",
     "adoptSignInLink": "Sign in",
-    "adoptNeedYes": "Mark this step useful (Yes) to unlock Adopt as Knowledge Base."
+    "adoptNeedYes": "Mark this step useful (Yes) to unlock Adopt as Knowledge Base.",
+    "continueThisGuide": "Continue this guide",
+    "askNewQuestion": "Ask a new question",
+    "guideChatHandoffHint": "Chat uses the same vehicle and safety state as this guide."
   },
   "onboarding": {
     "welcomeEyebrow": "Welcome to Garage Genius",
@@ -140,7 +143,12 @@
     "gateAddVehicle": "Add vehicle",
     "gateUpgrade": "Upgrade for more vehicles",
     "gateManageGarage": "Manage garage",
-    "gatePickVehicle": "Pick vehicle"
+    "gatePickVehicle": "Pick vehicle",
+    "vehicleNotOwned": "This vehicle is not in your garage. Refresh and select a saved vehicle.",
+    "vehicleSelectionMismatch": "Vehicle selection changed. Refresh chat and try again.",
+    "budgetExceeded": "This month's AI allowance is used up. Upgrade for a larger budget.",
+    "visionQuotaExceeded": "Monthly photo analysis limit reached. Upgrade for a higher photo quota.",
+    "limitedMode": "Limited — quota exceeded. This is not a full coaching reply."
   },
   "dtc": {
     "enterCode": "Enter fault code",
@@ -153,6 +161,23 @@
     "invalidCode": "Use a valid code like P0420 or U0100.",
     "submit": "Diagnose code",
     "signInForObdPhoto": "Sign in to analyze an OBD screenshot."
+  },
+  "recalls": {
+    "usTitle": "NHTSA safety campaigns (education only)",
+    "usFootnote": "NHTSA data for education only. Verify open recalls with your VIN at nhtsa.gov/recalls or a dealer. This is not proof a recall was completed.",
+    "nhtsaLink": "nhtsa.gov/recalls",
+    "usUnavailable": "We couldn't verify recalls right now. Check NHTSA with your VIN at nhtsa.gov/recalls or a dealer.",
+    "usEmpty": "No open campaigns returned for this YMM. Still verify with your VIN on NHTSA at nhtsa.gov/recalls or a dealer. This is not proof the vehicle has never had a campaign.",
+    "sourceNhtsa": "Source: NHTSA",
+    "sourceRegional": "Source: regional (not NHTSA)",
+    "expand": "Expand",
+    "mayBeAffected": "This year/make/model may be affected. Verify with your VIN on NHTSA or a dealer.",
+    "showingOf": "Showing {{shown}} of {{total}} NHTSA campaigns on file for this year/make/model.",
+    "regionalTitle": "Regional safety checks",
+    "regionalTitleGB": "Regional safety checks (UK)",
+    "regionalTitleEU": "Regional safety checks (EU / EEA)",
+    "regionalBody": "Safety campaigns are handled by national authorities and manufacturers in your region. We don’t list a full local recall database here—check your vehicle maker’s site or dealer with your VIN.",
+    "regionalBodyGB": "Safety campaigns are handled by national authorities and manufacturers in your region. We don’t list a full local recall database here—check your vehicle maker’s site or dealer with your VIN. In the UK you can also check with DVSA and the manufacturer. We do not look up MOT history in this version."
   },
   "obd": {
     "connectEntry": "Connect OBD",
@@ -204,7 +229,9 @@
     "refreshSensorsReading": "Reading…",
     "enableAdapterCta": "Enable OBD in Settings",
     "bleBlockedByPref": "Turn on “I have an OBD-II adapter” in Settings before connecting Bluetooth OBD.",
-    "mileageUpdated": "Vehicle mileage updated to {{value}} {{unit}}"
+    "mileageUpdated": "Vehicle mileage updated to {{value}} {{unit}}",
+    "mileageSkippedDecrease": "OBD odometer is not higher than the archive. Mileage was not reduced.",
+    "mileageSkippedJump": "OBD odometer jumped too far from the archive. Mileage was not overwritten."
   },
   "parts": {
     "searchOnAmazon": "Search on Amazon",
@@ -327,7 +354,9 @@
     "planLimitStore": "Plan limit: {{count}} vehicle(s).",
     "limitReached": "Vehicle limit reached. Upgrade for more.",
     "limitReachedStore": "Vehicle limit reached.",
-    "couldNotSave": "Could not save vehicle."
+    "couldNotSave": "Could not save vehicle.",
+    "vpicYmmConflict": "Saved year/make/model does not match the VIN decode. Confirm the vehicle before coaching.",
+    "ymmUnverified": "Year/make/model were entered by hand (VIN decode unavailable). Confirm before quoting specs."
   },
   "shopReport": {
     "eyebrow": "Shop handoff",
@@ -335,6 +364,8 @@
     "subtitle": "Education summary for your technician — not a final diagnosis.",
     "includeFullVin": "Include full VIN in PDF",
     "includeFullVinHint": "Default / share link show last 8 only.",
+    "includeRecalls": "Include NHTSA recall education (US)",
+    "includeRecallsHint": "Up to 3 campaigns + nhtsa.gov/recalls. Education only — not a VIN repair status.",
     "includeScreenshots": "Include screenshots",
     "noPhotosYet": "No photos in this chat yet.",
     "photosOnPdf": "Up to {{count}} image(s) on PDF page 2.",

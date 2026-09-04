@@ -1,0 +1,12 @@
+[
+  {
+    "code": "B0028",
+    "title_en": "Right Side Airbag Deployment Control",
+    "summary_en": "Supplemental restraint system. Do not probe airbag circuits. Have SRS diagnosed by a qualified technician — educational coaching only.",
+    "system": "body",
+    "severity_hint": "high",
+    "common_causes": ["SRS connector after a seat/service job", "Clock spring or harness (shop only)", "Module stored event"],
+    "diy_level": "shop",
+    "safety_notes": "Never probe airbag circuits or disable SRS to clear a light. Qualified technician only."
+  }
+]

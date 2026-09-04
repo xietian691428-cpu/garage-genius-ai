@@ -127,6 +127,10 @@ export function formatVehicleConfigCard(vehicle: VehicleInfo): string {
   const drive = vehicle.driveType || vcdb?.driveType || "Not specified";
   const brakes = humanizeBrakes(vehicle.brakes || vcdb?.brakes);
   const fluids = resolveFluidFields(vehicle);
+  const garageOilSaved = Boolean(
+    vehicle.oilCapacity?.trim() || vehicle.vcdb?.oilCapacity?.trim(),
+  );
+  const chatOilLine = garageOilSaved ? fluids.oilLine : null;
 
   const market = normalizeVehicleMarket(vehicle.market);
   const marketLabel = vehicleMarketLabel(market);
@@ -136,16 +140,20 @@ export function formatVehicleConfigCard(vehicle: VehicleInfo): string {
     "## Authoritative Vehicle Configuration",
     identity,
     `- Market / country version: ${market} (${marketLabel}) — ${marketHint}`,
-    fluids.fuelGrade || fluids.oilLine
-      ? `- Engine: ${engine}${fluids.fuelGrade ? ` · ${fluids.fuelGrade}` : ""}${fluids.oilLine ? ` · Oil ${fluids.oilLine}` : ""}`
+    fluids.fuelGrade || chatOilLine
+      ? `- Engine: ${engine}${fluids.fuelGrade ? ` · ${fluids.fuelGrade}` : ""}${
+          chatOilLine ? ` · Oil ${chatOilLine}` : ""
+        }`
       : `- Engine: ${engine}`,
   ];
 
   if (fluids.fuelGrade) {
     lines.push(`- Fuel: ${fluids.fuelGrade}`);
   }
-  if (fluids.oilLine) {
-    lines.push(`- Engine oil: ${fluids.oilLine}`);
+  if (chatOilLine) {
+    lines.push(
+      `- Engine oil: ${chatOilLine} (garage profile — confirm on the fill cap / owner's manual)`,
+    );
   }
 
   lines.push(
@@ -168,13 +176,13 @@ export function formatVehicleConfigCard(vehicle: VehicleInfo): string {
   lines.push(
     `Respect the Market / country version above: owner manuals, lighting, emissions equipment, fuel labeling (AKI vs RON), units (mi/mph vs km/h), and some powertrains differ by market. Prefer ${market}-spec guidance; if uncertain, say to confirm in the local owner's manual.`,
   );
-  if (fluids.fuelGrade || fluids.oilLine) {
+  if (fluids.fuelGrade || chatOilLine) {
     lines.push(
-      `When giving oil-change or fuel guidance, cite the Fuel / Engine oil values above; still remind the user to confirm capacity and viscosity in the owner's manual.`,
+      `When giving oil-change or fuel guidance, cite only garage-saved Fuel / Engine oil values above and name that source; still remind the user to confirm capacity and viscosity on the fill cap and in the owner's manual. Curated lookup oil figures are not Chat anchors.`,
     );
   } else {
     lines.push(
-      `Fuel grade and oil capacity are not verified for this vehicle — tell the user to check the owner's manual before filling fluids.`,
+      `Fuel grade and oil capacity are not verified for this vehicle this turn — tell the user to check the fill cap and owner's manual. Do not invent quarts, liters, 0W-xx as required, ft-lb/N·m, or OEM part numbers.`,
     );
   }
   lines.push(

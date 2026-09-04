@@ -11,6 +11,7 @@ import {
   AI_ROUTE_TOKEN_FLOOR,
   aiAbuseResponse,
   assertAiRateLimit,
+  assertAiSpendGate,
   assertAiTokenBudget,
   consumeAiTokensBestEffort,
   requireVerifiedAiUser,
@@ -115,6 +116,10 @@ export async function POST(req: NextRequest) {
   try {
     const user = await requireVerifiedAiUser(req);
     await assertAiRateLimit(user.id, "vision", user.email);
+    await assertAiSpendGate(user.id, {
+      needsVision: true,
+      email: user.email,
+    });
 
     const body = await req.json();
     const imageRaw =
@@ -197,19 +202,25 @@ Rules:
       AI_ROUTE_TOKEN_FLOOR.vision,
       estimateTokensFromMessages(messages),
     );
-    await assertAiTokenBudget(user.id, estimated, user.email);
+    const { isAiCostHardCapEnabled } = await import("@/lib/ai-cost/config");
+    if (!isAiCostHardCapEnabled()) {
+      await assertAiTokenBudget(user.id, estimated, user.email);
+    }
 
     // Kimi vision first; DeepSeek VL fallback (lib/vision.ts)
     const { content, usage, model, visionProvider } = await callVisionJson(
       messages,
-      900,
+      800,
     );
+    const isKimi = visionProvider === "kimi";
     await consumeAiTokensBestEffort(
       user.id,
       Math.max(1, usage.total_tokens),
       {
         route: "vision",
         model,
+        provider: isKimi ? "kimi" : "deepseek",
+        skipMonthlyQuota: isKimi,
         promptTokens: usage.prompt_tokens,
         completionTokens: usage.completion_tokens,
         email: user.email,
