@@ -2,17 +2,27 @@
 
 import {
   hideStorePurchaseUi,
+  isNativeAndroid,
   NATIVE_TERMS_BILLING_BULLETS,
+  NATIVE_TERMS_BILLING_BULLETS_ANDROID,
   NATIVE_TERMS_BILLING_HEADING,
+  type CapacitorPlatformId,
 } from "@/lib/native-platform";
 
 /** Billing clause: purchase copy is website-only (App Store 2.1(b)). */
 export default function SubscriptionsTermsList({
   forceStoreSafe = false,
+  storePlatform = "web",
 }: {
   forceStoreSafe?: boolean;
+  storePlatform?: CapacitorPlatformId;
 }) {
   const storeSafe = forceStoreSafe || hideStorePurchaseUi();
+  const androidTerms =
+    storePlatform === "android" || isNativeAndroid();
+  const storeBullets = androidTerms
+    ? NATIVE_TERMS_BILLING_BULLETS_ANDROID
+    : NATIVE_TERMS_BILLING_BULLETS;
 
   return (
     <section>
@@ -23,7 +33,7 @@ export default function SubscriptionsTermsList({
       </h2>
       {storeSafe ? (
         <ul className="mt-2 list-disc space-y-1 pl-5">
-          {NATIVE_TERMS_BILLING_BULLETS.map((item) => (
+          {storeBullets.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>

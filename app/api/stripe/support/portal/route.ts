@@ -7,6 +7,10 @@ import {
 } from "@/lib/stripe-support";
 import { isQaUnlockEnabled, qaPaymentDisabledMessage } from "@/lib/qa-mode";
 import { getAppBaseUrl } from "@/lib/app-url";
+import {
+  stripeBlockedForStoreRequest,
+  stripeStoreShellBlockedJson,
+} from "@/lib/stripe-web-guard";
 
 export const runtime = "nodejs";
 
@@ -20,6 +24,10 @@ function appBaseUrl(req: NextRequest): string {
  */
 export async function POST(req: NextRequest) {
   try {
+    if (stripeBlockedForStoreRequest(req)) {
+      return stripeStoreShellBlockedJson();
+    }
+
     if (isQaUnlockEnabled()) {
       return NextResponse.json(
         { error: qaPaymentDisabledMessage() },

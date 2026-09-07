@@ -1,9 +1,10 @@
 # App Store / Play Store launch guide — Garage Genius AI
 
-Last updated: 2026-07-28  
+Last updated: 2026-09-07  
 Canonical site: **https://garagegenius.cloud**  
 Bundle ID / applicationId: **com.garagegenius.ai**  
-Marketing version: **1.0.0** (iOS `MARKETING_VERSION` / Android `versionName`)  
+Marketing version: **1.0.0** (iOS `MARKETING_VERSION` 1.0 / Android `versionName`)  
+iOS build **8** (`CURRENT_PROJECT_VERSION`) · Android **versionCode 8**  
 Native shell: Capacitor 8 (remote URL → production Next.js)
 
 ---
@@ -14,11 +15,12 @@ Native shell: Capacitor 8 (remote URL → production Next.js)
 |------|--------|
 | Capacitor `ios/` + `android/` | **Scaffolded in repo** |
 | Permission strings (camera / mic / photos / BT) | **Declared** |
-| Stripe inside native WebView | **Blocked in client** (`lib/billing.ts`) |
-| StoreKit / Play Billing IAP | **iOS StoreKit 2 wired** (`@capgo/native-purchases` + `/api/apple/verify`); Android Play Billing still pending |
-| Universal Links / App Links templates | **Present** (replace Team ID + SHA-256) |
+| Stripe inside native WebView | **Blocked client + API** (`lib/billing.ts`, `lib/stripe-web-guard.ts` → 403) |
+| StoreKit / Play Billing IAP | **iOS StoreKit 2 wired**; **Android Play Billing not in this version** (free features only; no web-pay CTA in the Play app) |
+| Universal Links / App Links templates | **Present** (Play SHA-256 still `REPLACE_WITH_PLAY_APP_SIGNING_SHA256`) |
 | Screenshots / store listing assets | **You — create in consoles** |
 | Sign in with Apple (if Google enabled) | **Ops — enable in Supabase + Apple** |
+| Play listing copy / review notes | **`docs/PLAY_STORE_REVIEW_NOTES.md`** |
 
 ---
 
@@ -199,24 +201,25 @@ Web Bluetooth **does not work** in iOS WKWebView. UI already routes users to **E
 Digital features: Pro / Pro Heavy subscriptions and token packs (content / AI quota). These are **in-app digital goods**.
 
 ### What will fail review
-Loading Stripe Checkout or Stripe Portal inside the Capacitor WebView as the primary way to buy Pro/tokens.
+- Loading Stripe Checkout or Stripe Portal inside the Capacitor WebView for Pro/tokens.
+- Buttons or copy in the **iOS** app that tell users to pay on the website (Apple 3.1.1).
+- Buttons or copy in the **Android** app that tell users to pay on the website or another store (Google Play Payments).
 
-### Recommended path (highest chance to pass)
+### Current shipping path
 
-**Phase A — first store binary (fastest honest path)**  
-1. Ship Free + email-verified trial features that already work without new IAP.  
-2. Keep Stripe on **mobile Safari / desktop web** only.  
-3. In the native app, paid upgrade CTAs show an honest message (already enforced by `lib/billing.ts`): use web, or wait for IAP.  
-4. Optional later: Apple “External Link Account” / Play external offers — region-limited; still not a full substitute for IAP for digital unlocks in many cases.
+**Website (Safari / Chrome / desktop)**  
+Stripe Checkout, Customer Portal, and token recharge. After payment, users return to `/app?billing=success` (portal → `/app?tab=settings`).
 
-**Phase B — before promoting paid plans inside the apps**  
-1. Implement **StoreKit 2** (iOS) + **Play Billing** (Android) for:  
-   - `pro_monthly`, `pro_yearly`, `heavy_monthly`, `heavy_yearly`  
-   - token packs as consumables (optional)  
-2. Server verifies receipts / Play RTDN and writes the same `profiles.subscription_status` fields Stripe uses.  
-3. Detect `Capacitor.isNativePlatform()` → IAP UI; web → Stripe.
+**iOS App Store**  
+StoreKit 2 IAP only (`docs/APP_STORE_REVIEW_NOTES.md`).
 
-**Do not** mix “Stripe-only WebView checkout” into the first App Store submission if you show Upgrade buttons that charge for digital access.
+**Google Play (this versionCode 8)**  
+Free coaching features only. No Play Billing SKUs. No Stripe in the WebView. No “buy on the website” CTA. Listing and review notes: `docs/PLAY_STORE_REVIEW_NOTES.md`.
+
+**Later**  
+Play Billing for the same Pro / Heavy products, server-verified into `profiles.subscription_status`.
+
+Do **not** mix “open our website to subscribe” into either store binary.
 
 ---
 
@@ -299,10 +302,12 @@ How to test
 3. Open Chat / Coach / Dashboard. Camera may request permission for photos/receipts.
 4. Voice mic is Pro/trial only.
 5. iOS Bluetooth OBD is intentionally unavailable — use “Enter fault code” or OBD screenshot.
-6. In-app Stripe checkout is disabled in the native shell for store compliance. Paid upgrades on web: https://garagegenius.cloud/pricing
+6. Website Stripe checkout is not available inside store apps.
 
 No gambling, no user-generated dating, no third-party content marketplace.
 ```
+
+**Google Play:** use the listing + review notes in `docs/PLAY_STORE_REVIEW_NOTES.md` (do not tell reviewers to pay on the website).
 
 ---
 
@@ -342,12 +347,12 @@ Terms URL: **https://garagegenius.cloud/terms**
 - [ ] Replace `TEAMID` in AASA file and redeploy web
 
 ### Google Play Console
-- [ ] App `com.garagegenius.ai`, Data safety form aligned with Privacy Policy
+- [ ] App `com.garagegenius.ai`, Data safety form aligned with Privacy Policy (`docs/PLAY_STORE_REVIEW_NOTES.md`)
 - [ ] Content rating questionnaire
 - [ ] Store listing + phone screenshots (+ 7" / 10" tablet if claimed)
 - [ ] App signing → copy SHA-256 into `assetlinks.json` and redeploy
-- [ ] If selling digital goods: Play Billing (not Stripe WebView)
-- [ ] Target API level per current Play requirements
+- [ ] This version: **no** Play Billing products (free features only)
+- [ ] Target API level per current Play requirements (repo `targetSdkVersion` 36)
 
 ### Supabase / ops
 - [ ] Confirm email ON
@@ -358,12 +363,13 @@ Terms URL: **https://garagegenius.cloud/terms**
 
 ## 9. Current blockers (before paid native launch)
 
-1. **IAP is implemented on iOS** — StoreKit 2 via `@capgo/native-purchases`; website Stripe stays on Safari only.  
-2. **Universal Links not finalized** — Team ID + Play SHA-256 placeholders.  
+1. **IAP is implemented on iOS** — StoreKit 2 via `@capgo/native-purchases`; website Stripe stays on Safari / Chrome only.  
+2. **Play App Links not finalized** — replace `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` after Play App Signing is created.  
 3. **Java / Android SDK** may be missing locally — `npx cap open android` after installing Android Studio.  
 4. **Sign in with Apple** must be live if Google is offered on iOS.  
 5. **Store screenshots / icons** not produced yet.  
 6. **Mainland China network** — Vercel may be unreachable without VPN; store builds still load `garagegenius.cloud` (plan CDN/China strategy separately if needed).
+7. **Android paid upgrades** wait on Play Billing — do not add web checkout CTAs in the Play binary.
 
 ---
 

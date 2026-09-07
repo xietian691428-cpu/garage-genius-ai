@@ -59,9 +59,11 @@ export default function PricingPageClient({
             Garage Genius AI
           </p>
           <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight text-white sm:text-5xl">
-            {iap || storeShell
-              ? "Subscribe with Apple"
-              : "Simple plans for DIY repair"}
+            {blocked
+              ? "Garage Genius on this device"
+              : iap || storeShell
+                ? "Subscribe with Apple"
+                : "Simple plans for DIY repair"}
           </h1>
           <p className="mt-3 text-base text-slate-400 sm:text-lg">
             {blocked

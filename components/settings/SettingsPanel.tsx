@@ -29,8 +29,8 @@ import {
   hideStorePurchaseUi,
   nativePlanDisplayLabel,
   NATIVE_DELETE_ACCOUNT_BODY,
+  NATIVE_DELETE_ACCOUNT_BODY_ANDROID,
   NATIVE_NO_IAP_MESSAGE,
-  NATIVE_WEBSITE_MANAGE_HINT,
 } from "@/lib/native-platform";
 import {
   openAppleManageSubscriptions,
@@ -266,11 +266,8 @@ export default function SettingsPanel({
                   ? "Enjoy full Pro features during your trial. Subscribe before it ends to keep voice coaching and higher limits."
                   : "Free includes limited monthly help. Pro unlocks voice coaching, more vehicles, and fuller repair answers. Heavy adds the highest limits."}
           </p>
-          {billingMode === "native_blocked" ? (
-            <p className="mt-4 text-xs leading-relaxed text-slate-500">
-              {NATIVE_WEBSITE_MANAGE_HINT}
-            </p>
-          ) : iap ? (
+          {billingMode !== "native_blocked" &&
+            (iap ? (
             <div className="mt-4 flex flex-col gap-2">
               <Link
                 href="/pricing"
@@ -329,7 +326,7 @@ export default function SettingsPanel({
             >
               {busy ? "Opening…" : "Manage billing"}
             </button>
-          )}
+          ))}
           {!storeSafe && !iap && (
             <button
               type="button"
@@ -383,9 +380,11 @@ export default function SettingsPanel({
             Delete account
           </h2>
           <p className="mt-2 text-sm text-slate-400">
-            {storeSafe
-              ? NATIVE_DELETE_ACCOUNT_BODY
-              : "Permanently deletes your Garage Genius account, vehicles, chats, maintenance history, and inventory we store for you. This cannot be undone. Active Stripe subscriptions are cancelled when possible — also confirm in Manage billing if a charge continues."}
+            {billingMode === "native_blocked"
+              ? NATIVE_DELETE_ACCOUNT_BODY_ANDROID
+              : billingMode === "native_iap"
+                ? NATIVE_DELETE_ACCOUNT_BODY
+                : "Permanently deletes your Garage Genius account, vehicles, chats, maintenance history, and inventory we store for you. This cannot be undone. Active Stripe subscriptions are cancelled when possible — also confirm in Manage billing if a charge continues."}
           </p>
           {!deleteOpen ? (
             <button

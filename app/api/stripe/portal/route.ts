@@ -13,6 +13,10 @@ import {
   BILLING_PORTAL_UNAVAILABLE,
   toUserFacingBillingError,
 } from "@/lib/billing-errors";
+import {
+  stripeBlockedForStoreRequest,
+  stripeStoreShellBlockedJson,
+} from "@/lib/stripe-web-guard";
 
 export const runtime = "nodejs";
 
@@ -28,6 +32,10 @@ function appBaseUrl(req: NextRequest): string {
 
 export async function POST(req: NextRequest) {
   try {
+    if (stripeBlockedForStoreRequest(req)) {
+      return stripeStoreShellBlockedJson();
+    }
+
     if (isQaUnlockEnabled()) {
       return NextResponse.json(
         { error: qaPaymentDisabledMessage() },
@@ -75,7 +83,7 @@ export async function POST(req: NextRequest) {
     const baseUrl = appBaseUrl(req);
     const session = await getStripe().billingPortal.sessions.create({
       customer: profile.stripe_customer_id,
-      return_url: `${baseUrl}/?billing=portal`,
+      return_url: `${baseUrl}/app?tab=settings&billing=portal`,
     });
 
     return NextResponse.json({ url: session.url });

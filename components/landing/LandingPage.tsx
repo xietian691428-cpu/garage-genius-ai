@@ -15,7 +15,7 @@ import PricingCards from "@/components/landing/PricingCards";
 import {
   isStoreShellClient,
   NATIVE_LANDING_CTA,
-  NATIVE_LANDING_KICKER,
+  nativeLandingKicker,
 } from "@/lib/native-platform";
 
 const FEATURES = [
@@ -65,15 +65,19 @@ const TRIAL_COPY =
 
 export default function LandingPage({
   forceStoreSafe = false,
+  nativeUserAgent = null,
 }: {
   forceStoreSafe?: boolean;
+  nativeUserAgent?: string | null;
 }) {
   const { isAuthenticated, loading } = useAuth();
   const storeSafe = forceStoreSafe || isStoreShellClient();
   const primaryHref = isAuthenticated ? "/app" : "/login?next=/app";
   const primaryLabel = isAuthenticated ? "Open garage" : NATIVE_LANDING_CTA;
-  // Web: Stripe signup trial pitch. Store shell: IAP-safe (no “no card required”).
-  const heroKicker = storeSafe ? NATIVE_LANDING_KICKER : TRIAL_COPY;
+  // Web: Stripe signup trial pitch. Store shell: platform-safe (no “no card required”).
+  const heroKicker = storeSafe
+    ? nativeLandingKicker(nativeUserAgent)
+    : TRIAL_COPY;
 
   return (
     <div className="landing-root">

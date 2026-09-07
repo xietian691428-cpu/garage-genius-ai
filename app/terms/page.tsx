@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import LegalDocLayout from "@/components/legal/LegalDocLayout";
 import SubscriptionsTermsList from "@/components/legal/SubscriptionsTermsList";
-import { readForceStoreSafe } from "@/lib/store-shell-request";
+import {
+  readForceStoreSafe,
+  readStoreShellPlatform,
+} from "@/lib/store-shell-request";
 
 export const metadata: Metadata = {
   title: "Terms of Service — Garage Genius AI",
@@ -10,7 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default async function TermsPage() {
-  const storeSafe = await readForceStoreSafe();
+  const [storeSafe, storePlatform] = await Promise.all([
+    readForceStoreSafe(),
+    readStoreShellPlatform(),
+  ]);
   return (
     <LegalDocLayout title="Terms of Service" updated="July 30, 2026">
       <section>
@@ -76,7 +82,10 @@ export default async function TermsPage() {
         </p>
       </section>
 
-      <SubscriptionsTermsList forceStoreSafe={storeSafe} />
+      <SubscriptionsTermsList
+        forceStoreSafe={storeSafe}
+        storePlatform={storePlatform}
+      />
 
       <section>
         <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">

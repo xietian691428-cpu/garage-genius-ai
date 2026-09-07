@@ -12,6 +12,12 @@ export type NativeBillingMode = "web_stripe" | "native_iap" | "native_blocked";
 
 export type CapacitorPlatformId = "ios" | "android" | "web";
 
+/** Appended in capacitor.config.ts so SSR can tell store WebViews from Mobile Safari. */
+export const NATIVE_UA_TOKEN = "GarageGeniusNative";
+
+/** Set by the native shell client so subsequent SSR requests stay store-safe. */
+export const NATIVE_STORE_SHELL_COOKIE = "gg_store_shell";
+
 function capacitorBridge(): CapacitorBridge | undefined {
   if (typeof window === "undefined") return undefined;
   return (window as Window & { Capacitor?: CapacitorBridge }).Capacitor;
@@ -26,34 +32,6 @@ export function isNativeCapacitor(): boolean {
   }
 }
 
-/** `Capacitor.getPlatform()` when running in a native shell. */
-export function getCapacitorPlatform(): CapacitorPlatformId {
-  if (!isNativeCapacitor()) return "web";
-  try {
-    const raw = capacitorBridge()?.getPlatform?.()?.toLowerCase() ?? "";
-    if (raw === "ios") return "ios";
-    if (raw === "android") return "android";
-  } catch {
-    /* fall through */
-  }
-  return "web";
-}
-
-export function isNativeIos(): boolean {
-  return getCapacitorPlatform() === "ios";
-}
-
-/** Appended in capacitor.config.ts so SSR can tell store WebViews from Mobile Safari. */
-export const NATIVE_UA_TOKEN = "GarageGeniusNative";
-
-/** Set by the native shell client so subsequent SSR requests stay store-safe. */
-export const NATIVE_STORE_SHELL_COOKIE = "gg_store_shell";
-
-/** Landing CTA / kicker when store shell (no Stripe “no card” web trial pitch). */
-export const NATIVE_LANDING_CTA = "Start free";
-export const NATIVE_LANDING_KICKER =
-  "Free to start · Upgrade in-app with Apple In-App Purchase";
-
 export function userAgentLooksNative(ua: string | null | undefined): boolean {
   return Boolean(ua && ua.includes(NATIVE_UA_TOKEN));
 }
@@ -62,15 +40,82 @@ export function userAgentLooksNative(ua: string | null | undefined): boolean {
  * Capacitor / in-app WKWebView often omits Mobile Safari's Version/ + Safari/
  * tokens. Treat those as store shell for SSR so Landing never paints Stripe
  * “no card” trial CTAs before JS hydrates — without breaking real Mobile Safari.
+ * Android WebViews must never be classified as iOS.
  */
 export function userAgentLooksLikeIosAppWebView(
   ua: string | null | undefined,
 ): boolean {
   if (!ua) return false;
+  if (/Android/i.test(ua)) return false;
   if (userAgentLooksNative(ua)) return true;
   if (!/iPhone|iPad|iPod/i.test(ua)) return false;
   if (/Version\//i.test(ua) && /Safari\//i.test(ua)) return false;
   return /AppleWebKit/i.test(ua);
+}
+
+export function uaLooksAndroidNative(ua: string | null | undefined): boolean {
+  if (!ua) return false;
+  return userAgentLooksNative(ua) && /Android/i.test(ua);
+}
+
+function clientStoreShellCookiePresent(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie
+    .split(";")
+    .some((part) => part.trim() === `${NATIVE_STORE_SHELL_COOKIE}=1`);
+}
+
+/** `Capacitor.getPlatform()` when running in a native shell. */
+export function getCapacitorPlatform(): CapacitorPlatformId {
+  try {
+    if (isNativeCapacitor()) {
+      const raw = capacitorBridge()?.getPlatform?.()?.toLowerCase() ?? "";
+      if (raw === "ios") return "ios";
+      if (raw === "android") return "android";
+    }
+  } catch {
+    /* fall through */
+  }
+  if (typeof navigator !== "undefined") {
+    const ua = navigator.userAgent;
+    if (
+      /Android/i.test(ua) &&
+      (userAgentLooksNative(ua) || clientStoreShellCookiePresent())
+    ) {
+      return "android";
+    }
+    if (userAgentLooksLikeIosAppWebView(ua)) return "ios";
+  }
+  return "web";
+}
+
+export function isNativeIos(): boolean {
+  return getCapacitorPlatform() === "ios";
+}
+
+export function isNativeAndroid(): boolean {
+  return getCapacitorPlatform() === "android";
+}
+
+/** Landing CTA / kicker when store shell (no Stripe “no card” web trial pitch). */
+export const NATIVE_LANDING_CTA = "Start free";
+export const NATIVE_LANDING_KICKER =
+  "Free to start · Upgrade in-app with Apple In-App Purchase";
+
+/** Play listing / Android WebView — no Apple IAP pitch, no web-pay steering. */
+export const NATIVE_LANDING_KICKER_ANDROID =
+  "Free to start · Sign in to save your garage";
+
+export function nativeLandingKicker(ua?: string | null): string {
+  const resolvedUa =
+    ua ?? (typeof navigator !== "undefined" ? navigator.userAgent : null);
+  if (
+    getCapacitorPlatform() === "android" ||
+    uaLooksAndroidNative(resolvedUa)
+  ) {
+    return NATIVE_LANDING_KICKER_ANDROID;
+  }
+  return NATIVE_LANDING_KICKER;
 }
 
 export function storeShellCookieIsSet(
@@ -91,11 +136,15 @@ export function requestLooksStoreShell(input: {
   );
 }
 
-function clientStoreShellCookiePresent(): boolean {
-  if (typeof document === "undefined") return false;
-  return document.cookie
-    .split(";")
-    .some((part) => part.trim() === `${NATIVE_STORE_SHELL_COOKIE}=1`);
+/** Platform for store-shell SSR (legal copy, landing kicker). Web if not a store shell. */
+export function storeShellPlatformFromRequest(input: {
+  userAgent?: string | null;
+  storeShellCookie?: string | null;
+}): CapacitorPlatformId {
+  const ua = input.userAgent ?? "";
+  if (/Android/i.test(ua) && requestLooksStoreShell(input)) return "android";
+  if (requestLooksStoreShell(input)) return "ios";
+  return "web";
 }
 
 /** True inside App Store / Play WebView (or Cap shell). */
@@ -115,21 +164,7 @@ export function isStoreShellClient(): boolean {
  * Android Capacitor stays blocked until Play Billing ships.
  */
 export function hideStorePurchaseUi(): boolean {
-  if (isNativeIos()) return false;
-  if (isNativeCapacitor()) return true;
-  // WKWebView heuristic without Cap bridge (SSR flash / edge) — treat as iOS store shell → show IAP UI
-  if (typeof navigator !== "undefined") {
-    if (userAgentLooksLikeIosAppWebView(navigator.userAgent)) return false;
-    if (userAgentLooksNative(navigator.userAgent)) {
-      // UA token without platform — prefer showing IAP (iOS primary store)
-      return false;
-    }
-  }
-  if (clientStoreShellCookiePresent()) {
-    // Cookie alone: show IAP (iOS). Android will still block at purchase time.
-    return false;
-  }
-  return false;
+  return getCapacitorPlatform() === "android";
 }
 
 /**
@@ -138,13 +173,11 @@ export function hideStorePurchaseUi(): boolean {
  * Android native → blocked (no Play Billing yet).
  */
 export function getBillingMode(): NativeBillingMode {
-  if (!isNativeCapacitor()) {
-    // Heuristic store shell without Cap still must not open Stripe in WebView
-    if (isStoreShellClient()) return "native_iap";
-    return "web_stripe";
-  }
-  if (getCapacitorPlatform() === "ios") return "native_iap";
-  return "native_blocked";
+  const platform = getCapacitorPlatform();
+  if (platform === "android") return "native_blocked";
+  if (platform === "ios") return "native_iap";
+  if (isStoreShellClient()) return "native_iap";
+  return "web_stripe";
 }
 
 export function canUseStripeCheckout(): boolean {
@@ -165,14 +198,20 @@ export function hideWebCheckoutUi(
   return mode !== "web_stripe";
 }
 
-/** Android / blocked shells — purchases unavailable. */
+/**
+ * Android / blocked shells — no purchase CTA and no “buy on the website” steering
+ * (Google Play Payments + Apple 3.1.1).
+ */
 export const NATIVE_NO_IAP_MESSAGE =
-  "In-app purchases are not available on this platform yet. On iPhone/iPad, upgrade with Apple In-App Purchase. On the website, you can manage billing with Stripe.";
+  "In-app purchases are not available in this version. You can keep using Garage Genius with the free features on this device.";
 
 export const NATIVE_ACCOUNT_LIMITS_TITLE = "Upgrade your plan";
 
 export const NATIVE_ACCOUNT_LIMITS_BODY =
   "This feature isn’t included with your current plan. Subscribe with Apple In-App Purchase to unlock Pro.";
+
+export const NATIVE_ACCOUNT_LIMITS_BODY_ANDROID =
+  "This feature isn’t included with your current plan on this device.";
 
 export const NATIVE_WEBSITE_MANAGE_HINT =
   "Purchases in this app use Apple In-App Purchase. Manage or cancel in Settings → Apple ID → Subscriptions.";
@@ -186,11 +225,25 @@ export const NATIVE_TERMS_BILLING_BULLETS = [
   "Deleting your account cancels access immediately; Apple subscriptions are managed in Apple ID settings.",
 ] as const;
 
+/** Play store WebView — do not name an alternate checkout (Stripe / website). */
+export const NATIVE_TERMS_BILLING_BULLETS_ANDROID = [
+  "This Android version of Garage Genius provides the free DIY coaching features of the service.",
+  "Subscriptions are not sold in this Android app.",
+  "If your signed-in account already includes a plan from another Garage Genius experience, that access may appear here after you sign in.",
+  "Deleting your account cancels access to Garage Genius data we store for you.",
+] as const;
+
 export const NATIVE_DELETE_ACCOUNT_BODY =
   "Permanently deletes your Garage Genius account, vehicles, chats, maintenance history, and inventory we store for you. This cannot be undone. Apple subscriptions must be canceled separately in your Apple ID settings.";
 
+export const NATIVE_DELETE_ACCOUNT_BODY_ANDROID =
+  "Permanently deletes your Garage Genius account, vehicles, chats, maintenance history, and inventory we store for you. This cannot be undone.";
+
 export const NATIVE_PRIVACY_BILLING =
   "Apple App Store transaction identifiers and plan status (for iOS In-App Purchases); Stripe customer IDs and plan status on the website (card details are handled by Apple or Stripe, not stored on our servers).";
+
+export const NATIVE_PRIVACY_BILLING_ANDROID =
+  "Plan status tied to your signed-in Garage Genius account. This Android app does not collect payment card numbers.";
 
 export const NATIVE_PRIVACY_PUSH =
   "reminder endpoint if you enable maintenance reminders.";
@@ -201,12 +254,22 @@ export const NATIVE_PRIVACY_USE =
 export const NATIVE_PRIVACY_CHOICES =
   "You can sign out, manage Apple subscriptions in your Apple ID settings, review plan details on the Garage Genius website, decline AI provider consent (DeepSeek / Kimi) until you agree, disable push reminders, limit what vehicle or photo data you enter, and delete your account.";
 
+export const NATIVE_PRIVACY_CHOICES_ANDROID =
+  "You can sign out, decline AI provider consent (DeepSeek / Kimi) until you agree, disable push reminders, limit what vehicle or photo data you enter, and delete your account.";
+
 export function nativeUpgradeBlockedMessage(): string {
   const mode = getBillingMode();
   if (mode === "native_iap") {
     return "Use Apple In-App Purchase in this app to change your plan.";
   }
   return NATIVE_NO_IAP_MESSAGE;
+}
+
+export function nativeAccountLimitsBody(): string {
+  if (getBillingMode() === "native_blocked") {
+    return NATIVE_ACCOUNT_LIMITS_BODY_ANDROID;
+  }
+  return NATIVE_ACCOUNT_LIMITS_BODY;
 }
 
 export function storeSafePlanLabel(input: {

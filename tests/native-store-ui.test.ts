@@ -1,13 +1,20 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   NATIVE_DELETE_ACCOUNT_BODY,
   NATIVE_LANDING_CTA,
   NATIVE_LANDING_KICKER,
+  NATIVE_LANDING_KICKER_ANDROID,
+  NATIVE_NO_IAP_MESSAGE,
+  NATIVE_TERMS_BILLING_BULLETS_ANDROID,
   canUseNativeIap,
   getBillingMode,
+  hideStorePurchaseUi,
+  nativeLandingKicker,
   requestLooksStoreShell,
   storeSafePlanLabel,
+  storeShellPlatformFromRequest,
+  userAgentLooksLikeIosAppWebView,
   userAgentLooksNative,
 } from "@/lib/native-platform";
 import {
@@ -95,5 +102,51 @@ describe("store shell detection", () => {
           "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 GarageGeniusNative",
       }),
     ).toBe(true);
+  });
+
+  it("does not classify Android native UA as iOS WKWebView", () => {
+    const androidUa =
+      "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36 GarageGeniusNative";
+    expect(userAgentLooksNative(androidUa)).toBe(true);
+    expect(userAgentLooksLikeIosAppWebView(androidUa)).toBe(false);
+    expect(storeShellPlatformFromRequest({ userAgent: androidUa })).toBe(
+      "android",
+    );
+    expect(requestLooksStoreShell({ userAgent: androidUa })).toBe(true);
+  });
+
+  it("treats Android Chrome without the native token as website (Stripe allowed)", () => {
+    const chromeUa =
+      "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36";
+    expect(requestLooksStoreShell({ userAgent: chromeUa })).toBe(false);
+    expect(storeShellPlatformFromRequest({ userAgent: chromeUa })).toBe("web");
+  });
+});
+
+describe("Android Play billing policy copy", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("does not steer Android users to website or Apple checkout", () => {
+    const banned = /website|stripe|apple|iphone|safari/i;
+    expect(NATIVE_NO_IAP_MESSAGE).not.toMatch(banned);
+    expect(NATIVE_LANDING_KICKER_ANDROID).not.toMatch(banned);
+    expect(NATIVE_LANDING_KICKER_ANDROID).not.toMatch(/14-day|no card/i);
+    for (const bullet of NATIVE_TERMS_BILLING_BULLETS_ANDROID) {
+      expect(bullet).not.toMatch(/stripe|buy on|open safari|website to/i);
+    }
+  });
+
+  it("blocks billing mode and hides purchase CTAs for Android native UA", () => {
+    vi.stubGlobal("window", {});
+    vi.stubGlobal("navigator", {
+      userAgent:
+        "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/131.0.0.0 Mobile Safari/537.36 GarageGeniusNative",
+    });
+    expect(getBillingMode()).toBe("native_blocked");
+    expect(canUseNativeIap()).toBe(false);
+    expect(hideStorePurchaseUi()).toBe(true);
+    expect(nativeLandingKicker()).toBe(NATIVE_LANDING_KICKER_ANDROID);
   });
 });

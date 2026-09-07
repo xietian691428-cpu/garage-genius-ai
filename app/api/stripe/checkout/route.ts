@@ -23,6 +23,10 @@ import {
   BILLING_CHECKOUT_UNAVAILABLE,
   toUserFacingBillingError,
 } from "@/lib/billing-errors";
+import {
+  stripeBlockedForStoreRequest,
+  stripeStoreShellBlockedJson,
+} from "@/lib/stripe-web-guard";
 
 export const runtime = "nodejs";
 
@@ -60,6 +64,10 @@ function parseBody(raw: unknown): {
 
 export async function POST(req: NextRequest) {
   try {
+    if (stripeBlockedForStoreRequest(req)) {
+      return stripeStoreShellBlockedJson();
+    }
+
     if (isQaUnlockEnabled()) {
       return NextResponse.json(
         { error: qaPaymentDisabledMessage() },

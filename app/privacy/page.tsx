@@ -3,11 +3,16 @@ import LegalDocLayout from "@/components/legal/LegalDocLayout";
 import StoreSafeText from "@/components/legal/StoreSafeText";
 import {
   NATIVE_PRIVACY_BILLING,
+  NATIVE_PRIVACY_BILLING_ANDROID,
   NATIVE_PRIVACY_CHOICES,
+  NATIVE_PRIVACY_CHOICES_ANDROID,
   NATIVE_PRIVACY_PUSH,
   NATIVE_PRIVACY_USE,
 } from "@/lib/native-platform";
-import { readForceStoreSafe } from "@/lib/store-shell-request";
+import {
+  readForceStoreSafe,
+  readStoreShellPlatform,
+} from "@/lib/store-shell-request";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Garage Genius AI",
@@ -16,7 +21,11 @@ export const metadata: Metadata = {
 };
 
 export default async function PrivacyPage() {
-  const storeSafe = await readForceStoreSafe();
+  const [storeSafe, storePlatform] = await Promise.all([
+    readForceStoreSafe(),
+    readStoreShellPlatform(),
+  ]);
+  const androidStore = storePlatform === "android";
   return (
     <LegalDocLayout title="Privacy Policy" updated="July 30, 2026">
       <section>
@@ -71,7 +80,11 @@ export default async function PrivacyPage() {
             <strong className="text-slate-200">Billing:</strong>{" "}
             <StoreSafeText
               forceStoreSafe={storeSafe}
-              store={NATIVE_PRIVACY_BILLING}
+              store={
+                androidStore
+                  ? NATIVE_PRIVACY_BILLING_ANDROID
+                  : NATIVE_PRIVACY_BILLING
+              }
               web="Stripe customer / subscription IDs and status (card details are handled by Stripe, not stored on our servers)."
             />
           </li>
@@ -180,7 +193,11 @@ export default async function PrivacyPage() {
         <p className="mt-2">
           <StoreSafeText
             forceStoreSafe={storeSafe}
-            store={NATIVE_PRIVACY_CHOICES}
+            store={
+              androidStore
+                ? NATIVE_PRIVACY_CHOICES_ANDROID
+                : NATIVE_PRIVACY_CHOICES
+            }
             web="You can sign out, cancel a subscription via Stripe Customer Portal (or the applicable app store), disable push reminders, limit what vehicle or photo data you enter, and delete your account."
           />{" "}
           For EU / UK

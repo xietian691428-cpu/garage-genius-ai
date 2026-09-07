@@ -280,7 +280,7 @@ describe("source regressions for App Store 2.1 / 3.1.1", () => {
     expect(landing).toContain('id="pricing"');
     expect(landing).not.toMatch(/\{!storeSafe && \(\s*<section id="pricing"/);
     expect(landing).toContain("NATIVE_LANDING_CTA");
-    expect(landing).toContain("NATIVE_LANDING_KICKER");
+    expect(landing).toContain("nativeLandingKicker");
     expect(landing).toContain("no card required");
     const platform = readFileSync("lib/native-platform.ts", "utf8");
     expect(platform).toContain('NATIVE_LANDING_CTA = "Start free"');

@@ -50,7 +50,8 @@ function GarageAppInner() {
     null,
   );
   const [focusCommand, setFocusCommand] = useState<FocusCommand | null>(null);
-  const { showTrialEndedPrompt, dismissTrialEndedPrompt } = useSubscription();
+  const { showTrialEndedPrompt, dismissTrialEndedPrompt, refresh } =
+    useSubscription();
   const {
     vehicles,
     currentVehicle,
@@ -74,6 +75,22 @@ function GarageAppInner() {
   useEffect(() => {
     setMobileNavPlacement(isNativeCapacitor() ? "bottom" : "top");
   }, []);
+
+  useEffect(() => {
+    const billing = searchParams.get("billing");
+    if (
+      billing !== "success" &&
+      billing !== "portal" &&
+      billing !== "support"
+    ) {
+      return;
+    }
+    void refresh();
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("billing");
+    const qs = next.toString();
+    router.replace(qs ? `/app?${qs}` : "/app", { scroll: false });
+  }, [searchParams, refresh, router]);
 
   const setAppTab = useCallback(
     (tab: AppTab) => {

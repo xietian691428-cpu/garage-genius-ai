@@ -25,7 +25,7 @@ const SAFE_EXACT = new Set([
   "Unauthorized",
   "No Stripe customer on file. Subscribe first.",
   "Stripe did not return a checkout URL.",
-  "No active Apple subscriptions found for this Apple ID.",
+  "Card checkout is not available in the store app.",
 ]);
 
 const SAFE_PATTERNS: RegExp[] = [
