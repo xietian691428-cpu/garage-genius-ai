@@ -130,6 +130,61 @@ Data deletion: Settings → Delete account. Privacy policy URL: `https://garageg
 
 ## After Play App Signing SHA-256 is known
 
-1. Update `public/.well-known/assetlinks.json`
-2. Redeploy production
-3. Play Console → App content → App Links / Deep links verification
+The repo still has a placeholder. **Do not invent a fingerprint.** Play-installed apps are signed with Google’s App Signing cert, not the local debug keystore.
+
+1. Play Console → your app → **Test and release → App integrity → App signing** (or **Setup → App signing**).
+2. Copy **App signing key certificate** → **SHA-256 certificate fingerprint** (colon-separated hex).
+3. If you also sideload / internal-test with your **upload key**, copy that SHA-256 too and keep both in the JSON array.
+4. Paste into `public/.well-known/assetlinks.json` (replace `REPLACE_WITH_PLAY_APP_SIGNING_SHA256`).
+5. Redeploy production, then Play Console → App content → App Links verification.
+
+Format example (colons required):
+
+```
+"AA:BB:CC:…:FF"
+```
+
+---
+
+## Play screenshot shoot list (phone v1)
+
+**Do not** claim 7"/10" tablet support in the listing unless you also upload tablet shots. For first publish, **phone + required graphics** is enough.
+
+### Required graphics (not screenshots)
+
+| Asset | Exact size | File | Notes |
+|-------|------------|------|--------|
+| Hi-res icon | **512 × 512** | 32-bit PNG, alpha OK, ≤ 1024 KB | Export from `resources/icon-only.png` (1024). No “#1 / FREE / SALE” badges. |
+| Feature graphic | **1024 × 500** | JPEG or 24-bit PNG, **no alpha** | Dark `#0a0f1c` + cyan mark + short name. Keep logo/name in the **center** (Play crops edges). No “Download now”. |
+
+### Phone screenshots (required)
+
+| Rule | Value |
+|------|--------|
+| Count | **Minimum 2**; upload **4–8** (4+ at 1080px helps Play recommendation slots) |
+| Recommended pixels | **1080 × 1920** portrait (9:16) |
+| Also accepted | Each side 320–3840 px; longest side ≤ 2× shortest |
+| Format | JPEG or 24-bit PNG, **no transparency**, ≤ 8 MB each |
+| Language | Same as listing (**en-US**). Clean status bar (full battery/wifi, no carrier name, no notifications). |
+
+**Shot order (actual in-app UI, Free demo account, English):**
+
+1. **Home / vehicle dashboard** — car map + a region checklist (brakes or battery).  
+2. **Chat** — a real diagnosis thread (e.g. P0420 / brake noise) with the vehicle selected.  
+3. **Coach** — a playbook step with the safety confirm visible.  
+4. **History or receipt** — a logged job or scanned receipt.  
+5. *(optional)* **Parts inventory** — saved parts for the current car.  
+6. *(optional)* **Enter fault code / OBD screenshot** — not a fake “Bluetooth always works” claim.  
+7. *(optional)* **Settings** — account + delete-account visible; **no Stripe / Apple / “buy on web”**.
+
+**Do not photograph:** Upgrade/Subscribe, Apple IAP prices, Stripe Checkout, the Unlimited QA account, Chinese UI, “Best app / #1 / Download now” overlays, another store’s badge.
+
+Optional 7-inch / 10-inch (only if you want tablet listing surfaces): 4 shots each; 7" **1200 × 1920**, 10" **1600 × 2560** portrait.
+
+---
+
+## Android Pro later (do not do this in v1)
+
+Wait until this **free** Play listing is **production-live**, then ship a **new versionCode** with **Google Play Billing** subscriptions (same Pro / Pro Heavy monthly+yearly as iOS). Server-verify Play purchases into `profiles.subscription_status`.
+
+Never “turn on Stripe inside the Android WebView” after approval — that can get the app removed. Website Stripe stays on Chrome/desktop only. Same-account Pro from web or iOS may continue to work after sign-in; that is not a purchase button.

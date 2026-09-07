@@ -216,10 +216,12 @@ StoreKit 2 IAP only (`docs/APP_STORE_REVIEW_NOTES.md`).
 **Google Play (this versionCode 8)**  
 Free coaching features only. No Play Billing SKUs. No Stripe in the WebView. No “buy on the website” CTA. Listing and review notes: `docs/PLAY_STORE_REVIEW_NOTES.md`.
 
-**Later**  
-Play Billing for the same Pro / Heavy products, server-verified into `profiles.subscription_status`.
+**Later (after the free Play listing is production-live)**  
+Implement **Google Play Billing** for the same Pro / Heavy products, verify on the server, write `profiles.subscription_status`. Ship a new `versionCode`. Do **not** enable Stripe Checkout in the Android WebView after approval.
 
 Do **not** mix “open our website to subscribe” into either store binary.
+
+Phone screenshot sizes and shot order: `docs/PLAY_STORE_REVIEW_NOTES.md`.
 
 ---
 
