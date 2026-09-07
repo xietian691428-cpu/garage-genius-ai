@@ -16,7 +16,7 @@ Website Stripe Checkout stays on **Chrome / desktop / mobile Safari** only. The 
 
 1. Deploy web to `https://garagegenius.cloud` (this Capacitor shell loads that URL).
 2. Play Console → create app → **App signing** → copy **App signing key certificate SHA-256**.
-3. Paste that fingerprint into `public/.well-known/assetlinks.json` (replace `REPLACE_WITH_PLAY_APP_SIGNING_SHA256`) and redeploy web so App Links can verify.
+3. Paste that fingerprint into `public/.well-known/assetlinks.json` (**done** for App Signing) and redeploy web so App Links can verify. If you also need the **upload key** fingerprint for sideload/internal builds, add it as a second array entry.
 4. Build a **release AAB** (Android Studio / `bundleRelease`), upload to an **internal testing** track first.
 5. Demo account must be **Free** (not the internal Unlimited QA account). Email verified. DeepSeek consent unset so reviewers see the consent dialog.
 

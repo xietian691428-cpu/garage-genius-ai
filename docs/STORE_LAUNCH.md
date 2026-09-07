@@ -17,7 +17,7 @@ Native shell: Capacitor 8 (remote URL → production Next.js)
 | Permission strings (camera / mic / photos / BT) | **Declared** |
 | Stripe inside native WebView | **Blocked client + API** (`lib/billing.ts`, `lib/stripe-web-guard.ts` → 403) |
 | StoreKit / Play Billing IAP | **iOS StoreKit 2 wired**; **Android Play Billing not in this version** (free features only; no web-pay CTA in the Play app) |
-| Universal Links / App Links templates | **Present** (Play SHA-256 still `REPLACE_WITH_PLAY_APP_SIGNING_SHA256`) |
+| Universal Links / App Links templates | **Present** (Play App Signing SHA-256 set in `assetlinks.json`) |
 | Screenshots / store listing assets | **You — create in consoles** |
 | Sign in with Apple (if Google enabled) | **Ops — enable in Supabase + Apple** |
 | Play listing copy / review notes | **`docs/PLAY_STORE_REVIEW_NOTES.md`** |
@@ -240,7 +240,7 @@ Templates live at:
 **You must:**
 
 1. Replace `TEAMID` in `apple-app-site-association` with your Apple Team ID (**done:** `JUUADU6WTN`).  
-2. Replace `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` with Play App Signing cert fingerprint.  
+2. Play App Signing SHA-256 is in `public/.well-known/assetlinks.json` (redeploy after any fingerprint change).  
 3. Xcode → Signing & Capabilities → **Associated Domains**: `applinks:garagegenius.cloud` (**wired in** `App.entitlements`)  
 4. Supabase Redirect URLs also include:  
    `https://garagegenius.cloud/auth/callback`  
@@ -366,7 +366,7 @@ Terms URL: **https://garagegenius.cloud/terms**
 ## 9. Current blockers (before paid native launch)
 
 1. **IAP is implemented on iOS** — StoreKit 2 via `@capgo/native-purchases`; website Stripe stays on Safari / Chrome only.  
-2. **Play App Links not finalized** — replace `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` after Play App Signing is created.  
+2. **Play App Links** — App Signing SHA-256 is in `assetlinks.json`; verify in Play Console after production deploy.  
 3. **Java / Android SDK** may be missing locally — `npx cap open android` after installing Android Studio.  
 4. **Sign in with Apple** must be live if Google is offered on iOS.  
 5. **Store screenshots / icons** not produced yet.  
