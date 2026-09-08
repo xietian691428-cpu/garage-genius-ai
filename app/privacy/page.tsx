@@ -169,7 +169,7 @@ export default async function PrivacyPage() {
         </p>
       </section>
 
-      <section>
+      <section id="deletion">
         <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
           6. Retention &amp; deletion
         </h2>
@@ -179,7 +179,11 @@ export default async function PrivacyPage() {
           <strong className="text-slate-200">Settings → Delete account</strong>.
           That removes your Auth user and cascaded app data we store for you
           (vehicles, chats, maintenance history, inventory, and related rows).
-          We may retain limited records required for legal, fraud, tax, or
+          If you no longer have the app, request deletion by email — see{" "}
+          <a href="/delete-account" className="text-cyan-400 hover:underline">
+            Delete account &amp; data
+          </a>
+          . We may retain limited records required for legal, fraud, tax, or
           accounting reasons (for example paid invoice references). Stripe may
           retain its own billing records under its policies. After deletion,
           recovery is not available.

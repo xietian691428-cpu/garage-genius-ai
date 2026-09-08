@@ -4,3 +4,5 @@ export const APPLE_STANDARD_EULA_URL =
 
 export const PRIVACY_POLICY_PATH = "/privacy";
 export const TERMS_PATH = "/terms";
+/** Google Play Data safety — account / data deletion web resource. */
+export const DELETE_ACCOUNT_PATH = "/delete-account";

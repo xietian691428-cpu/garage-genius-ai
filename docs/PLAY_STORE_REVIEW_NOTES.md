@@ -103,7 +103,7 @@ Declare collection that actually happens for a signed-in user:
 
 **Approximate location / contacts / SMS:** not collected for core features.
 
-Data deletion: Settings → Delete account. Privacy policy URL: `https://garagegenius.cloud/privacy`
+Data deletion: Settings → Delete account, or https://garagegenius.cloud/delete-account (email path if the app is uninstalled). Privacy policy: `https://garagegenius.cloud/privacy`
 
 ---
 

@@ -42,6 +42,9 @@ export default function LegalDocLayout({
           <Link href="/privacy" className="hover:text-cyan-400">
             Privacy Policy
           </Link>
+          <Link href="/delete-account" className="hover:text-cyan-400">
+            Delete account
+          </Link>
           <Link href="/terms" className="hover:text-cyan-400">
             Terms of Service
           </Link>

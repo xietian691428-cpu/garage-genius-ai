@@ -25,6 +25,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/pricing") ||
     pathname.startsWith("/privacy") ||
     pathname.startsWith("/terms") ||
+    pathname.startsWith("/delete-account") ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth")
   ) {
