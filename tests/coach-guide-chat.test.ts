@@ -5,6 +5,7 @@ import {
   formatGuideVehicleAnchor,
   newQuestionChatPrompt,
   guideSafetyMatchText,
+  stripGuideInjectForDisplay,
 } from "@/lib/coach-guide-chat";
 import {
   buildTurnFocus,
@@ -74,6 +75,27 @@ describe("Guide ↔ Chat shared inject (Player internals untouched)", () => {
     );
     expect(drift.shouldReset).toBe(true);
     expect(drift.reason).toBe("explicit_new_issue");
+  });
+
+  it("hides anchor / focus-safety blocks from the user bubble only", () => {
+    const focus = buildTurnFocus(
+      "Car is on jack stands. Parking brake is not holding on the slope.",
+      0,
+    );
+    const prompt = continueGuideChatPrompt({
+      guideTitle: "Oil & Filter Service",
+      vehicle: camry,
+      focus,
+    });
+    expect(prompt).toContain("[VEHICLE_ANCHOR]");
+    const shown = stripGuideInjectForDisplay(prompt);
+    expect(shown).toMatch(/^Continue this coach guide \(Oil & Filter Service\)/);
+    expect(shown).not.toContain("[VEHICLE_ANCHOR]");
+    expect(shown).not.toContain("[FOCUS_SAFETY]");
+    expect(shown).not.toContain("[CRITICAL STATE]");
+    expect(stripGuideInjectForDisplay("Brakes squeal when cold.")).toBe(
+      "Brakes squeal when cold.",
+    );
   });
 
   it("safety match text prefers raised/PB over a casual oil-guide title", () => {

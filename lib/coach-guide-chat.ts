@@ -69,6 +69,19 @@ export function continueGuideChatPrompt(input: {
     .trim();
 }
 
+const GUIDE_INJECT_START =
+  /(?:^|\n)\s*\[(?:VEHICLE_ANCHOR|FOCUS_SAFETY|CRITICAL STATE)\]/;
+
+/**
+ * User bubble / composer text for a guide handoff turn. The model still
+ * receives the full message; only the machine blocks are hidden.
+ */
+export function stripGuideInjectForDisplay(content: string): string {
+  const idx = content.search(GUIDE_INJECT_START);
+  if (idx < 0) return content;
+  return content.slice(0, idx).trimEnd();
+}
+
 /** Hits existing drift reset (`new question` / `another issue`). */
 export function newQuestionChatPrompt(): string {
   return "New question — this is a different issue from the coach guide. I have another issue on this vehicle.";

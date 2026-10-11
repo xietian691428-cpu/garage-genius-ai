@@ -9,6 +9,7 @@ import { isPhotoPromptWithoutImages } from "@/lib/chat-empty-photo";
 import { stripTrailingLegalDisclaimer } from "@/lib/legal-disclaimer";
 import { stripPartsDataFromContent } from "@/lib/parse-ai-parts";
 import { stripFocusFromContent } from "@/lib/parse-ai-focus";
+import { stripGuideInjectForDisplay } from "@/lib/coach-guide-chat";
 import {
   Volume2,
   Crosshair,
@@ -69,7 +70,7 @@ export default function MessageBubble({
   const { t, i18n } = useTranslation();
   const isUser = message.role === "user";
   const displayContent = isUser
-    ? message.content
+    ? stripGuideInjectForDisplay(message.content)
     : stripTrailingLegalDisclaimer(
         stripFocusFromContent(stripPartsDataFromContent(message.content)),
       );
@@ -218,7 +219,7 @@ export default function MessageBubble({
           <div className="mb-2 flex justify-end">
             <button
               type="button"
-              onClick={() => onEditUser(message.content)}
+              onClick={() => onEditUser(displayContent)}
               className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-blue-700/80 px-2.5 py-1 text-[11px] text-blue-100 transition hover:bg-blue-700"
               title="Edit & resend"
             >

@@ -32,7 +32,6 @@ import { supabase } from "@/lib/supabase";
 import { useTokenUsage } from "@/hooks/useTokenUsage";
 import { useSubscription } from "@/hooks/useSubscription";
 import UpgradeButton from "@/components/ui/UpgradeButton";
-import { extractFocusCommand, resolveFocusCommand, sanitizeFocusCommand } from "@/lib/parse-ai-focus";
 import type { FocusCommand } from "@/lib/types/focus";
 import type { RagKnowledgeHit } from "@/lib/types/rag";
 import { maintenanceService } from "@/lib/maintenance-records";
@@ -233,6 +232,11 @@ export default function ChatApp({
     images: string[];
   } | null>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
+  const pendingPersistRef = useRef<{
+    vehicleId: string;
+    messages: ChatMessage[];
+    isPro: boolean;
+  } | null>(null);
   const { refresh: refreshTokenUsage } = useTokenUsage();
   const { isFree, isPro, features } = useSubscription();
   const sessionSafety = useMemo(() => {
@@ -473,7 +477,9 @@ export default function ChatApp({
 
     const vehicleId = currentVehicle.id;
     const snapshot = messages;
+    pendingPersistRef.current = { vehicleId, messages: snapshot, isPro };
     const timer = window.setTimeout(() => {
+      pendingPersistRef.current = null;
       void chatCloudService
         .save(vehicleId, snapshot, { isPro })
         .catch((err) => console.warn("[ChatApp] cloud save:", err));
@@ -481,6 +487,18 @@ export default function ChatApp({
 
     return () => window.clearTimeout(timer);
   }, [messages, currentVehicle, ready, isPro]);
+
+  // Tab switches unmount Chat; flush a debounced save that hasn't fired yet.
+  useEffect(() => {
+    return () => {
+      const pending = pendingPersistRef.current;
+      if (!pending) return;
+      pendingPersistRef.current = null;
+      void chatCloudService
+        .save(pending.vehicleId, pending.messages, { isPro: pending.isPro })
+        .catch((err) => console.warn("[ChatApp] unmount save:", err));
+    };
+  }, []);
 
   useEffect(() => {
     if (!seedPrompt?.trim()) {
@@ -796,16 +814,6 @@ export default function ChatApp({
             latestUserId: lastUser.id,
           }),
         );
-      }
-
-      const focus = sanitizeFocusCommand(
-        data.suggestedFocus ||
-          resolveFocusCommand(assistantContent, data.ragHits) ||
-          extractFocusCommand(assistantContent),
-        "focus.ChatApp",
-      );
-      if (focus && onFocusDetected) {
-        onFocusDetected(focus);
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
