@@ -27,10 +27,9 @@ export const INVENTED_OEM_RE =
   /\b\d{4,5}-[A-Z0-9]{3,}(?:-[A-Z0-9]{2,})?\b/g;
 
 export const SPEC_MANUAL_REWRITE =
-  "the figure in the owner's manual, fill cap, under-hood label, or door sticker";
+  "the amount in your owner's manual or under-hood label";
 
-export const SPEC_TORQUE_REWRITE =
-  "the torque spec in the owner's manual (do not guess ft-lb or N·m)";
+export const SPEC_TORQUE_REWRITE = "the torque spec in the owner's manual";
 
 export const SPEC_OEM_REWRITE =
   "an OEM number verified with your VIN / dealer EPC";
@@ -64,12 +63,40 @@ export function specAllowlistBlob(ctx?: SpecAnchorContext | null): string {
   return specFluidAllowlistBlob(ctx);
 }
 
+const UNIT_FIGURE_RE =
+  /(\d+(?:\.\d+)?)\s*(qts?|quarts?|liters?|litres?|l|ft-?lbs?|foot[-\s]?pounds?|n[·.\s-]*m|newton[-\s]?metres?)(?![a-z])/gi;
+
+function unitClass(unit: string): string | null {
+  const u = unit.toLowerCase();
+  if (/^(?:qts?|quarts?)$/.test(u)) return "qt";
+  if (/^(?:liters?|litres?|l)$/.test(u)) return "l";
+  if (/^(?:ft-?lbs?|foot[-\s]?pounds?)$/.test(u)) return "ftlb";
+  if (/^(?:n[·.\s-]*m|newton[-\s]?metres?)$/.test(u)) return "nm";
+  return null;
+}
+
+/** "4.8 quarts" / "4.80 qt" → "4.8|qt" so unit spelling can't defeat an anchor. */
+function canonicalFigures(text: string): Set<string> {
+  const out = new Set<string>();
+  for (const m of text.matchAll(new RegExp(UNIT_FIGURE_RE.source, "gi"))) {
+    const cls = unitClass(m[2]);
+    const num = Number.parseFloat(m[1]);
+    if (cls && Number.isFinite(num)) out.add(`${num}|${cls}`);
+  }
+  return out;
+}
+
 /**
  * Exact token match (case-insensitive). Avoids "4.8 qt…" substring-allowing "8 qt".
  */
 function spanAllowed(span: string, allowLower: string): boolean {
   const token = span.trim().toLowerCase().replace(/\s+/g, " ");
   if (!token || !allowLower) return false;
+  const spanFigures = canonicalFigures(token);
+  if (spanFigures.size > 0) {
+    const allowed = canonicalFigures(allowLower);
+    if ([...spanFigures].every((f) => allowed.has(f))) return true;
+  }
   const parts = allowLower
     .split(/\n+/)
     .map((p) => p.trim().replace(/\s+/g, " "))
@@ -165,6 +192,10 @@ function splitPartsData(text: string): Array<{ kind: "prose" | "parts"; value: s
   return chunks;
 }
 
+/** "about 4.5 qt" → drop the hedge with the figure, or the rewrite reads "about the amount…". */
+const APPROX_PREFIX =
+  "(?:(?:\\babout|\\baround|\\broughly|\\bapproximately|\\bapprox\\.?|\\bnearly|\\bjust under|\\bjust over)\\s+|~\\s*)?";
+
 function replaceUnallowed(
   prose: string,
   re: RegExp,
@@ -172,11 +203,22 @@ function replaceUnallowed(
   allowLower: string,
   always?: boolean,
 ): string {
-  const copy = new RegExp(re.source, re.flags.includes("g") ? re.flags : `${re.flags}g`);
-  return prose.replace(copy, (span) => {
-    if (!always && spanAllowed(span, allowLower)) return span;
+  const flags = re.flags.includes("g") ? re.flags : `${re.flags}g`;
+  const withPrefix = new RegExp(`${APPROX_PREFIX}(${re.source})`, flags);
+  return prose.replace(withPrefix, (full: string, span: string) => {
+    if (!always && spanAllowed(span, allowLower)) return full;
     return replacement;
   });
+}
+
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** "X (X)" left by "30 ft-lb (41 N·m)" or "4.5 qt (4.3 L)" → "X". */
+function collapseDuplicateRewrite(prose: string, phrase: string): string {
+  const p = escapeRe(phrase);
+  return prose.replace(new RegExp(`${p}\\s*\\(\\s*${p}\\s*\\)`, "gi"), phrase);
 }
 
 /**
@@ -206,6 +248,8 @@ export function rewriteInventedSpecs(
         true,
       );
       out = replaceUnallowed(out, INVENTED_OEM_RE, SPEC_OEM_REWRITE, fluidAllow);
+      out = collapseDuplicateRewrite(out, SPEC_MANUAL_REWRITE);
+      out = collapseDuplicateRewrite(out, SPEC_TORQUE_REWRITE);
       return out;
     })
     .join("");

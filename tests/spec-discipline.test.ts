@@ -101,6 +101,38 @@ describe("spec discipline (no-anchor fixtures)", () => {
     );
   });
 
+  it("treats qt / quarts spellings of the same garage figure as anchored", () => {
+    const ctx = { oilCapacity: "4.8 qt with filter", oilViscosity: "0W-16" };
+    const reply =
+      "Capacity: 4.8 quarts with filter change. You'll use 4.8 qts, so check the dipstick.";
+    expect(inventedSpecFailures(reply, ctx)).toEqual([]);
+    expect(rewriteInventedSpecs(reply, ctx)).toBe(reply);
+    // A different number is still invented, whatever the spelling.
+    expect(inventedSpecFailures("Fill with 8 quarts.", ctx)).toContain(
+      "invented_spec:qt",
+    );
+    expect(inventedSpecFailures("Fill with 5 quarts.", ctx)).toContain(
+      "invented_spec:qt",
+    );
+    // Oil capacity still never unlocks torque.
+    expect(inventedSpecFailures("Torque to 4.8 ft-lb.", ctx)).toContain(
+      "invented_spec:ft-lb",
+    );
+  });
+
+  it("rewrites read as sentences (no dangling hedge, no doubled phrase)", () => {
+    const qt = rewriteInventedSpecs("Fill about 4.5 quarts first, then check the dipstick.");
+    expect(qt).toBe(
+      "Fill the amount in your owner's manual or under-hood label first, then check the dipstick.",
+    );
+    expect(rewriteInventedSpecs("Fill ~4.5 qt.")).toBe(
+      "Fill the amount in your owner's manual or under-hood label.",
+    );
+    const torque = rewriteInventedSpecs("Torque the drain plug to 30 ft-lb (41 N·m).");
+    expect(torque).toBe("Torque the drain plug to the torque spec in the owner's manual.");
+    expect(torque).not.toMatch(/\d/);
+  });
+
   it("allows torque only when torqueSpec is anchored", () => {
     const ctx = {
       oilCapacity: "4.8 qt",
