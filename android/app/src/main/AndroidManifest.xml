@@ -58,9 +58,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- Photo picker / legacy gallery access depending on API level -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- No READ_MEDIA_* / READ_EXTERNAL_STORAGE: <input type="file"> opens the system picker (Play photo & video policy). -->
 
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />

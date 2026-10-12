@@ -113,7 +113,7 @@ Data deletion: Settings → Delete account, or https://garagegenius.cloud/delete
 |------------|-----|
 | Camera | Photograph vehicle parts, OBD screens, and repair receipts for AI DIY guidance. |
 | Microphone | Hands-free voice coaching when the user enables it. |
-| Photos / images | Choose existing vehicle, OBD, or receipt images. |
+| Photos / images | **No media permission** (no `READ_MEDIA_IMAGES` / `READ_MEDIA_VIDEO` / `READ_EXTERNAL_STORAGE` since versionCode 10). Existing images are chosen through the Android system picker, which grants one-time access to the selected file. |
 | Bluetooth / BLE | Optional future or Web Bluetooth OBD adapters. Not required to use the app. Enter fault code and OBD screenshot always work. |
 | Internet | Load the Garage Genius service. |
 
