@@ -1,44 +1,33 @@
 /**
- * Web Bluetooth + ELM327-style OBD-II helper for garage DIY scans.
+ * OBD-II connector for garage DIY scans: transport (Web Bluetooth today) →
+ * ELM327 session (`lib/obd-elm.ts`) → structured `ObdSessionSnapshot`.
  *
- * Supported in Chrome / Edge on computers. Safari and iOS WebViews generally
- * do not expose Web Bluetooth — callers should use photo / manual DTC fallbacks
- * (never invent live OBD readings).
- *
- * BLE UUIDs vary by adapter brand (Veepeak, OBDLINK, generic ELM327 clones).
- * We try a short list of common Nordic UART / custom OBD services.
- *
- * ── Review vs simplified drafts ─────────────────────────
- * ❌ Do NOT return `Record<string, string>` with units baked in
- *    ("90°C") — Dashboard uses typed `ObdLiveSensors` numbers +
- *    `formatLiveSensorValue` / `LIVE_SENSOR_PIDS`.
- * ❌ Do NOT parse with `response.slice(4)` — ELM noise; use `41XX` frame
- *    via exported `parsePIDResponse(pid, raw)`.
- * ✅ PID set matches draft: 05 / 0C / 0D / 11 / 42 / 5C.
- * ✅ Failures leave fields null (never crash the scan).
- * ✅ Use `getObdConnector()` singleton from Dashboard (not `new OBDConnector()`).
+ * Decoding rules live in `lib/obd-protocol.ts`. Never invent readings — a
+ * failed or unsupported read leaves fields null.
  */
 
 import { lookupDtc } from "@/lib/dtc";
+import { ElmSession, ObdSessionError, type ObdScanStep } from "@/lib/obd-elm";
+import {
+  evaluateSmogReadiness,
+  modelYearFromVin,
+} from "@/lib/obd-protocol";
+import {
+  WebBluetoothTransport,
+  isWebBluetoothAvailable,
+  type ObdTransport,
+} from "@/lib/obd-transport";
+import { formatObdValue, type ObdUnitSystem } from "@/lib/obd-units";
+import { getCapacitorPlatform } from "@/lib/native-platform";
 import type {
   ObdConnectErrorCode,
   ObdConnectResult,
+  ObdSessionDtc,
   ObdSessionSnapshot,
 } from "@/lib/types/obd-session";
 
-export type ObdDtc = {
-  code: string;
-  desc: string;
-  severity: "Info" | "Low" | "Moderate" | "High";
-};
-
-export type ObdScanResult = {
-  connected: boolean;
-  /** Raw adapter responses for debugging */
-  raw: string[];
-  codes: ObdDtc[];
-  note: string;
-};
+export { isWebBluetoothAvailable };
+export type { ObdScanStep };
 
 /** Best-effort Mode 01 live values for Dashboard sensors panel */
 export type ObdLiveSensors = {
@@ -52,8 +41,8 @@ export type ObdLiveSensors = {
 };
 
 /**
- * Dashboard live PID set (Mode 01).
- * Values are numeric — UI adds units (do not return "90°C" strings).
+ * Dashboard live PID set (Mode 01). Values are metric numbers — UI converts
+ * and adds units via `formatLiveSensorValue`.
  */
 export const LIVE_SENSOR_PIDS: ReadonlyArray<{
   key: keyof Omit<ObdLiveSensors, "at">;
@@ -68,6 +57,8 @@ export const LIVE_SENSOR_PIDS: ReadonlyArray<{
   { key: "voltage", pid: "42", label: "Voltage", unit: "V" },
   { key: "oilTempC", pid: "5C", label: "Oil temp", unit: "°C" },
 ];
+
+const LIVE_PID_NUMBERS = LIVE_SENSOR_PIDS.map((p) => parseInt(p.pid, 16));
 
 export function emptyLiveSensors(): ObdLiveSensors {
   return {
@@ -86,136 +77,41 @@ export function hasLiveSensorData(sensors: ObdLiveSensors | null): boolean {
   return LIVE_SENSOR_PIDS.some(({ key }) => sensors[key] != null);
 }
 
-/** Format a numeric PID for Dashboard cells */
+/** Format a metric PID value for display (°F / mph by default for US owners). */
 export function formatLiveSensorValue(
   value: number | null,
   unit: string,
+  system: ObdUnitSystem = "imperial",
 ): string {
-  if (value == null || Number.isNaN(value)) return "—";
-  if (!unit) return String(Math.round(value));
-  if (unit === "V") return `${value.toFixed(2)} ${unit}`;
-  if (unit === "%") return `${Math.round(value)} ${unit}`;
-  return `${Math.round(value)} ${unit}`;
+  return formatObdValue(value, unit, system);
 }
 
-type BluetoothRequestDeviceFn = (options: {
-  filters?: Array<{ namePrefix?: string; services?: string[] }>;
-  acceptAllDevices?: boolean;
-  optionalServices?: string[];
-}) => Promise<BluetoothDeviceLike>;
-
-type BluetoothDeviceLike = {
-  name?: string;
-  gatt?: {
-    connected: boolean;
-    connect: () => Promise<BluetoothRemoteGATTServerLike>;
-    disconnect: () => void;
-  } | null;
-  addEventListener?: (type: string, listener: () => void) => void;
-};
-
-type BluetoothRemoteGATTServerLike = {
-  connected: boolean;
-  getPrimaryService: (service: string) => Promise<BluetoothRemoteGATTServiceLike>;
-  device: BluetoothDeviceLike;
-};
-
-type BluetoothRemoteGATTServiceLike = {
-  getCharacteristic: (
-    characteristic: string,
-  ) => Promise<BluetoothRemoteGATTCharacteristicLike>;
-};
-
-type BluetoothRemoteGATTCharacteristicLike = {
-  writeValue: (value: BufferSource) => Promise<void>;
-  readValue: () => Promise<DataView>;
-  startNotifications?: () => Promise<BluetoothRemoteGATTCharacteristicLike>;
-  addEventListener?: (
-    type: string,
-    listener: (ev: { target: { value?: DataView } }) => void,
-  ) => void;
-  removeEventListener?: (
-    type: string,
-    listener: (ev: { target: { value?: DataView } }) => void,
-  ) => void;
-};
-
-/** Common BLE UART / OBD service + TX characteristic pairs */
-const SERVICE_CANDIDATES: Array<{ service: string; write: string; notify?: string }> = [
-  {
-    // Nordic UART (many ELM327 BLE clones)
-    service: "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
-    write: "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
-    notify: "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
-  },
-  {
-    service: "000018f0-0000-1000-8000-00805f9b34fb",
-    write: "00002af1-0000-1000-8000-00805f9b34fb",
-    notify: "00002af0-0000-1000-8000-00805f9b34fb",
-  },
-  {
-    service: "0000fff0-0000-1000-8000-00805f9b34fb",
-    write: "0000fff2-0000-1000-8000-00805f9b34fb",
-    notify: "0000fff1-0000-1000-8000-00805f9b34fb",
-  },
-  {
-    service: "0000ffe0-0000-1000-8000-00805f9b34fb",
-    write: "0000ffe1-0000-1000-8000-00805f9b34fb",
-  },
-];
-
-function getBluetooth(): { requestDevice: BluetoothRequestDeviceFn } | null {
-  if (typeof navigator === "undefined") return null;
-  const nav = navigator as Navigator & {
-    bluetooth?: { requestDevice: BluetoothRequestDeviceFn };
-  };
-  return nav.bluetooth ?? null;
-}
-
-export function isWebBluetoothAvailable(): boolean {
-  return Boolean(getBluetooth()?.requestDevice);
-}
-
-/** Best-effort Capacitor / native shell detection (no hard dependency). */
-export function isCapacitorNative(): boolean {
-  if (typeof window === "undefined") return false;
-  const w = window as Window & {
-    Capacitor?: { isNativePlatform?: () => boolean; getPlatform?: () => string };
-  };
-  try {
-    return Boolean(w.Capacitor?.isNativePlatform?.());
-  } catch {
-    return false;
+function sensorsFromPids(pids: Map<number, number>): ObdLiveSensors {
+  const sensors = emptyLiveSensors();
+  for (const { key, pid } of LIVE_SENSOR_PIDS) {
+    const v = pids.get(parseInt(pid, 16));
+    if (v != null) sensors[key] = v;
   }
-}
-
-export function getCapacitorPlatform(): "ios" | "android" | "web" | "unknown" {
-  if (typeof window === "undefined") return "unknown";
-  const w = window as Window & {
-    Capacitor?: { getPlatform?: () => string };
-  };
-  const p = (w.Capacitor?.getPlatform?.() || "").toLowerCase();
-  if (p === "ios") return "ios";
-  if (p === "android") return "android";
-  if (p === "web") return "web";
-  return "unknown";
+  return sensors;
 }
 
 /**
- * Whether BLE OBD can be attempted in this runtime.
- * iOS WKWebView / Safari: Web Bluetooth is unavailable — guide to screenshot / manual code.
+ * Whether live OBD can be attempted in this runtime. Store apps need the
+ * native Bluetooth bridge (next app release); WKWebView / Android WebView do
+ * not expose Web Bluetooth.
  */
 export function getObdRuntimeSupport(): {
   supported: boolean;
   code: ObdConnectErrorCode | null;
   message: string;
 } {
-  if (isCapacitorNative() && getCapacitorPlatform() === "ios") {
+  const platform = getCapacitorPlatform();
+  if (platform === "ios") {
     return {
       supported: false,
       code: "capacitor_ios",
       message:
-        "Live Bluetooth OBD is not available in this iPhone and iPad app. Enter the fault code manually or upload an OBD screenshot.",
+        "Live Bluetooth OBD is not available in this iPhone and iPad app version. Enter the fault code manually or upload an OBD screenshot.",
     };
   }
   if (!isWebBluetoothAvailable()) {
@@ -223,13 +119,27 @@ export function getObdRuntimeSupport(): {
       supported: false,
       code: "unsupported",
       message:
-        "Web Bluetooth is not available here. Enter the fault code manually or upload an OBD screenshot.",
+        platform === "android"
+          ? "Live Bluetooth OBD is not available in this app version yet. Enter the fault code manually or upload an OBD screenshot."
+          : "Bluetooth is not available in this browser. Try Chrome, or enter the fault code / upload an OBD screenshot.",
     };
   }
   return { supported: true, code: null, message: "" };
 }
 
 function mapConnectError(err: unknown): ObdConnectResult {
+  if (err instanceof ObdSessionError) {
+    const messages: Record<ObdSessionError["code"], string> = {
+      adapter_silent:
+        "Connected over Bluetooth, but the adapter didn't answer. It may not be an ELM327-compatible scanner (BlueDriver, FIXD, Carly and similar only work with their own apps). Unplug it for 10 seconds and try again.",
+      no_ecu:
+        "The adapter is working, but the car didn't answer. Turn the ignition to ON (or start the engine), push the adapter firmly into the port, wait 10 seconds, then try again.",
+      disconnected:
+        "The adapter disconnected. Keep the phone near the car and make sure no other app is connected to the adapter.",
+    };
+    return { ok: false, code: err.code, message: messages[err.code] };
+  }
+
   const name =
     err && typeof err === "object" && "name" in err
       ? String((err as { name?: string }).name)
@@ -239,15 +149,15 @@ function mapConnectError(err: unknown): ObdConnectResult {
     return {
       ok: false,
       code: "cancelled",
-      message: "Device picker was cancelled. Turn on your adapter and try again.",
+      message:
+        "No adapter was selected. Make sure it's plugged in and the ignition is ON. If it isn't listed, tap “My adapter isn't listed”.",
     };
   }
-  if (name === "SecurityError" || /permission|not allowed/i.test(msg)) {
+  if (name === "SecurityError" || name === "NotAllowedError" || /permission|not allowed/i.test(msg)) {
     return {
       ok: false,
       code: "permission",
-      message:
-        "Bluetooth permission was denied. Allow Bluetooth for this site and retry.",
+      message: "Bluetooth permission was denied. Allow Bluetooth for this site and retry.",
     };
   }
   if (/No compatible OBD|characteristic|service/i.test(msg)) {
@@ -255,530 +165,178 @@ function mapConnectError(err: unknown): ObdConnectResult {
       ok: false,
       code: "service",
       message:
-        "No compatible BLE serial service found. Currently only BLE (Bluetooth Low Energy) ELM327 adapters are supported — Classic Bluetooth is not supported in the browser.",
-    };
-  }
-  if (/gatt|disconnect/i.test(msg)) {
-    return {
-      ok: false,
-      code: "gatt",
-      message: "Bluetooth link failed. Keep the adapter powered and close to the phone.",
+        "This device doesn't offer an OBD serial connection over Bluetooth LE. Classic-Bluetooth-only and Wi-Fi adapters can't connect from a browser.",
     };
   }
   if (/timeout/i.test(msg)) {
     return {
       ok: false,
       code: "timeout",
-      message: "Connection timed out. Power-cycle the adapter and retry.",
+      message: "Connection timed out. Unplug the adapter for 10 seconds, plug it back in, and retry.",
+    };
+  }
+  if (/gatt|disconnect|network/i.test(msg)) {
+    return {
+      ok: false,
+      code: "gatt",
+      message:
+        "Bluetooth link failed. Close other OBD apps that may hold the adapter, keep the phone close, and retry.",
     };
   }
   return { ok: false, code: "unknown", message: msg || "OBD connection failed." };
 }
 
-/** Decode Mode 03 / 07 payload fragments into P0xxx-style codes when possible. */
-export function parseDtcResponse(raw: string): ObdDtc[] {
-  const cleaned = raw
-    .replace(/\s+/g, "")
-    .replace(/>/g, "")
-    .toUpperCase();
-
-  const found = new Set<string>();
-
-  // Explicit P/C/B/U codes sometimes echoed by apps
-  for (const m of cleaned.matchAll(/([PCBU][0-9A-F]{4})/g)) {
-    found.add(m[1]);
-  }
-
-  // Classic ELM: "43 01 71 ..." → pairs after 43
-  const modeIdx = cleaned.indexOf("43");
-  if (modeIdx >= 0) {
-    const hex = cleaned.slice(modeIdx + 2).replace(/[^0-9A-F]/g, "");
-    for (let i = 0; i + 3 < hex.length; i += 4) {
-      const a = parseInt(hex.slice(i, i + 2), 16);
-      const b = parseInt(hex.slice(i + 2, i + 4), 16);
-      if (Number.isNaN(a) || Number.isNaN(b) || (a === 0 && b === 0)) continue;
-      const type = ["P", "C", "B", "U"][(a & 0xc0) >> 6] ?? "P";
-      const d1 = ((a & 0x30) >> 4).toString(16).toUpperCase();
-      const d2 = (a & 0x0f).toString(16).toUpperCase();
-      const d3 = ((b & 0xf0) >> 4).toString(16).toUpperCase();
-      const d4 = (b & 0x0f).toString(16).toUpperCase();
-      found.add(`${type}${d1}${d2}${d3}${d4}`);
-    }
-  }
-
-  return [...found].map((code) => {
-    const hit = lookupDtc(code);
-    return {
-      code: hit.code,
-      desc: hit.desc,
-      severity: hit.severity,
-    };
-  });
+function toSessionDtc(d: { code: string; ecu: string; kind: ObdSessionDtc["kind"] }): ObdSessionDtc {
+  const hit = lookupDtc(d.code);
+  return { code: hit.code, desc: hit.desc, severity: hit.severity, kind: d.kind, ecu: d.ecu };
 }
 
-/**
- * Parse Mode 01 ELM response for a single PID.
- * Looks for `41XX` payload (not raw string slice — adapters echo AT noise).
- * Returns null when unsupported / NO DATA / SEARCHING.
- */
-export function parsePIDResponse(pid: string, raw: string): number | null {
-  const cleanPid = pid.replace(/^0x/i, "").toUpperCase().padStart(2, "0");
-  const upper = raw.toUpperCase();
-  if (
-    /NO DATA|UNABLE TO CONNECT|STOPPED|ERROR|INVALID|BUS INIT|\?/.test(upper) &&
-    !upper.includes(`41${cleanPid}`)
-  ) {
-    return null;
-  }
-  if (/SEARCHING/.test(upper) && !upper.includes(`41${cleanPid}`)) {
-    return null;
-  }
-
-  const hex = upper.replace(/[^0-9A-F]/g, "");
-  const header = `41${cleanPid}`;
-  const idx = hex.indexOf(header);
-  if (idx < 0) return null;
-  const data = hex.slice(idx + header.length);
-  if (data.length < 2) return null;
-
-  const A = parseInt(data.slice(0, 2), 16);
-  const B = data.length >= 4 ? parseInt(data.slice(2, 4), 16) : 0;
-  if (Number.isNaN(A)) return null;
-
-  switch (cleanPid) {
-    case "05": // Coolant °C
-    case "0F": // Intake air °C
-    case "5C": // Engine oil temp °C (not all ECUs)
-      return A - 40;
-    case "0C": // RPM = ((A*256)+B)/4
-      if (Number.isNaN(B)) return null;
-      return Math.round(((A * 256 + B) / 4) * 10) / 10;
-    case "0D": // Vehicle speed km/h
-      return A;
-    case "11": // Throttle %
-      return Math.round((A * 100) / 255);
-    case "2F": // Fuel level %
-      return Math.round((A * 100) / 255);
-    case "42": // Control module voltage
-      if (Number.isNaN(B)) return null;
-      return Math.round(((A * 256 + B) / 1000) * 100) / 100;
-    case "31": {
-      // Distance traveled since codes cleared (km)
-      if (Number.isNaN(B)) return null;
-      return A * 256 + B;
+/** Same code from several modes → keep one row, preferring stored > permanent > pending. */
+function mergeDtcs(list: ObdSessionDtc[]): ObdSessionDtc[] {
+  const rank = { stored: 0, permanent: 1, pending: 2 } as const;
+  const byCode = new Map<string, ObdSessionDtc>();
+  for (const d of list) {
+    const prev = byCode.get(d.code);
+    if (!prev || rank[d.kind ?? "stored"] < rank[prev.kind ?? "stored"]) {
+      byCode.set(d.code, d);
     }
-    case "A6": {
-      // Vehicle odometer (km) — 4 bytes when supported
-      if (data.length < 8) return null;
-      const v =
-        (parseInt(data.slice(0, 2), 16) << 24) |
-        (parseInt(data.slice(2, 4), 16) << 16) |
-        (parseInt(data.slice(4, 6), 16) << 8) |
-        parseInt(data.slice(6, 8), 16);
-      if (!Number.isFinite(v) || v <= 0) return null;
-      return v;
-    }
-    default:
-      return A;
   }
+  return [...byCode.values()];
 }
 
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
+type TransportRequest = (options: {
+  showAllDevices?: boolean;
+  timeoutMs?: number;
+}) => Promise<ObdTransport>;
 
 export class OBDConnector {
-  private device: BluetoothDeviceLike | null = null;
-  private server: BluetoothRemoteGATTServerLike | null = null;
-  private characteristic: BluetoothRemoteGATTCharacteristicLike | null = null;
-  private notifyChar: BluetoothRemoteGATTCharacteristicLike | null = null;
-  private buffer = "";
+  private session: ElmSession | null = null;
+
+  constructor(private readonly requestTransport?: TransportRequest) {}
 
   get isConnected(): boolean {
-    return Boolean(this.server?.connected && this.characteristic);
+    return Boolean(this.session?.connected);
   }
 
   get deviceName(): string {
-    return this.device?.name || "OBD adapter";
+    return this.session?.transport.deviceName || "OBD adapter";
   }
 
-  /**
-   * Typed connect with error codes for UI. Prefer this over `connect()`.
-   */
+  /** Pick adapter → connect → ELM init + protocol search. */
   async connectDetailed(options?: {
     timeoutMs?: number;
+    showAllDevices?: boolean;
+    onStep?: (step: ObdScanStep) => void;
   }): Promise<ObdConnectResult> {
     const support = getObdRuntimeSupport();
-    if (!support.supported) {
-      return {
-        ok: false,
-        code: support.code || "unsupported",
-        message: support.message,
-      };
+    if (!this.requestTransport && !support.supported) {
+      return { ok: false, code: support.code || "unsupported", message: support.message };
     }
-
-    const bluetooth = getBluetooth();
-    if (!bluetooth) {
-      return {
-        ok: false,
-        code: "unsupported",
-        message: support.message || "Web Bluetooth unavailable",
-      };
-    }
-
-    const timeoutMs = options?.timeoutMs ?? 45_000;
-    const withTimeout = <T>(p: Promise<T>, label: string): Promise<T> =>
-      Promise.race([
-        p,
-        new Promise<T>((_, reject) =>
-          setTimeout(
-            () => reject(new Error(`${label} timeout`)),
-            timeoutMs,
-          ),
-        ),
-      ]);
-
+    this.disconnect();
     try {
-      try {
-        this.device = await withTimeout(
-          bluetooth.requestDevice({
-            filters: [
-              { namePrefix: "OBD" },
-              { namePrefix: "ELM" },
-              { namePrefix: "VEEPEAK" },
-              { namePrefix: "OBDLINK" },
-              { namePrefix: "BLE" },
-            ],
-            optionalServices: SERVICE_CANDIDATES.map((c) => c.service),
-          }),
-          "Device picker",
-        );
-      } catch (firstErr) {
-        console.warn(
-          "[obd] filtered picker failed, trying acceptAllDevices",
-          firstErr,
-        );
-        this.device = await withTimeout(
-          bluetooth.requestDevice({
-            acceptAllDevices: true,
-            optionalServices: SERVICE_CANDIDATES.map((c) => c.service),
-          }),
-          "Device picker",
-        );
-      }
-
-      if (!this.device.gatt) {
-        return {
-          ok: false,
-          code: "gatt",
-          message: "Selected device has no GATT server.",
-        };
-      }
-
-      this.server = await withTimeout(
-        this.device.gatt.connect(),
-        "GATT connect",
-      );
-      this.device.addEventListener?.("gattserverdisconnected", () => {
-        this.characteristic = null;
-        this.notifyChar = null;
+      const request = this.requestTransport ?? WebBluetoothTransport.request;
+      const transport = await request({
+        showAllDevices: options?.showAllDevices,
+        timeoutMs: options?.timeoutMs,
       });
-
-      let opened = false;
-      for (const cand of SERVICE_CANDIDATES) {
-        try {
-          const service = await this.server.getPrimaryService(cand.service);
-          this.characteristic = await service.getCharacteristic(cand.write);
-          if (cand.notify) {
-            try {
-              this.notifyChar = await service.getCharacteristic(cand.notify);
-              await this.notifyChar.startNotifications?.();
-              this.notifyChar.addEventListener?.(
-                "characteristicvaluechanged",
-                (ev) => {
-                  const v = ev.target.value;
-                  if (v) {
-                    this.buffer += new TextDecoder().decode(v);
-                  }
-                },
-              );
-            } catch {
-              this.notifyChar = null;
-            }
-          }
-          opened = true;
-          break;
-        } catch {
-          /* try next UUID pair */
-        }
-      }
-
-      if (!opened || !this.characteristic) {
-        throw new Error("No compatible OBD BLE service/characteristic found");
-      }
-
-      await this.sendCommand("ATZ");
-      await sleep(300);
-      await this.sendCommand("ATE0");
-      await this.sendCommand("ATL0");
-      await this.sendCommand("ATS0");
-      await this.sendCommand("ATH0");
-      // Protocol auto
-      await this.sendCommand("ATSP0");
-
-      return { ok: true, deviceName: this.deviceName };
+      const session = new ElmSession(transport);
+      this.session = session;
+      await session.initialize(options?.onStep);
+      return { ok: true, deviceName: transport.deviceName };
     } catch (err) {
-      console.error("[obd] connectDetailed failed", err);
+      console.error("[obd] connect failed", err);
       this.disconnect();
       return mapConnectError(err);
     }
   }
 
-  /** @deprecated Prefer connectDetailed — kept for Dashboard compatibility. */
-  async connect(): Promise<boolean> {
-    const result = await this.connectDetailed();
-    return result.ok;
-  }
-
   disconnect() {
-    try {
-      this.device?.gatt?.disconnect();
-    } catch {
-      /* ignore */
-    }
-    this.device = null;
-    this.server = null;
-    this.characteristic = null;
-    this.notifyChar = null;
-    this.buffer = "";
+    const s = this.session;
+    this.session = null;
+    if (!s) return;
+    s.dispose();
+    s.transport.disconnect();
   }
 
-  private async sendCommand(cmd: string, waitMs = 450): Promise<string> {
-    if (!this.characteristic) throw new Error("Not connected");
-    this.buffer = "";
-    const payload = new TextEncoder().encode(`${cmd}\r`);
-    await this.characteristic.writeValue(payload);
-
-    // Poll until ELM prompt `>` or timeout (more reliable than fixed sleep alone)
-    const deadline = Date.now() + waitMs + 600;
-    while (Date.now() < deadline) {
-      if (this.buffer.includes(">")) break;
-      await sleep(40);
-    }
-
-    if (this.buffer.trim()) {
-      return this.buffer;
-    }
-
-    // Fallback read for adapters that expose readable TX on same char
-    try {
-      const value = await this.characteristic.readValue();
-      return new TextDecoder().decode(value);
-    } catch {
-      return this.buffer || "";
-    }
-  }
-
-  async readDTCs(): Promise<ObdDtc[]> {
-    const stored = await this.sendCommand("03", 600);
-    const pending = await this.sendCommand("07", 600);
-    const codes = [
-      ...parseDtcResponse(stored),
-      ...parseDtcResponse(pending),
-    ];
-    // de-dupe by code
-    const seen = new Set<string>();
-    return codes.filter((c) => {
-      if (seen.has(c.code)) return false;
-      seen.add(c.code);
-      return true;
-    });
-  }
-
-  /**
-   * Mode 01 current-data PID (e.g. "05" coolant, "0C" RPM, "42" voltage).
-   * Returns null when the ECU/adapter does not support the PID.
-   */
-  async readPID(pid: string): Promise<number | null> {
-    const clean = pid.replace(/^0x/i, "").replace(/\s+/g, "").toUpperCase();
-    if (!/^[0-9A-F]{2}$/.test(clean)) {
-      throw new Error(`Invalid PID: ${pid}`);
-    }
-    const raw = await this.sendCommand(`01${clean}`, 500);
-    return parsePIDResponse(clean, raw);
-  }
-
-  /**
-   * Batch Mode 01 live sensors for Dashboard.
-   * Same PID set as the sketch (05/0C/0D/11/42/5C) but typed numeric fields.
-   */
+  /** Dashboard “Refresh sensors”. */
   async readLiveSensors(): Promise<ObdLiveSensors> {
-    if (!this.isConnected) {
-      throw new Error("Not connected — call connect() before readLiveSensors()");
+    if (!this.session?.connected) {
+      throw new Error("Not connected — connect the OBD adapter first.");
     }
-
-    const sensors = emptyLiveSensors();
-
-    for (const { key, pid } of LIVE_SENSOR_PIDS) {
-      try {
-        const value = await this.readPID(pid);
-        if (value != null) sensors[key] = value;
-      } catch {
-        /* PID unsupported — leave null */
-      }
-      // Brief gap so cheap ELM clones don't drop frames
-      await sleep(60);
-    }
-
-    sensors.at = new Date().toISOString();
-    return sensors;
-  }
-
-  /** Best-effort odometer / distance PIDs (many ECUs omit these). */
-  async readMileageHints(): Promise<{
-    odometerKm: number | null;
-    distanceSinceCodesClearedKm: number | null;
-  }> {
-    let odometerKm: number | null = null;
-    let distanceSinceCodesClearedKm: number | null = null;
-    try {
-      odometerKm = await this.readPID("A6");
-    } catch {
-      /* unsupported */
-    }
-    await sleep(60);
-    try {
-      distanceSinceCodesClearedKm = await this.readPID("31");
-    } catch {
-      /* unsupported */
-    }
-    return { odometerKm, distanceSinceCodesClearedKm };
+    return sensorsFromPids(await this.session.readPids(LIVE_PID_NUMBERS));
   }
 
   /**
-   * Connect (if needed) → DTCs + live sensors + mileage hints.
-   * Structured for Chat / Coach injection.
+   * Connect (if needed) → readiness, stored/pending/permanent codes, freeze
+   * frame, live sensors, mileage, VIN. Never throws.
    */
   async readSessionSnapshot(options?: {
     connectIfNeeded?: boolean;
     includeSensors?: boolean;
+    onStep?: (step: ObdScanStep) => void;
   }): Promise<ObdSessionSnapshot> {
-    const connectIfNeeded = options?.connectIfNeeded !== false;
-    const includeSensors = options?.includeSensors !== false;
-    const warnings: string[] = [];
     const at = new Date().toISOString();
-
-    if (!this.isConnected) {
-      if (!connectIfNeeded) {
-        return {
-          at,
-          deviceName: this.deviceName,
-          connected: false,
-          codes: [],
-          sensors: emptyLiveSensors(),
-          odometerKm: null,
-          distanceSinceCodesClearedKm: null,
-          note: "Not connected.",
-          warnings: ["not_connected"],
-        };
-      }
-      const connected = await this.connectDetailed();
-      if (!connected.ok) {
-        return {
-          at,
-          deviceName: "—",
-          connected: false,
-          codes: [],
-          sensors: emptyLiveSensors(),
-          odometerKm: null,
-          distanceSinceCodesClearedKm: null,
-          note: connected.message,
-          warnings: [connected.code],
-        };
-      }
-    }
-
-    let codes: ObdDtc[] = [];
-    try {
-      codes = await this.readDTCs();
-    } catch (err) {
-      warnings.push(
-        err instanceof Error ? err.message : "DTC read failed",
-      );
-    }
-
-    let sensors = emptyLiveSensors();
-    if (includeSensors) {
-      try {
-        sensors = await this.readLiveSensors();
-      } catch (err) {
-        warnings.push(
-          err instanceof Error ? err.message : "Live sensor read failed",
-        );
-      }
-    }
-
-    const mileage = await this.readMileageHints();
-    if (mileage.odometerKm == null && mileage.distanceSinceCodesClearedKm == null) {
-      warnings.push("mileage_unavailable");
-    }
-
-    const note = codes.length
-      ? `Read ${codes.length} code(s) from ${this.deviceName}.`
-      : `Connected to ${this.deviceName} — no stored/pending DTCs reported.`;
-
-    return {
-      at: new Date().toISOString(),
+    const failed = (note: string, warning: string): ObdSessionSnapshot => ({
+      at,
       deviceName: this.deviceName,
-      connected: true,
-      codes,
-      sensors,
-      odometerKm: mileage.odometerKm,
-      distanceSinceCodesClearedKm: mileage.distanceSinceCodesClearedKm,
+      connected: false,
+      codes: [],
+      sensors: emptyLiveSensors(),
+      odometerKm: null,
+      distanceSinceCodesClearedKm: null,
       note,
-      warnings,
-    };
-  }
+      warnings: [warning],
+    });
 
-  /**
-   * Full DIY scan: connect (if needed) → AT init → Mode 03/07.
-   * Does not throw — returns connected:false for UI fallbacks.
-   */
-  async scan(): Promise<ObdScanResult> {
-    const raw: string[] = [];
-    if (!this.isConnected) {
-      const ok = await this.connect();
-      if (!ok) {
-        return {
-          connected: false,
-          raw,
-          codes: [],
-          note: "OBD connection failed or cancelled.",
-        };
-      }
+    if (!this.session?.connected) {
+      if (options?.connectIfNeeded === false) return failed("Not connected.", "not_connected");
+      const res = await this.connectDetailed({ onStep: options?.onStep });
+      if (!res.ok) return failed(res.message, res.code);
     }
+    const session = this.session!;
 
     try {
-      const codes = await this.readDTCs();
+      const scan = await session.scan({
+        sensorPids: options?.includeSensors === false ? [] : LIVE_PID_NUMBERS,
+        onStep: options?.onStep,
+      });
+      const codes = mergeDtcs(scan.dtcs.map(toSessionDtc));
+      const stored = codes.filter((c) => c.kind === "stored").length;
+      const warnings = [...scan.warnings];
+      if (!scan.pids.has(0xa6) && !scan.pids.has(0x31)) warnings.push("mileage_unavailable");
+
+      const note = codes.length
+        ? `Read ${codes.length} code(s) from ${this.deviceName}${stored < codes.length ? ` (${stored} stored)` : ""}.`
+        : `Connected to ${this.deviceName} — no stored, pending, or permanent codes reported.`;
+
       return {
+        at: new Date().toISOString(),
+        deviceName: this.deviceName,
         connected: true,
-        raw,
         codes,
-        note: codes.length
-          ? `Read ${codes.length} code(s) from ${this.deviceName}.`
-          : `Connected to ${this.deviceName} — no stored/pending DTCs reported.`,
+        sensors: sensorsFromPids(scan.pids),
+        odometerKm: scan.pids.get(0xa6) ?? null,
+        distanceSinceCodesClearedKm: scan.pids.get(0x31) ?? null,
+        note,
+        warnings,
+        milOn: scan.readiness?.milOn ?? null,
+        readiness: scan.readiness,
+        smog: scan.readiness
+          ? evaluateSmogReadiness(scan.readiness, modelYearFromVin(scan.vin))
+          : null,
+        freezeFrame: scan.freezeFrame,
+        vin: scan.vin,
+        adapter: {
+          version: session.info.version,
+          protocol: session.info.protocol?.label ?? null,
+          batteryVoltage: session.info.batteryVoltage,
+        },
       };
     } catch (err) {
       console.error("[obd] scan failed", err);
-      return {
-        connected: true,
-        raw,
-        codes: [],
-        note:
-          err instanceof Error
-            ? err.message
-            : "Connected but DTC read failed.",
-      };
+      const mapped = mapConnectError(err);
+      if (err instanceof ObdSessionError) this.disconnect();
+      return failed(mapped.ok ? "Read failed." : mapped.message, mapped.ok ? "unknown" : mapped.code);
     }
   }
 }

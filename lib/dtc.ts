@@ -17,6 +17,14 @@ import {
   severityHintToDtcSeverity,
 } from "@/lib/vehicle-data/dtc-local";
 import { getCoachPlaybook } from "@/lib/coach-scenarios/catalog";
+import type { ObdReadiness, SmogReadiness } from "@/lib/obd-protocol";
+import { formatObdValueBoth } from "@/lib/obd-units";
+import type {
+  ObdAdapterSummary,
+  ObdFreezeFrame,
+  ObdSessionDtc,
+} from "@/lib/types/obd-session";
+import { maskVin } from "@/lib/vehicle-data/vin";
 
 export {
   DTC_CODE_REGEX,
@@ -156,7 +164,7 @@ export function buildDtcDiagnosisPrompt(options: {
     source === "obd_screenshot"
       ? "Codes are user-provided from an OBD scanner / dash photo (OCR). This is not a live Bluetooth adapter feed."
       : source === "obd_bluetooth"
-        ? "Codes and sensors were read live over Bluetooth OBD-II (ELM327 BLE)."
+        ? "Codes and sensors were read live over Bluetooth OBD-II (ELM327-compatible adapter). Treat pending codes as early warnings, not confirmed faults."
         : source === "manual"
           ? "Codes are user-provided (typed or pasted by the owner). This is not live/realtime OBD data."
           : "Codes are user-provided from the owner's message. This is not live/realtime OBD data.";
@@ -187,16 +195,24 @@ export function buildDtcDiagnosisPrompt(options: {
     playbook
       ? `Mention the best Coach playbook theme if relevant (suggest: ${playbook.slug} — ${playbook.reason}).`
       : "",
-    "Do not invent OEM torque specs, fluid quarts, or freeze-frame data you do not have. Ask at most one clarifying question if critical.",
+    source === "obd_bluetooth"
+      ? "Use only the freeze-frame and readiness values listed above; do not invent others. Do not invent OEM torque specs or fluid quarts. Ask at most one clarifying question if critical."
+      : "Do not invent OEM torque specs, fluid quarts, or freeze-frame data you do not have. Ask at most one clarifying question if critical.",
   ]
     .filter((line) => Boolean(line))
     .join("\n");
 }
 
+const DTC_KIND_NOTE: Record<NonNullable<ObdSessionDtc["kind"]>, string> = {
+  stored: "stored (confirmed — sets the check engine light)",
+  pending: "pending (seen once, not yet confirmed — may clear or mature)",
+  permanent: "permanent (stays until the car's own self-test passes; cannot be cleared by a scanner)",
+};
+
 /** Build Chat diagnosis prompt from a BLE OBD session snapshot. */
 export function buildObdBleDiagnosisPrompt(options: {
   deviceName: string;
-  codes: Array<{ code: string; desc?: string; severity?: string }>;
+  codes: Array<Pick<ObdSessionDtc, "code" | "kind" | "ecu"> & { desc?: string; severity?: string }>;
   vehicleLabel?: string;
   sensors?: {
     rpm?: number | null;
@@ -208,25 +224,63 @@ export function buildObdBleDiagnosisPrompt(options: {
   } | null;
   odometerKm?: number | null;
   distanceSinceCodesClearedKm?: number | null;
+  milOn?: boolean | null;
+  readiness?: ObdReadiness | null;
+  smog?: SmogReadiness | null;
+  freezeFrame?: ObdFreezeFrame | null;
+  vin?: string | null;
+  adapter?: ObdAdapterSummary | null;
 }): string {
   const parsed = options.codes.map((c) => lookupDtc(c.code));
   const live: string[] = [`Adapter: ${options.deviceName}`];
+  if (options.adapter?.protocol) live.push(`Vehicle protocol: ${options.adapter.protocol}`);
+  if (options.vin) live.push(`VIN reported by the car (masked): ${maskVin(options.vin)}`);
+  if (options.milOn != null) {
+    live.push(`Check engine light (MIL): ${options.milOn ? "ON — commanded by the ECU" : "OFF"}`);
+  }
+  for (const c of options.codes) {
+    if (!c.kind) continue;
+    live.push(`${c.code}: ${DTC_KIND_NOTE[c.kind]}${c.ecu ? ` · module ${c.ecu}` : ""}`);
+  }
+  if (options.freezeFrame) {
+    const ff = options.freezeFrame;
+    const vals = ff.values.map((v) => `${v.label} ${formatObdValueBoth(v.value, v.unit)}`);
+    live.push(
+      `Freeze frame${ff.dtc ? ` (stored with ${ff.dtc})` : ""}: ${vals.length ? vals.join(", ") : "no values reported"}`,
+    );
+  }
+  if (options.readiness) {
+    const notReady = options.readiness.monitors.filter((m) => !m.ready).map((m) => m.label);
+    live.push(
+      `Readiness monitors: ${options.readiness.monitors.length} supported, ${
+        notReady.length ? `not ready: ${notReady.join(", ")}` : "all ready"
+      }`,
+    );
+  }
+  if (options.smog && options.smog.verdict !== "unknown") {
+    const verdict = {
+      ready: "likely ready for an OBD smog/emissions test",
+      not_ready: "not ready for an OBD smog/emissions test yet (too many incomplete monitors)",
+      mil_on: "would fail an OBD smog/emissions test while the check engine light is on",
+    }[options.smog.verdict];
+    live.push(`Emissions readiness estimate: ${verdict} (state rules vary)`);
+  }
   if (options.odometerKm != null) {
-    live.push(`Odometer (PID A6): ${options.odometerKm.toLocaleString()} km`);
+    live.push(`Odometer (PID A6): ${formatObdValueBoth(options.odometerKm, "km")}`);
   }
   if (options.distanceSinceCodesClearedKm != null) {
     live.push(
-      `Distance since codes cleared (PID 31): ${options.distanceSinceCodesClearedKm.toLocaleString()} km`,
+      `Distance since codes cleared (PID 31): ${formatObdValueBoth(options.distanceSinceCodesClearedKm, "km")}`,
     );
   }
   const s = options.sensors;
   if (s) {
-    if (s.rpm != null) live.push(`RPM: ${s.rpm}`);
-    if (s.coolantC != null) live.push(`Coolant: ${s.coolantC}°C`);
+    if (s.rpm != null) live.push(`RPM: ${Math.round(s.rpm)}`);
+    if (s.coolantC != null) live.push(`Coolant: ${formatObdValueBoth(s.coolantC, "°C")}`);
     if (s.voltage != null) live.push(`Module voltage: ${s.voltage} V`);
-    if (s.speedKph != null) live.push(`Speed: ${s.speedKph} km/h`);
+    if (s.speedKph != null) live.push(`Speed: ${formatObdValueBoth(s.speedKph, "km/h")}`);
     if (s.throttlePct != null) live.push(`Throttle: ${s.throttlePct}%`);
-    if (s.oilTempC != null) live.push(`Oil temp: ${s.oilTempC}°C`);
+    if (s.oilTempC != null) live.push(`Oil temp: ${formatObdValueBoth(s.oilTempC, "°C")}`);
   }
 
   return buildDtcDiagnosisPrompt({

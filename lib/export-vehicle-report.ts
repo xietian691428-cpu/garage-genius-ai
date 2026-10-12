@@ -8,6 +8,7 @@ import type { VehicleInfo } from "@/lib/types/chat";
 import type { VehicleVitals } from "@/lib/vehicle-vitals";
 import type { ObdLiveSensors } from "@/lib/obd";
 import { LIVE_SENSOR_PIDS, formatLiveSensorValue } from "@/lib/obd";
+import { obdUnitSystemForVehicle } from "@/lib/obd-units";
 import { formatVehicleYmmMarket } from "@/lib/types/vehicle-market";
 
 export type ExportReportInput = {
@@ -68,7 +69,7 @@ export function exportVehicleReportPdf(input: ExportReportInput): void {
   if (liveSensors) {
     for (const { key, label, unit } of LIVE_SENSOR_PIDS) {
       line(
-        `• ${label}: ${formatLiveSensorValue(liveSensors[key] ?? null, unit)}`,
+        `• ${label}: ${formatLiveSensorValue(liveSensors[key] ?? null, unit, obdUnitSystemForVehicle(vehicle))}`,
       );
     }
   } else {

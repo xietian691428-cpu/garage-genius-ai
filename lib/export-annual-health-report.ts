@@ -9,6 +9,7 @@ import type { MaintenanceRecord } from "@/lib/types/maintenance";
 import type { VehicleVitals } from "@/lib/vehicle-vitals";
 import type { ObdLiveSensors } from "@/lib/obd";
 import { LIVE_SENSOR_PIDS, formatLiveSensorValue } from "@/lib/obd";
+import { obdUnitSystemForVehicle } from "@/lib/obd-units";
 import { formatVehicleYmmMarket } from "@/lib/types/vehicle-market";
 import type { CoachRecommendedPlaybook } from "@/lib/coach-scenarios/catalog";
 
@@ -110,7 +111,7 @@ export function exportAnnualHealthReportPdf(
   if (liveSensors) {
     for (const { key, label, unit } of LIVE_SENSOR_PIDS) {
       line(
-        `• ${label}: ${formatLiveSensorValue(liveSensors[key] ?? null, unit)}`,
+        `• ${label}: ${formatLiveSensorValue(liveSensors[key] ?? null, unit, obdUnitSystemForVehicle(vehicle))}`,
       );
     }
   } else {

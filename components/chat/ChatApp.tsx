@@ -1157,12 +1157,8 @@ export default function ChatApp({
   const handleObdBleSession = (snapshot: ObdSessionSnapshot) => {
     void handleSend(
       buildObdBleDiagnosisPrompt({
-        deviceName: snapshot.deviceName,
-        codes: snapshot.codes,
+        ...snapshot,
         vehicleLabel,
-        sensors: snapshot.sensors,
-        odometerKm: snapshot.odometerKm,
-        distanceSinceCodesClearedKm: snapshot.distanceSinceCodesClearedKm,
       }),
     );
   };

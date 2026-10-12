@@ -82,6 +82,7 @@ import {
   hasLiveSensorData,
   type ObdLiveSensors,
 } from "@/lib/obd";
+import { obdUnitSystemForVehicle } from "@/lib/obd-units";
 import {
   getAffiliateLinks,
   partQueryForDtc,
@@ -167,6 +168,7 @@ export default function Dashboard({
   const [showObdModal, setShowObdModal] = useState(false);
   const [obdNote, setObdNote] = useState<string | null>(null);
   const [liveSensors, setLiveSensors] = useState<ObdLiveSensors | null>(null);
+  const obdUnits = obdUnitSystemForVehicle(vehicle);
   const [isRefreshingSensors, setIsRefreshingSensors] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [inbox, setInbox] = useState<ReminderInboxItem[]>([]);
@@ -560,12 +562,8 @@ export default function Dashboard({
     const vehicleLabel = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
     onAskAI?.(
       buildObdBleDiagnosisPrompt({
-        deviceName: snapshot.deviceName,
-        codes: snapshot.codes,
+        ...snapshot,
         vehicleLabel,
-        sensors: snapshot.sensors,
-        odometerKm: snapshot.odometerKm,
-        distanceSinceCodesClearedKm: snapshot.distanceSinceCodesClearedKm,
       }),
     );
   };
@@ -1552,7 +1550,7 @@ export default function Dashboard({
                 >
                   <div className="text-xs text-cyan-400 sm:text-sm">{label}</div>
                   <div className="mt-1 font-mono text-xl text-white sm:text-2xl">
-                    {formatLiveSensorValue(liveSensors?.[key] ?? null, unit)}
+                    {formatLiveSensorValue(liveSensors?.[key] ?? null, unit, obdUnits)}
                   </div>
                 </div>
               ))}
@@ -1560,7 +1558,7 @@ export default function Dashboard({
             {!hasLiveSensorData(liveSensors) && (
               <p className="mt-4 text-center text-xs text-slate-500">
                 {showObdConnectEntry
-                  ? `No live data yet — ${t("obd.connectEntry")} with a BLE ELM327 adapter, then Refresh Sensors.`
+                  ? `No live data yet — ${t("obd.connectEntry")} with an ELM327-compatible adapter, then Refresh Sensors.`
                   : t("obd.noAdapterLiveHint")}
               </p>
             )}
@@ -1693,6 +1691,7 @@ export default function Dashboard({
         onAskAi={onAskAI ? handleObdAskAi : undefined}
         askAiLabel={t("obd.diagnoseInChat")}
         vehicleId={vehicle?.id}
+        unitSystem={obdUnits}
         onMileageSynced={(result) => {
           if (!vehicle) return;
           onMergeVehicleLocal?.(vehicle.id, {

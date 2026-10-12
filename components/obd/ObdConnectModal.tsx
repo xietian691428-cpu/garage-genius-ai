@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 import {
+  AlertTriangle,
   Bluetooth,
   BluetoothConnected,
   BluetoothOff,
+  CheckCircle2,
+  CircleDashed,
   Loader2,
   X,
 } from "lucide-react";
@@ -14,9 +17,14 @@ import {
   getObdConnector,
   getObdRuntimeSupport,
   LIVE_SENSOR_PIDS,
+  type ObdScanStep,
 } from "@/lib/obd";
+import { formatObdValue, type ObdUnitSystem } from "@/lib/obd-units";
 import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
-import { OBD_COMPATIBLE_DEVICES } from "@/lib/types/obd-session";
+import {
+  OBD_COMPATIBLE_DEVICES,
+  OBD_LOCKED_DEVICES,
+} from "@/lib/types/obd-session";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 import { useObdPreference } from "@/hooks/useObdPreference";
@@ -24,9 +32,10 @@ import {
   canStartObdBleConnect,
   shouldEmphasizeObdConnect,
 } from "@/lib/obd-preference";
-import { isNativeIos } from "@/lib/native-platform";
+import { isNativeAndroid, isNativeIos } from "@/lib/native-platform";
 import { syncObdMileageToVehicle } from "@/lib/obd-mileage-sync-client";
 import type { MileageUnit } from "@/lib/obd-mileage";
+import { checkObdVin, type ObdVinResponse } from "@/lib/obd-vin-client";
 
 type Props = {
   open: boolean;
@@ -49,19 +58,27 @@ type Props = {
    */
   onAskAi?: (snapshot: ObdSessionSnapshot) => void;
   askAiLabel?: string;
-  /** Current garage vehicle — required for OBD mileage write-back. */
+  /** Current garage vehicle — required for OBD mileage / VIN write-back. */
   vehicleId?: string | null;
   /** Local garage refresh after mileage was written (new reading only). */
   onMileageSynced?: (result: {
     mileage: number;
     unit: MileageUnit;
   }) => void;
+  /** Display units; US owners default to °F / mph / miles. */
+  unitSystem?: ObdUnitSystem;
 };
 
 type Phase = "pref" | "guide" | "working" | "result" | "error";
 
+const KIND_STYLE = {
+  stored: "border-red-500/40 bg-red-500/10 text-red-200",
+  pending: "border-amber-500/40 bg-amber-500/10 text-amber-200",
+  permanent: "border-violet-500/40 bg-violet-500/10 text-violet-200",
+} as const;
+
 /**
- * Connect OBD guide + BLE scan → structured session for Chat/Coach/Dashboard.
+ * Connect OBD guide + scan → structured session for Chat/Coach/Dashboard.
  * Soft preference prompt when ownership is unset. Does not modify CoachScenarioPlayer.
  */
 export default function ObdConnectModal({
@@ -73,15 +90,19 @@ export default function ObdConnectModal({
   askAiLabel,
   vehicleId,
   onMileageSynced,
+  unitSystem = "imperial",
 }: Props) {
   const { t } = useTranslation();
   const { pref, loading: prefLoading, setHasObdAdapter } = useObdPreference();
   const [phase, setPhase] = useState<Phase>("guide");
+  const [step, setStep] = useState<ObdScanStep | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<ObdSessionSnapshot | null>(null);
   const [connectedName, setConnectedName] = useState<string | null>(null);
   const [prefBusy, setPrefBusy] = useState(false);
   const [mileageToast, setMileageToast] = useState<string | null>(null);
+  const [vinCheck, setVinCheck] = useState<ObdVinResponse | null>(null);
+  const [vinSaving, setVinSaving] = useState(false);
   useBodyScrollLock(open);
 
   useEffect(() => {
@@ -123,6 +144,22 @@ export default function ObdConnectModal({
     }
   };
 
+  const maybeCheckVin = async (session: ObdSessionSnapshot) => {
+    if (!vehicleId || !session.vin) return;
+    setVinCheck(await checkObdVin({ vehicleId, vin: session.vin }));
+  };
+
+  const saveVin = async () => {
+    if (!vehicleId || !snapshot?.vin) return;
+    setVinSaving(true);
+    try {
+      const res = await checkObdVin({ vehicleId, vin: snapshot.vin, save: true });
+      if (res) setVinCheck(res);
+    } finally {
+      setVinSaving(false);
+    }
+  };
+
   const support = getObdRuntimeSupport();
   const emphasize = shouldEmphasizeObdConnect(pref);
   // Hard-stop live BLE flow on iOS app even if runtime capability probes are noisy.
@@ -134,6 +171,7 @@ export default function ObdConnectModal({
     setError(null);
     setSnapshot(null);
     setMileageToast(null);
+    setVinCheck(null);
     const obd = getObdConnector();
     setConnectedName(obd.isConnected ? obd.deviceName : null);
     if (pref.preferenceUnset) {
@@ -171,18 +209,24 @@ export default function ObdConnectModal({
     onClose();
   };
 
-  const connectAndRead = async () => {
+  const connectAndRead = async (showAllDevices = false) => {
     if (!canStartObdBleConnect(pref)) {
       setError(t("obd.bleBlockedByPref"));
       setPhase("error");
       return;
     }
     setPhase("working");
+    setStep(null);
     setError(null);
+    setVinCheck(null);
     try {
       const obd = getObdConnector();
       if (!obd.isConnected) {
-        const result = await obd.connectDetailed({ timeoutMs: 45_000 });
+        const result = await obd.connectDetailed({
+          timeoutMs: 45_000,
+          showAllDevices,
+          onStep: setStep,
+        });
         if (!result.ok) {
           setError(result.message);
           setPhase("error");
@@ -196,8 +240,10 @@ export default function ObdConnectModal({
       const session = await obd.readSessionSnapshot({
         connectIfNeeded: false,
         includeSensors: true,
+        onStep: setStep,
       });
       if (!session.connected) {
+        if (!obd.isConnected) setConnectedName(null);
         setError(session.note || t("obd.errorGeneric"));
         setPhase("error");
         return;
@@ -205,6 +251,7 @@ export default function ObdConnectModal({
       setSnapshot(session);
       setPhase("result");
       void maybeSyncMileage(session);
+      void maybeCheckVin(session);
       if (autoNotifyOnReady) {
         onSessionReady(session);
       }
@@ -220,6 +267,7 @@ export default function ObdConnectModal({
     getObdConnector().disconnect();
     setConnectedName(null);
     setSnapshot(null);
+    setVinCheck(null);
     setPhase("guide");
   };
 
@@ -233,6 +281,18 @@ export default function ObdConnectModal({
     onSessionReady(snapshot);
     onClose();
   };
+
+  const unsupportedMessage = iosNoBle
+    ? t("obd.iosUnsupported")
+    : isNativeAndroid()
+      ? t("obd.appVersionUnsupported")
+      : t("obd.browserUnsupported");
+
+  const vinDecodedLabel = vinCheck?.decoded
+    ? [vinCheck.decoded.year, vinCheck.decoded.make, vinCheck.decoded.model]
+        .filter(Boolean)
+        .join(" ")
+    : "";
 
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-4 sm:items-center">
@@ -311,13 +371,9 @@ export default function ObdConnectModal({
 
           {phase === "guide" || phase === "error" ? (
             <div className="space-y-4">
-              {iosNoBle ? (
+              {iosNoBle || !support.supported ? (
                 <p className="rounded-xl border border-amber-700/40 bg-amber-950/30 px-3 py-2 text-xs text-amber-100">
-                  {t("obd.iosUnsupported")}
-                </p>
-              ) : !support.supported ? (
-                <p className="rounded-xl border border-amber-700/40 bg-amber-950/30 px-3 py-2 text-xs text-amber-100">
-                  {t("obd.browserUnsupported")}
+                  {unsupportedMessage}
                 </p>
               ) : (
                 <p className="rounded-xl border border-cyan-700/40 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100">
@@ -326,7 +382,7 @@ export default function ObdConnectModal({
               )}
 
               {phase === "error" && error ? (
-                <p className="rounded-xl border border-red-700/40 bg-red-950/30 px-3 py-2 text-xs text-red-100">
+                <p className="rounded-xl border border-red-700/40 bg-red-950/30 px-3 py-2 text-xs leading-relaxed text-red-100">
                   {error}
                 </p>
               ) : null}
@@ -374,8 +430,11 @@ export default function ObdConnectModal({
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-2 text-[11px] text-slate-600">
+                  <p className="mt-2 text-[11px] text-slate-500">
                     {t("obd.bleOnlyNote")}
+                  </p>
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    {t("obd.lockedNote", { list: OBD_LOCKED_DEVICES.join(", ") })}
                   </p>
                 </div>
               ) : null}
@@ -385,7 +444,9 @@ export default function ObdConnectModal({
           {phase === "working" ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
               <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
-              <p className="text-sm text-slate-300">{t("obd.working")}</p>
+              <p className="text-sm text-slate-300">
+                {step ? t(`obd.step_${step}`) : t("obd.working")}
+              </p>
               <p className="text-xs text-slate-500">{t("obd.workingHint")}</p>
             </div>
           ) : null}
@@ -404,26 +465,111 @@ export default function ObdConnectModal({
               <p className="text-xs text-slate-400">
                 {onAskAi ? t("obd.dashboardSyncedHint") : t("obd.injectedHint")}
               </p>
+
+              {snapshot.milOn != null ? (
+                <p
+                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium ${
+                    snapshot.milOn
+                      ? "border-amber-500/40 bg-amber-500/10 text-amber-200"
+                      : "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+                  }`}
+                >
+                  {snapshot.milOn ? (
+                    <AlertTriangle className="h-4 w-4" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4" />
+                  )}
+                  {snapshot.milOn ? t("obd.milOn") : t("obd.milOff")}
+                </p>
+              ) : null}
+
               <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2">
                 <p className="mb-1 text-[11px] font-semibold uppercase text-slate-500">
                   {t("obd.codesTitle")}
                 </p>
                 {snapshot.codes.length ? (
-                  <ul className="space-y-1 font-mono text-sm text-cyan-200">
-                    {snapshot.codes.map((c) => (
-                      <li key={c.code}>
-                        {c.code}{" "}
-                        <span className="font-sans text-xs text-slate-400">
-                          — {c.desc}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <ul className="space-y-1.5">
+                      {snapshot.codes.map((c) => (
+                        <li key={c.code} className="text-sm">
+                          <span className="font-mono text-cyan-200">{c.code}</span>
+                          {c.kind ? (
+                            <span
+                              className={`ml-2 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold uppercase ${KIND_STYLE[c.kind]}`}
+                            >
+                              {t(`obd.kind_${c.kind}`)}
+                            </span>
+                          ) : null}
+                          <span className="block text-xs text-slate-400">{c.desc}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {snapshot.codes.some((c) => c.kind && c.kind !== "stored") ? (
+                      <p className="mt-2 text-[11px] text-slate-500">{t("obd.kindHelp")}</p>
+                    ) : null}
+                  </>
                 ) : (
                   <p className="text-xs text-slate-400">{t("obd.noCodes")}</p>
                 )}
               </div>
+
+              {snapshot.readiness && snapshot.smog ? (
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2">
+                  <p className="mb-1 text-[11px] font-semibold uppercase text-slate-500">
+                    {t("obd.readinessTitle")}
+                  </p>
+                  <p
+                    className={`text-sm font-medium ${
+                      snapshot.smog.verdict === "ready"
+                        ? "text-emerald-300"
+                        : snapshot.smog.verdict === "unknown"
+                          ? "text-slate-300"
+                          : "text-amber-200"
+                    }`}
+                  >
+                    {t(`obd.smog_${snapshot.smog.verdict}`, {
+                      count: snapshot.smog.incomplete.length,
+                    })}
+                  </p>
+                  <ul className="mt-2 grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
+                    {snapshot.readiness.monitors.map((m) => (
+                      <li key={m.id} className="flex items-center gap-1.5 text-slate-300">
+                        {m.ready ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                        ) : (
+                          <CircleDashed className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+                        )}
+                        {m.label}
+                        <span className="text-slate-500">
+                          · {m.ready ? t("obd.monitorReady") : t("obd.monitorIncomplete")}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-[11px] text-slate-500">{t("obd.smogNote")}</p>
+                </div>
+              ) : null}
+
+              {snapshot.freezeFrame ? (
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2">
+                  <p className="mb-1 text-[11px] font-semibold uppercase text-slate-500">
+                    {snapshot.freezeFrame.dtc
+                      ? t("obd.freezeFrameFor", { code: snapshot.freezeFrame.dtc })
+                      : t("obd.freezeFrameTitle")}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-300">
+                    {snapshot.freezeFrame.values.map((v) => (
+                      <div key={v.pid}>
+                        <span className="text-slate-500">{v.label}: </span>
+                        {formatObdValue(v.value, v.unit, unitSystem)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               <LiabilityDisclaimer variant="panel" />
+
               <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2">
                 <p className="mb-1 text-[11px] font-semibold uppercase text-slate-500">
                   {t("obd.sensorsTitle")}
@@ -432,17 +578,68 @@ export default function ObdConnectModal({
                   {LIVE_SENSOR_PIDS.map(({ key, label, unit }) => (
                     <div key={key}>
                       <span className="text-slate-500">{label}: </span>
-                      {formatLiveSensorValue(snapshot.sensors[key], unit)}
+                      {formatLiveSensorValue(snapshot.sensors[key], unit, unitSystem)}
                     </div>
                   ))}
                   <div>
                     <span className="text-slate-500">{t("obd.odometer")}: </span>
-                    {snapshot.odometerKm != null
-                      ? `${snapshot.odometerKm.toLocaleString()} km`
-                      : "—"}
+                    {formatObdValue(snapshot.odometerKm, "km", unitSystem)}
                   </div>
+                  {snapshot.distanceSinceCodesClearedKm != null ? (
+                    <div>
+                      <span className="text-slate-500">{t("obd.distanceSinceClear")}: </span>
+                      {formatObdValue(snapshot.distanceSinceCodesClearedKm, "km", unitSystem)}
+                    </div>
+                  ) : null}
+                  {snapshot.adapter?.batteryVoltage != null ? (
+                    <div>
+                      <span className="text-slate-500">{t("obd.batteryVoltage")}: </span>
+                      {formatObdValue(snapshot.adapter.batteryVoltage, "V")}
+                    </div>
+                  ) : null}
                 </div>
               </div>
+
+              {snapshot.vin ? (
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2">
+                  <p className="mb-1 text-[11px] font-semibold uppercase text-slate-500">
+                    {t("obd.vinTitle")}
+                  </p>
+                  <p className="font-mono text-sm tracking-wide text-slate-200">{snapshot.vin}</p>
+                  {vinDecodedLabel ? (
+                    <p className="text-xs text-slate-400">
+                      {t("obd.vinDecoded", { label: vinDecodedLabel })}
+                    </p>
+                  ) : null}
+                  {vinCheck ? (
+                    <p
+                      className={`mt-1 text-xs ${
+                        vinCheck.status === "mismatch" ? "text-amber-200" : "text-slate-300"
+                      }`}
+                    >
+                      {t(`obd.vin_${vinCheck.status}`)}
+                    </p>
+                  ) : null}
+                  {vinCheck?.status === "missing" ? (
+                    <button
+                      type="button"
+                      disabled={vinSaving}
+                      onClick={() => void saveVin()}
+                      className="mt-2 rounded-lg border border-cyan-500/50 px-3 py-1.5 text-xs font-semibold text-cyan-100 hover:bg-cyan-500/15 disabled:opacity-50"
+                    >
+                      {t("obd.vinSave")}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {snapshot.adapter?.version || snapshot.adapter?.protocol ? (
+                <p className="text-[11px] text-slate-600">
+                  {[snapshot.deviceName, snapshot.adapter.version, snapshot.adapter.protocol]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -452,7 +649,7 @@ export default function ObdConnectModal({
         canStartObdBleConnect(pref) &&
         support.supported &&
         !iosNoBle ? (
-          <div className="flex shrink-0 flex-wrap gap-2 border-t border-slate-800 px-4 py-3">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-slate-800 px-4 py-3">
             {connectedName ? (
               <button
                 type="button"
@@ -461,6 +658,14 @@ export default function ObdConnectModal({
               >
                 <BluetoothOff className="h-4 w-4" />
                 {t("obd.disconnect")}
+              </button>
+            ) : phase === "guide" || phase === "error" ? (
+              <button
+                type="button"
+                onClick={() => void connectAndRead(true)}
+                className="px-1 py-2.5 text-xs text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline"
+              >
+                {t("obd.showAllDevices")}
               </button>
             ) : null}
 

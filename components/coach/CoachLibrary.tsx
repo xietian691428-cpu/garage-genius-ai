@@ -318,12 +318,8 @@ export default function CoachLibrary({
   const runObdBleToChat = (snapshot: ObdSessionSnapshot) => {
     onAskAI(
       buildObdBleDiagnosisPrompt({
-        deviceName: snapshot.deviceName,
-        codes: snapshot.codes,
+        ...snapshot,
         vehicleLabel: vehicleLabel || undefined,
-        sensors: snapshot.sensors,
-        odometerKm: snapshot.odometerKm,
-        distanceSinceCodesClearedKm: snapshot.distanceSinceCodesClearedKm,
       }),
       { playbookSlug: "diagnosis_check_engine" },
     );
