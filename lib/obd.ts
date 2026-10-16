@@ -22,6 +22,11 @@ import {
   NativeBleTransport,
   isNativeBleRuntime,
 } from "@/lib/obd-transport-native";
+import {
+  canUseObdSimulator,
+  requestSimulatedTransport,
+  type ObdSimScenarioId,
+} from "@/lib/obd-sim";
 import { formatObdValue, type ObdUnitSystem } from "@/lib/obd-units";
 import type {
   ObdConnectErrorCode,
@@ -37,6 +42,11 @@ export {
   stopNativeBleScan,
   type NativeBleScanDevice,
 } from "@/lib/obd-transport-native";
+export {
+  canUseObdSimulator,
+  OBD_SIM_SCENARIOS,
+  type ObdSimScenarioId,
+} from "@/lib/obd-sim";
 export type { ObdScanStep };
 
 /** Best-effort Mode 01 live values for Dashboard sensors panel */
@@ -109,12 +119,16 @@ function sensorsFromPids(pids: Map<number, number>): ObdLiveSensors {
  * Whether live OBD can be attempted in this runtime.
  * Store apps use native BLE (`@capacitor-community/bluetooth-le`).
  * Browsers use Web Bluetooth (Chrome / Edge).
+ * QA accounts may also use the scripted ELM simulator (no hardware).
  */
-export function getObdRuntimeSupport(): {
+export function getObdRuntimeSupport(email?: string | null): {
   supported: boolean;
   code: ObdConnectErrorCode | null;
   message: string;
 } {
+  if (canUseObdSimulator(email)) {
+    return { supported: true, code: null, message: "" };
+  }
   if (isNativeBleRuntime()) {
     return { supported: true, code: null, message: "" };
   }
@@ -213,6 +227,7 @@ type TransportRequest = (options: {
   timeoutMs?: number;
   deviceId?: string;
   deviceName?: string;
+  simScenario?: ObdSimScenarioId;
 }) => Promise<ObdTransport>;
 
 async function defaultRequestTransport(options: {
@@ -220,7 +235,11 @@ async function defaultRequestTransport(options: {
   timeoutMs?: number;
   deviceId?: string;
   deviceName?: string;
+  simScenario?: ObdSimScenarioId;
 }): Promise<ObdTransport> {
+  if (options.simScenario) {
+    return requestSimulatedTransport({ scenario: options.simScenario });
+  }
   if (isNativeBleRuntime()) {
     if (!options.deviceId) {
       throw new Error("Select an adapter from the scanned list.");
@@ -257,16 +276,28 @@ export class OBDConnector {
     /** Required on native BLE: device chosen from the in-app scan list. */
     deviceId?: string;
     deviceName?: string;
+    /** QA-only scripted ELM327 (no Bluetooth hardware). */
+    simScenario?: ObdSimScenarioId;
+    /** Email for QA simulator / runtime checks. */
+    email?: string | null;
     onStep?: (step: ObdScanStep) => void;
   }): Promise<ObdConnectResult> {
-    const support = getObdRuntimeSupport();
+    const support = getObdRuntimeSupport(options?.email);
     if (!this.requestTransport && !support.supported) {
       return { ok: false, code: support.code || "unsupported", message: support.message };
+    }
+    if (options?.simScenario && !canUseObdSimulator(options.email)) {
+      return {
+        ok: false,
+        code: "unsupported",
+        message: "OBD simulator is only available on the internal test account.",
+      };
     }
     if (
       !this.requestTransport &&
       isNativeBleRuntime() &&
-      !options?.deviceId
+      !options?.deviceId &&
+      !options?.simScenario
     ) {
       return {
         ok: false,
@@ -283,6 +314,7 @@ export class OBDConnector {
         timeoutMs: options?.timeoutMs,
         deviceId: options?.deviceId,
         deviceName: options?.deviceName,
+        simScenario: options?.simScenario,
       });
       const session = new ElmSession(transport);
       this.session = session;

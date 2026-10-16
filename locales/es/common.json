@@ -275,7 +275,10 @@
     "vin_missing": "Este vehículo aún no tiene VIN guardado.",
     "vin_saved": "VIN guardado en este vehículo.",
     "vinSave": "Guardar VIN en este vehículo",
-    "appVersionUnsupported": "El OBD Bluetooth en vivo aún no está disponible en esta versión de la app. Introduce el código de fallo o sube una captura OBD."
+    "appVersionUnsupported": "El OBD Bluetooth en vivo aún no está disponible en esta versión de la app. Introduce el código de fallo o sube una captura OBD.",
+    "simTitle": "QA — adaptadores simulados (sin hardware)",
+    "simBanner": "Solo cuenta de prueba interna. Respuestas ELM327 simuladas — no es un auto ni un enlace Bluetooth real.",
+    "simPickHint": "Elige un adaptador simulado arriba"
   },
   "parts": {
     "searchOnAmazon": "Buscar en Amazon",

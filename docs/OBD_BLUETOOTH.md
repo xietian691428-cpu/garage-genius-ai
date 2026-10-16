@@ -64,6 +64,14 @@ Cheap clones vary widely — we do **not** promise 100% compatibility.
 - `tests/obd-session.test.ts` — scripted ELM327 (`FakeElm`): 2018 CAN car end-to-end, chunked BLE delivery, ISO 9141 car, header-less clones, search retry, ignition off, non-ELM device  
 - `tests/obd-native-filter.test.ts` — OBD name-prefix filter for native scan  
 
+## QA simulator (no hardware)
+
+Internal smoke-test account (`lib/qa-test-account.ts`) sees a **QA — simulated adapters** list in Connect OBD. These use `lib/obd-sim.ts` (scripted ELM327) and never touch Bluetooth. Ordinary accounts never see them.
+
+Scenarios: Camry with codes, no-codes/ready, ignition OFF, silent adapter, occupied link. Use this to exercise Scan → result → Chat without a dongle. **Real BLE still requires hardware** before claiming M1 hardware readiness.
+
+Local/preview override: `NEXT_PUBLIC_OBD_SIM=1` (any signed-in user).
+
 ## Hardware checklist (M1 acceptance)
 
 1. **iOS App** + Veepeak or Vgate BLE on a 2008+ car: Scan → connect → codes / readiness / VIN → Open diagnosis in Chat  

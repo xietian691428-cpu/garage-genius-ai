@@ -13,15 +13,18 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
+  canUseObdSimulator,
   formatLiveSensorValue,
   getObdConnector,
   getObdRuntimeSupport,
   isNativeBleRuntime,
   LIVE_SENSOR_PIDS,
+  OBD_SIM_SCENARIOS,
   startNativeBleScan,
   stopNativeBleScan,
   type NativeBleScanDevice,
   type ObdScanStep,
+  type ObdSimScenarioId,
 } from "@/lib/obd";
 import { formatObdValue, type ObdUnitSystem } from "@/lib/obd-units";
 import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
@@ -32,6 +35,7 @@ import {
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 import { useObdPreference } from "@/hooks/useObdPreference";
+import { useAuth } from "@/hooks/useAuth";
 import {
   canStartObdBleConnect,
   shouldEmphasizeObdConnect,
@@ -96,6 +100,7 @@ export default function ObdConnectModal({
   unitSystem = "imperial",
 }: Props) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { pref, loading: prefLoading, setHasObdAdapter } = useObdPreference();
   const [phase, setPhase] = useState<Phase>("guide");
   const [step, setStep] = useState<ObdScanStep | null>(null);
@@ -109,6 +114,7 @@ export default function ObdConnectModal({
   const [scanning, setScanning] = useState(false);
   const [scanDevices, setScanDevices] = useState<NativeBleScanDevice[]>([]);
   useBodyScrollLock(open);
+  const allowSim = canUseObdSimulator(user?.email);
 
   useEffect(() => {
     if (!mileageToast) return;
@@ -172,7 +178,7 @@ export default function ObdConnectModal({
     }
   };
 
-  const support = getObdRuntimeSupport();
+  const support = getObdRuntimeSupport(user?.email);
   const emphasize = shouldEmphasizeObdConnect(pref);
   const nativeBle = isNativeBleRuntime();
   const showBleGuide = emphasize && support.supported;
@@ -261,6 +267,7 @@ export default function ObdConnectModal({
     showAllDevices?: boolean;
     deviceId?: string;
     deviceName?: string;
+    simScenario?: ObdSimScenarioId;
   }) => {
     if (!canStartObdBleConnect(pref)) {
       setError(t("obd.bleBlockedByPref"));
@@ -274,12 +281,19 @@ export default function ObdConnectModal({
     setVinCheck(null);
     try {
       const obd = getObdConnector();
+      // Switching to a sim scenario always reconnects with a fresh scripted bus.
+      if (options?.simScenario && obd.isConnected) {
+        obd.disconnect();
+        setConnectedName(null);
+      }
       if (!obd.isConnected) {
         const result = await obd.connectDetailed({
           timeoutMs: 45_000,
           showAllDevices: options?.showAllDevices,
           deviceId: options?.deviceId,
           deviceName: options?.deviceName,
+          simScenario: options?.simScenario,
+          email: user?.email,
           onStep: setStep,
         });
         if (!result.ok) {
@@ -467,6 +481,37 @@ export default function ObdConnectModal({
                   {t("obd.iosPreferManual")}
                 </p>
               )}
+
+              {showBleGuide && allowSim ? (
+                <div>
+                  <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {t("obd.simTitle")}
+                  </h3>
+                  <p className="mb-2 text-[11px] text-amber-200/90">
+                    {t("obd.simBanner")}
+                  </p>
+                  <ul className="space-y-2">
+                    {OBD_SIM_SCENARIOS.map((s) => (
+                      <li key={s.id}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void connectAndRead({ simScenario: s.id })
+                          }
+                          className="flex w-full flex-col gap-0.5 rounded-xl border border-amber-700/40 bg-amber-950/20 px-3 py-2.5 text-left hover:border-amber-500/50 hover:bg-amber-950/40"
+                        >
+                          <span className="text-sm font-medium text-amber-100">
+                            {s.label}
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            {s.note}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
 
               {showBleGuide && nativeBle ? (
                 <div>
@@ -802,7 +847,11 @@ export default function ObdConnectModal({
             ) : (
               <button
                 type="button"
-                disabled={!support.supported || phase === "working"}
+                disabled={
+                  !support.supported ||
+                  phase === "working" ||
+                  (allowSim && !nativeBle && !connectedName)
+                }
                 onClick={() =>
                   void (nativeBle && !connectedName
                     ? startScan(false)
@@ -817,7 +866,9 @@ export default function ObdConnectModal({
                     ? scanning
                       ? t("obd.scanAgain")
                       : t("obd.scanCta")
-                    : t("obd.connectCta")}
+                    : allowSim
+                      ? t("obd.simPickHint")
+                      : t("obd.connectCta")}
               </button>
             )}
           </div>

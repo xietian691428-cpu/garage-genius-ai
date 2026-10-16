@@ -275,7 +275,10 @@
     "vin_missing": "This vehicle has no VIN saved yet.",
     "vin_saved": "VIN saved to this vehicle.",
     "vinSave": "Save VIN to this vehicle",
-    "appVersionUnsupported": "Live Bluetooth OBD isn't available in this app version yet. Enter the fault code or upload an OBD screenshot."
+    "appVersionUnsupported": "Live Bluetooth OBD isn't available in this app version yet. Enter the fault code or upload an OBD screenshot.",
+    "simTitle": "QA — simulated adapters (no hardware)",
+    "simBanner": "Internal test only. Scripted ELM327 replies — not a real car or Bluetooth link.",
+    "simPickHint": "Pick a simulated adapter above"
   },
   "parts": {
     "searchOnAmazon": "Search on Amazon",
