@@ -16,7 +16,11 @@ import {
   formatLiveSensorValue,
   getObdConnector,
   getObdRuntimeSupport,
+  isNativeBleRuntime,
   LIVE_SENSOR_PIDS,
+  startNativeBleScan,
+  stopNativeBleScan,
+  type NativeBleScanDevice,
   type ObdScanStep,
 } from "@/lib/obd";
 import { formatObdValue, type ObdUnitSystem } from "@/lib/obd-units";
@@ -32,7 +36,6 @@ import {
   canStartObdBleConnect,
   shouldEmphasizeObdConnect,
 } from "@/lib/obd-preference";
-import { isNativeAndroid, isNativeIos } from "@/lib/native-platform";
 import { syncObdMileageToVehicle } from "@/lib/obd-mileage-sync-client";
 import type { MileageUnit } from "@/lib/obd-mileage";
 import { checkObdVin, type ObdVinResponse } from "@/lib/obd-vin-client";
@@ -103,6 +106,8 @@ export default function ObdConnectModal({
   const [mileageToast, setMileageToast] = useState<string | null>(null);
   const [vinCheck, setVinCheck] = useState<ObdVinResponse | null>(null);
   const [vinSaving, setVinSaving] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanDevices, setScanDevices] = useState<NativeBleScanDevice[]>([]);
   useBodyScrollLock(open);
 
   useEffect(() => {
@@ -110,6 +115,13 @@ export default function ObdConnectModal({
     const id = window.setTimeout(() => setMileageToast(null), 3200);
     return () => window.clearTimeout(id);
   }, [mileageToast]);
+
+  useEffect(() => {
+    if (open) return;
+    setScanning(false);
+    setScanDevices([]);
+    void stopNativeBleScan();
+  }, [open]);
 
   const maybeSyncMileage = async (session: ObdSessionSnapshot) => {
     if (!canStartObdBleConnect(pref)) return;
@@ -162,9 +174,8 @@ export default function ObdConnectModal({
 
   const support = getObdRuntimeSupport();
   const emphasize = shouldEmphasizeObdConnect(pref);
-  // Hard-stop live BLE flow on iOS app even if runtime capability probes are noisy.
-  const iosNoBle = isNativeIos() || support.code === "capacitor_ios";
-  const showBleGuide = emphasize && !iosNoBle;
+  const nativeBle = isNativeBleRuntime();
+  const showBleGuide = emphasize && support.supported;
 
   useEffect(() => {
     if (!open || prefLoading) return;
@@ -172,6 +183,9 @@ export default function ObdConnectModal({
     setSnapshot(null);
     setMileageToast(null);
     setVinCheck(null);
+    setScanning(false);
+    setScanDevices([]);
+    void stopNativeBleScan();
     const obd = getObdConnector();
     setConnectedName(obd.isConnected ? obd.deviceName : null);
     if (pref.preferenceUnset) {
@@ -209,12 +223,51 @@ export default function ObdConnectModal({
     onClose();
   };
 
-  const connectAndRead = async (showAllDevices = false) => {
+  const stopScan = async () => {
+    setScanning(false);
+    await stopNativeBleScan();
+  };
+
+  const startScan = async (showAllDevices = false) => {
     if (!canStartObdBleConnect(pref)) {
       setError(t("obd.bleBlockedByPref"));
       setPhase("error");
       return;
     }
+    if (!support.supported) {
+      setError(t("obd.browserUnsupported"));
+      setPhase("error");
+      return;
+    }
+    setPhase("guide");
+    setError(null);
+    setScanDevices([]);
+    setScanning(true);
+    try {
+      await startNativeBleScan((device) => {
+        setScanDevices((prev) => {
+          if (prev.some((d) => d.deviceId === device.deviceId)) return prev;
+          return [...prev, device].sort((a, b) => (b.rssi ?? -999) - (a.rssi ?? -999));
+        });
+      }, { showAllDevices });
+    } catch (err) {
+      setScanning(false);
+      setError(err instanceof Error ? err.message : t("obd.errorGeneric"));
+      setPhase("error");
+    }
+  };
+
+  const connectAndRead = async (options?: {
+    showAllDevices?: boolean;
+    deviceId?: string;
+    deviceName?: string;
+  }) => {
+    if (!canStartObdBleConnect(pref)) {
+      setError(t("obd.bleBlockedByPref"));
+      setPhase("error");
+      return;
+    }
+    await stopScan();
     setPhase("working");
     setStep(null);
     setError(null);
@@ -224,7 +277,9 @@ export default function ObdConnectModal({
       if (!obd.isConnected) {
         const result = await obd.connectDetailed({
           timeoutMs: 45_000,
-          showAllDevices,
+          showAllDevices: options?.showAllDevices,
+          deviceId: options?.deviceId,
+          deviceName: options?.deviceName,
           onStep: setStep,
         });
         if (!result.ok) {
@@ -250,6 +305,7 @@ export default function ObdConnectModal({
       }
       setSnapshot(session);
       setPhase("result");
+      setScanDevices([]);
       void maybeSyncMileage(session);
       void maybeCheckVin(session);
       if (autoNotifyOnReady) {
@@ -268,6 +324,7 @@ export default function ObdConnectModal({
     setConnectedName(null);
     setSnapshot(null);
     setVinCheck(null);
+    setScanDevices([]);
     setPhase("guide");
   };
 
@@ -282,11 +339,7 @@ export default function ObdConnectModal({
     onClose();
   };
 
-  const unsupportedMessage = iosNoBle
-    ? t("obd.iosUnsupported")
-    : isNativeAndroid()
-      ? t("obd.appVersionUnsupported")
-      : t("obd.browserUnsupported");
+  const unsupportedMessage = t("obd.browserUnsupported");
 
   const vinDecodedLabel = vinCheck?.decoded
     ? [vinCheck.decoded.year, vinCheck.decoded.make, vinCheck.decoded.model]
@@ -371,7 +424,7 @@ export default function ObdConnectModal({
 
           {phase === "guide" || phase === "error" ? (
             <div className="space-y-4">
-              {iosNoBle || !support.supported ? (
+              {!support.supported ? (
                 <p className="rounded-xl border border-amber-700/40 bg-amber-950/30 px-3 py-2 text-xs text-amber-100">
                   {unsupportedMessage}
                 </p>
@@ -405,12 +458,63 @@ export default function ObdConnectModal({
                     <li>{t("obd.step3")}</li>
                     <li>{t("obd.step4")}</li>
                   </ol>
+                  <p className="mt-2 text-[11px] text-slate-500">
+                    {t("obd.closeOtherAppsHint")}
+                  </p>
                 </div>
               ) : (
                 <p className="text-sm text-slate-300">
                   {t("obd.iosPreferManual")}
                 </p>
               )}
+
+              {showBleGuide && nativeBle ? (
+                <div>
+                  <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {t("obd.selectDevice")}
+                  </h3>
+                  {scanning ? (
+                    <p className="mb-2 flex items-center gap-2 text-xs text-cyan-200">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      {t("obd.scanning")}
+                    </p>
+                  ) : null}
+                  <p className="mb-2 text-[11px] text-slate-500">
+                    {t("obd.scanningHint")}
+                  </p>
+                  {scanDevices.length ? (
+                    <ul className="space-y-2">
+                      {scanDevices.map((d) => (
+                        <li key={d.deviceId}>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void connectAndRead({
+                                deviceId: d.deviceId,
+                                deviceName: d.name,
+                              })
+                            }
+                            className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-left hover:border-cyan-500/50 hover:bg-slate-900"
+                          >
+                            <span className="text-sm font-medium text-slate-100">
+                              {d.name}
+                            </span>
+                            {d.rssi != null ? (
+                              <span className="text-[11px] text-slate-500">
+                                {d.rssi} dBm
+                              </span>
+                            ) : null}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="rounded-xl border border-dashed border-slate-700 px-3 py-3 text-xs text-slate-400">
+                      {t("obd.noDevicesYet")}
+                    </p>
+                  )}
+                </div>
+              ) : null}
 
               {showBleGuide ? (
                 <div>
@@ -433,6 +537,11 @@ export default function ObdConnectModal({
                   <p className="mt-2 text-[11px] text-slate-500">
                     {t("obd.bleOnlyNote")}
                   </p>
+                  {!nativeBle ? (
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      {t("obd.bleWebNote")}
+                    </p>
+                  ) : null}
                   <p className="mt-1 text-[11px] text-slate-500">
                     {t("obd.lockedNote", { list: OBD_LOCKED_DEVICES.join(", ") })}
                   </p>
@@ -647,8 +756,7 @@ export default function ObdConnectModal({
         {phase !== "pref" &&
         !prefLoading &&
         canStartObdBleConnect(pref) &&
-        support.supported &&
-        !iosNoBle ? (
+        support.supported ? (
           <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-slate-800 px-4 py-3">
             {connectedName ? (
               <button
@@ -662,10 +770,24 @@ export default function ObdConnectModal({
             ) : phase === "guide" || phase === "error" ? (
               <button
                 type="button"
-                onClick={() => void connectAndRead(true)}
+                onClick={() =>
+                  void (nativeBle
+                    ? startScan(true)
+                    : connectAndRead({ showAllDevices: true }))
+                }
                 className="px-1 py-2.5 text-xs text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline"
               >
                 {t("obd.showAllDevices")}
+              </button>
+            ) : null}
+
+            {scanning && !connectedName ? (
+              <button
+                type="button"
+                onClick={() => void stopScan()}
+                className="rounded-xl border border-slate-600 px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-900"
+              >
+                {t("obd.stopScan")}
               </button>
             ) : null}
 
@@ -681,11 +803,21 @@ export default function ObdConnectModal({
               <button
                 type="button"
                 disabled={!support.supported || phase === "working"}
-                onClick={() => void connectAndRead()}
+                onClick={() =>
+                  void (nativeBle && !connectedName
+                    ? startScan(false)
+                    : connectAndRead())
+                }
                 className="ml-auto inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cyan-500 px-3 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400 disabled:opacity-50 sm:flex-none"
               >
                 <Bluetooth className="h-4 w-4" />
-                {connectedName ? t("obd.readAgain") : t("obd.connectCta")}
+                {connectedName
+                  ? t("obd.readAgain")
+                  : nativeBle
+                    ? scanning
+                      ? t("obd.scanAgain")
+                      : t("obd.scanCta")
+                    : t("obd.connectCta")}
               </button>
             )}
           </div>

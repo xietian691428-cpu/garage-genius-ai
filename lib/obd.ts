@@ -1,6 +1,7 @@
 /**
- * OBD-II connector for garage DIY scans: transport (Web Bluetooth today) →
- * ELM327 session (`lib/obd-elm.ts`) → structured `ObdSessionSnapshot`.
+ * OBD-II connector for garage DIY scans: transport (Web Bluetooth or native
+ * BLE in store apps) → ELM327 session (`lib/obd-elm.ts`) → structured
+ * `ObdSessionSnapshot`.
  *
  * Decoding rules live in `lib/obd-protocol.ts`. Never invent readings — a
  * failed or unsupported read leaves fields null.
@@ -17,8 +18,11 @@ import {
   isWebBluetoothAvailable,
   type ObdTransport,
 } from "@/lib/obd-transport";
+import {
+  NativeBleTransport,
+  isNativeBleRuntime,
+} from "@/lib/obd-transport-native";
 import { formatObdValue, type ObdUnitSystem } from "@/lib/obd-units";
-import { getCapacitorPlatform } from "@/lib/native-platform";
 import type {
   ObdConnectErrorCode,
   ObdConnectResult,
@@ -27,6 +31,12 @@ import type {
 } from "@/lib/types/obd-session";
 
 export { isWebBluetoothAvailable };
+export {
+  isNativeBleRuntime,
+  startNativeBleScan,
+  stopNativeBleScan,
+  type NativeBleScanDevice,
+} from "@/lib/obd-transport-native";
 export type { ObdScanStep };
 
 /** Best-effort Mode 01 live values for Dashboard sensors panel */
@@ -96,32 +106,24 @@ function sensorsFromPids(pids: Map<number, number>): ObdLiveSensors {
 }
 
 /**
- * Whether live OBD can be attempted in this runtime. Store apps need the
- * native Bluetooth bridge (next app release); WKWebView / Android WebView do
- * not expose Web Bluetooth.
+ * Whether live OBD can be attempted in this runtime.
+ * Store apps use native BLE (`@capacitor-community/bluetooth-le`).
+ * Browsers use Web Bluetooth (Chrome / Edge).
  */
 export function getObdRuntimeSupport(): {
   supported: boolean;
   code: ObdConnectErrorCode | null;
   message: string;
 } {
-  const platform = getCapacitorPlatform();
-  if (platform === "ios") {
-    return {
-      supported: false,
-      code: "capacitor_ios",
-      message:
-        "Live Bluetooth OBD is not available in this iPhone and iPad app version. Enter the fault code manually or upload an OBD screenshot.",
-    };
+  if (isNativeBleRuntime()) {
+    return { supported: true, code: null, message: "" };
   }
   if (!isWebBluetoothAvailable()) {
     return {
       supported: false,
       code: "unsupported",
       message:
-        platform === "android"
-          ? "Live Bluetooth OBD is not available in this app version yet. Enter the fault code manually or upload an OBD screenshot."
-          : "Bluetooth is not available in this browser. Try Chrome, or enter the fault code / upload an OBD screenshot.",
+        "Bluetooth is not available in this browser. Try Chrome, or enter the fault code / upload an OBD screenshot.",
     };
   }
   return { supported: true, code: null, message: "" };
@@ -153,11 +155,13 @@ function mapConnectError(err: unknown): ObdConnectResult {
         "No adapter was selected. Make sure it's plugged in and the ignition is ON. If it isn't listed, tap “My adapter isn't listed”.",
     };
   }
-  if (name === "SecurityError" || name === "NotAllowedError" || /permission|not allowed/i.test(msg)) {
+  if (name === "SecurityError" || name === "NotAllowedError" || /permission|not allowed|denied/i.test(msg)) {
     return {
       ok: false,
       code: "permission",
-      message: "Bluetooth permission was denied. Allow Bluetooth for this site and retry.",
+      message: isNativeBleRuntime()
+        ? "Bluetooth permission was denied. Allow Bluetooth for Garage Genius in system Settings, then retry."
+        : "Bluetooth permission was denied. Allow Bluetooth for this site and retry.",
     };
   }
   if (/No compatible OBD|characteristic|service/i.test(msg)) {
@@ -165,7 +169,7 @@ function mapConnectError(err: unknown): ObdConnectResult {
       ok: false,
       code: "service",
       message:
-        "This device doesn't offer an OBD serial connection over Bluetooth LE. Classic-Bluetooth-only and Wi-Fi adapters can't connect from a browser.",
+        "This device doesn't offer an OBD serial connection over Bluetooth LE. Classic-Bluetooth-only and Wi-Fi adapters aren't supported yet. Close other OBD apps and try an ELM327 BLE adapter.",
     };
   }
   if (/timeout/i.test(msg)) {
@@ -175,7 +179,7 @@ function mapConnectError(err: unknown): ObdConnectResult {
       message: "Connection timed out. Unplug the adapter for 10 seconds, plug it back in, and retry.",
     };
   }
-  if (/gatt|disconnect|network/i.test(msg)) {
+  if (/gatt|disconnect|network|Bluetooth is off/i.test(msg)) {
     return {
       ok: false,
       code: "gatt",
@@ -207,7 +211,31 @@ function mergeDtcs(list: ObdSessionDtc[]): ObdSessionDtc[] {
 type TransportRequest = (options: {
   showAllDevices?: boolean;
   timeoutMs?: number;
+  deviceId?: string;
+  deviceName?: string;
 }) => Promise<ObdTransport>;
+
+async function defaultRequestTransport(options: {
+  showAllDevices?: boolean;
+  timeoutMs?: number;
+  deviceId?: string;
+  deviceName?: string;
+}): Promise<ObdTransport> {
+  if (isNativeBleRuntime()) {
+    if (!options.deviceId) {
+      throw new Error("Select an adapter from the scanned list.");
+    }
+    return NativeBleTransport.connect({
+      deviceId: options.deviceId,
+      deviceName: options.deviceName,
+      timeoutMs: options.timeoutMs,
+    });
+  }
+  return WebBluetoothTransport.request({
+    showAllDevices: options.showAllDevices,
+    timeoutMs: options.timeoutMs,
+  });
+}
 
 export class OBDConnector {
   private session: ElmSession | null = null;
@@ -226,18 +254,35 @@ export class OBDConnector {
   async connectDetailed(options?: {
     timeoutMs?: number;
     showAllDevices?: boolean;
+    /** Required on native BLE: device chosen from the in-app scan list. */
+    deviceId?: string;
+    deviceName?: string;
     onStep?: (step: ObdScanStep) => void;
   }): Promise<ObdConnectResult> {
     const support = getObdRuntimeSupport();
     if (!this.requestTransport && !support.supported) {
       return { ok: false, code: support.code || "unsupported", message: support.message };
     }
+    if (
+      !this.requestTransport &&
+      isNativeBleRuntime() &&
+      !options?.deviceId
+    ) {
+      return {
+        ok: false,
+        code: "cancelled",
+        message:
+          "No adapter was selected. Scan for nearby Bluetooth LE adapters, then tap yours in the list.",
+      };
+    }
     this.disconnect();
     try {
-      const request = this.requestTransport ?? WebBluetoothTransport.request;
+      const request = this.requestTransport ?? defaultRequestTransport;
       const transport = await request({
         showAllDevices: options?.showAllDevices,
         timeoutMs: options?.timeoutMs,
+        deviceId: options?.deviceId,
+        deviceName: options?.deviceName,
       });
       const session = new ElmSession(transport);
       this.session = session;

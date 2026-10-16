@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Capacitor BLE plugin (client-only; needed so Next can resolve its ESM)
+  transpilePackages: ["@capacitor-community/bluetooth-le"],
   // Keep node:sqlite / native sqlite out of the bundler
   serverExternalPackages: [],
   // Mirror Vercel deploy env for client bundles (QA unlock hard-block).

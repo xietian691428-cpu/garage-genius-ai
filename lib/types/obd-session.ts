@@ -99,12 +99,12 @@ export const OBD_COMPATIBLE_DEVICES: ObdCompatibleDevice[] = [
   {
     id: "veepeak",
     name: "Veepeak OBDCheck BLE / BLE+",
-    notes: "Bluetooth LE. Works in Chrome.",
+    notes: "Bluetooth LE. Recommended for store apps and Chrome.",
   },
   {
     id: "obdlink-cx",
     name: "OBDLink CX",
-    notes: "Bluetooth LE model. (OBDLink LX / MX+ are Classic Bluetooth.)",
+    notes: "Bluetooth LE model. (OBDLink LX / MX+ are Classic Bluetooth — not yet.)",
   },
   {
     id: "vgate",

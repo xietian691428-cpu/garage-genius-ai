@@ -28,6 +28,14 @@ const config: CapacitorConfig = {
     ],
   },
   plugins: {
+    BluetoothLe: {
+      displayStrings: {
+        scanning: "Scanning for OBD adapters…",
+        cancel: "Cancel",
+        availableDevices: "Nearby adapters",
+        noDeviceFound: "No adapters found",
+      },
+    },
     SplashScreen: {
       // Keep short; JS also calls SplashScreen.hide() on login / AuthGate
       launchShowDuration: 800,

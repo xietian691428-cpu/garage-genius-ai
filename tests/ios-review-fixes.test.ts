@@ -264,14 +264,19 @@ describe("source regressions for App Store 2.1 / 3.1.1", () => {
     expect(modal).not.toContain("items-end");
   });
 
-  it("removes Android/desktop OBD references from iOS-visible copy", () => {
+  it("keeps OBD copy free of cross-platform store mentions (App Store 2.3.10)", () => {
     const modal = readFileSync("components/obd/ObdConnectModal.tsx", "utf8");
     const dashboard = readFileSync("components/dashboard/Dashboard.tsx", "utf8");
+    const obd = readFileSync("lib/obd.ts", "utf8");
     const en = readFileSync("locales/en-US/common.json", "utf8");
     const es = readFileSync("locales/es/common.json", "utf8");
-    expect(modal).toContain("!iosNoBle");
+    // Native BLE is enabled in the store shell; do not hard-block iOS.
+    expect(modal).toContain("isNativeBleRuntime");
+    expect(obd).toContain("isNativeBleRuntime");
+    expect(obd).not.toMatch(/capacitor_ios[\s\S]{0,80}supported:\s*false/);
     expect(dashboard).not.toContain("Chrome + BLE ELM327");
     expect(en).not.toMatch(/Android\/desktop|Chrome or Edge/i);
+    // Spanish locale must not name other store platforms at all.
     expect(es).not.toMatch(/Android|Chrome o Edge/i);
   });
 

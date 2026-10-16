@@ -8,13 +8,13 @@ Garage Genius talks to **ELM327-compatible** adapters (the open command set used
 
 | Layer | File | Notes |
 |---|---|---|
-| Transport | `lib/obd-transport.ts` | `ObdTransport` byte pipe. Today: `WebBluetoothTransport`. Phase 2 adds native BLE (iOS + Android) and Classic Bluetooth (Android). |
+| Transport | `lib/obd-transport.ts`, `lib/obd-transport-native.ts` | `ObdTransport` byte pipe. Web: `WebBluetoothTransport`. Store apps: `NativeBleTransport` via `@capacitor-community/bluetooth-le`. Classic Bluetooth (Android) is Phase 2 M2 — not shipped. |
 | ELM session | `lib/obd-elm.ts` | One command in flight, waits for `>` prompt, init (`ATZ ATE0 ATL0 ATS1 ATH1 ATAT1 ATSP0`), protocol search with 15 s timeout + one retry, supported-PID bitmaps, scan steps. |
 | Protocol | `lib/obd-protocol.ts` | Pure parsing: CAN 11/29-bit with ISO-TP reassembly, legacy J1850 / ISO 9141 / KWP (header + checksum), header-less fallback, multi-ECU. Decoders for DTCs, PIDs, readiness, VIN, freeze frame. |
-| Connector | `lib/obd.ts` | `getObdConnector()` singleton → `ObdSessionSnapshot`. Transport factory is injectable (tests, Phase 2). |
+| Connector | `lib/obd.ts` | `getObdConnector()` singleton → `ObdSessionSnapshot`. Picks Web vs native transport by platform. |
 | Units | `lib/obd-units.ts` | Data stays metric; UI shows °F / mph / miles unless the vehicle uses km. |
 | VIN check | `app/api/obd/vin/route.ts` | Compares OBD VIN with the garage vehicle; saves only when the vehicle has none. |
-| UI | `components/obd/ObdConnectModal.tsx` | Guide, step progress, results, VIN match / save. |
+| UI | `components/obd/ObdConnectModal.tsx` | Guide, native scan list (store apps), step progress, results, VIN match / save. |
 
 ## What a scan reads
 
@@ -31,31 +31,47 @@ Codes are **read-only**. Clearing codes (Mode 04) is intentionally not offered: 
 
 ## Runtime support
 
-| Environment | Today |
+| Environment | Today (M1) |
 |---|---|
-| Chrome / Edge (Android phone, desktop) | Web Bluetooth + BLE adapters |
-| Safari / iOS | Not available — manual code or screenshot |
-| Store apps (iOS / Android WebView) | Not available until the native transport ships (Phase 2) |
+| iOS App (Capacitor) | Native BLE via `@capacitor-community/bluetooth-le` — in-app scan list |
+| Android App (Capacitor) | Native BLE (same plugin) — in-app scan list; runtime SCAN/CONNECT |
+| Chrome / Edge (desktop or Android browser) | Web Bluetooth + BLE adapters |
+| Safari / iPhone webpage | Not available — use the App, or enter code / screenshot |
 
-Detection: `getObdRuntimeSupport()` in `lib/obd.ts`. iOS-visible copy must not mention other platforms (App Store 2.3.10, guarded by `tests/ios-review-fixes.test.ts`).
+Detection: `getObdRuntimeSupport()` / `isNativeBleRuntime()` in `lib/obd.ts`. iOS-visible copy must not mention other platforms (App Store 2.3.10, guarded by `tests/ios-review-fixes.test.ts`).
 
 ## Adapters
 
-Works: Veepeak OBDCheck BLE / BLE+, OBDLink CX, Vgate iCar Pro BLE / vLinker BLE, generic ELM327 Bluetooth 4.0 / BLE. GATT services probed: `fff0`, `ffe0`, `18f0`, `ae30`, Vgate `e7810a71…`, Nordic UART; write / notify characteristics are found by property. “My adapter isn't listed” opens an unfiltered picker.
+**Works (open ELM327 BLE):** Veepeak OBDCheck BLE / BLE+, OBDLink CX, Vgate iCar Pro BLE / vLinker BLE, generic ELM327 Bluetooth 4.0 / BLE.
 
-Won't work (closed ecosystems): BlueDriver, FIXD, Carly, Carista, Innova RepairSolutions, Autel / Launch handhelds.
+GATT services probed: `fff0`, `ffe0`, `18f0`, `ae30`, Vgate `e7810a71…`, Nordic UART; write / notify characteristics are found by property. “My adapter isn't listed” rescans without the OBD name filter (native) or opens an unfiltered picker (web).
 
-Classic-Bluetooth-only (OBDLink LX / MX+, $10 ELM327 v1.5 classic, BAFX) and Wi-Fi adapters cannot connect from a browser — Phase 2.
+**Won't work (closed ecosystems):** BlueDriver, FIXD, Carly, Carista, Innova RepairSolutions, Autel / Launch handhelds.
+
+**Not yet (M2):** Classic-Bluetooth-only (OBDLink LX / MX+, many $10–20 ELM327 v1.5 classic, BAFX classic) and Wi-Fi adapters.
+
+Cheap clones vary widely — we do **not** promise 100% compatibility.
+
+## Permissions
+
+- **iOS:** `NSBluetoothAlwaysUsageDescription` / `NSBluetoothPeripheralUsageDescription` — connect to OBD-II adapters to read diagnostic data.  
+- **Android 12+:** `BLUETOOTH_SCAN` (`neverForLocation`) + `BLUETOOTH_CONNECT`; `BleClient.initialize({ androidNeverForLocation: true })`.  
+- **Android ≤11:** legacy `BLUETOOTH` / `BLUETOOTH_ADMIN` + location (`maxSdkVersion 30`) for scanning.
 
 ## Tests
 
 - `tests/obd-protocol.test.ts` — real response formats per protocol, multi-ECU, multi-frame, readiness, VIN, freeze frame  
 - `tests/obd-session.test.ts` — scripted ELM327 (`FakeElm`): 2018 CAN car end-to-end, chunked BLE delivery, ISO 9141 car, header-less clones, search retry, ignition off, non-ELM device  
+- `tests/obd-native-filter.test.ts` — OBD name-prefix filter for native scan  
 
-## Before release with real hardware
+## Hardware checklist (M1 acceptance)
 
-1. Chrome Android + one BLE adapter on a 2008+ car: codes / readiness / VIN match  
-2. Same with a pre-2008 car if available (K-line / J1850)  
-3. Ignition OFF → clear “turn the ignition ON” error  
-4. Dashboard Connect OBD → vitals update → Ask AI → Chat  
-5. Unsupported browser: modal blocks; no fake codes  
+1. **iOS App** + Veepeak or Vgate BLE on a 2008+ car: Scan → connect → codes / readiness / VIN → Open diagnosis in Chat  
+2. **Android App** — same path  
+3. Ignition OFF → clear “turn the ignition ON” (`no_ecu`) error  
+4. Close another OBD app holding the adapter → connect succeeds after retry  
+5. Unsupported browser still blocks with Chrome / manual-code guidance; no fake codes  
+
+## Store versions
+
+M1 ships with **Android versionCode 11** (`1.0.1`) and **iOS build 11** (`1.0.1`). Deploy the matching web build so Cap remote URL serves the new modal.

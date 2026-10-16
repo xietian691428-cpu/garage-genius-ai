@@ -5,7 +5,7 @@
  * protocol code.
  */
 
-export type ObdTransportKind = "web-bluetooth" | "mock";
+export type ObdTransportKind = "web-bluetooth" | "native-ble" | "mock";
 
 export interface ObdTransport {
   readonly kind: ObdTransportKind;
@@ -82,7 +82,7 @@ export const BLE_OBD_SERVICES: string[] = [
 ];
 
 /** Web Bluetooth `namePrefix` is case-sensitive — list common spellings. */
-const NAME_PREFIXES = [
+export const OBD_BLE_NAME_PREFIXES = [
   "OBD",
   "Obd",
   "obd",
@@ -101,17 +101,26 @@ const NAME_PREFIXES = [
   "iCar",
   "KONNWEI",
   "Konnwei",
-  "Carista",
   "Viecar",
   "LELink",
   "Kiwi",
   "BLE",
 ];
 
+/** Case-insensitive name match for native scan filtering. */
+export function nameLooksLikeObdAdapter(name: string): boolean {
+  const n = name.trim();
+  if (!n) return false;
+  const lower = n.toLowerCase();
+  return OBD_BLE_NAME_PREFIXES.some((p) => lower.startsWith(p.toLowerCase()));
+}
+
 function getWebBluetooth(): WebBluetooth | null {
   if (typeof navigator === "undefined") return null;
   const nav = navigator as Navigator & { bluetooth?: WebBluetooth };
-  return nav.bluetooth?.requestDevice ? nav.bluetooth : null;
+  return typeof nav.bluetooth?.requestDevice === "function"
+    ? nav.bluetooth
+    : null;
 }
 
 export function isWebBluetoothAvailable(): boolean {
@@ -162,7 +171,7 @@ export class WebBluetoothTransport implements ObdTransport {
         ? { acceptAllDevices: true, optionalServices: BLE_OBD_SERVICES }
         : {
             filters: [
-              ...NAME_PREFIXES.map((namePrefix) => ({ namePrefix })),
+              ...OBD_BLE_NAME_PREFIXES.map((namePrefix) => ({ namePrefix })),
               ...BLE_OBD_SERVICES.map((s) => ({ services: [s] })),
             ],
             optionalServices: BLE_OBD_SERVICES,

@@ -49,6 +49,7 @@ AuthKey_*.p8
 
 # Capacitor / Android local SDK path (machine-specific)
 android/local.properties
+android/keystore/
 android/.gradle/
 android/**/build/
 ios/App/Pods/
@@ -82,3 +83,6 @@ scripts/scrape/car_qa/config/proxies.txt
 scripts/scrape/car_qa/output/*.jsonl
 !scripts/scrape/car_qa/output/.gitkeep
 scripts/scrape/car_qa/.env
+
+# Local Play upload artifacts
+dist/
