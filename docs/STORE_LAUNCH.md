@@ -1,10 +1,10 @@
 # App Store / Play Store launch guide — Garage Genius AI
 
-Last updated: 2026-09-07  
+Last updated: 2026-10-19  
 Canonical site: **https://garagegenius.cloud**  
 Bundle ID / applicationId: **com.garagegenius.ai**  
-Marketing version: **1.0.0** (iOS `MARKETING_VERSION` 1.0 / Android `versionName`)  
-iOS build **8** (`CURRENT_PROJECT_VERSION`) · Android **versionCode 8**  
+Marketing version: **1.0.2** (iOS `MARKETING_VERSION` / Android `versionName`)  
+iOS build **12** (`CURRENT_PROJECT_VERSION`) · Android **versionCode 12**  
 Native shell: Capacitor 8 (remote URL → production Next.js)
 
 ---
@@ -81,7 +81,7 @@ npm run cap:ios    # opens Xcode
 - [ ] Sign up / sign in (email verify works)
 - [ ] Add vehicle / Dashboard / Chat / Coach
 - [ ] Camera or photo pick for receipt / OBD screenshot
-- [ ] OBD live Bluetooth **not** offered as working on iOS (manual code / screenshot)
+- [ ] Connect OBD → Bluetooth permission + scan list (BLE adapter optional; Enter fault code always works)
 - [ ] Pricing upgrade shows store-safe message (no Stripe Checkout in WebView)
 - [ ] Delete account path still reachable in Settings
 
@@ -183,15 +183,15 @@ CAPACITOR_SERVER_URL=https://garagegenius.cloud npm run cap:sync
 | Camera | Garage Genius uses the camera so you can photograph vehicle parts, OBD screens, and repair receipts for AI DIY guidance. |
 | Photo Library | Garage Genius needs photo library access so you can choose existing vehicle, OBD, or receipt images for diagnosis. |
 | Microphone | Garage Genius uses the microphone for hands-free voice coaching while your hands are busy under the hood (Pro / trial). |
-| Bluetooth | Bluetooth is reserved for future native OBD adapters. On iOS today, use Enter fault code or an OBD screenshot instead of live Bluetooth OBD. |
+| Bluetooth | Garage Genius uses Bluetooth to connect to your OBD-II adapter and read vehicle diagnostic data (fault codes, sensors, and VIN) for AI DIY guidance. |
 
 ### Android (manifest — already set)
 
-Camera, microphone, Bluetooth (optional feature), read images / legacy storage, Internet.
+Camera, microphone, Bluetooth / BLE (optional OBD), Internet. No broad media-library permission (system picker since versionCode 10).
 
-### Product honesty — OBD on iOS
+### Product honesty — OBD on store apps
 
-Web Bluetooth **does not work** in iOS WKWebView. UI already routes users to **Enter fault code** or **OBD screenshot** (`lib/obd.ts` → `capacitor_ios`). Do **not** market “Bluetooth OBD on iPhone” until a native BLE plugin ships.
+iOS and Android store apps use **native BLE** (`@capacitor-community/bluetooth-le`) for optional ELM327-compatible adapters. Safari / iPhone webpage still cannot use Web Bluetooth — those users should use the App, or Enter fault code / OBD screenshot. Do **not** claim 100% adapter compatibility; classic Bluetooth-only dongles are Phase 2 (not in 1.0.2). See `docs/OBD_BLUETOOTH.md`.
 
 ---
 
@@ -213,8 +213,8 @@ Stripe Checkout, Customer Portal, and token recharge. After payment, users retur
 **iOS App Store**  
 StoreKit 2 IAP only (`docs/APP_STORE_REVIEW_NOTES.md`).
 
-**Google Play (this versionCode 8)**  
-Free coaching features only. No Play Billing SKUs. No Stripe in the WebView. No “buy on the website” CTA. Listing and review notes: `docs/PLAY_STORE_REVIEW_NOTES.md`.
+**Google Play (this versionCode 12 / 1.0.2)**  
+Free coaching features only. No Play Billing SKUs. No Stripe in the WebView. No “buy on the website” CTA. R8 minify enabled for Play DEX quality. Listing and review notes: `docs/PLAY_STORE_REVIEW_NOTES.md`.
 
 **Later (after the free Play listing is production-live)**  
 Implement **Google Play Billing** for the same Pro / Heavy products, verify on the server, write `profiles.subscription_status`. Ship a new `versionCode`. Do **not** enable Stripe Checkout in the Android WebView after approval.
@@ -272,13 +272,14 @@ Garage Genius AI is a DIY auto-repair coach for weekend mechanics in the US & EU
 • Parts inventory — save what you need for the next job
 • Receipt scan — log shop work into maintenance history
 • Voice coaching (Pro / trial) — hands-free readouts when your hands are greasy
+• Optional Bluetooth OBD — connect a compatible ELM327 BLE adapter (or enter a fault code / upload an OBD screenshot)
 
 IMPORTANT SAFETY NOTICE
 Garage Genius provides general DIY educational guidance only. It is not a substitute for a licensed mechanic, official service manuals, or professional shop work. High-risk systems (brakes, airbags, fuel, jacking, hybrid/EV high voltage) require extra caution — confirm with a qualified technician when unsure.
 
 Insurance tips about modifications / non-OEM parts are educational reminders only. Garage Genius AI does not provide insurance or legal advice and never determines whether a claim will be covered — always check your policy or contact your insurer.
 
-On iPhone, live Bluetooth OBD is not available; enter fault codes manually or upload an OBD screenshot. BLE OBD works on supported Android Chrome environments with compatible adapters.
+Live Bluetooth OBD works in the iOS and Android store apps with compatible ELM327 BLE adapters. Compatibility is not guaranteed for every dongle; classic Bluetooth-only adapters are not supported yet. You can always enter a fault code or upload an OBD screenshot.
 
 Privacy Policy: https://garagegenius.cloud/privacy
 Terms of Service: https://garagegenius.cloud/terms
@@ -303,7 +304,7 @@ How to test
 2. Add a vehicle or use onboarding.
 3. Open Chat / Coach / Dashboard. Camera may request permission for photos/receipts.
 4. Voice mic is Pro/trial only.
-5. iOS Bluetooth OBD is intentionally unavailable — use “Enter fault code” or OBD screenshot.
+5. Optional Bluetooth OBD (Connect OBD) may request Bluetooth; not required — use Enter fault code or OBD screenshot.
 6. Website Stripe checkout is not available inside store apps.
 
 No gambling, no user-generated dating, no third-party content marketplace.
@@ -379,6 +380,6 @@ Terms URL: **https://garagegenius.cloud/terms**
 
 1. ~~Wire `@capacitor/app` URL open → navigate WebView~~ — `NativeDeepLinkBridge` in root layout.  
 2. StoreKit 2 + Play Billing products + server receipt verify.  
-3. Optional native BLE plugin for iOS OBD.  
+3. ~~Native BLE OBD (M1) for iOS + Android store apps~~ — see `docs/OBD_BLUETOOTH.md`. Classic BT / Wi‑Fi = Phase 2.  
 4. ~~App icon set + splash assets in `ios/` / `android/`~~ — see §2b (`npm run cap:assets`).  
 5. TestFlight / internal testing track smoke (auth, chat, coach, camera, delete account).

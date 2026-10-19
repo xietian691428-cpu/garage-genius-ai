@@ -82,4 +82,4 @@ Local/preview override: `NEXT_PUBLIC_OBD_SIM=1` (any signed-in user).
 
 ## Store versions
 
-M1 ships with **Android versionCode 11** (`1.0.1`) and **iOS build 11** (`1.0.1`). Deploy the matching web build so Cap remote URL serves the new modal.
+M1 ships with **Android versionCode 12** (`1.0.2`) and **iOS build 12** (`1.0.2`). Deploy the matching web build so Cap remote URL serves the new modal.

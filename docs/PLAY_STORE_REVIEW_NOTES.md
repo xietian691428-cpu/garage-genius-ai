@@ -1,12 +1,13 @@
-# Google Play Console — Garage Genius AI (v1.0.0 / versionCode 8)
+# Google Play Console — Garage Genius AI (v1.0.2 / versionCode 12)
 
 Use this file for **Play Console listing + Data safety + review notes**.
 
 Do **not** paste passwords into git.
 
-**This Android binary:** versionName **1.0.0**, versionCode **8** (aligned with iOS build 8).  
+**This Android binary:** versionName **1.0.2**, versionCode **12** (aligned with iOS build 12).  
 **Package:** `com.garagegenius.ai`  
-**This version does not sell subscriptions in the Play app.** No Play Billing SKUs. Do not add paid in-app products until Play Billing is implemented.
+**This version does not sell subscriptions in the Play app.** No Play Billing SKUs. Do not add paid in-app products until Play Billing is implemented.  
+**Release notes for this binary:** R8 minify/obfuscation (Play DEX quality), light edge-to-edge system bars, optional native BLE OBD (ELM327-compatible adapters).
 
 Website Stripe Checkout stays on **Chrome / desktop / mobile Safari** only. The Android WebView must not start card checkout, and must not tell users to “buy on the website.”
 
@@ -42,7 +43,7 @@ Garage Genius AI is a DIY auto-repair coach for weekend mechanics.
 • Coach playbooks — step-by-step DIY scenarios with safety confirms
 • Parts inventory — save what you need for the next job
 • Receipt scan — log shop work into maintenance history
-• Enter a fault code or upload an OBD screenshot when you have a scan tool
+• Optional Bluetooth OBD — connect a compatible ELM327 BLE adapter to read codes (or enter a fault code / upload an OBD screenshot)
 
 IMPORTANT SAFETY NOTICE
 Garage Genius provides general DIY educational guidance only. It is not a substitute for a licensed mechanic, official service manuals, or professional shop work. High-risk systems (brakes, airbags, fuel, jacking, hybrid/EV high voltage) require extra caution — confirm with a qualified technician when unsure.
@@ -76,7 +77,7 @@ How to test
 2. An AI processing consent dialog names DeepSeek (chat) and Kimi (photos). Tap Agree to continue, or Not now to skip AI features.
 3. Add a vehicle (or finish onboarding), then open Home, Chat, and Coach.
 4. Camera / photos may request permission for vehicle photos, OBD screenshots, or receipts.
-5. Live Bluetooth OBD is optional and not required. Reviewers can use Enter fault code or an OBD screenshot.
+5. Optional Bluetooth OBD: Chat / Coach / Dashboard → Connect OBD may request Bluetooth permission and scan for ELM327 BLE adapters. Not required — reviewers can use Enter fault code or an OBD screenshot. Compatibility is not guaranteed for every dongle (classic Bluetooth-only adapters are not supported yet).
 6. Settings includes Delete account.
 
 Demo account: use the email/password in the Play Console review form. That account is Free so quota-limited features behave as a new user. Do not use an unlimited internal QA account.
@@ -114,7 +115,7 @@ Data deletion: Settings → Delete account, or https://garagegenius.cloud/delete
 | Camera | Photograph vehicle parts, OBD screens, and repair receipts for AI DIY guidance. |
 | Microphone | Hands-free voice coaching when the user enables it. |
 | Photos / images | **No media permission** (no `READ_MEDIA_IMAGES` / `READ_MEDIA_VIDEO` / `READ_EXTERNAL_STORAGE` since versionCode 10). Existing images are chosen through the Android system picker, which grants one-time access to the selected file. |
-| Bluetooth / BLE | Optional future or Web Bluetooth OBD adapters. Not required to use the app. Enter fault code and OBD screenshot always work. |
+| Bluetooth / BLE | Optional native BLE OBD (ELM327-compatible adapters) via `@capacitor-community/bluetooth-le`. Not required to use the app. Enter fault code and OBD screenshot always work. |
 | Internet | Load the Garage Genius service. |
 
 ---
@@ -174,7 +175,7 @@ Format example (colons required):
 3. **Coach** — a playbook step with the safety confirm visible.  
 4. **History or receipt** — a logged job or scanned receipt.  
 5. *(optional)* **Parts inventory** — saved parts for the current car.  
-6. *(optional)* **Enter fault code / OBD screenshot** — not a fake “Bluetooth always works” claim.  
+6. *(optional)* **Connect OBD / Enter fault code** — show the connect flow or manual code entry; do not claim every adapter works.  
 7. *(optional)* **Settings** — account + delete-account visible; **no Stripe / Apple / “buy on web”**.
 
 **Do not photograph:** Upgrade/Subscribe, Apple IAP prices, Stripe Checkout, the Unlimited QA account, Chinese UI, “Best app / #1 / Download now” overlays, another store’s badge.

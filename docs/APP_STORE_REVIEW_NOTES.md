@@ -1,10 +1,11 @@
-# App Store Review Notes — Garage Genius AI (v1.0 (8))
+# App Store Review Notes — Garage Genius AI (v1.0.2 (12))
 
 Use this file for **App Store Connect → App Review Information → Notes** and the resubmit checklist.
 
 Do **not** paste passwords into git. Rotate any password that already appeared in a previous Review Notes field or screenshot.
 
-**This submission:** Version **1.0**, Build **8**. Archive this binary (do not resubmit 1.0 (7)).
+**This submission:** Version **1.0.2**, Build **12**. Archive this binary (do not resubmit older builds).  
+**Also in this binary:** optional native BLE OBD (ELM327-compatible adapters) via `@capacitor-community/bluetooth-le`.
 
 ### Before Submit for Review
 
@@ -12,10 +13,11 @@ Do **not** paste passwords into git. Rotate any password that already appeared i
 2. App Store Connect **App Description** (or EULA field) must include:  
    `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
 3. Privacy Policy field: `https://garagegenius.cloud/privacy`
-4. **Attach all four IAP products to 1.0 (8)** with App Review screenshots, then submit IAPs **with** the new binary (Guideline 2.1(b)).
-5. Deploy web to `garagegenius.cloud`, then `npx cap sync ios` → Xcode Archive **1.0 (8)** → Upload.
+4. **Attach all four IAP products to 1.0.2 (12)** with App Review screenshots, then submit IAPs **with** the new binary (Guideline 2.1(b)).
+5. Deploy web to `garagegenius.cloud`, then `npx cap sync ios` → Xcode Archive **1.0.2 (12)** → Upload.
 6. iPhone smoke: Sign in with Apple lands in `/app` and **stays** signed in (does not bounce to login).
 7. Demo account in ASC must be **Free** with DeepSeek consent unset. Never the 163 QA account.
+8. Bluetooth: Connect OBD may request Bluetooth permission; reviewers are not required to have an adapter.
 
 ---
 
@@ -36,6 +38,7 @@ How to review (iPhone or iPad):
 3. Open Account → View plans & subscribe (or open Subscribe with Apple). Localized App Store prices load from StoreKit. Tap Subscribe to Pro or Heavy to present the system purchase sheet.
 4. Restore purchases is on the same subscription page and on Account.
 5. Manage or cancel: Account → Manage Apple subscription, or Settings → Apple ID → Subscriptions.
+6. Optional Bluetooth OBD: Chat / Coach / Dashboard → Connect OBD may request Bluetooth and scan for ELM327 BLE adapters. Not required for review — use Enter fault code or an OBD screenshot. Classic Bluetooth-only adapters are not supported yet; compatibility is not guaranteed for every dongle.
 
 Review demo account: sign in with the email/password in App Review Information. That account is Free (not Pro) so Subscribe is tappable, and the DeepSeek consent dialog will appear. Use a Sandbox Apple ID for the purchase sheet.
 
@@ -63,14 +66,14 @@ Also fill App Review Information:
 
 ## 2.1(a) — Sign in with Apple (stay signed in)
 
-Native ASAuthorization → `supabase.auth.signInWithIdToken`. Build 8 waits for a confirmed session, hard-navigates to Home, and does not redirect to login while session bootstrap is still loading.
+Native ASAuthorization → `supabase.auth.signInWithIdToken`. The app waits for a confirmed session, hard-navigates to Home, and does not redirect to login while session bootstrap is still loading.
 
 **Ops (once):**
 
 1. Xcode → Signing & Capabilities → **Sign in with Apple**.
 2. Apple Developer → App ID `com.garagegenius.ai` has Sign in with Apple.
 3. Supabase Apple Client IDs include Services ID **and** bundle ID `com.garagegenius.ai`.
-4. `npx cap sync ios` → Archive **1.0 (8)**.
+4. `npx cap sync ios` → Archive **1.0.2 (12)**.
 
 Google is hidden in the iOS app. Email/password remains.
 
@@ -114,9 +117,16 @@ After login, `/app` shows a centered dialog naming **DeepSeek**. Consent is stor
 
 ---
 
+## Bluetooth / OBD (optional)
+
+`NSBluetoothAlwaysUsageDescription` / `NSBluetoothPeripheralUsageDescription` explain OBD-II diagnostic reads for AI DIY guidance. Live BLE is optional; Enter fault code and OBD screenshot remain available. See `docs/OBD_BLUETOOTH.md`.
+
+---
+
 ## Device smoke before submit
 
 1. Sign in with Apple → stays on Home (no bounce to login).
 2. AI consent appears → Agree.
 3. Subscription page → StoreKit prices → purchase sheet.
 4. Email/password demo login still works.
+5. Connect OBD → Bluetooth permission prompt → scan list (hardware optional).
