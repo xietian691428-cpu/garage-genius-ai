@@ -12,6 +12,7 @@
 -keep class io.capawesome.capacitorjs.plugins.** { *; }
 -keep class ee.forgr.nativepurchases.** { *; }
 -keep class com.capacitorjs.community.plugins.** { *; }
+-keep class com.garagegenius.ai.ObdClassicBluetoothPlugin { *; }
 
 # Preserve line numbers for crash deobfuscation
 -keepattributes SourceFile,LineNumberTable

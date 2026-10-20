@@ -1,7 +1,7 @@
 /**
- * OBD-II connector for garage DIY scans: transport (Web Bluetooth or native
- * BLE in store apps) → ELM327 session (`lib/obd-elm.ts`) → structured
- * `ObdSessionSnapshot`.
+ * OBD-II connector for garage DIY scans: transport (Web Bluetooth, native
+ * BLE, or Android Classic RFCOMM) → ELM327 session (`lib/obd-elm.ts`) →
+ * structured `ObdSessionSnapshot`.
  *
  * Decoding rules live in `lib/obd-protocol.ts`. Never invent readings — a
  * failed or unsupported read leaves fields null.
@@ -23,11 +23,16 @@ import {
   isNativeBleRuntime,
 } from "@/lib/obd-transport-native";
 import {
+  NativeClassicTransport,
+  isNativeClassicRuntime,
+} from "@/lib/obd-transport-classic";
+import {
   canUseObdSimulator,
   requestSimulatedTransport,
   type ObdSimScenarioId,
 } from "@/lib/obd-sim";
 import { formatObdValue, type ObdUnitSystem } from "@/lib/obd-units";
+import { isNativeAndroid } from "@/lib/native-platform";
 import type {
   ObdConnectErrorCode,
   ObdConnectResult,
@@ -43,11 +48,29 @@ export {
   type NativeBleScanDevice,
 } from "@/lib/obd-transport-native";
 export {
+  isNativeClassicRuntime,
+  listBondedClassicDevices,
+  startClassicDiscovery,
+  stopClassicDiscovery,
+  rankClassicDevices,
+  type ClassicScanDevice,
+} from "@/lib/obd-transport-classic";
+export {
   canUseObdSimulator,
   OBD_SIM_SCENARIOS,
   type ObdSimScenarioId,
 } from "@/lib/obd-sim";
+export {
+  OBD_PROTOCOL_CHOICES,
+  runObdSelfCheck,
+  type ObdSelfCheckResult,
+} from "@/lib/obd-self-check";
 export type { ObdScanStep };
+
+/** Link mode for native Android dual-stack. iOS/Web ignore classic. */
+export type ObdLinkMode = "ble" | "classic";
+
+const MAX_RECONNECT_ATTEMPTS = 2;
 
 /** Best-effort Mode 01 live values for Dashboard sensors panel */
 export type ObdLiveSensors = {
@@ -182,8 +205,9 @@ function mapConnectError(err: unknown): ObdConnectResult {
     return {
       ok: false,
       code: "service",
-      message:
-        "This device doesn't offer an OBD serial connection over Bluetooth LE. Classic-Bluetooth-only and Wi-Fi adapters aren't supported yet. Close other OBD apps and try an ELM327 BLE adapter.",
+      message: isNativeAndroid()
+        ? "This device doesn't offer an OBD serial connection over Bluetooth LE. On Android, try Classic Bluetooth mode for ELM327 SPP adapters, or use a BLE adapter."
+        : "This device doesn't offer an OBD serial connection over Bluetooth LE. Classic-Bluetooth-only and Wi-Fi adapters aren't supported on this platform. Close other OBD apps and try an ELM327 BLE adapter.",
     };
   }
   if (/timeout/i.test(msg)) {
@@ -222,23 +246,34 @@ function mergeDtcs(list: ObdSessionDtc[]): ObdSessionDtc[] {
   return [...byCode.values()];
 }
 
-type TransportRequest = (options: {
+type TransportRequestOptions = {
   showAllDevices?: boolean;
   timeoutMs?: number;
   deviceId?: string;
   deviceName?: string;
   simScenario?: ObdSimScenarioId;
-}) => Promise<ObdTransport>;
+  /** Android Classic: use RFCOMM instead of BLE. */
+  linkMode?: ObdLinkMode;
+  /** ELM ATSP protocol id (`0` or `1`–`C`). */
+  protocol?: string;
+};
 
-async function defaultRequestTransport(options: {
-  showAllDevices?: boolean;
-  timeoutMs?: number;
-  deviceId?: string;
-  deviceName?: string;
-  simScenario?: ObdSimScenarioId;
-}): Promise<ObdTransport> {
+type TransportRequest = (options: TransportRequestOptions) => Promise<ObdTransport>;
+
+async function defaultRequestTransport(
+  options: TransportRequestOptions,
+): Promise<ObdTransport> {
   if (options.simScenario) {
     return requestSimulatedTransport({ scenario: options.simScenario });
+  }
+  if (options.linkMode === "classic" && isNativeClassicRuntime()) {
+    if (!options.deviceId) {
+      throw new Error("Select a Classic Bluetooth adapter from the list.");
+    }
+    return NativeClassicTransport.connect({
+      address: options.deviceId,
+      deviceName: options.deviceName,
+    });
   }
   if (isNativeBleRuntime()) {
     if (!options.deviceId) {
@@ -258,6 +293,7 @@ async function defaultRequestTransport(options: {
 
 export class OBDConnector {
   private session: ElmSession | null = null;
+  private lastConnect: TransportRequestOptions | null = null;
 
   constructor(private readonly requestTransport?: TransportRequest) {}
 
@@ -273,13 +309,16 @@ export class OBDConnector {
   async connectDetailed(options?: {
     timeoutMs?: number;
     showAllDevices?: boolean;
-    /** Required on native BLE: device chosen from the in-app scan list. */
+    /** Required on native BLE/Classic: device chosen from the in-app list. */
     deviceId?: string;
     deviceName?: string;
     /** QA-only scripted ELM327 (no Bluetooth hardware). */
     simScenario?: ObdSimScenarioId;
     /** Email for QA simulator / runtime checks. */
     email?: string | null;
+    linkMode?: ObdLinkMode;
+    /** Manual ATSP when auto protocol search fails. */
+    protocol?: string;
     onStep?: (step: ObdScanStep) => void;
   }): Promise<ObdConnectResult> {
     const support = getObdRuntimeSupport(options?.email);
@@ -293,32 +332,39 @@ export class OBDConnector {
         message: "OBD simulator is only available on the internal test account.",
       };
     }
+    const classic =
+      options?.linkMode === "classic" && isNativeClassicRuntime();
     if (
       !this.requestTransport &&
-      isNativeBleRuntime() &&
+      (classic || isNativeBleRuntime()) &&
       !options?.deviceId &&
       !options?.simScenario
     ) {
       return {
         ok: false,
         code: "cancelled",
-        message:
-          "No adapter was selected. Scan for nearby Bluetooth LE adapters, then tap yours in the list.",
+        message: classic
+          ? "No adapter was selected. Pick a paired Classic Bluetooth adapter, or discover nearby devices."
+          : "No adapter was selected. Scan for nearby Bluetooth LE adapters, then tap yours in the list.",
       };
     }
+    const transportOpts: TransportRequestOptions = {
+      showAllDevices: options?.showAllDevices,
+      timeoutMs: options?.timeoutMs,
+      deviceId: options?.deviceId,
+      deviceName: options?.deviceName,
+      simScenario: options?.simScenario,
+      linkMode: options?.linkMode,
+      protocol: options?.protocol,
+    };
+    this.lastConnect = transportOpts;
     this.disconnect();
     try {
       const request = this.requestTransport ?? defaultRequestTransport;
-      const transport = await request({
-        showAllDevices: options?.showAllDevices,
-        timeoutMs: options?.timeoutMs,
-        deviceId: options?.deviceId,
-        deviceName: options?.deviceName,
-        simScenario: options?.simScenario,
-      });
+      const transport = await request(transportOpts);
       const session = new ElmSession(transport);
       this.session = session;
-      await session.initialize(options?.onStep);
+      await session.initialize(options?.onStep, { protocol: options?.protocol });
       return { ok: true, deviceName: transport.deviceName };
     } catch (err) {
       console.error("[obd] connect failed", err);
@@ -335,12 +381,55 @@ export class OBDConnector {
     s.transport.disconnect();
   }
 
-  /** Dashboard “Refresh sensors”. */
+  /**
+   * Re-open the last transport + ELM init (used after mid-session drops).
+   * Returns false if there is nothing to reconnect to.
+   */
+  private async reconnectOnce(onStep?: (step: ObdScanStep) => void): Promise<boolean> {
+    const opts = this.lastConnect;
+    if (!opts?.deviceId && !opts?.simScenario) return false;
+    const result = await this.connectDetailed({
+      ...opts,
+      onStep,
+      email: undefined,
+    });
+    return result.ok;
+  }
+
+  /** Dashboard “Refresh sensors” with one automatic reconnect on drop. */
   async readLiveSensors(): Promise<ObdLiveSensors> {
-    if (!this.session?.connected) {
-      throw new Error("Not connected — connect the OBD adapter first.");
+    const read = async () => {
+      if (!this.session?.connected) {
+        throw new ObdSessionError("disconnected", "Adapter disconnected");
+      }
+      return sensorsFromPids(await this.session.readPids(LIVE_PID_NUMBERS));
+    };
+    try {
+      return await read();
+    } catch (err) {
+      if (!(err instanceof ObdSessionError) || err.code !== "disconnected") {
+        throw err instanceof Error
+          ? err
+          : new Error("Not connected — connect the OBD adapter first.");
+      }
+      for (let i = 0; i < MAX_RECONNECT_ATTEMPTS; i++) {
+        const ok = await this.reconnectOnce();
+        if (!ok) break;
+        try {
+          return await read();
+        } catch (err2) {
+          if (
+            !(err2 instanceof ObdSessionError) ||
+            err2.code !== "disconnected"
+          ) {
+            throw err2;
+          }
+        }
+      }
+      throw new Error(
+        "Adapter disconnected. Keep the phone near the car and tap Connect OBD again.",
+      );
     }
-    return sensorsFromPids(await this.session.readPids(LIVE_PID_NUMBERS));
   }
 
   /**
@@ -351,6 +440,8 @@ export class OBDConnector {
     connectIfNeeded?: boolean;
     includeSensors?: boolean;
     onStep?: (step: ObdScanStep) => void;
+    /** Internal: remaining reconnect attempts after a mid-scan drop. */
+    _reconnectLeft?: number;
   }): Promise<ObdSessionSnapshot> {
     const at = new Date().toISOString();
     const failed = (note: string, warning: string): ObdSessionSnapshot => ({
@@ -411,6 +502,21 @@ export class OBDConnector {
       };
     } catch (err) {
       console.error("[obd] scan failed", err);
+      const left = options?._reconnectLeft ?? MAX_RECONNECT_ATTEMPTS;
+      if (
+        err instanceof ObdSessionError &&
+        err.code === "disconnected" &&
+        left > 0
+      ) {
+        const ok = await this.reconnectOnce(options?.onStep);
+        if (ok) {
+          return this.readSessionSnapshot({
+            ...options,
+            connectIfNeeded: false,
+            _reconnectLeft: left - 1,
+          });
+        }
+      }
       const mapped = mapConnectError(err);
       if (err instanceof ObdSessionError) this.disconnect();
       return failed(mapped.ok ? "Read failed." : mapped.message, mapped.ok ? "unknown" : mapped.code);

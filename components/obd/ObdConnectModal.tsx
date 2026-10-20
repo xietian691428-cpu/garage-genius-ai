@@ -18,11 +18,20 @@ import {
   getObdConnector,
   getObdRuntimeSupport,
   isNativeBleRuntime,
+  isNativeClassicRuntime,
+  listBondedClassicDevices,
   LIVE_SENSOR_PIDS,
+  OBD_PROTOCOL_CHOICES,
   OBD_SIM_SCENARIOS,
+  rankClassicDevices,
+  runObdSelfCheck,
+  startClassicDiscovery,
   startNativeBleScan,
+  stopClassicDiscovery,
   stopNativeBleScan,
+  type ClassicScanDevice,
   type NativeBleScanDevice,
+  type ObdLinkMode,
   type ObdScanStep,
   type ObdSimScenarioId,
 } from "@/lib/obd";
@@ -43,6 +52,10 @@ import {
 import { syncObdMileageToVehicle } from "@/lib/obd-mileage-sync-client";
 import type { MileageUnit } from "@/lib/obd-mileage";
 import { checkObdVin, type ObdVinResponse } from "@/lib/obd-vin-client";
+import { getCapacitorPlatform, isNativeAndroid } from "@/lib/native-platform";
+import type { ObdTransport } from "@/lib/obd-transport";
+import { NativeBleTransport } from "@/lib/obd-transport-native";
+import { NativeClassicTransport } from "@/lib/obd-transport-classic";
 
 type Props = {
   open: boolean;
@@ -113,6 +126,14 @@ export default function ObdConnectModal({
   const [vinSaving, setVinSaving] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanDevices, setScanDevices] = useState<NativeBleScanDevice[]>([]);
+  const [classicDevices, setClassicDevices] = useState<ClassicScanDevice[]>([]);
+  const androidClassic = isNativeAndroid() && isNativeClassicRuntime();
+  const [linkMode, setLinkMode] = useState<ObdLinkMode>("ble");
+  const [protocol, setProtocol] = useState("0");
+  const [showAllProtocols, setShowAllProtocols] = useState(false);
+  const [selfCheckText, setSelfCheckText] = useState<string | null>(null);
+  const [selfCheckBusy, setSelfCheckBusy] = useState(false);
+  const [selfCheckCopied, setSelfCheckCopied] = useState(false);
   useBodyScrollLock(open);
   const allowSim = canUseObdSimulator(user?.email);
 
@@ -126,7 +147,10 @@ export default function ObdConnectModal({
     if (open) return;
     setScanning(false);
     setScanDevices([]);
+    setClassicDevices([]);
+    setSelfCheckText(null);
     void stopNativeBleScan();
+    void stopClassicDiscovery();
   }, [open]);
 
   const maybeSyncMileage = async (session: ObdSessionSnapshot) => {
@@ -182,6 +206,7 @@ export default function ObdConnectModal({
   const emphasize = shouldEmphasizeObdConnect(pref);
   const nativeBle = isNativeBleRuntime();
   const showBleGuide = emphasize && support.supported;
+  const useClassic = androidClassic && linkMode === "classic";
 
   useEffect(() => {
     if (!open || prefLoading) return;
@@ -191,7 +216,12 @@ export default function ObdConnectModal({
     setVinCheck(null);
     setScanning(false);
     setScanDevices([]);
+    setClassicDevices([]);
+    setSelfCheckText(null);
+    setLinkMode("ble");
+    setProtocol("0");
     void stopNativeBleScan();
+    void stopClassicDiscovery();
     const obd = getObdConnector();
     setConnectedName(obd.isConnected ? obd.deviceName : null);
     if (pref.preferenceUnset) {
@@ -232,6 +262,7 @@ export default function ObdConnectModal({
   const stopScan = async () => {
     setScanning(false);
     await stopNativeBleScan();
+    await stopClassicDiscovery();
   };
 
   const startScan = async (showAllDevices = false) => {
@@ -248,14 +279,28 @@ export default function ObdConnectModal({
     setPhase("guide");
     setError(null);
     setScanDevices([]);
+    setClassicDevices([]);
     setScanning(true);
     try {
-      await startNativeBleScan((device) => {
-        setScanDevices((prev) => {
-          if (prev.some((d) => d.deviceId === device.deviceId)) return prev;
-          return [...prev, device].sort((a, b) => (b.rssi ?? -999) - (a.rssi ?? -999));
+      if (useClassic) {
+        const bonded = await listBondedClassicDevices();
+        setClassicDevices(rankClassicDevices(bonded));
+        await startClassicDiscovery((device) => {
+          setClassicDevices((prev) => {
+            if (prev.some((d) => d.address === device.address)) return prev;
+            return rankClassicDevices([...prev, device]);
+          });
         });
-      }, { showAllDevices });
+      } else {
+        await startNativeBleScan((device) => {
+          setScanDevices((prev) => {
+            if (prev.some((d) => d.deviceId === device.deviceId)) return prev;
+            return [...prev, device].sort(
+              (a, b) => (b.rssi ?? -999) - (a.rssi ?? -999),
+            );
+          });
+        }, { showAllDevices });
+      }
     } catch (err) {
       setScanning(false);
       setError(err instanceof Error ? err.message : t("obd.errorGeneric"));
@@ -268,6 +313,8 @@ export default function ObdConnectModal({
     deviceId?: string;
     deviceName?: string;
     simScenario?: ObdSimScenarioId;
+    linkMode?: ObdLinkMode;
+    protocol?: string;
   }) => {
     if (!canStartObdBleConnect(pref)) {
       setError(t("obd.bleBlockedByPref"));
@@ -279,6 +326,8 @@ export default function ObdConnectModal({
     setStep(null);
     setError(null);
     setVinCheck(null);
+    setSelfCheckText(null);
+    const mode = options?.linkMode ?? linkMode;
     try {
       const obd = getObdConnector();
       // Switching to a sim scenario always reconnects with a fresh scripted bus.
@@ -294,6 +343,8 @@ export default function ObdConnectModal({
           deviceName: options?.deviceName,
           simScenario: options?.simScenario,
           email: user?.email,
+          linkMode: mode,
+          protocol: options?.protocol ?? protocol,
           onStep: setStep,
         });
         if (!result.ok) {
@@ -339,7 +390,65 @@ export default function ObdConnectModal({
     setSnapshot(null);
     setVinCheck(null);
     setScanDevices([]);
+    setClassicDevices([]);
+    setSelfCheckText(null);
     setPhase("guide");
+  };
+
+  const runSelfCheck = async (device: {
+    deviceId: string;
+    deviceName?: string;
+  }) => {
+    if (!canStartObdBleConnect(pref)) {
+      setError(t("obd.bleBlockedByPref"));
+      setPhase("error");
+      return;
+    }
+    await stopScan();
+    setSelfCheckBusy(true);
+    setSelfCheckCopied(false);
+    setError(null);
+    setSelfCheckText(null);
+    let transport: ObdTransport | null = null;
+    try {
+      transport = useClassic
+        ? await NativeClassicTransport.connect({
+            address: device.deviceId,
+            deviceName: device.deviceName,
+          })
+        : await NativeBleTransport.connect({
+            deviceId: device.deviceId,
+            deviceName: device.deviceName,
+          });
+      const result = await runObdSelfCheck({
+        transport,
+        platform: getCapacitorPlatform(),
+        protocol,
+      });
+      setSelfCheckText(result.reportText);
+      if (!result.ok) {
+        setError(result.error || t("obd.selfCheckFailed"));
+        setPhase("error");
+      } else {
+        setPhase("guide");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("obd.selfCheckFailed"));
+      setPhase("error");
+    } finally {
+      transport?.disconnect();
+      setSelfCheckBusy(false);
+    }
+  };
+
+  const copySelfCheck = async () => {
+    if (!selfCheckText) return;
+    try {
+      await navigator.clipboard.writeText(selfCheckText);
+      setSelfCheckCopied(true);
+    } catch {
+      setSelfCheckCopied(false);
+    }
   };
 
   const primaryResultAction = () => {
@@ -354,6 +463,9 @@ export default function ObdConnectModal({
   };
 
   const unsupportedMessage = t("obd.browserUnsupported");
+  const protocolChoices = showAllProtocols
+    ? OBD_PROTOCOL_CHOICES
+    : OBD_PROTOCOL_CHOICES.filter((p) => p.preset);
 
   const vinDecodedLabel = vinCheck?.decoded
     ? [vinCheck.decoded.year, vinCheck.decoded.make, vinCheck.decoded.model]
@@ -444,9 +556,79 @@ export default function ObdConnectModal({
                 </p>
               ) : (
                 <p className="rounded-xl border border-cyan-700/40 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100">
-                  {t("obd.bleOnlyBanner")}
+                  {androidClassic
+                    ? t("obd.dualModeBanner")
+                    : t("obd.bleOnlyBanner")}
                 </p>
               )}
+
+              {androidClassic && showBleGuide ? (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLinkMode("ble");
+                      void stopScan();
+                      setClassicDevices([]);
+                    }}
+                    className={`flex-1 rounded-xl px-3 py-2 text-xs font-semibold ${
+                      linkMode === "ble"
+                        ? "bg-cyan-500 text-black"
+                        : "border border-slate-600 text-slate-300"
+                    }`}
+                  >
+                    {t("obd.modeBle")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLinkMode("classic");
+                      void stopScan();
+                      setScanDevices([]);
+                    }}
+                    className={`flex-1 rounded-xl px-3 py-2 text-xs font-semibold ${
+                      linkMode === "classic"
+                        ? "bg-cyan-500 text-black"
+                        : "border border-slate-600 text-slate-300"
+                    }`}
+                  >
+                    {t("obd.modeClassic")}
+                  </button>
+                </div>
+              ) : null}
+
+              {showBleGuide ? (
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    {t("obd.protocolLabel")}
+                  </label>
+                  <select
+                    value={protocol}
+                    onChange={(e) => setProtocol(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+                  >
+                    {protocolChoices.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.id === "0"
+                          ? t("obd.protocolAuto")
+                          : `${p.id} — ${p.label}`}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowAllProtocols((v) => !v)}
+                    className="mt-1 text-[11px] text-slate-400 underline-offset-2 hover:underline"
+                  >
+                    {showAllProtocols
+                      ? t("obd.protocolShowPresets")
+                      : t("obd.protocolShowAll")}
+                  </button>
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    {t("obd.protocolHint")}
+                  </p>
+                </div>
+              ) : null}
 
               {phase === "error" && error ? (
                 <p className="rounded-xl border border-red-700/40 bg-red-950/30 px-3 py-2 text-xs leading-relaxed text-red-100">
@@ -513,30 +695,85 @@ export default function ObdConnectModal({
                 </div>
               ) : null}
 
-              {showBleGuide && nativeBle ? (
+              {showBleGuide && (nativeBle || useClassic) ? (
                 <div>
                   <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    {t("obd.selectDevice")}
+                    {useClassic
+                      ? t("obd.selectClassicDevice")
+                      : t("obd.selectDevice")}
                   </h3>
                   {scanning ? (
                     <p className="mb-2 flex items-center gap-2 text-xs text-cyan-200">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      {t("obd.scanning")}
+                      {useClassic
+                        ? t("obd.scanningClassic")
+                        : t("obd.scanning")}
                     </p>
                   ) : null}
                   <p className="mb-2 text-[11px] text-slate-500">
-                    {t("obd.scanningHint")}
+                    {useClassic
+                      ? t("obd.scanningClassicHint")
+                      : t("obd.scanningHint")}
                   </p>
-                  {scanDevices.length ? (
+                  {useClassic ? (
+                    classicDevices.length ? (
+                      <ul className="space-y-2">
+                        {classicDevices.map((d) => (
+                          <li key={d.address} className="space-y-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void connectAndRead({
+                                  deviceId: d.address,
+                                  deviceName: d.name,
+                                  linkMode: "classic",
+                                })
+                              }
+                              className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-left hover:border-cyan-500/50 hover:bg-slate-900"
+                            >
+                              <span className="text-sm font-medium text-slate-100">
+                                {d.name}
+                              </span>
+                              {d.rssi != null ? (
+                                <span className="text-[11px] text-slate-500">
+                                  {d.rssi} dBm
+                                </span>
+                              ) : null}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={selfCheckBusy}
+                              onClick={() =>
+                                void runSelfCheck({
+                                  deviceId: d.address,
+                                  deviceName: d.name,
+                                })
+                              }
+                              className="w-full rounded-lg border border-slate-700 px-2 py-1.5 text-[11px] text-slate-400 hover:border-slate-500 disabled:opacity-50"
+                            >
+                              {selfCheckBusy
+                                ? t("obd.selfCheckRunning")
+                                : t("obd.selfCheckCta")}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="rounded-xl border border-dashed border-slate-700 px-3 py-3 text-xs text-slate-400">
+                        {t("obd.noClassicDevicesYet")}
+                      </p>
+                    )
+                  ) : scanDevices.length ? (
                     <ul className="space-y-2">
                       {scanDevices.map((d) => (
-                        <li key={d.deviceId}>
+                        <li key={d.deviceId} className="space-y-1">
                           <button
                             type="button"
                             onClick={() =>
                               void connectAndRead({
                                 deviceId: d.deviceId,
                                 deviceName: d.name,
+                                linkMode: "ble",
                               })
                             }
                             className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-left hover:border-cyan-500/50 hover:bg-slate-900"
@@ -550,6 +787,21 @@ export default function ObdConnectModal({
                               </span>
                             ) : null}
                           </button>
+                          <button
+                            type="button"
+                            disabled={selfCheckBusy}
+                            onClick={() =>
+                              void runSelfCheck({
+                                deviceId: d.deviceId,
+                                deviceName: d.name,
+                              })
+                            }
+                            className="w-full rounded-lg border border-slate-700 px-2 py-1.5 text-[11px] text-slate-400 hover:border-slate-500 disabled:opacity-50"
+                          >
+                            {selfCheckBusy
+                              ? t("obd.selfCheckRunning")
+                              : t("obd.selfCheckCta")}
+                          </button>
                         </li>
                       ))}
                     </ul>
@@ -558,6 +810,26 @@ export default function ObdConnectModal({
                       {t("obd.noDevicesYet")}
                     </p>
                   )}
+                </div>
+              ) : null}
+
+              {selfCheckText ? (
+                <div className="rounded-xl border border-slate-700 bg-slate-950/80 p-3">
+                  <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {t("obd.selfCheckTitle")}
+                  </h3>
+                  <pre className="max-h-40 overflow-auto whitespace-pre-wrap text-[11px] text-slate-300">
+                    {selfCheckText}
+                  </pre>
+                  <button
+                    type="button"
+                    onClick={() => void copySelfCheck()}
+                    className="mt-2 rounded-lg border border-cyan-500/40 px-3 py-1.5 text-xs font-semibold text-cyan-100 hover:bg-cyan-500/10"
+                  >
+                    {selfCheckCopied
+                      ? t("obd.selfCheckCopied")
+                      : t("obd.selfCheckCopy")}
+                  </button>
                 </div>
               ) : null}
 
@@ -580,7 +852,9 @@ export default function ObdConnectModal({
                     ))}
                   </ul>
                   <p className="mt-2 text-[11px] text-slate-500">
-                    {t("obd.bleOnlyNote")}
+                    {androidClassic
+                      ? t("obd.dualModeNote")
+                      : t("obd.bleOnlyNote")}
                   </p>
                   {!nativeBle ? (
                     <p className="mt-1 text-[11px] text-slate-500">
@@ -816,13 +1090,15 @@ export default function ObdConnectModal({
               <button
                 type="button"
                 onClick={() =>
-                  void (nativeBle
+                  void (nativeBle || useClassic
                     ? startScan(true)
                     : connectAndRead({ showAllDevices: true }))
                 }
                 className="px-1 py-2.5 text-xs text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline"
               >
-                {t("obd.showAllDevices")}
+                {useClassic
+                  ? t("obd.discoverClassic")
+                  : t("obd.showAllDevices")}
               </button>
             ) : null}
 
@@ -850,19 +1126,20 @@ export default function ObdConnectModal({
                 disabled={
                   !support.supported ||
                   phase === "working" ||
-                  (allowSim && !nativeBle && !connectedName)
+                  selfCheckBusy ||
+                  (allowSim && !nativeBle && !useClassic && !connectedName)
                 }
                 onClick={() =>
-                  void (nativeBle && !connectedName
+                  void ((nativeBle || useClassic) && !connectedName
                     ? startScan(false)
-                    : connectAndRead())
+                    : connectAndRead({ linkMode }))
                 }
                 className="ml-auto inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cyan-500 px-3 py-2.5 text-sm font-semibold text-black hover:bg-cyan-400 disabled:opacity-50 sm:flex-none"
               >
                 <Bluetooth className="h-4 w-4" />
                 {connectedName
                   ? t("obd.readAgain")
-                  : nativeBle
+                  : nativeBle || useClassic
                     ? scanning
                       ? t("obd.scanAgain")
                       : t("obd.scanCta")

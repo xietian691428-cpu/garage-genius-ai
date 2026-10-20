@@ -5,7 +5,11 @@
  * protocol code.
  */
 
-export type ObdTransportKind = "web-bluetooth" | "native-ble" | "mock";
+export type ObdTransportKind =
+  | "web-bluetooth"
+  | "native-ble"
+  | "native-classic"
+  | "mock";
 
 export interface ObdTransport {
   readonly kind: ObdTransportKind;

@@ -164,8 +164,15 @@ export class ElmSession {
     });
   }
 
-  /** Reset adapter, find the vehicle protocol, and load supported PIDs. */
-  async initialize(onStep?: (step: ObdScanStep) => void): Promise<ElmAdapterInfo> {
+  /**
+   * Reset adapter, find the vehicle protocol, and load supported PIDs.
+   * @param options.protocol ELM ATSP id (`0` auto, `1`–`9`, `A`–`C`). Default auto.
+   * @param options.skipSupportedPidWalk Self-check only needs 0100, not the full bitmap walk.
+   */
+  async initialize(
+    onStep?: (step: ObdScanStep) => void,
+    options?: { protocol?: string; skipSupportedPidWalk?: boolean },
+  ): Promise<ElmAdapterInfo> {
     onStep?.("init");
     let banner = await this.send("ATZ", 4_000);
     if (!cleanElmLines(banner, "ATZ").length) banner = await this.send("ATI", 3_000);
@@ -181,7 +188,9 @@ export class ElmSession {
     await this.send("ATS1");
     this.headers = /OK/i.test(await this.send("ATH1"));
     await this.send("ATAT1");
-    await this.send("ATSP0");
+    const sp = (options?.protocol ?? "0").toUpperCase().replace(/^ATSP/i, "");
+    const spCmd = /^[0-9A-C]$/.test(sp) ? sp : "0";
+    await this.send(`ATSP${spCmd}`);
 
     this.info.version =
       parseAdapterVersion(banner) ?? parseAdapterVersion(await this.send("ATI"));
@@ -207,10 +216,12 @@ export class ElmSession {
     }
 
     this.supported = decodeSupportedPids(this.parse(raw, "0100"), 0x00);
-    for (let base = 0x20; base <= 0xc0 && this.supported.has(base); base += 0x20) {
-      const cmd = `01${hex2(base)}`;
-      const more = decodeSupportedPids(this.parse(await this.send(cmd), cmd), base);
-      for (const pid of more) this.supported.add(pid);
+    if (!options?.skipSupportedPidWalk) {
+      for (let base = 0x20; base <= 0xc0 && this.supported.has(base); base += 0x20) {
+        const cmd = `01${hex2(base)}`;
+        const more = decodeSupportedPids(this.parse(await this.send(cmd), cmd), base);
+        for (const pid of more) this.supported.add(pid);
+      }
     }
     return this.info;
   }
