@@ -1,6 +1,6 @@
 # Garage Genius AI — Deployment & launch checklist
 
-Last updated: July 24, 2026  
+Last updated: 2026-10-20  
 Scope: **27 production Coach playbooks** + core Free/Pro product.  
 Migrations **001–024**: assumed applied (including playbook usage + Stripe revenue + support refunds).
 
@@ -31,7 +31,8 @@ Migrations **001–024**: assumed applied (including playbook usage + Stripe rev
 - [ ] `npm run build` succeeds on the deploy target (Node version matches Vercel)
 - [ ] `assertCoachProductionReady()` → **27** playbooks, safety UX rules present
 - [ ] `NEXT_PUBLIC_QA_UNLOCK` / `QA_UNLOCK` **unset** in production (code also hard-blocks when `VERCEL_ENV=production`)
-- [ ] OAuth buttons only when `NEXT_PUBLIC_AUTH_APPLE` / `NEXT_PUBLIC_AUTH_GOOGLE` enabled after Supabase providers are live
+- [ ] OAuth: enable Supabase Apple + Google providers first, then set `NEXT_PUBLIC_AUTH_APPLE=1` / `NEXT_PUBLIC_AUTH_GOOGLE=1` on Vercel and **Redeploy** (see `docs/AUTH_PROVIDERS.md`)
+- [ ] Google: Web + Android only (iOS App hides Google). Redirect URLs must include `garagegenius://auth/callback`
 - [ ] Secrets not committed (`.env.local` gitignored)
 - [ ] Legal pages load: `/privacy`, `/terms` (linked from login, Settings, landing footer, pricing)
 

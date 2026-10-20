@@ -55,16 +55,26 @@ describe("native Apple vs web OAuth policy", () => {
     ).toBe(false);
   });
 
-  it("hides Google on native iOS even when the env flag is on", () => {
+  it("shows Google on web/Android when enabled; hides on native iOS", () => {
     expect(
       isGoogleOAuthButtonVisible({ googleEnabled: true, nativeIos: true }),
     ).toBe(false);
+    // Android Capacitor and desktop web both pass nativeIos: false
     expect(
       isGoogleOAuthButtonVisible({ googleEnabled: true, nativeIos: false }),
     ).toBe(true);
     expect(
       isGoogleOAuthButtonVisible({ googleEnabled: false, nativeIos: false }),
     ).toBe(false);
+  });
+
+  it("blocks Google OAuth kickoff on native iOS in useAuth", () => {
+    const auth = readFileSync("hooks/useAuth.ts", "utf8");
+    expect(auth).toMatch(
+      /provider === "google" && isNativeIos\(\)[\s\S]*?not available in the iOS app/,
+    );
+    expect(auth).toContain("garagegenius://auth/callback");
+    expect(auth).toContain("skipBrowserRedirect: native");
   });
 
   it("treats SIGN_IN_CANCELED as a user cancel", () => {

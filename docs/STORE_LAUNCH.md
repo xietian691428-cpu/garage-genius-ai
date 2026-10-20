@@ -19,7 +19,7 @@ Native shell: Capacitor 8 (remote URL → production Next.js)
 | StoreKit / Play Billing IAP | **iOS StoreKit 2 wired**; **Android Play Billing not in this version** (free features only; no web-pay CTA in the Play app) |
 | Universal Links / App Links templates | **Present** (Play App Signing SHA-256 set in `assetlinks.json`) |
 | Screenshots / store listing assets | **You — create in consoles** |
-| Sign in with Apple (if Google enabled) | **Ops — enable in Supabase + Apple** |
+| Sign in with Apple / Google | **Apple live**; **Google Web+Android** — `docs/AUTH_PROVIDERS.md` + `NEXT_PUBLIC_AUTH_GOOGLE=1` |
 | Play listing copy / review notes | **`docs/PLAY_STORE_REVIEW_NOTES.md`** |
 
 ---
