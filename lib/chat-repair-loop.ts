@@ -229,11 +229,13 @@ export function getFollowUpChips(options?: {
 
   const out: StarterChip[] = [];
 
-  // Exterior lighting continuation chips (buy → install → troubleshoot)
-  const lightingChips = lightingFollowUpChips(
-    rawUser || rawText,
-    options?.vehicle,
-  );
+  // Exterior lighting continuation chips (buy → install → troubleshoot).
+  // Combine user + assistant: short confirms ("Dust cap I can unscrew") alone
+  // are not lighting-intent, but the prior turn is.
+  const lightingBlob = [rawUser, rawText].filter(Boolean).join("\n");
+  const lightingChips = lightingFollowUpChips(lightingBlob, options?.vehicle, {
+    transcriptBlob: lightingBlob,
+  });
   if (lightingChips.length) {
     for (const c of lightingChips.slice(0, 3)) {
       out.push({
