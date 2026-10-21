@@ -230,11 +230,12 @@ export function getFollowUpChips(options?: {
   const out: StarterChip[] = [];
 
   // Exterior lighting continuation chips (buy → install → troubleshoot).
-  // Combine user + assistant: short confirms ("Dust cap I can unscrew") alone
-  // are not lighting-intent, but the prior turn is.
+  // Intent: user+assistant. Structure confirm: user-only (assistant "dust cap
+  // vs sealed" education must not false-confirm the path).
   const lightingBlob = [rawUser, rawText].filter(Boolean).join("\n");
   const lightingChips = lightingFollowUpChips(lightingBlob, options?.vehicle, {
     transcriptBlob: lightingBlob,
+    confirmBlob: rawUser,
   });
   if (lightingChips.length) {
     for (const c of lightingChips.slice(0, 3)) {

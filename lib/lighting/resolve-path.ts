@@ -119,8 +119,14 @@ function playbookFor(
 }
 
 export type ResolveLightingOptions = {
-  /** Extra transcript (recent user turns) for structure confirm phrases. */
+  /** Extra text for lighting intent (may include assistant). */
   transcriptBlob?: string;
+  /**
+   * Owner-only text for structure confirm. Defaults to userMessage.
+   * Do not pass assistant copy — educational "dust cap vs sealed" text
+   * would false-confirm the path.
+   */
+  confirmBlob?: string;
 };
 
 /**
@@ -141,15 +147,18 @@ export function resolveLightingPath(
   const override = vehicle ? noteOverrides(vehicle) : null;
   const entry = vehicle ? matchEntry(vehicle) : null;
 
-  const fromText = parseLightingStructureFromText(blob);
+  // Structure confirm: owner words only (never assistant education copy)
+  const confirmSrc = options?.confirmBlob ?? userMessage;
+  const fromText = parseLightingStructureFromText(confirmSrc);
   const userConfirmedReplaceable =
-    fromText === "replaceable_bulb" || parseReplaceableHousingConfirm(blob);
-  // Prefer replaceable when both fire — assistant copy often says
-  // "not a sealed LED module" which still matches sealed patterns.
+    fromText === "replaceable_bulb" ||
+    parseReplaceableHousingConfirm(confirmSrc);
+  // Prefer replaceable when both fire — assistant contrast copy often says
+  // "not a sealed LED module" which still matches sealed patterns if mis-fed.
   const userConfirmedSealed =
     !userConfirmedReplaceable &&
     (fromText === "sealed_or_integrated_led" ||
-      parseSealedHousingConfirm(blob));
+      parseSealedHousingConfirm(confirmSrc));
 
   let path: LightingStructurePath = "ambiguous_needs_confirm";
   let confidence: LightingPathResult["confidence"] = "low";
