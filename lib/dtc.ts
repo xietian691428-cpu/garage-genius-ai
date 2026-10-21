@@ -380,5 +380,8 @@ export function getDtcFollowUpChips(sourceText?: string | null): DtcChip[] {
 export function textHasDtcSignal(text?: string | null): boolean {
   if (!text) return false;
   if (extractDtcCodes(text).length > 0) return true;
-  return /fault code|dtc|check engine|obd|trouble code/i.test(text);
+  // \bobd\b — do not match "observed" (W8 evidence wording) or similar.
+  return /\bfault code\b|\bdtc\b|\bcheck engine\b|\bobd\b|\btrouble code\b/i.test(
+    text,
+  );
 }

@@ -107,6 +107,7 @@ export default function MessageBubble({
       focusPart: focusCmd?.part ?? null,
       assistantText: displayContent,
       userText: priorUserText,
+      vehicle: vehicle ?? null,
     }).slice(0, 3);
   }, [
     isLastAssistant,
@@ -115,6 +116,7 @@ export default function MessageBubble({
     focusCmd?.part,
     displayContent,
     priorUserText,
+    vehicle,
   ]);
 
   const handleReplay = () => {
