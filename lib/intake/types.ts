@@ -31,6 +31,23 @@ export type SideSlot = "left" | "right" | "both" | "na" | "unknown";
 export type SuddenOrGradual = "sudden" | "gradual" | "unknown";
 export type IntermittentOrConstant = "intermittent" | "constant" | "unknown";
 
+/** Battery / cranking symptom family (W9). */
+export type BatteryCrankSymptom =
+  | "unknown"
+  | "no_crank"
+  | "slow_crank"
+  | "clicks"
+  | "starts_then_dies";
+
+export type YesNoUnknown = "yes" | "no" | "unknown";
+
+export type IntakeFocusIntent =
+  | "none"
+  | "lighting"
+  | "battery_cranking"
+  | "overheat"
+  | "generic_root_cause";
+
 export type IntakeSlots = {
   symptom_summary: string | null;
   when_started: string | null;
@@ -47,6 +64,17 @@ export type IntakeSlots = {
   lighting_function: LightingFunctionSlot;
   housing_confirm: HousingConfirmSlot;
   trim_or_package: string | null;
+  /** Battery / cranking (W9). */
+  battery_symptom: BatteryCrankSymptom;
+  lights_dim: YesNoUnknown;
+  recent_battery_work: YesNoUnknown;
+  parked_days: string | null;
+  weather_cold: YesNoUnknown;
+  /** Overheat (W9). */
+  temp_gauge_or_light: YesNoUnknown;
+  steam: YesNoUnknown;
+  level_checked_cold: YesNoUnknown;
+  recent_cooling_work: YesNoUnknown;
 };
 
 export type IntakeMissingSlot =
@@ -54,13 +82,21 @@ export type IntakeMissingSlot =
   | "intermittent_or_constant"
   | "side"
   | "lighting_structure"
-  | "housing_confirm";
+  | "housing_confirm"
+  | "battery_symptom"
+  | "lights_dim"
+  | "temp_gauge_or_light"
+  | "steam"
+  | "level_checked_cold";
 
 export type IntakeDeriveResult = {
   slots: IntakeSlots;
   missingCritical: IntakeMissingSlot[];
   evidenceItems: EvidenceItem[];
+  focusIntent: IntakeFocusIntent;
   lightingIntent: boolean;
+  batteryIntent: boolean;
+  overheatIntent: boolean;
   seekingRootCause: boolean;
   /** Prefer ask-first over long diagnosis dump. */
   preferIntakeQuestions: boolean;
@@ -81,4 +117,13 @@ export const EMPTY_INTAKE_SLOTS: IntakeSlots = {
   lighting_function: "unknown",
   housing_confirm: "unset",
   trim_or_package: null,
+  battery_symptom: "unknown",
+  lights_dim: "unknown",
+  recent_battery_work: "unknown",
+  parked_days: null,
+  weather_cold: "unknown",
+  temp_gauge_or_light: "unknown",
+  steam: "unknown",
+  level_checked_cold: "unknown",
+  recent_cooling_work: "unknown",
 };

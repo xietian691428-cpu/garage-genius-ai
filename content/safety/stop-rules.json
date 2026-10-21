@@ -30,10 +30,27 @@
     "patterns": [
       "open radiator cap hot",
       "remove coolant cap while hot",
-      "hot cooling system pressurized"
+      "hot cooling system pressurized",
+      "overheating steam",
+      "overheating on the",
+      "steam from under",
+      "steam from hood",
+      "steam from the hood",
+      "gauge in red"
     ],
-    "summary_en": "Never open a pressurized hot cooling system. Stop DIY until fully cool; overheating with steam → safe pull-over, not under-hood heroics.",
-    "owner_prep_en": "Note temperature gauge behavior and any coolant smell/steam after cool-down only."
+    "summary_en": "Never open a pressurized hot cooling system. Stop DIY until fully cool; overheating with steam → safe pull-over / tow — not under-hood heroics or limping on the highway.",
+    "owner_prep_en": "Note temperature gauge behavior and any coolant smell/steam after cool-down only. Do not keep driving with steam."
+  },
+  {
+    "id": "battery_airbag_jump",
+    "patterns": [
+      "jump pack on airbag",
+      "clamp near airbag",
+      "boost on srs",
+      "sulfation boil battery"
+    ],
+    "summary_en": "Do not teach dangerous jump-pack placement near SRS/airbag lines or boil-out sulfation DIY. Prefer a qualified tech for deep electrical work.",
+    "owner_prep_en": "Note no-crank vs slow-crank vs clicks, whether lights dim, and any recent battery work."
   },
   {
     "id": "hv_orange_hybrid",

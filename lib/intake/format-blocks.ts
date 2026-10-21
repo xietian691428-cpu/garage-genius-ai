@@ -14,6 +14,7 @@ function slotLine(label: string, value: string | null | undefined): string | nul
 export function formatIntakeStateBlock(result: IntakeDeriveResult): string {
   const s = result.slots;
   const filled = [
+    slotLine("focus", result.focusIntent !== "none" ? result.focusIntent : null),
     slotLine("symptom", s.symptom_summary),
     slotLine("when_started", s.when_started),
     slotLine("onset", s.sudden_or_gradual !== "unknown" ? s.sudden_or_gradual : null),
@@ -39,15 +40,39 @@ export function formatIntakeStateBlock(result: IntakeDeriveResult): string {
       s.housing_confirm !== "unset" ? s.housing_confirm : null,
     ),
     slotLine("trim", s.trim_or_package),
+    slotLine(
+      "battery_symptom",
+      s.battery_symptom !== "unknown" ? s.battery_symptom : null,
+    ),
+    slotLine("lights_dim", s.lights_dim !== "unknown" ? s.lights_dim : null),
+    slotLine(
+      "recent_battery_work",
+      s.recent_battery_work !== "unknown" ? s.recent_battery_work : null,
+    ),
+    slotLine("parked_days", s.parked_days),
+    slotLine("weather_cold", s.weather_cold !== "unknown" ? s.weather_cold : null),
+    slotLine(
+      "temp_gauge_or_light",
+      s.temp_gauge_or_light !== "unknown" ? s.temp_gauge_or_light : null,
+    ),
+    slotLine("steam", s.steam !== "unknown" ? s.steam : null),
+    slotLine(
+      "level_checked_cold",
+      s.level_checked_cold !== "unknown" ? s.level_checked_cold : null,
+    ),
+    slotLine(
+      "recent_cooling_work",
+      s.recent_cooling_work !== "unknown" ? s.recent_cooling_work : null,
+    ),
   ].filter(Boolean);
 
   const missing =
     result.missingCritical.length > 0
-      ? `Missing critical slots (ask ≤2–3 before long diagnosis): ${result.missingCritical.join(", ")}.`
+      ? `Missing critical slots (ask ≤2 high-value questions before long diagnosis): ${result.missingCritical.join(", ")}.`
       : "No critical intake gaps for this turn.";
 
   const askFirst = result.preferIntakeQuestions
-    ? "PRIORITY: Ask the missing high-value questions first (chips OK). Do not dump a long parts/cause list until slots above are filled or owner declines."
+    ? "PRIORITY: Ask the missing high-value questions first (chips OK). Do not dump a long parts/cause list until slots above are filled or owner declines. Never say Replace battery now / Replace converter now."
     : "Intake sufficient to proceed with educational narrowing — still no root-cause assertions.";
 
   const lightingGate =
@@ -59,6 +84,24 @@ export function formatIntakeStateBlock(result: IntakeDeriveResult): string {
           ? "LIGHTING GATE: replaceable path allowed only with verify disclaimer; still not VIN-proven fitment."
           : null;
 
+  const batteryGate = result.batteryIntent
+    ? [
+        "BATTERY/CRANKING GATE: educate no_crank vs slow_crank vs clicks before parts.",
+        "Do not assert Replace battery now. Jump-pack misuse / sulfation deep DIY / airbag-line work: stop — see a pro.",
+        "OBD voltage is OBSERVED only if a live adapter snapshot is present this turn — never invent voltage.",
+      ].join(" ")
+    : null;
+
+  const overheatGate = result.overheatIntent
+    ? [
+        "OVERHEAT GATE: NEVER instruct opening a hot radiator/coolant pressure cap.",
+        "Educational check order when safe: cold coolant level → leak signs → fan operation → shop. No invented cap pressure or capacity.",
+        s.steam === "yes"
+          ? "Steam reported: do not keep driving; pull over safely when possible and arrange a tow — do not limp on the highway."
+          : "If steam develops or gauge stays in red: do not drive / arrange a tow.",
+      ].join(" ")
+    : null;
+
   return [
     "[INTAKE_STATE]",
     "Ephemeral session slots (no VIN). Use to ask like a tech — then narrow. Never invent missing facts.",
@@ -66,6 +109,8 @@ export function formatIntakeStateBlock(result: IntakeDeriveResult): string {
     missing,
     askFirst,
     lightingGate,
+    batteryGate,
+    overheatGate,
   ]
     .filter(Boolean)
     .join("\n");
@@ -80,6 +125,10 @@ export function summarizeIntakeForShopNote(slots: IntakeSlots): string {
     slots.housing_confirm !== "unset"
       ? `housing=${slots.housing_confirm}`
       : null,
+    slots.battery_symptom !== "unknown"
+      ? `battery=${slots.battery_symptom}`
+      : null,
+    slots.steam === "yes" ? "steam=yes" : null,
     slots.dtc_list.length ? `dtc=${slots.dtc_list.join(",")}` : null,
     slots.already_tried ? "owner_tried=yes" : null,
   ].filter(Boolean);

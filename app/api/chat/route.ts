@@ -87,7 +87,11 @@ import {
 } from "@/lib/vehicle-data/anchors";
 import { isVehicleDataDebug } from "@/lib/vehicle-data/config";
 import { maskVin } from "@/lib/vehicle-data/vin";
-import { deriveIntake, formatIntakeStateBlock } from "@/lib/intake";
+import {
+  applyW9OutputGuards,
+  deriveIntake,
+  formatIntakeStateBlock,
+} from "@/lib/intake";
 import { formatEvidenceBlock } from "@/lib/evidence/grades";
 import { formatStopRuleBlock } from "@/lib/safety/stop-rules";
 import { specGapMetadata, classifySpecGapIntents } from "@/lib/spec-gap-intent";
@@ -767,11 +771,22 @@ export async function POST(request: NextRequest) {
 
     const gatedContent = ensureDisclaimer(
       applyObdHonestyGuards(
-        applyDiagnosticToneGuards(
-          applySpecOutputGate(
-            applyAffiliatePartsToReply(reply, prioritized, currentVehicle),
-            specCtx,
+        applyW9OutputGuards(
+          applyDiagnosticToneGuards(
+            applySpecOutputGate(
+              applyAffiliatePartsToReply(reply, prioritized, currentVehicle),
+              specCtx,
+            ),
           ),
+          {
+            userText: userPlainForLang,
+            lightingStructureUnknown:
+              intake.lightingIntent &&
+              intake.slots.lighting_structure === "unknown",
+            overheatIntent: intake.overheatIntent,
+            steamReported: intake.slots.steam === "yes",
+            batteryIntent: intake.batteryIntent,
+          },
         ),
         hasLiveObdAdapter(obdPreference),
       ),

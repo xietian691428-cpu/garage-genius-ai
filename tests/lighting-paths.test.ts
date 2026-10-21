@@ -47,6 +47,7 @@ describe("resolveLightingPath", () => {
     );
     expect(r).not.toBeNull();
     expect(r!.path).toBe("ambiguous_needs_confirm");
+    expect(r!.multiConfig).toBe(true);
     expect(r!.confirmPrompts.length).toBeGreaterThan(0);
     expect(r!.bulbHint).toBeNull();
     expect(r!.playbookSlug).toBe("diagnosis_electrical_lights_sensors");

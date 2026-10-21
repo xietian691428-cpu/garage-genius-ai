@@ -187,17 +187,23 @@ export function resolveLightingPath(
 
   const dataMissing = !entry && !override && !structureConfirmed;
 
+  const multiConfig = Boolean(entry?.multiConfig);
   const cautions = [
     ...GENERIC_CAUTIONS,
     ...(entry?.cautions || []),
     ...(intent === "led_upgrade" ? LED_UPGRADE_CAUTIONS : []),
+    ...(multiConfig && !structureConfirmed
+      ? [
+          "This YMM has multiple lighting packages (multi_config) — confirm dust-cap vs sealed before any bulb size.",
+        ]
+      : []),
   ];
   const confirmPrompts =
     !structureConfirmed || path === "ambiguous_needs_confirm"
       ? [...(entry?.confirmPrompts || []), ...GENERIC_CONFIRM].slice(0, 3)
       : [...(entry?.confirmPrompts || [])].slice(0, 2);
 
-  // W8: bulb hints only after replaceable structure is confirmed (+ table row)
+  // W8/W9: bulb hints only after replaceable structure is confirmed (+ table row)
   const bulbHint =
     structureConfirmed && path === "likely_replaceable_bulb"
       ? entry?.lowBeamHint ?? null
@@ -218,6 +224,7 @@ export function resolveLightingPath(
     intent,
     playbookSlug: playbookFor(path, intent),
     dataMissing,
+    multiConfig,
   };
 }
 

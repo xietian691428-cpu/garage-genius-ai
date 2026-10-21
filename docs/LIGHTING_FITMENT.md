@@ -27,6 +27,26 @@ Structure paths (confidence language only — never 100%):
 
 Intake slots (`lighting_structure`, `housing_confirm`) are ephemeral — see [INTAKE_AND_EVIDENCE.md](./INTAKE_AND_EVIDENCE.md).
 
+## YMM coverage (weak table — not parts-grade)
+
+`content/lighting/ymm-common.json` is an **educational** US-market sketch. It is **not** a parts catalog, not Amazon fitment, and **not** VIN-level option decoding.
+
+| Make | Models (year ranges in JSON) | Notes |
+| --- | --- | --- |
+| Toyota | Camry, Corolla, RAV4 | Often `multiConfig` (halogen vs LED by trim) |
+| Honda | Civic, Accord, CR-V | Often `multiConfig` |
+| Ford | F-150 | Halogen vs LED packages — confirm first |
+| Chevrolet | Silverado | Confirm before any H-number |
+| Ram | 1500 | Package-heavy — no hard-coded bulb |
+| Nissan | Altima, Rogue | Confirm housing |
+| Hyundai | Tucson, Elantra | Confirm housing |
+| Subaru | Outback | Older rows may hint H11 **only after** dust-cap confirm |
+| Jeep | Grand Cherokee | Halogen / HID / LED mix |
+| Tesla | Model 3 | Sealed LED education |
+| BMW | 3 Series | Sealed LED education |
+
+`multiConfig: true` → path stays `ambiguous_needs_confirm` until the owner confirms dust-cap vs sealed; **no bulb size** until then. Missing rows are preferred over wrong H-numbers.
+
 ## YMM and VIN limits
 
 - **YMM alone is not enough** when trims mix halogen and LED. The model must ask trim and/or housing rear view (dust cap + bulb vs heat sink / sealed module).

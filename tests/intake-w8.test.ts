@@ -91,10 +91,9 @@ describe("W8 intake slots", () => {
     expect(intake.seekingRootCause).toBe(true);
     expect(intake.preferIntakeQuestions).toBe(true);
     expect(intake.missingCritical.length).toBeGreaterThan(0);
-    const chips = intakeChipPrompts(
-      intake.missingCritical,
-      intake.lightingIntent,
-    );
+    const chips = intakeChipPrompts(intake.missingCritical, {
+      lightingIntent: intake.lightingIntent,
+    });
     expect(chips.length).toBeGreaterThan(0);
     expect(formatIntakeStateBlock(intake)).toMatch(/Ask the missing/i);
   });

@@ -60,6 +60,7 @@ W1–W5 leftovers still apply. Short index:
 | Exit-under repair is a second DeepSeek pass; if it fails, observe-only | W1 / W6 |
 | Lighting YMM ≠ VIN lighting options; weak bulb hints can still be wrong for a trim | W7 |
 | Intake honesty / no paid fitment / DTC check_order ≠ TSB | W8 |
+| Lighting weak table ≠ VIN config; battery/overheat intake honesty | W9 |
 
 **Observe is not a second safety gate.** `[safety-observe]` / `metadata.safetyEvents` are counts. Blocking still happens in Chat gates, spec rewrite, and `needsExitUnderRepair`.
 
@@ -88,5 +89,13 @@ Details: [LIGHTING_FITMENT.md](./LIGHTING_FITMENT.md).
 **Stop rules are prompt-level.** `[STOP_RULE]` forces see-a-pro language for SRS, brake hydraulics/ABS deep work, hot cooling caps, HV orange, adaptive/matrix coding, ADAS camera-on-lamp. Complements `safety-topics` / drive-safety; not a second callout UI.
 
 Details: [INTAKE_AND_EVIDENCE.md](./INTAKE_AND_EVIDENCE.md).
+
+## W9 — Lighting table expansion + battery / overheat intake reuse
+
+**Weak YMM table is not VIN-level lighting decode.** Expanded `ymm-common.json` still only covers common US-market heads. `multiConfig` rows must stay ambiguous until housing confirm. Wrong H-numbers are worse than blank rows.
+
+**Battery / overheat intake is ephemeral and honesty-dependent.** Same derive path as lighting — no second persistence. Missing cranking pattern or steam/gauge slots → ask first; never “Replace battery now.” Steam → do-not-drive / no hot-cap (prompt + W9 output gate).
+
+**No paid fitment API / no matrix coding / no deep cooling teardown** in this wave.
 
 Regression pack: [tests/README.md](../tests/README.md). Invariants: [SAFETY_INVARIANTS.md](./SAFETY_INVARIANTS.md).

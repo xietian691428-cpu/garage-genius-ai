@@ -251,13 +251,14 @@ export function getFollowUpChips(options?: {
     return out.slice(0, 4);
   }
 
-  // Intake: missing high-value slots → ask-first chips (non-lighting)
+  // Intake: missing high-value slots → ask-first chips (lighting / battery / overheat)
   const intake = deriveIntake({ currentUserMessage: rawUser || rawText });
   if (intake.preferIntakeQuestions && intake.missingCritical.length) {
-    const prompts = intakeChipPrompts(
-      intake.missingCritical,
-      intake.lightingIntent,
-    );
+    const prompts = intakeChipPrompts(intake.missingCritical, {
+      lightingIntent: intake.lightingIntent,
+      batteryIntent: intake.batteryIntent,
+      overheatIntent: intake.overheatIntent,
+    });
     for (const [i, p] of prompts.entries()) {
       out.push({
         id: `intake-${i}`,

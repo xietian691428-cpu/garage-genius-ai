@@ -18,12 +18,18 @@ Generic: `symptom_summary`, `when_started`, `sudden_or_gradual`, `intermittent_o
 
 Lighting-aligned (same object): `lighting_structure`, `lighting_function`, `housing_confirm`, `trim_or_package`.
 
+Battery / cranking (W9): `battery_symptom` (no_crank / slow_crank / clicks / starts_then_dies), `lights_dim`, `recent_battery_work`, `parked_days`, `weather_cold`.
+
+Overheat (W9): `temp_gauge_or_light`, `steam`, `level_checked_cold`, `recent_cooling_work`.
+
 Rules:
 
 1. Lighting + `lighting_structure=unknown` → no bulb sizes; confirm chips/prompts first.
 2. After dust-cap / sealed confirm → update path confidence; then buy/Coach chips.
-3. Non-lighting “what’s broken?” with missing when/intermittent → ask ≤2–3 high-value questions.
-4. No full VIN in intake text.
+3. Battery/overheat: ask ≤2 high-value slots before parts dumps; never “Replace battery now.”
+4. Overheat + steam → do not drive / no hot radiator-cap DIY (prompt + output gate).
+5. Non-lighting “what’s broken?” with missing when/intermittent → ask ≤2 high-value questions.
+6. No full VIN in intake text.
 
 ## Evidence grades (`[EVIDENCE]`)
 

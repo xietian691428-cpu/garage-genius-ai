@@ -46,6 +46,8 @@ export const DIAGNOSTIC_TONE_PHRASES: ReadonlyArray<{
   { id: "must_replace", needle: "must replace" },
   { id: "replace_the_cat_now", needle: "replace the catalytic" },
   { id: "replace_the_converter", needle: "replace the converter" },
+  { id: "replace_the_battery_now", needle: "replace the battery now" },
+  { id: "replace_battery_now", needle: "replace battery now" },
   { id: "guaranteed_fix", needle: "guaranteed fix" },
 ];
 

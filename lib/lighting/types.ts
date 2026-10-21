@@ -26,6 +26,8 @@ export type LightingYmmEntry = {
   modelIncludes: string[];
   path: LightingStructurePath;
   confidence: LightingConfidence;
+  /** Same YMM can be halogen or LED by trim — never emit bulb size until structure confirmed. */
+  multiConfig?: boolean;
   lowBeamHint?: string;
   highBeamHint?: string;
   cautions?: string[];
@@ -49,6 +51,8 @@ export type LightingPathResult = {
     | "diagnosis_electrical_lights_sensors";
   /** True when YMM had no table row — generic education only. */
   dataMissing: boolean;
+  /** Table row marks halogen/LED fork for this YMM. */
+  multiConfig: boolean;
 };
 
 export type LightingChip = {
