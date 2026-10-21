@@ -144,23 +144,30 @@ export function resolveLightingPath(
   const fromText = parseLightingStructureFromText(blob);
   const userConfirmedReplaceable =
     fromText === "replaceable_bulb" || parseReplaceableHousingConfirm(blob);
+  // Prefer replaceable when both fire — assistant copy often says
+  // "not a sealed LED module" which still matches sealed patterns.
   const userConfirmedSealed =
-    fromText === "sealed_or_integrated_led" || parseSealedHousingConfirm(blob);
+    !userConfirmedReplaceable &&
+    (fromText === "sealed_or_integrated_led" ||
+      parseSealedHousingConfirm(blob));
 
   let path: LightingStructurePath = "ambiguous_needs_confirm";
   let confidence: LightingPathResult["confidence"] = "low";
   let structureConfirmed = false;
 
-  if (userConfirmedSealed || override === "likely_sealed_or_integrated_led") {
-    path = "likely_sealed_or_integrated_led";
-    confidence = userConfirmedSealed ? "high" : "medium";
-    structureConfirmed = true;
-  } else if (
+  if (
     userConfirmedReplaceable ||
     override === "likely_replaceable_bulb"
   ) {
     path = "likely_replaceable_bulb";
     confidence = userConfirmedReplaceable ? "high" : "medium";
+    structureConfirmed = true;
+  } else if (
+    userConfirmedSealed ||
+    override === "likely_sealed_or_integrated_led"
+  ) {
+    path = "likely_sealed_or_integrated_led";
+    confidence = userConfirmedSealed ? "high" : "medium";
     structureConfirmed = true;
   } else {
     // Table may suggest a weak prior — never promote to confirmed; cap path
