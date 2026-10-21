@@ -20,8 +20,6 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
-	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -33,36 +31,36 @@
 			</array>
 		</dict>
 	</array>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
-	<!-- HTTPS-only app; declare no non-exempt encryption for App Store / TestFlight export questions -->
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>NSCameraUsageDescription</key>
-	<string>Garage Genius uses the camera so you can photograph vehicle parts, OBD screens, and repair receipts for AI DIY guidance.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Garage Genius needs photo library access so you can choose existing vehicle, OBD, or receipt images for diagnosis.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Garage Genius may save annotated repair photos you choose to keep in your library.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Garage Genius uses the microphone for hands-free voice coaching while your hands are busy under the hood.</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Garage Genius uses Bluetooth to connect to your OBD-II adapter and read vehicle diagnostic data (fault codes, sensors, and VIN) for AI DIY guidance.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Garage Genius uses Bluetooth to connect to your OBD-II adapter and read vehicle diagnostic data (fault codes, sensors, and VIN) for AI DIY guidance.</string>
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
-	<key>UIMainStoryboardFile</key>
-	<string>Main</string>
-  <key>UIRequiredDeviceCapabilities</key>
-	<array>
-		<string>armv7</string>
-	</array>
-	<!-- Explicit iPhone + iPad (TARGETED_DEVICE_FAMILY also 1,2 in Xcode) -->
+	<key>NSCameraUsageDescription</key>
+	<string>Garage Genius uses the camera so you can photograph vehicle parts, OBD screens, and repair receipts for AI DIY guidance.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Garage Genius uses the microphone for hands-free voice coaching while your hands are busy under the hood.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Garage Genius may save annotated repair photos you choose to keep in your library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Garage Genius needs photo library access so you can choose existing vehicle, OBD, or receipt images for diagnosis.</string>
 	<key>UIDeviceFamily</key>
 	<array>
 		<integer>1</integer>
 		<integer>2</integer>
+	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv7</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
