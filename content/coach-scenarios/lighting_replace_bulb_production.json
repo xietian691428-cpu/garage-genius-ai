@@ -1,0 +1,388 @@
+{
+  "id": "coach_scenario_lighting_replace_bulb_production",
+  "slug": "lighting_replace_bulb",
+  "title": "Headlight Bulb Replace (Education)",
+  "subtitle": "Confirm housing type, then safe DIY bulb steps \u2014 no invented sizes, no root-cause certainty.",
+  "category": "maintenance",
+  "focus_part": "lights",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 15,
+    "diy_max": 90,
+    "shop_min": 45,
+    "shop_max": 240
+  },
+  "cost_band_usd": {
+    "diy_min": 10,
+    "diy_max": 120,
+    "shop_min": 80,
+    "shop_max": 900
+  },
+  "tone": "Production EN lighting coach: educational, confidence language only, no root-cause certainty, no 'definitely legal' for LED upgrades, FMVSS 108 / local-law caution, max 2 CTAs.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure, stop and find a nearby shop \u2014 that's the smart call.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Confirmed dust-cap bulb access",
+    "Matching bulb designation from old bulb or manual"
+  ],
+  "tools_checklist": [
+    "Gloves",
+    "Eye protection",
+    "Flashlight",
+    "Trim tools if covers block access"
+  ],
+  "parts_checklist": [
+    "Correct bulb type verified on housing/manual",
+    "Dielectric grease optional on connector"
+  ],
+  "adaptive_rules": [],
+  "visual_assets": [
+    {
+      "key": "none",
+      "type": "none",
+      "src": "",
+      "alt": "Follow written steps",
+      "shot_description": "Intentionally omitted decorative art \u2014 follow the written checklist."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Confirm replaceable bulb",
+      "coach_encourage": "Confirming housing type first saves a wrong Amazon order.",
+      "personalize": "Lighting coach for your {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "Before buying: look behind the headlamp for a twist-off dust cap and a plug-in bulb. If you only see a sealed module / heat sink with no bulb, switch to the assembly guide. Fitment varies by trim \u2014 verify on the vehicle or owner's manual.",
+      "visual_type": "none",
+      "visual_asset_key": "none",
+      "focus_part": "lights",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 7,
+        "label": "Step 1 of 7 \u00b7 14%",
+        "fraction": 0.14,
+        "percent": 14
+      },
+      "safety_warning": "General guidance only. Lights can get hot \u2014 let them cool. Follow your owner's manual.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "go_welcome",
+          "label": "Continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "power_off"
+        },
+        {
+          "id": "sealed_path",
+          "label": "Looks sealed / LED",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "redirect_assembly"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "go_welcome",
+          "goto": "power_off"
+        },
+        {
+          "when_button_id": "sealed_path",
+          "goto": "redirect_assembly"
+        }
+      ],
+      "variants": [],
+      "high_risk": false,
+      "checklist": [],
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false
+    },
+    {
+      "id": "redirect_assembly",
+      "title": "Sealed path \u2014 use assembly guide",
+      "coach_encourage": "Stopping a wrong DIY is a win.",
+      "personalize": "Lighting coach for your {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "Factory LED / sealed lamps are usually whole-assembly jobs. Open the Headlamp assembly guide, or book a qualified tech if bumper work looks heavy. Do not invent OEM lamp part numbers.",
+      "visual_type": "none",
+      "visual_asset_key": "none",
+      "focus_part": "lights",
+      "duration_minutes": 2,
+      "difficulty": "Medium",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "label": "Step 2 of 7 \u00b7 29%",
+        "fraction": 0.29,
+        "percent": 29
+      },
+      "safety_warning": "General guidance only. Lights can get hot \u2014 let them cool. Follow your owner's manual.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "finish_redirect_assembly",
+          "label": "Finish",
+          "style": "primary",
+          "action": "mark_done"
+        }
+      ],
+      "branches": [],
+      "variants": [],
+      "high_risk": false,
+      "checklist": [],
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false
+    },
+    {
+      "id": "power_off",
+      "title": "Power off & cool down",
+      "coach_encourage": "Steady steps beat guessing.",
+      "personalize": "Lighting coach for your {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "Ignition OFF, lights OFF, keys out if practical. Let hot lamps cool. Wear gloves. Avoid touching halogen glass with bare skin \u2014 oils can create hot spots.",
+      "visual_type": "none",
+      "visual_asset_key": "none",
+      "focus_part": "lights",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 7,
+        "label": "Step 2 of 7 \u00b7 29%",
+        "fraction": 0.29,
+        "percent": 29
+      },
+      "safety_warning": "Hot glass and sharp housing edges. Eye protection recommended.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "go_power_off",
+          "label": "Continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "access"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "go_power_off",
+          "goto": "access"
+        }
+      ],
+      "variants": [],
+      "high_risk": false,
+      "checklist": [],
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true
+    },
+    {
+      "id": "access",
+      "title": "Access the bulb",
+      "coach_encourage": "Steady steps beat guessing.",
+      "personalize": "Lighting coach for your {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "Open the dust cover. Unplug the connector (note tabs). Release the spring clip or twist lock as designed. Compare the new bulb designation to the old one and the housing/manual \u2014 do not guess H11/9005 if unlabeled.",
+      "visual_type": "none",
+      "visual_asset_key": "none",
+      "focus_part": "lights",
+      "duration_minutes": 2,
+      "difficulty": "Medium",
+      "progress": {
+        "index": 3,
+        "total": 7,
+        "label": "Step 3 of 7 \u00b7 43%",
+        "fraction": 0.43,
+        "percent": 43
+      },
+      "safety_warning": "General guidance only. Lights can get hot \u2014 let them cool. Follow your owner's manual.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "go_access",
+          "label": "Continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "install"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "go_access",
+          "goto": "install"
+        }
+      ],
+      "variants": [],
+      "high_risk": false,
+      "checklist": [],
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true
+    },
+    {
+      "id": "install",
+      "title": "Install & reseal",
+      "coach_encourage": "Steady steps beat guessing.",
+      "personalize": "Lighting coach for your {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "Seat the new bulb without touching the glass. Reconnect, refit the dust cover squarely so the seal is not pinched. Moisture after a bad seal is a common DIY miss.",
+      "visual_type": "none",
+      "visual_asset_key": "none",
+      "focus_part": "lights",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 7,
+        "label": "Step 4 of 7 \u00b7 57%",
+        "fraction": 0.57,
+        "percent": 57
+      },
+      "safety_warning": "General guidance only. Lights can get hot \u2014 let them cool. Follow your owner's manual.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "go_install",
+          "label": "Continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "function_check"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "go_install",
+          "goto": "function_check"
+        }
+      ],
+      "variants": [],
+      "high_risk": false,
+      "checklist": [],
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true
+    },
+    {
+      "id": "function_check",
+      "title": "Function check & basic aim",
+      "coach_encourage": "Steady steps beat guessing.",
+      "personalize": "Lighting coach for your {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "Key on: low beam, high beam, and indicators as applicable. Park ~25 ft from a wall on level ground for a rough height check \u2014 this is not a professional beam pattern calibration. If aim looks wildly off, use a shop.",
+      "visual_type": "none",
+      "visual_asset_key": "none",
+      "focus_part": "lights",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 5,
+        "total": 7,
+        "label": "Step 5 of 7 \u00b7 71%",
+        "fraction": 0.71,
+        "percent": 71
+      },
+      "safety_warning": "General guidance only. Lights can get hot \u2014 let them cool. Follow your owner's manual.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "go_function_check",
+          "label": "Continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "done_bulb"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "go_function_check",
+          "goto": "done_bulb"
+        }
+      ],
+      "variants": [],
+      "high_risk": false,
+      "checklist": [],
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true
+    },
+    {
+      "id": "done_bulb",
+      "title": "Done \u2014 verify at night",
+      "coach_encourage": "Steady steps beat guessing.",
+      "personalize": "Lighting coach for your {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "Recheck seals after the first rain. If a bulb-out warning remains on LED/CAN buses, coding or a compatible load may be shop work \u2014 we do not invent coding procedures.",
+      "visual_type": "none",
+      "visual_asset_key": "none",
+      "focus_part": "lights",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 6,
+        "total": 7,
+        "label": "Step 6 of 7 \u00b7 86%",
+        "fraction": 0.86,
+        "percent": 86
+      },
+      "safety_warning": "General guidance only. Lights can get hot \u2014 let them cool. Follow your owner's manual.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "finish_done_bulb",
+          "label": "Finish",
+          "style": "primary",
+          "action": "mark_done"
+        }
+      ],
+      "branches": [],
+      "variants": [],
+      "high_risk": false,
+      "checklist": [],
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false
+    }
+  ],
+  "completion": {
+    "title": "Lighting path logged",
+    "coach_encourage": "You finished an educational lighting path \u2014 verify at night in a safe lot.",
+    "description": "Log what you confirmed (bulb vs assembly) and any parts bought. Recheck aim and seals after rain. This was education, not a shop invoice.",
+    "log_category": "electrical",
+    "next_check_miles_default": 6000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Ask Chat about lights",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Follow-up on my headlight / exterior lighting work for THIS vehicle. Keep it educational \u2014 no root-cause certainty and no invented bulb sizes."
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390\u00d7844 EN lighting coach\n\u2022 Progress + educational tone\n\u2022 Confidence language only\n\u2022 Risk modal for operational steps\n\u2022 Max 2 CTAs",
+    "react_native_pseudocode": "Load *_production.json via CoachScenarioPlayer \u2014 do not change Player internals."
+  }
+}

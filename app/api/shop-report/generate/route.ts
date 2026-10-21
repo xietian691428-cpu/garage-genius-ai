@@ -17,6 +17,7 @@ import {
   collectCodesFromMessages,
   createShopReportId,
   truncateTranscript,
+  userTextBlob,
   vinLast8,
   buildShopReportPreview,
 } from "@/lib/shop-report/context";
@@ -41,6 +42,7 @@ import type {
 } from "@/lib/types/shop-report";
 import { SHOP_REPORT_DISCLAIMER, SHOP_REPORT_DTC_NOTE } from "@/lib/types/shop-report";
 import { fetchRecallsByYmm } from "@/lib/vehicle-data/nhtsa-recalls";
+import { formatLightingShopReportNote } from "@/lib/lighting";
 
 export const runtime = "nodejs";
 
@@ -155,10 +157,18 @@ export async function POST(req: NextRequest) {
       .filter(Boolean)
       .join("\n\n");
 
+    const lightingNote = formatLightingShopReportNote(
+      userTextBlob(messages) || coachText,
+      vehicle,
+    );
+    const coachWithLighting = [coachText, lightingNote]
+      .filter(Boolean)
+      .join("\n\n");
+
     const preview = buildShopReportPreview({
       vehicle,
       messages,
-      coachText,
+      coachText: coachWithLighting,
     });
     if (!preview.hasEnoughData) {
       return NextResponse.json(
@@ -191,7 +201,7 @@ export async function POST(req: NextRequest) {
         codes,
         ownerNotes,
         source: body.source === "coach" ? "coach" : "chat",
-        coachContext: coachText || undefined,
+        coachContext: coachWithLighting || undefined,
       }),
       2200,
     );

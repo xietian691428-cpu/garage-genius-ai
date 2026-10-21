@@ -329,6 +329,11 @@
     "simBanner": "Solo cuenta de prueba interna. Respuestas ELM327 simuladas — no es un auto ni un enlace Bluetooth real.",
     "simPickHint": "Elige un adaptador simulado arriba"
   },
+  "lighting": {
+    "fitmentDisclaimer": "El ajuste varía según el acabado y las opciones de fábrica. Verifica en el vehículo o el manual del propietario antes de comprar.",
+    "upgradeDisclaimer": "LED/HID de posventa en carcasas de halogenuros pueden causar deslumbramiento y pueden no cumplir normas locales; solo educativo.",
+    "troubleshootDisclaimer": "Enumera causas posibles; no sustituye el diagnóstico profesional en sistemas adaptativos."
+  },
   "parts": {
     "searchOnAmazon": "Buscar en Amazon",
     "findOnAmazon": "Encontrar esta pieza en Amazon",

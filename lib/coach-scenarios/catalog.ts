@@ -24,6 +24,9 @@ import exhaust from "@/content/coach-scenarios/diagnosis_exhaust_emissions_produ
 import fuel from "@/content/coach-scenarios/maintenance_fuel_injectors_production.json";
 import cooling from "@/content/coach-scenarios/maintenance_cooling_water_pump_production.json";
 import electrical from "@/content/coach-scenarios/diagnosis_electrical_lights_sensors_production.json";
+import lightingBulb from "@/content/coach-scenarios/lighting_replace_bulb_production.json";
+import lightingAssembly from "@/content/coach-scenarios/lighting_replace_assembly_basic_production.json";
+import lightingLens from "@/content/coach-scenarios/lighting_lens_restore_edu_production.json";
 import bodyPaint from "@/content/coach-scenarios/maintenance_body_paint_production.json";
 import summerRain from "@/content/coach-scenarios/maintenance_summer_rain_prep_production.json";
 import modified from "@/content/coach-scenarios/maintenance_modified_car_production.json";
@@ -53,6 +56,9 @@ export type CoachPlaybookSlug =
   | "maintenance_fuel_injectors"
   | "maintenance_cooling_water_pump"
   | "diagnosis_electrical_lights_sensors"
+  | "lighting_replace_bulb"
+  | "lighting_replace_assembly_basic"
+  | "lighting_lens_restore_edu"
   | "maintenance_body_paint"
   | "maintenance_summer_rain_prep"
   | "maintenance_modified_car"
@@ -100,6 +106,9 @@ export const COACH_PRODUCTION_PLAYBOOKS: Record<CoachPlaybookSlug, CoachScenario
   maintenance_fuel_injectors: asScenario(fuel),
   maintenance_cooling_water_pump: asScenario(cooling),
   diagnosis_electrical_lights_sensors: asScenario(electrical),
+  lighting_replace_bulb: asScenario(lightingBulb),
+  lighting_replace_assembly_basic: asScenario(lightingAssembly),
+  lighting_lens_restore_edu: asScenario(lightingLens),
   maintenance_body_paint: asScenario(bodyPaint),
   maintenance_summer_rain_prep: asScenario(summerRain),
   maintenance_modified_car: asScenario(modified),
@@ -126,6 +135,9 @@ const PHASE3 = new Set<CoachPlaybookSlug>([
   "maintenance_fuel_injectors",
   "maintenance_cooling_water_pump",
   "diagnosis_electrical_lights_sensors",
+  "lighting_replace_bulb",
+  "lighting_replace_assembly_basic",
+  "lighting_lens_restore_edu",
   "maintenance_body_paint",
   "maintenance_summer_rain_prep",
   "maintenance_modified_car",

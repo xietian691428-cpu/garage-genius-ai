@@ -329,6 +329,11 @@
     "simBanner": "Internal test only. Scripted ELM327 replies — not a real car or Bluetooth link.",
     "simPickHint": "Pick a simulated adapter above"
   },
+  "lighting": {
+    "fitmentDisclaimer": "Fitment varies by trim and factory options. Verify on the vehicle or owner’s manual before purchase.",
+    "upgradeDisclaimer": "Aftermarket LED/HID in halogen housings may cause glare and may not meet local rules; educational only.",
+    "troubleshootDisclaimer": "Lists possible causes; does not replace professional diagnosis for adaptive systems."
+  },
   "parts": {
     "searchOnAmazon": "Search on Amazon",
     "findOnAmazon": "Find this part on Amazon",

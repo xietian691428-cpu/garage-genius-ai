@@ -1,0 +1,306 @@
+{
+  "id": "coach_scenario_lighting_lens_restore_edu_production",
+  "slug": "lighting_lens_restore_edu",
+  "title": "Headlight Lens Restore (Education)",
+  "subtitle": "Haze vs internal moisture triage \u2014 polish risks called out; no guaranteed cure.",
+  "category": "maintenance",
+  "focus_part": "lights",
+  "version": "production",
+  "locale": "en-US",
+  "markets": [
+    "US",
+    "EU",
+    "GB",
+    "CA"
+  ],
+  "entry_step_id": "welcome",
+  "estimated_total_minutes": {
+    "diy_min": 15,
+    "diy_max": 90,
+    "shop_min": 45,
+    "shop_max": 240
+  },
+  "cost_band_usd": {
+    "diy_min": 10,
+    "diy_max": 120,
+    "shop_min": 80,
+    "shop_max": 900
+  },
+  "tone": "Production EN lighting coach: educational, confidence language only, no root-cause certainty, no 'definitely legal' for LED upgrades, FMVSS 108 / local-law caution, max 2 CTAs.",
+  "ux_rules": {
+    "max_action_buttons": 2,
+    "prefer_visual": [
+      "annotated"
+    ],
+    "trust_reminder_every_n_steps": 3,
+    "trust_reminder_default": "If you're unsure, stop and find a nearby shop \u2014 that's the smart call.",
+    "show_progress_bar": true,
+    "require_safety_disclaimer_on_operational": true,
+    "require_safety_disclaimer_every_step": true,
+    "enforce_risk_confirm_modal": true,
+    "safety_disclaimer_default": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+    "safety_disclaimer_modal": "This is general guidance only. Always follow your owner's manual or an authorized technician. This app is not responsible for damage from DIY work.",
+    "risk_checkbox_label_default": "I have read and understand the risks",
+    "risk_cancel_label_default": "Find a nearby shop",
+    "risk_cancel_action_default": "book_shop",
+    "locale": "en-US",
+    "show_step_feedback": true,
+    "step_feedback_prompt": "Was this step useful?"
+  },
+  "prerequisites": [
+    "Cool lamps",
+    "Shade for polish chemicals"
+  ],
+  "tools_checklist": [
+    "Lens restore kit (optional)",
+    "Microfiber",
+    "Masking tape",
+    "Gloves / eye protection"
+  ],
+  "parts_checklist": [
+    "UV sealant from kit",
+    "Replacement assembly if cracked/leaking"
+  ],
+  "adaptive_rules": [],
+  "visual_assets": [
+    {
+      "key": "none",
+      "type": "none",
+      "src": "",
+      "alt": "Follow written steps",
+      "shot_description": "Intentionally omitted decorative art \u2014 follow the written checklist."
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Cloudy lens / moisture",
+      "coach_encourage": "Steady steps beat guessing.",
+      "personalize": "Lighting coach for your {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "Yellow haze is often UV clearcoat failure. Internal fogging after rain often means a failed seal or vent. Education only \u2014 aggressive polishing can thin the lens.",
+      "visual_type": "none",
+      "visual_asset_key": "none",
+      "focus_part": "lights",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 1,
+        "total": 5,
+        "label": "Step 1 of 5 \u00b7 20%",
+        "fraction": 0.2,
+        "percent": 20
+      },
+      "safety_warning": "General guidance only. Lights can get hot \u2014 let them cool. Follow your owner's manual.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "go_welcome",
+          "label": "Continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "triage"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "go_welcome",
+          "goto": "triage"
+        }
+      ],
+      "variants": [],
+      "high_risk": false,
+      "checklist": [],
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false
+    },
+    {
+      "id": "triage",
+      "title": "Haze vs water inside",
+      "coach_encourage": "Steady steps beat guessing.",
+      "personalize": "Lighting coach for your {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "External haze: restoration kits may help temporarily. Water droplets inside on the reflector: reseal/replace path \u2014 do not run high beams hoping it 'burns off' as a fix. If the lamp is cracked, prefer replacement.",
+      "visual_type": "none",
+      "visual_asset_key": "none",
+      "focus_part": "lights",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 2,
+        "total": 5,
+        "label": "Step 2 of 5 \u00b7 40%",
+        "fraction": 0.4,
+        "percent": 40
+      },
+      "safety_warning": "General guidance only. Lights can get hot \u2014 let them cool. Follow your owner's manual.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "go_triage",
+          "label": "Continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "restore_edu"
+        },
+        {
+          "id": "moisture",
+          "label": "Water inside the lamp",
+          "style": "secondary",
+          "action": "goto",
+          "next_step_id": "moisture_path"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "go_triage",
+          "goto": "restore_edu"
+        },
+        {
+          "when_button_id": "moisture",
+          "goto": "moisture_path"
+        }
+      ],
+      "variants": [],
+      "high_risk": false,
+      "checklist": [],
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false
+    },
+    {
+      "id": "moisture_path",
+      "title": "Moisture / seal education",
+      "coach_encourage": "Steady steps beat guessing.",
+      "personalize": "Lighting coach for your {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "Check dust caps, vents, and cracks. Dry only if you can open designed access \u2014 never drill random holes. Persistent moisture \u2192 assembly seal failure; shop or assembly path.",
+      "visual_type": "none",
+      "visual_asset_key": "none",
+      "focus_part": "lights",
+      "duration_minutes": 2,
+      "difficulty": "Medium",
+      "progress": {
+        "index": 3,
+        "total": 5,
+        "label": "Step 3 of 5 \u00b7 60%",
+        "fraction": 0.6,
+        "percent": 60
+      },
+      "safety_warning": "General guidance only. Lights can get hot \u2014 let them cool. Follow your owner's manual.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "finish_moisture_path",
+          "label": "Finish",
+          "style": "primary",
+          "action": "mark_done"
+        }
+      ],
+      "branches": [],
+      "variants": [],
+      "high_risk": false,
+      "checklist": [],
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true
+    },
+    {
+      "id": "restore_edu",
+      "title": "Polish education (optional)",
+      "coach_encourage": "Steady steps beat guessing.",
+      "personalize": "Lighting coach for your {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "If you polish: shade, wet sand only as kit instructs, UV seal afterward. Stop if you see through thin spots. Results vary; this is not a permanent OEM clearcoat.",
+      "visual_type": "none",
+      "visual_asset_key": "none",
+      "focus_part": "lights",
+      "duration_minutes": 2,
+      "difficulty": "Medium",
+      "progress": {
+        "index": 3,
+        "total": 5,
+        "label": "Step 3 of 5 \u00b7 60%",
+        "fraction": 0.6,
+        "percent": 60
+      },
+      "safety_warning": "Chemical splash risk \u2014 gloves and eye protection. Do not polish while lamps are hot.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "go_restore_edu",
+          "label": "Continue",
+          "style": "primary",
+          "action": "goto",
+          "next_step_id": "done_lens"
+        }
+      ],
+      "branches": [
+        {
+          "when_button_id": "go_restore_edu",
+          "goto": "done_lens"
+        }
+      ],
+      "variants": [],
+      "high_risk": false,
+      "checklist": [],
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": true
+    },
+    {
+      "id": "done_lens",
+      "title": "Re-check at night",
+      "coach_encourage": "Steady steps beat guessing.",
+      "personalize": "Lighting coach for your {{year}} {{make}} {{model}} at {{mileage}} miles.",
+      "description": "Confirm beam is not scattered into oncoming lanes. If glare is worse after polish or LED bulb hacks, stop using that setup and revisit housing design / local rules.",
+      "visual_type": "none",
+      "visual_asset_key": "none",
+      "focus_part": "lights",
+      "duration_minutes": 2,
+      "difficulty": "Easy",
+      "progress": {
+        "index": 4,
+        "total": 5,
+        "label": "Step 4 of 5 \u00b7 80%",
+        "fraction": 0.8,
+        "percent": 80
+      },
+      "safety_warning": "General guidance only. Lights can get hot \u2014 let them cool. Follow your owner's manual.",
+      "trust_nudge": null,
+      "action_buttons": [
+        {
+          "id": "finish_done_lens",
+          "label": "Finish",
+          "style": "primary",
+          "action": "mark_done"
+        }
+      ],
+      "branches": [],
+      "variants": [],
+      "high_risk": false,
+      "checklist": [],
+      "safety_disclaimer": "General guidance only. Follow your owner's manual or an authorized tech. This app isn't liable for DIY damage.",
+      "is_operational": false
+    }
+  ],
+  "completion": {
+    "title": "Lighting path logged",
+    "coach_encourage": "You finished an educational lighting path \u2014 verify at night in a safe lot.",
+    "description": "Log what you confirmed (bulb vs assembly) and any parts bought. Recheck aim and seals after rain. This was education, not a shop invoice.",
+    "log_category": "electrical",
+    "next_check_miles_default": 6000,
+    "action_buttons": [
+      {
+        "id": "home",
+        "label": "Back to garage",
+        "style": "primary",
+        "action": "mark_done"
+      },
+      {
+        "id": "ask",
+        "label": "Ask Chat about lights",
+        "style": "secondary",
+        "action": "open_chat",
+        "payload": "Follow-up on my headlight / exterior lighting work for THIS vehicle. Keep it educational \u2014 no root-cause certainty and no invented bulb sizes."
+      }
+    ]
+  },
+  "ui_spec": {
+    "figma": "PRODUCTION 390\u00d7844 EN lighting coach\n\u2022 Progress + educational tone\n\u2022 Confidence language only\n\u2022 Risk modal for operational steps\n\u2022 Max 2 CTAs",
+    "react_native_pseudocode": "Load *_production.json via CoachScenarioPlayer \u2014 do not change Player internals."
+  }
+}

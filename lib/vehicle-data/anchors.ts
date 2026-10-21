@@ -5,6 +5,7 @@
 
 import type { VehicleInfo } from "@/lib/types/chat";
 import { formatDiyPathBlock } from "@/lib/diy-check-paths";
+import { formatLightingPathBlock } from "@/lib/lighting";
 import { normalizeVehicleMarket } from "@/lib/types/vehicle-market";
 import { formatDtcRefBlock } from "@/lib/vehicle-data/dtc-local";
 import {
@@ -291,6 +292,8 @@ The owner asked about recalls. Answer from [RECALL_HINTS] and [ANCHOR_STATUS] on
     if (dtc) blocks.push(dtc);
     const diy = formatDiyPathBlock(userMessage, vehicle);
     if (diy) blocks.push(diy);
+    const lighting = formatLightingPathBlock(userMessage, vehicle);
+    if (lighting) blocks.push(lighting);
 
     const status: OfficialAnchorStatus = {
       vpic: vpicOk ? "ok" : "none",

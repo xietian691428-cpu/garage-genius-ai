@@ -58,9 +58,22 @@ W1–W5 leftovers still apply. Short index:
 | Non-en/es UI vs en/es-only assistant (CJK post-gate) | W4 |
 | User-stated facts can be written into a Shop Report | W5 |
 | Exit-under repair is a second DeepSeek pass; if it fails, observe-only | W1 / W6 |
+| Lighting YMM ≠ VIN lighting options; weak bulb hints can still be wrong for a trim | W7 |
 
 **Observe is not a second safety gate.** `[safety-observe]` / `metadata.safetyEvents` are counts. Blocking still happens in Chat gates, spec rewrite, and `needsExitUnderRepair`.
 
 **Stay-under contradiction uses the W1 repair prompt.** Raised-only (no brake/PB CRITICAL) now also rewrites unnegated stay-under / continue-under. It does not invent a second phrase list.
+
+## W7 — Exterior lighting path (headlamps)
+
+**YMM / weak table ≠ this VIN’s lighting package.** `content/lighting/ymm-common.json` is educational coverage for common US-market rows. The same year/make/model can be halogen bulb or sealed LED by trim. Chat must confirm housing type when ambiguous; it must not claim VIN-decoded lighting options without a real fitment source.
+
+**Allowlisted bulb hints can still be wrong for a rare package.** H11/9005-style hints always carry verify language. Unknown YMM must not invent a size. Spec gate still blocks invented OEM lamp numbers when not anchored.
+
+**LED-in-halogen “upgrade” legality is not decided here.** Copy teaches glare and FMVSS 108 / local-rule risk. Novel “you’re fine / legal in all states” phrasing can still slip tone guards — watch regressions.
+
+**Adaptive / matrix aim and coding are shop tools.** Guides do not teach module coding. Shop Report may note an educational lighting path; technicians still verify on the car.
+
+Details: [LIGHTING_FITMENT.md](./LIGHTING_FITMENT.md).
 
 Regression pack: [tests/README.md](../tests/README.md). Invariants: [SAFETY_INVARIANTS.md](./SAFETY_INVARIANTS.md).

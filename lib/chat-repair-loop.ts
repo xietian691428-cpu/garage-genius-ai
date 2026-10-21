@@ -9,6 +9,7 @@ import type { MaintenanceRecord } from "@/lib/types/maintenance";
 import { listRecommendedCoachPlaybooks } from "@/lib/coach-scenarios/catalog";
 import { getDtcFollowUpChips, textHasDtcSignal } from "@/lib/dtc";
 import { diyPathFollowUpChip } from "@/lib/diy-check-paths";
+import { lightingFollowUpChips } from "@/lib/lighting";
 import { getUsHighFreqDtcChips } from "@/lib/us-completion-funnel";
 
 /** Max messages sent to the model (keeps recent turns; welcome stripped). */
@@ -34,6 +35,12 @@ export const CHAT_STARTER_CHIPS: StarterChip[] = [
     label: "Warning light",
     prompt:
       "A warning light came on. Ask what color/symbol I see (one question), then give the top 3 likely causes with safe DIY checks before parts. Structure as Problem → Checks → Solution path.",
+  },
+  {
+    id: "headlight",
+    label: "Headlight out",
+    prompt:
+      "My low beam / headlight is out on THIS vehicle. Help me decide whether I more likely need a replaceable bulb or a sealed/integrated LED assembly (confidence language only — no 100% claims). Ask trim or what I see behind the housing if needed. Do not invent bulb sizes. Then outline the buy path and risks — not only an Amazon link.",
   },
   {
     id: "brake",
@@ -193,7 +200,7 @@ const FOCUS_CHECK_CHIPS: Record<string, StarterChip> = {
     id: "check-bulbs",
     label: "Bulb / fuse check",
     prompt:
-      "Guide a DIY exterior light and fuse check. Top 3 causes of a dead light and next steps.",
+      "Guide a DIY exterior light and fuse check for THIS vehicle. First confirm bulb vs sealed LED assembly with confidence language (ask trim / dust-cap vs heat-sink if needed). Top 3 educational causes of a dead light (power/ground/bulb or source/connector) — no root-cause certainty. Do not invent bulb sizes. LED-in-halogen upgrades: mention glare and local-rule risk without saying definitely legal.",
   },
 };
 
@@ -205,11 +212,13 @@ export function getFollowUpChips(options?: {
   assistantText?: string | null;
   /** Prefer for topic inference — avoids “Brake inspection” false chips on oil DIY. */
   userText?: string | null;
+  vehicle?: VehicleInfo | null;
 }): StarterChip[] {
   const focus = (options?.focusPart || "").toLowerCase();
   const text = (options?.assistantText || "").toLowerCase();
   const user = (options?.userText || "").toLowerCase();
   const rawText = options?.assistantText || "";
+  const rawUser = options?.userText || "";
 
   // DTC-focused replies → explain / checks / parts chips
   if (textHasDtcSignal(rawText) || textHasDtcSignal(options?.userText || "")) {
@@ -218,6 +227,25 @@ export function getFollowUpChips(options?: {
   }
 
   const out: StarterChip[] = [];
+
+  // Exterior lighting continuation chips (buy → install → troubleshoot)
+  const lightingChips = lightingFollowUpChips(
+    rawUser || rawText,
+    options?.vehicle,
+  );
+  if (lightingChips.length) {
+    for (const c of lightingChips.slice(0, 3)) {
+      out.push({
+        id: c.id,
+        label: c.label,
+        prompt: c.prompt,
+        playbookSlug: c.playbookSlug,
+      });
+    }
+    const byIdLighting = (id: string) => FOLLOW_UP_CHIPS.find((c) => c.id === id)!;
+    if (!out.find((c) => c.id === "top3")) out.push(byIdLighting("top3"));
+    return out.slice(0, 4);
+  }
 
   const inferFrom = (blob: string) => {
     const pathChip = diyPathFollowUpChip(blob);

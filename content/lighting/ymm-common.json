@@ -1,0 +1,174 @@
+{
+  "version": 1,
+  "disclaimer": "Weak educational table for common US-market fitments. Never treat as VIN-decoded lighting options. Always verify on the vehicle or owner's manual before purchase.",
+  "entries": [
+    {
+      "id": "toyota-camry-2018-2024",
+      "yearMin": 2018,
+      "yearMax": 2024,
+      "make": "toyota",
+      "modelIncludes": ["camry"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "lowBeamHint": "Halogen-trim Camrys often use H11 low beam (verify). LED package / many XLE–XSE lamps are sealed assemblies — not a screw-in bulb.",
+      "highBeamHint": "Halogen trims often use 9005 / HB3 high beam — confirm on the housing label or manual.",
+      "cautions": [
+        "Same year/model can be halogen bulb or factory LED assembly by trim/options.",
+        "Do not buy from YMM alone — confirm housing type first."
+      ],
+      "confirmPrompts": [
+        "Which trim (LE / SE / XLE / XSE / TRD) and do the headlights look like factory LED (no replaceable bulb behind a dust cap)?",
+        "Look behind the headlamp: twist-off dust cap with a plug-in bulb, or a sealed module / heat sink with no bulb?"
+      ]
+    },
+    {
+      "id": "toyota-corolla-2019-2024",
+      "yearMin": 2019,
+      "yearMax": 2024,
+      "make": "toyota",
+      "modelIncludes": ["corolla"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "lowBeamHint": "Many halogen Corollas use H11 low beam — verify. Higher trims may use LED assemblies.",
+      "cautions": ["Trim and market (USDM) change bulb vs assembly."],
+      "confirmPrompts": [
+        "Is this a halogen housing with a rear dust cap, or a factory LED lamp?",
+        "Check the owner's manual lighting section or the label on the housing."
+      ]
+    },
+    {
+      "id": "honda-civic-2016-2021",
+      "yearMin": 2016,
+      "yearMax": 2021,
+      "make": "honda",
+      "modelIncludes": ["civic"],
+      "path": "likely_replaceable_bulb",
+      "confidence": "medium",
+      "lowBeamHint": "Common US Civic halogen low beam is often H11 — still verify on the vehicle.",
+      "highBeamHint": "High beam is often 9005 / HB3 on halogen trims — verify.",
+      "cautions": ["Sport / Touring LED packages may be sealed — confirm trim."],
+      "confirmPrompts": [
+        "If you see a factory LED signature and no dust-cap bulb, treat it as an assembly path instead."
+      ]
+    },
+    {
+      "id": "honda-civic-2022-2025",
+      "yearMin": 2022,
+      "yearMax": 2025,
+      "make": "honda",
+      "modelIncludes": ["civic"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "low",
+      "cautions": ["Newer Civics vary widely by trim; do not assume H11."],
+      "confirmPrompts": [
+        "Confirm whether the low beam has a replaceable bulb behind a dust cover or a sealed LED module."
+      ]
+    },
+    {
+      "id": "honda-accord-2018-2022",
+      "yearMin": 2018,
+      "yearMax": 2022,
+      "make": "honda",
+      "modelIncludes": ["accord"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "lowBeamHint": "Some Accords use replaceable halogen/HID sources; many higher trims use LED assemblies.",
+      "confirmPrompts": [
+        "Trim and whether headlights are factory LED?",
+        "Housing rear: dust cap + bulb, or sealed heat-sink module?"
+      ]
+    },
+    {
+      "id": "honda-crv-2017-2022",
+      "yearMin": 2017,
+      "yearMax": 2022,
+      "make": "honda",
+      "modelIncludes": ["cr-v", "crv"],
+      "path": "likely_replaceable_bulb",
+      "confidence": "medium",
+      "lowBeamHint": "Common US CR-V halogen low beam is often H11 — verify before purchase.",
+      "cautions": ["Touring / some packages may differ."],
+      "confirmPrompts": ["Confirm dust-cap access behind the lamp before ordering."]
+    },
+    {
+      "id": "toyota-rav4-2019-2024",
+      "yearMin": 2019,
+      "yearMax": 2024,
+      "make": "toyota",
+      "modelIncludes": ["rav4"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "cautions": ["RAV4 trims mix halogen and LED; YMM alone is not enough."],
+      "confirmPrompts": [
+        "LE / XLE / Limited / Adventure / Hybrid — do headlights look like sealed LED?",
+        "Can you twist a dust cover and unplug a bulb, or is it a sealed module?"
+      ]
+    },
+    {
+      "id": "ford-f150-2015-2020",
+      "yearMin": 2015,
+      "yearMax": 2020,
+      "make": "ford",
+      "modelIncludes": ["f-150", "f150"],
+      "path": "likely_replaceable_bulb",
+      "confidence": "medium",
+      "lowBeamHint": "Many F-150 halogen packages use H11 or similar — verify the housing stamp / manual.",
+      "highBeamHint": "High beam is often 9005-class on halogen trucks — verify.",
+      "cautions": ["LED headlamp packages and aftermarket housings change everything."],
+      "confirmPrompts": ["Factory halogen or factory LED headlamps?"]
+    },
+    {
+      "id": "chevy-silverado-2014-2018",
+      "yearMin": 2014,
+      "yearMax": 2018,
+      "make": "chevrolet",
+      "modelIncludes": ["silverado"],
+      "path": "likely_replaceable_bulb",
+      "confidence": "medium",
+      "lowBeamHint": "Common halogen low beams on this generation are often H11 — still verify.",
+      "cautions": ["HID/LED packages exist; confirm before buying."],
+      "confirmPrompts": ["Confirm bulb access behind the housing."]
+    },
+    {
+      "id": "subaru-outback-2015-2019",
+      "yearMin": 2015,
+      "yearMax": 2019,
+      "make": "subaru",
+      "modelIncludes": ["outback"],
+      "path": "likely_replaceable_bulb",
+      "confidence": "medium",
+      "lowBeamHint": "Many Outbacks in this range use H11 low beam — verify.",
+      "confirmPrompts": ["Confirm dust-cap bulb access; some later packages differ."]
+    },
+    {
+      "id": "tesla-model3-any",
+      "yearMin": 2017,
+      "yearMax": 2030,
+      "make": "tesla",
+      "modelIncludes": ["model 3", "model3"],
+      "path": "likely_sealed_or_integrated_led",
+      "confidence": "high",
+      "cautions": [
+        "Factory LED assemblies are not DIY screw-in bulbs.",
+        "Adaptive / matrix-style functions may need specialized tools and aim."
+      ],
+      "confirmPrompts": []
+    },
+    {
+      "id": "bmw-3series-2019-2024",
+      "yearMin": 2019,
+      "yearMax": 2024,
+      "make": "bmw",
+      "modelIncludes": ["3 series", "330i", "330e", "m340i", "320i"],
+      "path": "likely_sealed_or_integrated_led",
+      "confidence": "medium",
+      "cautions": [
+        "Modern BMW lighting is often LED assemblies; coding/aim may be shop work.",
+        "Do not invent OEM lamp part numbers."
+      ],
+      "confirmPrompts": [
+        "If an older halogen retrofit is present, say so — otherwise assume sealed LED."
+      ]
+    }
+  ]
+}
