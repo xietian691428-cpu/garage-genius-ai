@@ -195,6 +195,8 @@ export type GatherAnchorsOptions = {
   vpic?: VpicSnapshot | null;
   recalls?: RecallQueryResult | null;
   epa?: EpaMpgAnchor | null;
+  /** Recent user turns for lighting structure confirm (no VIN). */
+  transcriptBlob?: string;
 };
 
 /**
@@ -292,7 +294,9 @@ The owner asked about recalls. Answer from [RECALL_HINTS] and [ANCHOR_STATUS] on
     if (dtc) blocks.push(dtc);
     const diy = formatDiyPathBlock(userMessage, vehicle);
     if (diy) blocks.push(diy);
-    const lighting = formatLightingPathBlock(userMessage, vehicle);
+    const lighting = formatLightingPathBlock(userMessage, vehicle, {
+      transcriptBlob: options?.transcriptBlob,
+    });
     if (lighting) blocks.push(lighting);
 
     const status: OfficialAnchorStatus = {

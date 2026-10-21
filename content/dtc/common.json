@@ -79,7 +79,14 @@
     "system": "powertrain",
     "severity_hint": "medium",
     "common_causes": ["Vacuum or intake leak", "MAF reading issue", "Fuel delivery restriction"],
-    "diy_level": "basic"
+    "diy_level": "basic",
+    "common_associations": ["vacuum", "MAF", "fuel delivery"],
+    "check_order": [
+      "Listen/feel for vacuum or intake leaks (hoses, PCV, intake boot)",
+      "Note short/long fuel trims and whether lean is cold-only or always",
+      "Inspect MAF connector and air filter path before replacing sensors",
+      "Fuel delivery / pressure only after leak and MAF basics — not Replace MAF now"
+    ]
   },
   {
     "code": "P0174",
@@ -98,7 +105,14 @@
     "severity_hint": "high",
     "common_causes": ["Ignition coil or spark plug wear", "Intake vacuum leak", "Fuel quality or injector issue"],
     "diy_level": "basic",
-    "safety_notes": "If the engine is shaking hard or the MIL is flashing, reduce load and consider a shop. Catalytic converter overheat risk."
+    "safety_notes": "If the engine is shaking hard or the MIL is flashing, reduce load and consider a shop. Catalytic converter overheat risk.",
+    "common_associations": ["misfire ignition", "vacuum", "fuel"],
+    "check_order": [
+      "If flashing MIL or hard shake — reduce load; do not keep driving hard",
+      "Recent fuel fill / water-in-fuel / bad gas symptoms?",
+      "Shared intake vacuum leaks that affect multiple cylinders",
+      "Ignition (coils/plugs) and only then injector/fuel — educational, not Replace all coils now"
+    ]
   },
   {
     "code": "P0301",
@@ -215,7 +229,14 @@
     "system": "powertrain",
     "severity_hint": "medium",
     "common_causes": ["Exhaust leak ahead of the downstream sensor", "Aging downstream O2 sensor", "Catalyst efficiency concern (confirm with live data)"],
-    "diy_level": "advanced"
+    "diy_level": "advanced",
+    "common_associations": ["catalyst", "O2", "exhaust leak"],
+    "check_order": [
+      "Visible exhaust leak or loose joints ahead of the downstream sensor",
+      "Codes cleared recently without a proper drive cycle / readiness?",
+      "Related fuel or misfire codes present at the same time?",
+      "Only then consider sensor vs catalyst efficiency with live data — never Replace converter now"
+    ]
   },
   {
     "code": "P0430",
@@ -224,7 +245,14 @@
     "system": "powertrain",
     "severity_hint": "medium",
     "common_causes": ["Exhaust leak", "Downstream O2 sensor issue", "Catalyst efficiency concern (confirm, do not assume)"],
-    "diy_level": "advanced"
+    "diy_level": "advanced",
+    "common_associations": ["catalyst", "O2", "exhaust leak"],
+    "check_order": [
+      "Visible exhaust leak or loose joints on bank 2 path",
+      "Recent clear without drive cycle?",
+      "Companion misfire/fuel codes?",
+      "Sensor vs catalyst efficiency with data — not Replace converter now"
+    ]
   },
   {
     "code": "P0442",

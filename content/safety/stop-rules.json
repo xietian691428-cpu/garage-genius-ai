@@ -1,0 +1,79 @@
+[
+  {
+    "id": "srs_airbag",
+    "patterns": [
+      "airbag",
+      "srs",
+      "seatbelt pretension",
+      "pretensioner",
+      "clock spring",
+      "安全气囊"
+    ],
+    "summary_en": "Airbag / seatbelt pretensioner fault lights need a qualified technician with proper tools — do not deep-DIY SRS connectors or clock-spring work.",
+    "owner_prep_en": "Note which lights are on, when they appeared, and any recent collision or battery work. Do not clear SRS codes as a fix."
+  },
+  {
+    "id": "brake_hydraulics_abs",
+    "patterns": [
+      "open brake line",
+      "bleed abs",
+      "abs module replace",
+      "brake hydraulic",
+      "master cylinder rebuild",
+      "abs deep"
+    ],
+    "summary_en": "Opening brake hydraulic lines or deep ABS module work is stop-DIY — use a qualified shop. Observe-only: fluid level, pad thickness, warning lights.",
+    "owner_prep_en": "Record ABS/brake warning behavior, soft-pedal vs hard, and any recent pad/rotor work."
+  },
+  {
+    "id": "hot_cooling_cap",
+    "patterns": [
+      "open radiator cap hot",
+      "remove coolant cap while hot",
+      "hot cooling system pressurized"
+    ],
+    "summary_en": "Never open a pressurized hot cooling system. Stop DIY until fully cool; overheating with steam → safe pull-over, not under-hood heroics.",
+    "owner_prep_en": "Note temperature gauge behavior and any coolant smell/steam after cool-down only."
+  },
+  {
+    "id": "hv_orange_hybrid",
+    "patterns": [
+      "orange high voltage",
+      "hv cable",
+      "hybrid battery service",
+      "traction battery disconnect",
+      "高压橙线",
+      "orange cable"
+    ],
+    "summary_en": "Hybrid/EV high-voltage (orange) systems — stop DIY. Only trained HV technicians.",
+    "owner_prep_en": "Record warning messages and whether the vehicle still drives normally; do not probe orange cabling."
+  },
+  {
+    "id": "adaptive_matrix_headlight_coding",
+    "patterns": [
+      "matrix headlight",
+      "adaptive headlight coding",
+      "afs coding",
+      "headlight coding",
+      "headlamp coding",
+      "matrix led coding",
+      "adaptive led calibration",
+      "需要编码",
+      "大灯标定"
+    ],
+    "summary_en": "Adaptive/matrix headlight coding and OEM-level aiming require dealer/shop tools — do not give coding step-by-steps.",
+    "owner_prep_en": "Note trim/package, which side failed, and whether ADAS camera sits on/near the lamp. Arrange professional aiming after any assembly swap."
+  },
+  {
+    "id": "adas_camera_lamp_bracket",
+    "patterns": [
+      "camera on headlight",
+      "adas camera bracket",
+      "forward camera headlamp",
+      "lane camera headlight",
+      "摄像头托架"
+    ],
+    "summary_en": "Headlamp work that disturbs ADAS camera brackets needs professional aim/calibration — prefer shop for assembly R&R if inexperienced.",
+    "owner_prep_en": "Photo the camera/bracket area if safe; list driver-assist features that were active."
+  }
+]

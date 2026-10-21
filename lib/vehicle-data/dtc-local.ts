@@ -64,6 +64,18 @@ function parseEntry(raw: unknown): LocalDtcCatalogEntry | null {
         .slice(0, 6)
     : [];
   const notes = String(rec.safety_notes || "").trim();
+  const checkOrder = Array.isArray(rec.check_order)
+    ? rec.check_order
+        .map((c) => String(c || "").trim())
+        .filter(Boolean)
+        .slice(0, 8)
+    : [];
+  const associations = Array.isArray(rec.common_associations)
+    ? rec.common_associations
+        .map((c) => String(c || "").trim())
+        .filter(Boolean)
+        .slice(0, 6)
+    : [];
   return {
     code,
     title_en: title,
@@ -81,6 +93,8 @@ function parseEntry(raw: unknown): LocalDtcCatalogEntry | null {
     common_causes: causes,
     diy_level: isDiy(rec.diy_level) ? rec.diy_level : "basic",
     safety_notes: notes || undefined,
+    check_order: checkOrder.length ? checkOrder : undefined,
+    common_associations: associations.length ? associations : undefined,
   };
 }
 
@@ -144,6 +158,8 @@ export function lookupLocalDtc(code: string): LocalDtcRef {
       safetyNotes: extra.safety_notes ?? null,
       edu: extra.summary_en,
       catalogHit: true,
+      checkOrder: extra.check_order ?? [],
+      commonAssociations: extra.common_associations ?? [],
     };
   }
   return {
@@ -158,6 +174,8 @@ export function lookupLocalDtc(code: string): LocalDtcRef {
     safetyNotes: null,
     edu: UNKNOWN_DTC_SUMMARY,
     catalogHit: false,
+    checkOrder: [],
+    commonAssociations: [],
   };
 }
 
@@ -195,8 +213,16 @@ function formatRefLine(r: LocalDtcRef): string {
     r.commonCauses.length > 0
       ? ` Educational checks (not a parts order): ${r.commonCauses.join("; ")}.`
       : "";
+  const assoc =
+    r.commonAssociations.length > 0
+      ? ` Associations (system-level, not must-replace): ${r.commonAssociations.join(", ")}.`
+      : "";
+  const order =
+    r.checkOrder.length > 0
+      ? ` check_order: ${r.checkOrder.map((s, i) => `${i + 1}) ${s}`).join(" → ")}.`
+      : "";
   const safety = r.safetyNotes ? ` Safety: ${r.safetyNotes}` : "";
-  return `- ${r.code} — ${r.title} (diy_level: ${r.diyLevel}; severity: ${r.severityHint}; ${hit}). ${r.summary}${causes}${safety}`;
+  return `- ${r.code} — ${r.title} (diy_level: ${r.diyLevel}; severity: ${r.severityHint}; ${hit}). ${r.summary}${causes}${assoc}${order}${safety}`;
 }
 
 const EMISSION_CODE_RE =
@@ -237,9 +263,15 @@ export function formatDtcRefBlock(
   const hasShop = refs.some((r) => r.diyLevel === "shop");
   const multi = refs.length > 1;
 
+  const hasCheckOrder = refs.some((r) => r.checkOrder.length > 0);
+
   const structure = multi
     ? `Reply structure (required): list every [DTC_REF] line above first, then check order. Safety-related codes (SRS/ABS/lost-comm, diy_level=shop) before pure emissions (catalyst/EVAP). Meaning → likely causes (list, not a verdict) → checks → when to go to a shop.`
     : `Reply structure (required): Meaning → likely causes (list, not a verdict) → checks → when to go to a shop.`;
+
+  const checkOrderLine = hasCheckOrder
+    ? `When check_order is present, guide the owner in that sequence. They may skip a step — note what was skipped. Never jump to "Replace converter now" / "It's definitely the catalyst".`
+    : "";
 
   const unknownLine = hasUnknown
     ? `Unknown / generic-family codes use only this template: ${UNKNOWN_DTC_SUMMARY}`
@@ -251,8 +283,9 @@ export function formatDtcRefBlock(
 
   return `[DTC_REF]
 Source: local SAE-style DTC catalog (not OEM, not a paid repair database).
-Use title, summary, and diy_level as the starting definition. Order DIY checks from observe → basic → advanced → shop. Do not invent TSBs, OEM part numbers, torque specs, or claim a specific part must be replaced from the code alone.
+Use title, summary, diy_level, and check_order as the starting definition. Order DIY checks from observe → basic → advanced → shop. Do not invent TSBs, OEM part numbers, torque specs, or claim a specific part must be replaced from the code alone.
 ${structure}
+${checkOrderLine}
 ${unknownLine}
 ${shopLine}
 ${lines.join("\n")}`.replace(/\n\n+/g, "\n").trim();

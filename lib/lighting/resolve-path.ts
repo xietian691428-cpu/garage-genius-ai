@@ -1,9 +1,15 @@
 /**
  * Resolve educational lighting structure path from YMM (+ optional notes/tags).
  * Never claims VIN-decoded lighting options.
+ * W8: structure unconfirmed → path capped ambiguous; bulb hints only after confirm.
  */
 
 import ymmTable from "@/content/lighting/ymm-common.json";
+import {
+  parseLightingStructureFromText,
+  parseReplaceableHousingConfirm,
+  parseSealedHousingConfirm,
+} from "@/lib/intake/derive";
 import type { VehicleInfo } from "@/lib/types/chat";
 import { detectLightingIntentKind, isLightingIntent } from "@/lib/lighting/intent";
 import type {
@@ -89,10 +95,17 @@ function playbookFor(
   intent: LightingPathResult["intent"],
 ): LightingPathResult["playbookSlug"] {
   if (intent === "lens_fog") return "lighting_lens_restore_edu";
+  // Structure must match before recommending replace_* guides
+  if (path === "ambiguous_needs_confirm") {
+    return "diagnosis_electrical_lights_sensors";
+  }
   if (intent === "troubleshoot" || intent === "led_upgrade") {
     return "diagnosis_electrical_lights_sensors";
   }
-  if (intent === "install_assembly" || path === "likely_sealed_or_integrated_led") {
+  if (
+    intent === "install_assembly" ||
+    path === "likely_sealed_or_integrated_led"
+  ) {
     return "lighting_replace_assembly_basic";
   }
   if (
@@ -105,50 +118,78 @@ function playbookFor(
   return "diagnosis_electrical_lights_sensors";
 }
 
+export type ResolveLightingOptions = {
+  /** Extra transcript (recent user turns) for structure confirm phrases. */
+  transcriptBlob?: string;
+};
+
 /**
  * Resolve lighting path for Chat inject. Returns null if message is not lighting.
  */
 export function resolveLightingPath(
   vehicle: VehicleInfo | null | undefined,
   userMessage: string,
+  options?: ResolveLightingOptions,
 ): LightingPathResult | null {
-  if (!isLightingIntent(userMessage)) return null;
-  const intent = detectLightingIntentKind(userMessage);
+  const blob = [userMessage, options?.transcriptBlob || ""]
+    .filter(Boolean)
+    .join("\n");
+  if (!isLightingIntent(userMessage) && !isLightingIntent(blob)) return null;
+  // Prefer current message for intent; fall back to blob
+  const intentMsg = isLightingIntent(userMessage) ? userMessage : blob;
+  const intent = detectLightingIntentKind(intentMsg);
   const override = vehicle ? noteOverrides(vehicle) : null;
   const entry = vehicle ? matchEntry(vehicle) : null;
 
-  let path: LightingStructurePath =
-    override || entry?.path || "ambiguous_needs_confirm";
-  let confidence = override
-    ? ("medium" as const)
-    : entry?.confidence || ("low" as const);
-  const dataMissing = !entry && !override;
+  const fromText = parseLightingStructureFromText(blob);
+  const userConfirmedReplaceable =
+    fromText === "replaceable_bulb" || parseReplaceableHousingConfirm(blob);
+  const userConfirmedSealed =
+    fromText === "sealed_or_integrated_led" || parseSealedHousingConfirm(blob);
 
-  // LED upgrade intent always adds upgrade cautions; path still from housing
+  let path: LightingStructurePath = "ambiguous_needs_confirm";
+  let confidence: LightingPathResult["confidence"] = "low";
+  let structureConfirmed = false;
+
+  if (userConfirmedSealed || override === "likely_sealed_or_integrated_led") {
+    path = "likely_sealed_or_integrated_led";
+    confidence = userConfirmedSealed ? "high" : "medium";
+    structureConfirmed = true;
+  } else if (
+    userConfirmedReplaceable ||
+    override === "likely_replaceable_bulb"
+  ) {
+    path = "likely_replaceable_bulb";
+    confidence = userConfirmedReplaceable ? "high" : "medium";
+    structureConfirmed = true;
+  } else {
+    // Table may suggest a weak prior — never promote to confirmed; cap path
+    path = "ambiguous_needs_confirm";
+    confidence = entry ? "low" : "low";
+    structureConfirmed = false;
+  }
+
+  const dataMissing = !entry && !override && !structureConfirmed;
+
   const cautions = [
     ...GENERIC_CAUTIONS,
     ...(entry?.cautions || []),
     ...(intent === "led_upgrade" ? LED_UPGRADE_CAUTIONS : []),
   ];
   const confirmPrompts =
-    path === "ambiguous_needs_confirm" || dataMissing
+    !structureConfirmed || path === "ambiguous_needs_confirm"
       ? [...(entry?.confirmPrompts || []), ...GENERIC_CONFIRM].slice(0, 3)
       : [...(entry?.confirmPrompts || [])].slice(0, 2);
 
-  // Never emit bulb size unless table has an allowlisted hint
+  // W8: bulb hints only after replaceable structure is confirmed (+ table row)
   const bulbHint =
-    path === "likely_replaceable_bulb" || path === "ambiguous_needs_confirm"
+    structureConfirmed && path === "likely_replaceable_bulb"
       ? entry?.lowBeamHint ?? null
       : null;
   const highBeamHint =
-    path === "likely_replaceable_bulb" || path === "ambiguous_needs_confirm"
+    structureConfirmed && path === "likely_replaceable_bulb"
       ? entry?.highBeamHint ?? null
       : null;
-
-  if (dataMissing) {
-    path = "ambiguous_needs_confirm";
-    confidence = "low";
-  }
 
   return {
     path,

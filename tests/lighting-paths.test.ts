@@ -40,7 +40,7 @@ describe("lighting intent", () => {
 });
 
 describe("resolveLightingPath", () => {
-  it("Camry 2020 buy question → ambiguous + confirm prompts, may hint with verify", () => {
+  it("Camry 2020 buy question → ambiguous + confirm; no bulb hint until structure confirmed", () => {
     const r = resolveLightingPath(
       camry2020,
       "My low beam is out — should I buy a bulb or the whole assembly?",
@@ -48,11 +48,17 @@ describe("resolveLightingPath", () => {
     expect(r).not.toBeNull();
     expect(r!.path).toBe("ambiguous_needs_confirm");
     expect(r!.confirmPrompts.length).toBeGreaterThan(0);
-    expect(r!.dataMissing).toBe(false);
-    // Hint may exist but must not be forced as certainty
-    if (r!.bulbHint) {
-      expect(r!.bulbHint.toLowerCase()).toMatch(/verify/);
-    }
+    expect(r!.bulbHint).toBeNull();
+    expect(r!.playbookSlug).toBe("diagnosis_electrical_lights_sensors");
+  });
+
+  it("Camry after dust-cap confirm → replaceable; hint only if allowlisted", () => {
+    const r = resolveLightingPath(
+      camry2020,
+      "Low beam out. I confirmed a dust cap I can unscrew behind the housing.",
+    );
+    expect(r!.path).toBe("likely_replaceable_bulb");
+    expect(r!.playbookSlug).toBe("lighting_replace_bulb");
   });
 
   it("unknown YMM → no invented bulb size", () => {
@@ -100,13 +106,20 @@ describe("resolveLightingPath", () => {
 });
 
 describe("lighting chips + playbooks", () => {
-  it("emits confirm / bulb / assembly chips", () => {
+  it("unconfirmed → confirm chips first; sealed path skips bulb steps", () => {
     const chips = lightingFollowUpChips(
       "low beam out bulb or assembly",
       camry2020,
     );
     expect(chips.map((c) => c.id)).toContain("lighting-confirm-housing");
     expect(chips.length).toBeGreaterThanOrEqual(3);
+
+    const sealedChips = lightingFollowUpChips(
+      "factory sealed LED heatsink module headlight",
+      camry2020,
+    );
+    expect(sealedChips.map((c) => c.id)).toContain("lighting-assembly-path");
+    expect(sealedChips.map((c) => c.id)).not.toContain("lighting-bulb-steps");
   });
 
   it("registers lighting Coach playbooks", () => {

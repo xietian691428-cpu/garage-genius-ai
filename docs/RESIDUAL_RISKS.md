@@ -59,6 +59,7 @@ W1–W5 leftovers still apply. Short index:
 | User-stated facts can be written into a Shop Report | W5 |
 | Exit-under repair is a second DeepSeek pass; if it fails, observe-only | W1 / W6 |
 | Lighting YMM ≠ VIN lighting options; weak bulb hints can still be wrong for a trim | W7 |
+| Intake honesty / no paid fitment / DTC check_order ≠ TSB | W8 |
 
 **Observe is not a second safety gate.** `[safety-observe]` / `metadata.safetyEvents` are counts. Blocking still happens in Chat gates, spec rewrite, and `needsExitUnderRepair`.
 
@@ -75,5 +76,17 @@ W1–W5 leftovers still apply. Short index:
 **Adaptive / matrix aim and coding are shop tools.** Guides do not teach module coding. Shop Report may note an educational lighting path; technicians still verify on the car.
 
 Details: [LIGHTING_FITMENT.md](./LIGHTING_FITMENT.md).
+
+## W8 — Intake slots, evidence grades, stop rules, DTC check_order
+
+**No paid fitment API.** Housing confirm and weak YMM hints are session education only. Structure unconfirmed → `[LIGHTING_PATH]` stays `ambiguous_needs_confirm` and bulb sizes stay blocked.
+
+**Intake depends on owner honesty.** Ephemeral slots are derived from the transcript (not a second DB). Wrong or incomplete answers → wrong narrowing. Prefer ≤2–3 questions over inventing causes.
+
+**DTC `check_order` is not a TSB.** Local catalog steps are educational sequences. They do not authorize “Replace converter now” or OEM procedure claims.
+
+**Stop rules are prompt-level.** `[STOP_RULE]` forces see-a-pro language for SRS, brake hydraulics/ABS deep work, hot cooling caps, HV orange, adaptive/matrix coding, ADAS camera-on-lamp. Complements `safety-topics` / drive-safety; not a second callout UI.
+
+Details: [INTAKE_AND_EVIDENCE.md](./INTAKE_AND_EVIDENCE.md).
 
 Regression pack: [tests/README.md](../tests/README.md). Invariants: [SAFETY_INVARIANTS.md](./SAFETY_INVARIANTS.md).

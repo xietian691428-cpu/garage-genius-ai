@@ -87,6 +87,9 @@ import {
 } from "@/lib/vehicle-data/anchors";
 import { isVehicleDataDebug } from "@/lib/vehicle-data/config";
 import { maskVin } from "@/lib/vehicle-data/vin";
+import { deriveIntake, formatIntakeStateBlock } from "@/lib/intake";
+import { formatEvidenceBlock } from "@/lib/evidence/grades";
+import { formatStopRuleBlock } from "@/lib/safety/stop-rules";
 import { specGapMetadata, classifySpecGapIntents } from "@/lib/spec-gap-intent";
 import { applySpecOutputGate, inventedSpecFailures } from "@/lib/spec-discipline";
 import { applyDiagnosticToneGuards } from "@/lib/diagnostic-tone";
@@ -436,11 +439,34 @@ export async function POST(request: NextRequest) {
     const userPlainForLang = latestUserPlainText(userMessages) || content;
     const replyLangHint = detectReplyLanguageHint(userPlainForLang);
 
+    const recentUserTexts = userMessages
+      .filter((m) => m.role === "user")
+      .slice(-6)
+      .map((m) => {
+        if (typeof m.content === "string") return m.content;
+        if (Array.isArray(m.content)) {
+          return m.content
+            .map((part) => {
+              if (!part || typeof part !== "object") return "";
+              const p = part as { type?: string; text?: string };
+              return p.type === "text" && typeof p.text === "string"
+                ? p.text
+                : "";
+            })
+            .filter(Boolean)
+            .join("\n");
+        }
+        return "";
+      })
+      .filter(Boolean);
+    const transcriptBlob = recentUserTexts.join("\n");
+
     let factAnchors: string | null = null;
     try {
       factAnchors = await gatherVehicleFactAnchors(
         currentVehicle,
         textForFacts,
+        { transcriptBlob },
       );
       if (isVehicleDataDebug()) {
         console.log("[vehicle-data] chat.anchors", {
@@ -487,6 +513,22 @@ export async function POST(request: NextRequest) {
         : null,
     });
     userMessages = conversation as DeepSeekMessage[];
+
+    // W8 intake / evidence / stop — ephemeral from transcript; after safety+drift, before messages.
+    const intake = deriveIntake({
+      currentUserMessage: userPlainForLang,
+      recentUserTexts,
+    });
+    const w8Blocks = [
+      formatIntakeStateBlock(intake),
+      formatEvidenceBlock(intake.evidenceItems),
+      formatStopRuleBlock(userPlainForLang),
+    ].filter(Boolean);
+    if (w8Blocks.length) {
+      factAnchors = factAnchors
+        ? `${factAnchors}\n\n${w8Blocks.join("\n\n")}`
+        : w8Blocks.join("\n\n");
+    }
 
     const fullMessages: DeepSeekMessage[] = trimDeepSeekConversation(
       [

@@ -10,6 +10,7 @@ import { listRecommendedCoachPlaybooks } from "@/lib/coach-scenarios/catalog";
 import { getDtcFollowUpChips, textHasDtcSignal } from "@/lib/dtc";
 import { diyPathFollowUpChip } from "@/lib/diy-check-paths";
 import { lightingFollowUpChips } from "@/lib/lighting";
+import { deriveIntake, intakeChipPrompts } from "@/lib/intake";
 import { getUsHighFreqDtcChips } from "@/lib/us-completion-funnel";
 
 /** Max messages sent to the model (keeps recent turns; welcome stripped). */
@@ -244,6 +245,25 @@ export function getFollowUpChips(options?: {
     }
     const byIdLighting = (id: string) => FOLLOW_UP_CHIPS.find((c) => c.id === id)!;
     if (!out.find((c) => c.id === "top3")) out.push(byIdLighting("top3"));
+    return out.slice(0, 4);
+  }
+
+  // Intake: missing high-value slots → ask-first chips (non-lighting)
+  const intake = deriveIntake({ currentUserMessage: rawUser || rawText });
+  if (intake.preferIntakeQuestions && intake.missingCritical.length) {
+    const prompts = intakeChipPrompts(
+      intake.missingCritical,
+      intake.lightingIntent,
+    );
+    for (const [i, p] of prompts.entries()) {
+      out.push({
+        id: `intake-${i}`,
+        label: p.length > 28 ? `${p.slice(0, 26)}…` : p,
+        prompt: p,
+      });
+    }
+    const byIdIntake = (id: string) => FOLLOW_UP_CHIPS.find((c) => c.id === id)!;
+    if (!out.find((c) => c.id === "more-checks")) out.push(byIdIntake("more-checks"));
     return out.slice(0, 4);
   }
 

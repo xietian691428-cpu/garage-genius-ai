@@ -97,6 +97,10 @@ export type LocalDtcCatalogEntry = {
   common_causes: string[];
   diy_level: DtcDiyLevel;
   safety_notes?: string;
+  /** Ordered educational checks — not a root-cause / parts mandate. */
+  check_order?: string[];
+  /** System-level associations (catalyst, O2, misfire…) — not “must replace”. */
+  common_associations?: string[];
 };
 
 export type LocalDtcRef = {
@@ -113,6 +117,8 @@ export type LocalDtcRef = {
   /** Alias of summary for older call sites. */
   edu: string;
   catalogHit: boolean;
+  checkOrder: string[];
+  commonAssociations: string[];
 };
 
 export type FetchLike = (
