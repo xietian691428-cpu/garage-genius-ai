@@ -37,6 +37,18 @@ html {
   text-size-adjust: 100%;
   /* Stop iOS rubber-band from revealing a white WKWebView canvas */
   overscroll-behavior: none;
+  /*
+   * Mobile-first readable base (~17.5–18px). Older garage users and
+   * outdoor glare need larger type than the 16px browser default.
+   * Desktop (≥1280) stays at 16px so dense layouts don't balloon.
+   */
+  font-size: 112.5%; /* 18px when root is 16px */
+}
+
+@media (min-width: 1280px) {
+  html {
+    font-size: 100%;
+  }
 }
 
 body {
@@ -47,6 +59,8 @@ body {
   min-height: 100dvh;
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
+  font-size: 1rem;
+  line-height: 1.55;
 }
 
 /* Capacitor / iOS store shell: lock the document; panels scroll inside .app-shell */
@@ -635,11 +649,18 @@ html.gg-native .app-shell {
   }
 }
 
-/* Markdown 排版 */
+/* Markdown 排版 — slightly larger on phone for DIY / older readers */
 .chat-markdown {
-  font-size: 0.9375rem;
-  line-height: 1.65;
+  font-size: 1.0625rem;
+  line-height: 1.7;
   word-break: break-word;
+}
+
+@media (min-width: 1280px) {
+  .chat-markdown {
+    font-size: 0.9375rem;
+    line-height: 1.65;
+  }
 }
 
 .chat-markdown p {

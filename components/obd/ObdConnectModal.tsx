@@ -2,25 +2,20 @@
 
 import { useEffect, useState } from "react";
 import {
-  AlertTriangle,
   Bluetooth,
   BluetoothConnected,
   BluetoothOff,
-  CheckCircle2,
-  CircleDashed,
   Loader2,
   X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   canUseObdSimulator,
-  formatLiveSensorValue,
   getObdConnector,
   getObdRuntimeSupport,
   isNativeBleRuntime,
   isNativeClassicRuntime,
   listBondedClassicDevices,
-  LIVE_SENSOR_PIDS,
   OBD_PROTOCOL_CHOICES,
   OBD_SIM_SCENARIOS,
   rankClassicDevices,
@@ -43,6 +38,8 @@ import {
 } from "@/lib/types/obd-session";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
+import ObdClearCodesModal from "@/components/obd/ObdClearCodesModal";
+import ObdDiagnosticsPanel from "@/components/obd/ObdDiagnosticsPanel";
 import { useObdPreference } from "@/hooks/useObdPreference";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -91,12 +88,6 @@ type Props = {
 
 type Phase = "pref" | "guide" | "working" | "result" | "error";
 
-const KIND_STYLE = {
-  stored: "border-red-500/40 bg-red-500/10 text-red-200",
-  pending: "border-amber-500/40 bg-amber-500/10 text-amber-200",
-  permanent: "border-violet-500/40 bg-violet-500/10 text-violet-200",
-} as const;
-
 /**
  * Connect OBD guide + scan → structured session for Chat/Coach/Dashboard.
  * Soft preference prompt when ownership is unset. Does not modify CoachScenarioPlayer.
@@ -134,6 +125,9 @@ export default function ObdConnectModal({
   const [selfCheckText, setSelfCheckText] = useState<string | null>(null);
   const [selfCheckBusy, setSelfCheckBusy] = useState(false);
   const [selfCheckCopied, setSelfCheckCopied] = useState(false);
+  const [clearOpen, setClearOpen] = useState(false);
+  const [clearBusy, setClearBusy] = useState(false);
+  const [clearError, setClearError] = useState<string | null>(null);
   useBodyScrollLock(open);
   const allowSim = canUseObdSimulator(user?.email);
 
@@ -392,7 +386,41 @@ export default function ObdConnectModal({
     setScanDevices([]);
     setClassicDevices([]);
     setSelfCheckText(null);
+    setClearOpen(false);
+    setClearError(null);
     setPhase("guide");
+  };
+
+  const confirmClearCodes = async () => {
+    const obd = getObdConnector();
+    if (!obd.isConnected) {
+      setClearError(t("obd.clearNeedConnect"));
+      return;
+    }
+    setClearBusy(true);
+    setClearError(null);
+    try {
+      const result = await obd.clearFaultCodes({
+        onStep: (s) => setStep(s),
+      });
+      if (!result.ok || !result.snapshot) {
+        setClearError(result.message || t("obd.errorGeneric"));
+        return;
+      }
+      setSnapshot(result.snapshot);
+      setConnectedName(obd.deviceName);
+      setPhase("result");
+      onSessionReady(result.snapshot);
+      setClearOpen(false);
+      setClearError(null);
+    } catch (err) {
+      setClearError(
+        err instanceof Error ? err.message : t("obd.errorGeneric"),
+      );
+    } finally {
+      setClearBusy(false);
+      setStep(null);
+    }
   };
 
   const runSelfCheck = async (device: {
@@ -474,6 +502,7 @@ export default function ObdConnectModal({
     : "";
 
   return (
+    <>
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-4 sm:items-center">
       <div
         role="dialog"
@@ -894,98 +923,38 @@ export default function ObdConnectModal({
                 {onAskAi ? t("obd.dashboardSyncedHint") : t("obd.injectedHint")}
               </p>
 
-              {snapshot.milOn != null ? (
-                <p
-                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium ${
-                    snapshot.milOn
-                      ? "border-amber-500/40 bg-amber-500/10 text-amber-200"
-                      : "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
-                  }`}
-                >
-                  {snapshot.milOn ? (
-                    <AlertTriangle className="h-4 w-4" />
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4" />
-                  )}
-                  {snapshot.milOn ? t("obd.milOn") : t("obd.milOff")}
-                </p>
-              ) : null}
+              <LiabilityDisclaimer variant="panel" />
 
-              <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2">
-                <p className="mb-1 text-[11px] font-semibold uppercase text-slate-500">
-                  {t("obd.codesTitle")}
-                </p>
-                {snapshot.codes.length ? (
-                  <>
-                    <ul className="space-y-1.5">
-                      {snapshot.codes.map((c) => (
-                        <li key={c.code} className="text-sm">
-                          <span className="font-mono text-cyan-200">{c.code}</span>
-                          {c.kind ? (
-                            <span
-                              className={`ml-2 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold uppercase ${KIND_STYLE[c.kind]}`}
-                            >
-                              {t(`obd.kind_${c.kind}`)}
-                            </span>
-                          ) : null}
-                          <span className="block text-xs text-slate-400">{c.desc}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    {snapshot.codes.some((c) => c.kind && c.kind !== "stored") ? (
-                      <p className="mt-2 text-[11px] text-slate-500">{t("obd.kindHelp")}</p>
-                    ) : null}
-                  </>
-                ) : (
-                  <p className="text-xs text-slate-400">{t("obd.noCodes")}</p>
-                )}
-              </div>
-
-              {snapshot.readiness && snapshot.smog ? (
-                <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2">
-                  <p className="mb-1 text-[11px] font-semibold uppercase text-slate-500">
-                    {t("obd.readinessTitle")}
-                  </p>
-                  <p
-                    className={`text-sm font-medium ${
-                      snapshot.smog.verdict === "ready"
-                        ? "text-emerald-300"
-                        : snapshot.smog.verdict === "unknown"
-                          ? "text-slate-300"
-                          : "text-amber-200"
-                    }`}
-                  >
-                    {t(`obd.smog_${snapshot.smog.verdict}`, {
-                      count: snapshot.smog.incomplete.length,
-                    })}
-                  </p>
-                  <ul className="mt-2 grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
-                    {snapshot.readiness.monitors.map((m) => (
-                      <li key={m.id} className="flex items-center gap-1.5 text-slate-300">
-                        {m.ready ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                        ) : (
-                          <CircleDashed className="h-3.5 w-3.5 shrink-0 text-amber-400" />
-                        )}
-                        {m.label}
-                        <span className="text-slate-500">
-                          · {m.ready ? t("obd.monitorReady") : t("obd.monitorIncomplete")}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="mt-2 text-[11px] text-slate-500">{t("obd.smogNote")}</p>
-                </div>
-              ) : null}
+              <ObdDiagnosticsPanel
+                compact
+                milOn={snapshot.milOn}
+                codes={snapshot.codes.map((c) => ({
+                  code: c.code,
+                  desc: c.desc,
+                  severity: c.severity,
+                  kind: c.kind,
+                }))}
+                readiness={snapshot.readiness}
+                smog={snapshot.smog}
+                sensors={snapshot.sensors}
+                unitSystem={unitSystem}
+                connected={snapshot.connected}
+                deviceName={snapshot.deviceName}
+                clearCodesEnabled={Boolean(connectedName)}
+                onClearCodes={() => {
+                  setClearError(null);
+                  setClearOpen(true);
+                }}
+              />
 
               {snapshot.freezeFrame ? (
-                <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2">
-                  <p className="mb-1 text-[11px] font-semibold uppercase text-slate-500">
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     {snapshot.freezeFrame.dtc
                       ? t("obd.freezeFrameFor", { code: snapshot.freezeFrame.dtc })
                       : t("obd.freezeFrameTitle")}
                   </p>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-300">
+                  <div className="grid grid-cols-2 gap-2 text-sm text-slate-300">
                     {snapshot.freezeFrame.values.map((v) => (
                       <div key={v.pid}>
                         <span className="text-slate-500">{v.label}: </span>
@@ -996,36 +965,23 @@ export default function ObdConnectModal({
                 </div>
               ) : null}
 
-              <LiabilityDisclaimer variant="panel" />
-
-              <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2">
-                <p className="mb-1 text-[11px] font-semibold uppercase text-slate-500">
-                  {t("obd.sensorsTitle")}
-                </p>
-                <div className="grid grid-cols-2 gap-2 text-xs text-slate-300">
-                  {LIVE_SENSOR_PIDS.map(({ key, label, unit }) => (
-                    <div key={key}>
-                      <span className="text-slate-500">{label}: </span>
-                      {formatLiveSensorValue(snapshot.sensors[key], unit, unitSystem)}
-                    </div>
-                  ))}
-                  <div>
-                    <span className="text-slate-500">{t("obd.odometer")}: </span>
-                    {formatObdValue(snapshot.odometerKm, "km", unitSystem)}
-                  </div>
-                  {snapshot.distanceSinceCodesClearedKm != null ? (
-                    <div>
-                      <span className="text-slate-500">{t("obd.distanceSinceClear")}: </span>
-                      {formatObdValue(snapshot.distanceSinceCodesClearedKm, "km", unitSystem)}
-                    </div>
-                  ) : null}
-                  {snapshot.adapter?.batteryVoltage != null ? (
-                    <div>
-                      <span className="text-slate-500">{t("obd.batteryVoltage")}: </span>
-                      {formatObdValue(snapshot.adapter.batteryVoltage, "V")}
-                    </div>
-                  ) : null}
+              <div className="grid grid-cols-2 gap-2 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-300">
+                <div>
+                  <span className="text-slate-500">{t("obd.odometer")}: </span>
+                  {formatObdValue(snapshot.odometerKm, "km", unitSystem)}
                 </div>
+                {snapshot.distanceSinceCodesClearedKm != null ? (
+                  <div>
+                    <span className="text-slate-500">{t("obd.distanceSinceClear")}: </span>
+                    {formatObdValue(snapshot.distanceSinceCodesClearedKm, "km", unitSystem)}
+                  </div>
+                ) : null}
+                {snapshot.adapter?.batteryVoltage != null ? (
+                  <div>
+                    <span className="text-slate-500">{t("obd.batteryVoltage")}: </span>
+                    {formatObdValue(snapshot.adapter.batteryVoltage, "V")}
+                  </div>
+                ) : null}
               </div>
 
               {snapshot.vin ? (
@@ -1152,5 +1108,18 @@ export default function ObdConnectModal({
         ) : null}
       </div>
     </div>
+
+    <ObdClearCodesModal
+      open={clearOpen}
+      busy={clearBusy}
+      error={clearError}
+      onCancel={() => {
+        if (clearBusy) return;
+        setClearOpen(false);
+        setClearError(null);
+      }}
+      onConfirm={() => void confirmClearCodes()}
+    />
+    </>
   );
 }

@@ -2,6 +2,10 @@
 
 Garage Genius talks to **ELM327-compatible** adapters (the open command set used by nearly every third-party OBD dongle) from **Chat**, **Check Engine coach**, and **Dashboard**. One scan reads the check engine light, stored / pending / permanent codes, emissions readiness, freeze frame, live sensors, odometer, and VIN, then can inject a diagnosis prompt into Chat.
 
+### Clear fault codes (Mode 04)
+
+After a successful scan and the liability notice, users may **Clear fault codes** behind an explicit risk gate (checkbox). This sends SAE J1979 **Mode 04**, which clears stored codes and resets readiness monitors. Permanent (Mode 0A) codes are not cleared by the standard. Copy warns that clearing does not fix the car, resets smog readiness, and must not be used to improperly pass an emissions / inspection test.
+
 > **No demo / fake data** is ever written. Unsupported reads stay empty; without Bluetooth the user enters codes or uploads a scanner screenshot.
 
 ## Architecture
@@ -58,6 +62,7 @@ Cheap clones vary — we do **not** promise 100% compatibility. Use **Run self-c
 
 - `tests/obd-protocol.test.ts`, `tests/obd-session.test.ts`, `tests/obd-native-filter.test.ts`  
 - `tests/obd-m2-classic.test.ts` — protocol choices, self-check report shape, Android-only classic gating helpers  
+- Mode 04 clear ack helpers + `clearFaultCodes` session test in protocol/session suites  
 
 ## QA simulator
 

@@ -215,4 +215,37 @@ describe("OBD session against a simulated ELM327", () => {
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.code).toBe("adapter_silent");
   });
+
+  it("clears stored codes with Mode 04 then re-reads an empty snapshot", async () => {
+    const elm = new FakeElm({
+      ...CAMRY_2018,
+      "04": "7E8 01 44\r\r>",
+      // After clear: stored empty; permanent may remain once then empty on re-scan
+      "03": ["7E8 04 43 01 01 71\r\r>", "7E8 02 43 00\r\r>"],
+      "07": ["7E8 04 47 01 04 20\r7E9 02 47 00\r\r>", "7E8 02 47 00\r\r>"],
+      "0A": ["7E8 04 4A 01 01 71\r\r>", "7E8 02 4A 00\r\r>"],
+      "0101": [
+        "7E8 06 41 01 81 07 65 04\r\r>",
+        "7E8 06 41 01 00 07 65 00\r\r>",
+      ],
+    });
+    const obd = connectorFor(elm);
+    const before = await obd.readSessionSnapshot();
+    expect(before.codes.some((c) => c.code === "P0171")).toBe(true);
+
+    const cleared = await obd.clearFaultCodes();
+    expect(cleared.ok).toBe(true);
+    expect(elm.sent).toContain("04");
+    expect(cleared.remainingStored).toBe(0);
+    expect(cleared.snapshot?.codes.filter((c) => c.kind === "stored")).toEqual(
+      [],
+    );
+  });
+
+  it("refuses clear when not connected", async () => {
+    const obd = connectorFor(new FakeElm({ ...CAMRY_2018 }));
+    const res = await obd.clearFaultCodes();
+    expect(res.ok).toBe(false);
+    expect(res.message).toMatch(/not connected/i);
+  });
 });

@@ -74,6 +74,8 @@ export const OBD_SIM_CAMRY_2018: Record<string, string | string[]> = {
   "03": "7E8 04 43 01 01 71\r\r>",
   "07": "7E8 04 47 01 04 20\r7E9 02 47 00\r\r>",
   "0A": "7E8 04 4A 01 01 71\r\r>",
+  // Mode 04 clear — QA can clear then Read again (codes still scripted until reload)
+  "04": "7E8 01 44\r\r>",
   "020200": "7E8 05 42 02 00 01 71\r\r>",
   "020400": "7E8 04 42 04 00 66\r\r>",
   "020500": "7E8 04 42 05 00 7B\r\r>",

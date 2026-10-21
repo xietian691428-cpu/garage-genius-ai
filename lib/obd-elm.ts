@@ -25,6 +25,8 @@ import {
   decodeVin,
   detectElmError,
   findPidBytes,
+  isClearDtcAcknowledged,
+  isClearDtcHardFailure,
   parseAdapterVersion,
   parseAdapterVoltage,
   parseObdMessages,
@@ -293,6 +295,78 @@ export class ElmSession {
   async readVin(): Promise<string | null> {
     const raw = await this.send("0902", 6_000);
     return decodeVin(this.parse(raw, "0902"));
+  }
+
+  /**
+   * SAE J1979 Mode 04 — clear/reset emission-related diagnostic info.
+   * Clears stored (Mode 03) codes and readiness monitors; pending may clear;
+   * permanent (Mode 0A) codes are not cleared by the standard.
+   * Requires ignition ON (engine usually OFF). Verifies by re-reading Mode 03.
+   */
+  async clearDtcs(): Promise<{
+    ok: boolean;
+    acknowledged: boolean;
+    remainingStored: number;
+    remainingPermanent: number;
+    message: string;
+  }> {
+    const raw = await this.send("04", 10_000);
+    if (isClearDtcHardFailure(raw)) {
+      const err = detectElmError(raw);
+      return {
+        ok: false,
+        acknowledged: false,
+        remainingStored: -1,
+        remainingPermanent: -1,
+        message:
+          err === "unable_to_connect" || err === "no_data"
+            ? "The car did not accept a clear request. Keep ignition ON (engine off is fine), then try again."
+            : `Clear failed (${(err ?? "error").replace(/_/g, " ")}).`,
+      };
+    }
+
+    const acknowledged = isClearDtcAcknowledged(raw, this.parse(raw, "04"));
+    // Give the ECU a moment before verifying stored codes.
+    await sleep(400);
+    const stored = await this.readDtcs("stored");
+    let permanent: DecodedDtc[] = [];
+    try {
+      permanent = await this.readDtcs("permanent");
+    } catch {
+      permanent = [];
+    }
+
+    const remainingStored = stored.length;
+    const remainingPermanent = permanent.length;
+    if (remainingStored === 0) {
+      return {
+        ok: true,
+        acknowledged,
+        remainingStored,
+        remainingPermanent,
+        message:
+          remainingPermanent > 0
+            ? "Stored codes cleared. Permanent codes can remain until the car re-tests itself."
+            : "Stored fault codes cleared.",
+      };
+    }
+    if (acknowledged) {
+      return {
+        ok: true,
+        acknowledged,
+        remainingStored,
+        remainingPermanent,
+        message: `Clear acknowledged, but ${remainingStored} stored code(s) are still present.`,
+      };
+    }
+    return {
+      ok: false,
+      acknowledged: false,
+      remainingStored,
+      remainingPermanent,
+      message:
+        "Could not confirm that codes were cleared. Record codes first, then retry with ignition ON.",
+    };
   }
 
   /** Full DIY scan. Each step is isolated so one unsupported mode can't sink the rest. */

@@ -12,7 +12,7 @@ type Props = {
 };
 
 const btn =
-  "flex min-h-[72px] min-w-[7.5rem] flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl border border-slate-700 bg-[#111827] px-3 py-3 text-xs font-semibold text-slate-100 transition hover:border-cyan-500/40 hover:text-cyan-200 sm:min-w-0";
+  "flex min-h-[76px] min-w-[7.5rem] flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl border border-slate-700 bg-[#111827] px-3 py-3 text-sm font-semibold text-slate-100 transition hover:border-cyan-500/40 hover:text-cyan-200 sm:min-w-0";
 
 export default function QuickActionsRow({
   showObdConnect,
@@ -24,7 +24,7 @@ export default function QuickActionsRow({
 }: Props) {
   return (
     <section data-testid="home-quick-actions">
-      <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
         Quick actions
       </h3>
       <div className="-mx-1 flex gap-2 overflow-x-auto pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible">

@@ -27,7 +27,7 @@ export default function UpcomingMaintenanceSection({
 }: Props) {
   return (
     <section data-testid="home-upcoming-maintenance">
-      <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
         Upcoming Maintenance
       </h3>
 
@@ -48,17 +48,17 @@ export default function UpcomingMaintenanceSection({
               className="rounded-3xl border border-slate-800 bg-[#111827] p-4"
             >
               <div className="flex items-start justify-between gap-2">
-                <h4 className="text-sm font-semibold text-white">{item.title}</h4>
+                <h4 className="text-base font-semibold text-white">{item.title}</h4>
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${urgencyBadge[item.urgency]}`}
                 >
                   {item.urgency.replace("_", " ")}
                 </span>
               </div>
-              <p className="mt-1.5 text-xs text-slate-400">
+              <p className="mt-1.5 text-sm text-slate-400">
                 {formatDueAroundLine(item)}
               </p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-sm text-slate-500">
                 DIY difficulty: {item.difficulty}
                 {item.estCostUsd
                   ? ` · Est. parts: $${item.estCostUsd.min}–${item.estCostUsd.max}`

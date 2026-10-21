@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Activity,
   AlertTriangle,
   Bell,
   Bluetooth,
@@ -40,7 +39,9 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { focusPartToRegionId } from "@/lib/types/focus";
 import AddVehicleModal from "@/components/vehicles/AddVehicleModal";
 import CameraCapture from "@/components/chat/CameraCapture";
+import ObdClearCodesModal from "@/components/obd/ObdClearCodesModal";
 import ObdConnectModal from "@/components/obd/ObdConnectModal";
+import ObdDiagnosticsPanel from "@/components/obd/ObdDiagnosticsPanel";
 import { useTranslation } from "react-i18next";
 import { hideStorePurchaseUi } from "@/lib/native-platform";
 import { useAiConsentGate } from "@/components/legal/AiConsentProvider";
@@ -53,6 +54,7 @@ import {
   buildObdBleDiagnosisPrompt,
 } from "@/lib/dtc";
 import type { ObdSessionSnapshot } from "@/lib/types/obd-session";
+import type { ObdReadiness, SmogReadiness } from "@/lib/obd-protocol";
 import {
   buildCodesAskPrompt,
   computeHealthScore,
@@ -63,7 +65,6 @@ import {
   levelFromValue,
   loadVehicleVitals,
   saveVehicleVitals,
-  severityTone,
   type DiagnosticCode,
   type FluidStatus,
   type VehicleVitals,
@@ -77,9 +78,6 @@ import {
 import { supabase } from "@/lib/supabase";
 import {
   getObdConnector,
-  LIVE_SENSOR_PIDS,
-  formatLiveSensorValue,
-  hasLiveSensorData,
   type ObdLiveSensors,
 } from "@/lib/obd";
 import { obdUnitSystemForVehicle } from "@/lib/obd-units";
@@ -168,6 +166,14 @@ export default function Dashboard({
   const [showObdModal, setShowObdModal] = useState(false);
   const [obdNote, setObdNote] = useState<string | null>(null);
   const [liveSensors, setLiveSensors] = useState<ObdLiveSensors | null>(null);
+  const [obdMilOn, setObdMilOn] = useState<boolean | null>(null);
+  const [obdReadiness, setObdReadiness] = useState<ObdReadiness | null>(null);
+  const [obdSmog, setObdSmog] = useState<SmogReadiness | null>(null);
+  const [obdConnected, setObdConnected] = useState(false);
+  const [obdDeviceName, setObdDeviceName] = useState<string | null>(null);
+  const [clearOpen, setClearOpen] = useState(false);
+  const [clearBusy, setClearBusy] = useState(false);
+  const [clearError, setClearError] = useState<string | null>(null);
   const obdUnits = obdUnitSystemForVehicle(vehicle);
   const [isRefreshingSensors, setIsRefreshingSensors] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
@@ -222,6 +228,11 @@ export default function Dashboard({
       setVitals(null);
       setVitalsHistory([]);
       setLiveSensors(null);
+      setObdMilOn(null);
+      setObdReadiness(null);
+      setObdSmog(null);
+      setObdConnected(false);
+      setObdDeviceName(null);
       setInbox([]);
       return;
     }
@@ -229,6 +240,11 @@ export default function Dashboard({
     setVisionNote(null);
     setObdNote(null);
     setLiveSensors(null);
+    setObdMilOn(null);
+    setObdReadiness(null);
+    setObdSmog(null);
+    setObdConnected(false);
+    setObdDeviceName(null);
     void (async () => {
       try {
         const hydrated = await vehicleVitalsCloud.hydrateLocal(vehicle.id);
@@ -494,11 +510,14 @@ export default function Dashboard({
       }));
 
       const nextFluids = current.fluids;
-      const nextCodes = [...scanned, ...current.codes]
-        .filter(
-          (c, i, arr) => arr.findIndex((x) => x.code === c.code) === i,
-        )
-        .slice(0, 8);
+      // OBD scan is source of truth for adapter-read codes (including after Mode 04 clear).
+      // Keep photo / manual entries that are not in the fresh OBD list.
+      const keepOther = current.codes.filter(
+        (c) =>
+          c.source !== "obd" &&
+          !scanned.some((s) => s.code === c.code),
+      );
+      const nextCodes = [...scanned, ...keepOther].slice(0, 8);
 
       const healthScore =
         scanned.length > 0
@@ -528,6 +547,11 @@ export default function Dashboard({
       setVitals(withScore);
       saveVehicleVitals(withScore);
       setLiveSensors(snapshot.sensors);
+      setObdMilOn(snapshot.milOn ?? null);
+      setObdReadiness(snapshot.readiness ?? null);
+      setObdSmog(snapshot.smog ?? null);
+      setObdConnected(Boolean(snapshot.connected));
+      setObdDeviceName(snapshot.deviceName || null);
       setObdNote(snapshot.note);
 
       void vehicleVitalsCloud
@@ -555,6 +579,33 @@ export default function Dashboard({
     if (!vitals) setVitals(base);
     setObdNote(null);
     setShowObdModal(true);
+  };
+
+  const confirmClearCodes = async () => {
+    const obd = getObdConnector();
+    if (!obd.isConnected) {
+      setClearError(t("obd.clearNeedConnect"));
+      setObdConnected(false);
+      return;
+    }
+    setClearBusy(true);
+    setClearError(null);
+    try {
+      const result = await obd.clearFaultCodes();
+      if (!result.ok || !result.snapshot) {
+        setClearError(result.message || t("obd.errorGeneric"));
+        return;
+      }
+      applyLiveObdSession(result.snapshot);
+      setObdNote(result.message);
+      setClearOpen(false);
+    } catch (err) {
+      setClearError(
+        err instanceof Error ? err.message : t("obd.errorGeneric"),
+      );
+    } finally {
+      setClearBusy(false);
+    }
   };
 
   const handleObdAskAi = (snapshot: ObdSessionSnapshot) => {
@@ -1222,63 +1273,63 @@ export default function Dashboard({
           <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-[#111827] to-[#0a0f1c] p-4 sm:rounded-3xl sm:p-6 lg:p-7">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-xs text-emerald-400 sm:text-sm">Overall Health</p>
-                <p className="mt-1.5 text-3xl font-bold sm:mt-2 sm:text-4xl lg:text-5xl">
+                <p className="text-sm font-medium text-emerald-400 sm:text-base">Overall Health</p>
+                <p className="mt-1.5 text-4xl font-bold sm:mt-2 sm:text-5xl lg:text-5xl">
                   {health != null ? `${health}%` : "—"}
                 </p>
-                <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-500 sm:text-xs">
-                  <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+                <p className="mt-1 flex items-center gap-1 text-xs text-slate-500 sm:text-sm">
+                  <TrendingUp className="h-4 w-4 shrink-0" />
                   <span className="truncate">
                     {vitals ? healthTrendLabel(vitals.healthHistory) : "Add a vehicle"}
                   </span>
                 </p>
               </div>
-              <CheckCircle className="h-7 w-7 shrink-0 text-emerald-400 sm:h-10 sm:w-10 lg:h-12 lg:w-12" />
+              <CheckCircle className="h-9 w-9 shrink-0 text-emerald-400 sm:h-11 sm:w-11 lg:h-12 lg:w-12" />
             </div>
           </div>
 
           <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-[#111827] to-[#0a0f1c] p-4 sm:rounded-3xl sm:p-6 lg:p-7">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-xs text-amber-400 sm:text-sm">Next Service</p>
-                <p className="mt-1.5 text-2xl font-bold sm:mt-2 sm:text-3xl lg:text-4xl">
+                <p className="text-sm font-medium text-amber-400 sm:text-base">Next Service</p>
+                <p className="mt-1.5 text-3xl font-bold sm:mt-2 sm:text-4xl lg:text-4xl">
                   {serviceEta?.miles === 0
                     ? "Due"
                     : serviceEta?.miles != null
                       ? serviceEta.miles.toLocaleString()
                       : "—"}
                 </p>
-                <p className="text-xs text-slate-400 sm:text-sm">
+                <p className="text-sm text-slate-400">
                   {serviceEta?.miles === 0 ? "service now" : "miles"}
                 </p>
               </div>
-              <Clock className="h-7 w-7 shrink-0 text-amber-400 sm:h-10 sm:w-10 lg:h-12 lg:w-12" />
+              <Clock className="h-9 w-9 shrink-0 text-amber-400 sm:h-11 sm:w-11 lg:h-12 lg:w-12" />
             </div>
           </div>
 
           <div className="rounded-2xl border border-red-500/30 bg-gradient-to-br from-[#111827] to-[#0a0f1c] p-4 sm:rounded-3xl sm:p-6 lg:p-7">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-xs text-red-400 sm:text-sm">Active Alerts</p>
-                <p className="mt-1.5 text-3xl font-bold sm:mt-2 sm:text-4xl lg:text-5xl">
+                <p className="text-sm font-medium text-red-400 sm:text-base">Active Alerts</p>
+                <p className="mt-1.5 text-4xl font-bold sm:mt-2 sm:text-5xl lg:text-5xl">
                   {vehicle ? alertCount : "—"}
                 </p>
-                <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">
+                <p className="mt-1 text-xs text-slate-500 sm:text-sm">
                   DTCs + fluid warnings
                 </p>
               </div>
-              <AlertTriangle className="h-7 w-7 shrink-0 text-red-400 sm:h-10 sm:w-10 lg:h-12 lg:w-12" />
+              <AlertTriangle className="h-9 w-9 shrink-0 text-red-400 sm:h-11 sm:w-11 lg:h-12 lg:w-12" />
             </div>
           </div>
 
           <div className="col-span-2 min-w-0 rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-[#111827] to-[#0a0f1c] p-4 sm:col-span-1 sm:rounded-3xl sm:p-6 xl:col-span-1 xl:p-7">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-xs text-cyan-400 sm:text-sm">Est. Market Band</p>
-                <p className="mt-1.5 text-3xl font-bold sm:mt-2 sm:text-4xl lg:text-5xl">
+                <p className="text-sm font-medium text-cyan-400 sm:text-base">Est. Market Band</p>
+                <p className="mt-1.5 text-4xl font-bold sm:mt-2 sm:text-5xl lg:text-5xl">
                   {vehicle ? marketBand : "—"}
                 </p>
-                <p className="mt-1 truncate text-[11px] text-slate-500 sm:text-xs">
+                <p className="mt-1 truncate text-xs text-slate-500 sm:text-sm">
                   DIY ballpark · {vehicle ? normalizeVehicleMarket(vehicle.market) : "—"}
                 </p>
               </div>
@@ -1286,13 +1337,66 @@ export default function Dashboard({
           </div>
         </div>
 
+        {vehicle ? (
+          <div className="mb-8">
+            <ObdDiagnosticsPanel
+              milOn={obdMilOn}
+              codes={(vitals?.codes ?? []).map((c) => ({
+                code: c.code,
+                desc: c.desc,
+                severity: c.severity,
+                recordedAt: c.recordedAt,
+              }))}
+              readiness={obdReadiness}
+              smog={obdSmog}
+              sensors={liveSensors}
+              unitSystem={obdUnits}
+              connected={obdConnected}
+              deviceName={obdDeviceName}
+              isRefreshing={isRefreshingSensors}
+              showConnectCta={showObdConnectEntry}
+              onConnect={openObdConnect}
+              onRefreshSensors={() => void handleRefreshSensors()}
+              refreshLabel={
+                isRefreshingSensors
+                  ? undefined
+                  : showObdConnectEntry
+                    ? undefined
+                    : t("obd.enableAdapterCta")
+              }
+              refreshObdAction={
+                showObdConnectEntry ? "connect" : "settings"
+              }
+              onAskAboutCodes={
+                vitals && vitals.codes.length > 0
+                  ? handleAskAboutCodes
+                  : undefined
+              }
+              clearCodesEnabled={obdConnected}
+              onClearCodes={
+                (vitals?.codes.length ?? 0) > 0
+                  ? () => {
+                      setClearError(null);
+                      if (!getObdConnector().isConnected) {
+                        setObdConnected(false);
+                        openObdConnect();
+                        return;
+                      }
+                      setClearOpen(true);
+                    }
+                  : undefined
+              }
+            />
+          </div>
+        ) : null}
+
         <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
           <div className="min-w-0 overflow-hidden rounded-3xl border border-slate-700 bg-[#111827] p-6 sm:p-8">
             <h3 className="mb-2 flex items-center gap-3 text-xl font-semibold">
               <Thermometer className="h-6 w-6 text-cyan-400" /> Fluid Levels &amp;
               Tire Pressure
             </h3>
-            <p className="mb-5 text-xs text-slate-500">
+            <p className="mb-5 text-sm text-slate-400">
               From OBD / photo / tap to edit — feeds health score
             </p>
             <div className="space-y-4">
@@ -1301,62 +1405,38 @@ export default function Dashboard({
                   key={item.key}
                   className="flex min-w-0 flex-col gap-1 border-b border-slate-800 pb-3 xl:flex-row xl:items-center xl:justify-between"
                 >
-                  <span className="text-sm text-slate-300">{item.label}</span>
+                  <span className="text-base text-slate-300">{item.label}</span>
                   <input
                     type="text"
                     value={item.value}
                     onChange={(e) => handleFluidEdit(item.key, e.target.value)}
                     disabled={!vitals}
-                    className={`w-full min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm xl:max-w-[220px] ${fluidTone(item.level)} focus:border-cyan-400 focus:outline-none`}
+                    className={`min-h-[48px] w-full min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-base xl:max-w-[220px] ${fluidTone(item.level)} focus:border-cyan-400 focus:outline-none`}
                   />
                 </div>
               ))}
               {!vehicle && (
-                <p className="text-sm text-slate-500">Select a vehicle to track fluids.</p>
+                <p className="text-base text-slate-500">Select a vehicle to track fluids.</p>
               )}
             </div>
           </div>
 
           <div className="min-w-0 overflow-hidden rounded-3xl border border-slate-700 bg-[#111827] p-6 sm:p-8">
-            <h3 className="mb-2 text-xl font-semibold">Recent Diagnostic Codes</h3>
-            <p className="mb-5 text-xs text-slate-500">
-              OBD scan, photo vision, or manual entry · Ask AI uses market + RAG
+            <h3 className="mb-2 flex items-center gap-3 text-xl font-semibold">
+              <AlertTriangle className="h-6 w-6 text-cyan-400" />
+              Codes &amp; parts
+            </h3>
+            <p className="mb-5 text-sm text-slate-400">
+              Manual entry and Amazon search · full scan summary is above
             </p>
-            <div className="space-y-3 text-sm">
-              {(vitals?.codes ?? []).length === 0 ? (
-                <p className="rounded-2xl border border-dashed border-slate-700 px-4 py-6 text-center text-slate-500">
-                  No codes yet — Connect OBD, Photo diagnosis, or add one below.
-                </p>
-              ) : (
-                vitals!.codes.map((c) => (
-                  <div
-                    key={`${c.code}-${c.recordedAt}`}
-                    className="flex justify-between gap-3 rounded-2xl bg-slate-900 p-4"
-                  >
-                    <div className="min-w-0">
-                      <div className="font-mono font-semibold text-white">
-                        {c.code}
-                      </div>
-                      <div className="truncate text-slate-400">{c.desc}</div>
-                      <div className="mt-1 text-[10px] uppercase tracking-wide text-slate-600">
-                        {c.source}
-                      </div>
-                    </div>
-                    <span className={`shrink-0 ${severityTone(c.severity)}`}>
-                      {c.severity}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
 
             {/* Recommended Parts - Market-aware Affiliate Links */}
             {vehicle && vitals && vitals.codes.length > 0 && (
-              <div className="mt-6 border-t border-slate-800 pt-5">
-                <h4 className="mb-3 text-sm font-medium text-slate-200">
+              <div className="mb-5">
+                <h4 className="mb-3 text-base font-medium text-slate-200">
                   {t("parts.recommendedTitle")}
                 </h4>
-                <p className="mb-3 text-xs text-slate-500">
+                <p className="mb-3 text-sm text-slate-500">
                   {t("parts.compareHint")}
                 </p>
 
@@ -1375,13 +1455,13 @@ export default function Dashboard({
                       rel="noopener noreferrer"
                       className="mb-3 block rounded-2xl bg-slate-900 p-4 transition hover:bg-slate-800"
                     >
-                      <div className="font-mono text-sm font-semibold text-white">
-                        {t("parts.fixForCode", { code: c.code })}
+                      <div className="font-mono text-base font-semibold text-white">
+                        {t("parts.formForCode", { code: c.code })}
                       </div>
-                      <div className="mt-1 text-xs text-slate-400">
+                      <div className="mt-1 text-sm text-slate-400">
                         {aff.searchQuery}
                       </div>
-                      <div className="mt-2 text-xs font-medium text-cyan-300">
+                      <div className="mt-2 text-sm font-medium text-cyan-300">
                         {t("parts.searchOnAmazon")} →
                       </div>
                     </a>
@@ -1391,27 +1471,27 @@ export default function Dashboard({
             )}
 
             {vehicle && (
-              <div className="mt-5 space-y-2 border-t border-slate-800 pt-4">
+              <div className="space-y-2 border-t border-slate-800 pt-4">
                 <div className="flex min-w-0 flex-col gap-2 xl:flex-row">
                   <input
                     type="text"
                     placeholder="Code e.g. P0300"
                     value={manualCode}
                     onChange={(e) => setManualCode(e.target.value)}
-                    className="min-h-[42px] min-w-0 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm xl:flex-1 focus:border-cyan-400 focus:outline-none"
+                    className="min-h-[48px] min-w-0 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-base xl:flex-1 focus:border-cyan-400 focus:outline-none"
                   />
                   <input
                     type="text"
                     placeholder="Short description"
                     value={manualDesc}
                     onChange={(e) => setManualDesc(e.target.value)}
-                    className="min-h-[42px] min-w-0 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm xl:flex-[1.4] focus:border-cyan-400 focus:outline-none"
+                    className="min-h-[48px] min-w-0 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-base xl:flex-[1.4] focus:border-cyan-400 focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleAddManualCode}
                     disabled={!manualCode.trim()}
-                    className="min-h-[42px] shrink-0 rounded-xl bg-slate-700 px-4 text-sm disabled:opacity-40"
+                    className="min-h-[48px] shrink-0 rounded-xl bg-slate-700 px-4 text-base font-medium disabled:opacity-40"
                   >
                     Add
                   </button>
@@ -1420,7 +1500,7 @@ export default function Dashboard({
                   <button
                     type="button"
                     onClick={handleAskAboutCodes}
-                    className="text-sm text-cyan-400 hover:text-cyan-300"
+                    className="text-base font-medium text-cyan-400 hover:text-cyan-300"
                   >
                     Ask AI about these codes →
                   </button>
@@ -1535,51 +1615,7 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* Real-time Sensors — after Fluids / Codes / Trend (product layout) */}
-        {vehicle && (
-          <div className="mt-8 rounded-3xl border border-slate-700 bg-[#111827] p-4 sm:p-6 lg:p-8">
-            <h3 className="mb-4 flex items-center gap-3 text-lg font-semibold sm:mb-6 sm:text-xl">
-              <Activity className="h-5 w-5 text-cyan-400 sm:h-6 sm:w-6" />
-              Real-time Sensors
-            </h3>
-            <div className="grid grid-cols-2 gap-3 text-sm sm:gap-4 md:grid-cols-3">
-              {LIVE_SENSOR_PIDS.map(({ key, label, unit }) => (
-                <div
-                  key={key}
-                  className="rounded-2xl bg-black/40 p-3 sm:p-4"
-                >
-                  <div className="text-xs text-cyan-400 sm:text-sm">{label}</div>
-                  <div className="mt-1 font-mono text-xl text-white sm:text-2xl">
-                    {formatLiveSensorValue(liveSensors?.[key] ?? null, unit, obdUnits)}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {!hasLiveSensorData(liveSensors) && (
-              <p className="mt-4 text-center text-xs text-slate-500">
-                {showObdConnectEntry
-                  ? `No live data yet — ${t("obd.connectEntry")} with an ELM327-compatible adapter, then Refresh Sensors.`
-                  : t("obd.noAdapterLiveHint")}
-              </p>
-            )}
-            <button
-              type="button"
-              data-testid="dashboard-refresh-sensors"
-              data-obd-action={
-                showObdConnectEntry ? "connect" : "settings"
-              }
-              onClick={() => void handleRefreshSensors()}
-              disabled={isRefreshingSensors || showObdModal}
-              className="mt-6 text-sm font-medium text-cyan-400 hover:text-cyan-300 disabled:opacity-40"
-            >
-              {isRefreshingSensors
-                ? t("obd.refreshSensorsReading")
-                : showObdConnectEntry
-                  ? t("obd.refreshSensors")
-                  : t("obd.enableAdapterCta")}
-            </button>
-          </div>
-        )}
+        {/* Live sensors + MIL/readiness live in ObdDiagnosticsPanel above */}
 
         {/* Push opt-in — predictive cards live in HomeHub above */}
         {vehicle && isWebPushSupported() && (
@@ -1699,6 +1735,18 @@ export default function Dashboard({
             mileageUnit: result.unit,
           });
         }}
+      />
+
+      <ObdClearCodesModal
+        open={clearOpen}
+        busy={clearBusy}
+        error={clearError}
+        onCancel={() => {
+          if (clearBusy) return;
+          setClearOpen(false);
+          setClearError(null);
+        }}
+        onConfirm={() => void confirmClearCodes()}
       />
 
       {selectedRegion && vehicle && !activeFocus && (

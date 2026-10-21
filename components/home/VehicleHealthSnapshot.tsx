@@ -33,7 +33,7 @@ export default function VehicleHealthSnapshot({ snapshot, onPrimary }: Props) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             Vehicle health
           </p>
           <h2 className="mt-1 text-xl font-semibold text-white sm:text-2xl">
@@ -43,10 +43,10 @@ export default function VehicleHealthSnapshot({ snapshot, onPrimary }: Props) {
               {snapshot.title}
             </span>
           </h2>
-          <p className="mt-3 text-sm leading-relaxed text-slate-300">
+          <p className="mt-3 text-base leading-relaxed text-slate-300">
             {snapshot.subtitle}
           </p>
-          <p className="mt-3 text-[11px] text-slate-500">
+          <p className="mt-3 text-sm text-slate-500">
             {snapshot.lastUpdatedLabel}
           </p>
         </div>
@@ -55,7 +55,7 @@ export default function VehicleHealthSnapshot({ snapshot, onPrimary }: Props) {
         type="button"
         data-testid="home-health-primary"
         onClick={onPrimary}
-        className="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl bg-cyan-500 px-4 text-sm font-semibold text-black hover:bg-cyan-400 sm:w-auto"
+        className="mt-5 inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-cyan-500 px-4 text-base font-semibold text-black hover:bg-cyan-400 sm:w-auto"
       >
         {snapshot.primaryCta.label}
       </button>

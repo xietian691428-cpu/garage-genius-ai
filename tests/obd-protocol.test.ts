@@ -10,6 +10,8 @@ import {
   detectElmError,
   evaluateSmogReadiness,
   findPidBytes,
+  isClearDtcAcknowledged,
+  isClearDtcHardFailure,
   modelYearFromVin,
   parseAdapterVersion,
   parseAdapterVoltage,
@@ -26,6 +28,25 @@ const codes = (raw: string, kind: "stored" | "pending" | "permanent", p = CAN11,
   decodeDtcMessages(parseObdMessages(raw, { protocol: p, headers }), kind, p).map(
     (d) => d.code,
   );
+
+describe("Mode 04 clear acknowledgement", () => {
+  it("accepts CAN positive response 44 and bare OK", () => {
+    const can = parseObdMessages("7E8 01 44\r\r>", {
+      protocol: CAN11,
+      headers: true,
+      command: "04",
+    });
+    expect(isClearDtcAcknowledged("7E8 01 44\r\r>", can)).toBe(true);
+    expect(isClearDtcAcknowledged("OK\r\r>", [])).toBe(true);
+  });
+
+  it("treats UNABLE TO CONNECT as a hard failure", () => {
+    expect(isClearDtcHardFailure("SEARCHING...\rUNABLE TO CONNECT\r\r>")).toBe(
+      true,
+    );
+    expect(isClearDtcHardFailure("7E8 01 44\r\r>")).toBe(false);
+  });
+});
 
 describe("ELM327 DTC decoding", () => {
   it("skips the CAN DTC-count byte (P0171 was misread as P0101)", () => {

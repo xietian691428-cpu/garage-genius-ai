@@ -106,6 +106,38 @@ export function detectElmError(raw: string): ElmErrorCode | null {
   return null;
 }
 
+/**
+ * Mode 04 (clear/reset emission-related diagnostic information) positive
+ * response is service `0x44`. ELM clones may also echo bare `OK`.
+ * `NO DATA` alone is ambiguous — callers should re-read Mode 03 to verify.
+ */
+export function isClearDtcAcknowledged(
+  raw: string,
+  messages: ObdMessage[],
+): boolean {
+  if (messages.some((m) => m.data[0] === 0x44)) return true;
+  for (const line of cleanElmLines(raw, "04")) {
+    if (/^OK$/i.test(line)) return true;
+    // Header-less single-byte positive response
+    if (/^44$/i.test(line.replace(/\s+/g, ""))) return true;
+  }
+  return false;
+}
+
+/** Hard failures that mean Mode 04 did not reach the ECU. */
+export function isClearDtcHardFailure(raw: string): boolean {
+  const err = detectElmError(raw);
+  return (
+    err === "unable_to_connect" ||
+    err === "can_error" ||
+    err === "bus_error" ||
+    err === "stopped" ||
+    err === "adapter_reset" ||
+    err === "unknown_command" ||
+    err === "buffer_full"
+  );
+}
+
 // ── Frame parsing ───────────────────────────────────────
 
 /** One logical OBD response from one ECU (ISO-TP already reassembled). */

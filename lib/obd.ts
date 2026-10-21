@@ -396,6 +396,71 @@ export class OBDConnector {
     return result.ok;
   }
 
+  /**
+   * Mode 04 clear after the user acknowledged DIY / emissions risks.
+   * Requires an active session. Re-reads a full snapshot on success.
+   */
+  async clearFaultCodes(options?: {
+    onStep?: (step: ObdScanStep) => void;
+  }): Promise<{
+    ok: boolean;
+    message: string;
+    remainingStored?: number;
+    remainingPermanent?: number;
+    snapshot?: ObdSessionSnapshot;
+  }> {
+    if (!this.session?.connected) {
+      return {
+        ok: false,
+        message: "Not connected — connect the OBD adapter before clearing codes.",
+      };
+    }
+    try {
+      const result = await this.session.clearDtcs();
+      if (!result.ok) {
+        return {
+          ok: false,
+          message: result.message,
+          remainingStored: result.remainingStored >= 0 ? result.remainingStored : undefined,
+          remainingPermanent:
+            result.remainingPermanent >= 0 ? result.remainingPermanent : undefined,
+        };
+      }
+      const snapshot = await this.readSessionSnapshot({
+        connectIfNeeded: false,
+        onStep: options?.onStep,
+      });
+      const note = result.message;
+      return {
+        ok: true,
+        message: note,
+        remainingStored: result.remainingStored,
+        remainingPermanent: result.remainingPermanent,
+        snapshot: {
+          ...snapshot,
+          note: snapshot.connected
+            ? `${note} ${snapshot.note}`
+            : note,
+        },
+      };
+    } catch (err) {
+      console.error("[obd] clearFaultCodes failed", err);
+      if (err instanceof ObdSessionError && err.code === "disconnected") {
+        this.disconnect();
+        return {
+          ok: false,
+          message:
+            "Adapter disconnected during clear. Keep the phone near the car and connect again.",
+        };
+      }
+      return {
+        ok: false,
+        message:
+          err instanceof Error ? err.message : "Clear codes failed. Try again.",
+      };
+    }
+  }
+
   /** Dashboard “Refresh sensors” with one automatic reconnect on drop. */
   async readLiveSensors(): Promise<ObdLiveSensors> {
     const read = async () => {

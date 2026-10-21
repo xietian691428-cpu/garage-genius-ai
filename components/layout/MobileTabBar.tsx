@@ -64,19 +64,19 @@ function TokenStrip() {
         isExhausted ? (
           <Link
             href="/pricing"
-            className="shrink-0 text-[10px] font-medium text-cyan-400"
+            className="shrink-0 text-xs font-medium text-cyan-400"
           >
             {label}
           </Link>
         ) : (
-          <span className="shrink-0 text-[10px] font-medium text-slate-400">
+          <span className="shrink-0 text-xs font-medium text-slate-400">
             {label}
           </span>
         )
       ) : (
         <Link
           href="/recharge"
-          className="shrink-0 text-[10px] font-medium text-cyan-400"
+          className="shrink-0 text-xs font-medium text-cyan-400"
         >
           {label}
         </Link>
@@ -135,10 +135,10 @@ export default function MobileTabBar({
         }`}
       >
         <Icon
-          className={`h-5 w-5 ${active ? "text-cyan-400" : ""}`}
+          className={`h-6 w-6 ${active ? "text-cyan-400" : ""}`}
           strokeWidth={active ? 2.25 : 1.75}
         />
-        <span className="max-w-full truncate text-[10px] font-medium leading-none">
+        <span className="max-w-full truncate text-xs font-semibold leading-tight">
           {label}
         </span>
       </Link>

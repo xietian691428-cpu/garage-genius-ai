@@ -18,7 +18,7 @@ export default function HomeTopBar({
 }: Props) {
   return (
     <header data-testid="home-top-bar">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
         Home
       </p>
       <label className="mt-1 block">
@@ -26,7 +26,7 @@ export default function HomeTopBar({
         <select
           data-testid="home-vehicle-select"
           disabled={loading || vehicles.length === 0}
-          className="mt-0.5 w-full max-w-md truncate rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-medium text-white outline-none focus:border-cyan-400"
+          className="mt-0.5 w-full max-w-md truncate rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-base font-medium text-white outline-none focus:border-cyan-400"
           value={current?.id ?? ""}
           onChange={(e) => {
             const next = vehicles.find((v) => v.id === e.target.value);
