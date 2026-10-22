@@ -178,14 +178,14 @@ async function tryDeepSeek(
       visionLog("deepseek.unparsed", {
         requestId,
         elapsedMs,
-        model: result.model,
+        model: "deepseek-vision",
         from: asFallbackFrom,
       });
       return { ok: false, reason: "deepseek_unparsed" };
     }
     visionLog(asFallbackFrom ? "deepseek.fallback_ok" : "deepseek.ok", {
       requestId,
-      model: result.model,
+      model: "deepseek-vision",
       elapsedMs,
       confidence: analysis.confidence,
       condition: analysis.condition,
@@ -196,7 +196,7 @@ async function tryDeepSeek(
     return {
       ok: true,
       analysis,
-      model: result.model || "deepseek-vision",
+      model: "deepseek-vision",
       usage: result.usage,
     };
   } catch (err) {
@@ -322,9 +322,9 @@ export async function analyzeChatImage(
   let fallbackFrom: ChatVisionFallbackFrom = null;
 
   for (let i = 0; i < order.length; i++) {
-    const provider = order[i];
-    const asFallback = i === 0 ? null : fallbackFrom;
-    const attempt =
+    const provider = order[i]!;
+    const asFallback: ChatVisionFallbackFrom = i === 0 ? null : fallbackFrom;
+    const attempt: AttemptOk | AttemptFail =
       provider === "deepseek"
         ? await tryDeepSeek(messages, requestId, started, asFallback)
         : await tryKimi(messages, requestId, started, asFallback);

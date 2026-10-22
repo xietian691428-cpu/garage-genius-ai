@@ -12,6 +12,7 @@ export type AiUpstreamErrorCode =
   | "network"
   | "config"
   | "insufficient_balance"
+  | "vision_unavailable"
   | "unknown";
 
 export class DeepSeekRequestError extends Error {
@@ -58,7 +59,9 @@ export function aiUpstreamResponse(error: unknown): Response | null {
           ? 400
           : error.code === "timeout"
             ? 504
-            : 502;
+            : error.code === "vision_unavailable"
+              ? 503
+              : 502;
 
   const userMessage =
     error.code === "timeout"

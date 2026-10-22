@@ -63,7 +63,7 @@ export async function callVisionJson(
       });
       return {
         ...result,
-        model: result.model || "deepseek-vision",
+        model: "deepseek-vision",
         visionProvider: "deepseek",
       };
     } catch (error) {
@@ -102,7 +102,7 @@ export async function callVisionJson(
   });
   return {
     ...result,
-    model: result.model || "deepseek-vision",
+    model: "deepseek-vision",
     visionProvider: "deepseek",
   };
 }
