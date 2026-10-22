@@ -1,11 +1,13 @@
-# App Store Review Notes — Garage Genius AI (v1.0.4 (14))
+# App Store Review Notes — Garage Genius AI (v1.0.4 (15))
 
 Use this file for **App Store Connect → App Review Information → Notes** and the resubmit checklist.
 
 Do **not** paste passwords into git. Rotate any password that already appeared in a previous Review Notes field or screenshot.
 
-**This submission:** Version **1.0.4**, Build **14**. Archive this binary (do not resubmit older builds).  
+**This submission:** Version **1.0.4**, Build **15**. Archive this binary (do not resubmit older builds).  
 **Also in this binary:** optional native BLE OBD (ELM327-compatible adapters) via `@capacitor-community/bluetooth-le`; Privacy Manifest; In-App Purchase capability enabled; `arm64` device requirement.
+
+**Guideline 2.1(a) resubmit (build 14 → 15):** Cold-launch crash reported on iPad Air (M3) / iPadOS. Build 15 disables Capacitor SplashScreen immersive/fullscreen overlays (same class of handoff risk as the Android splash fix), sets `UIRequiresFullScreen`, and keeps launch work out of `AppDelegate`.
 
 ### Before Submit for Review
 
@@ -13,9 +15,9 @@ Do **not** paste passwords into git. Rotate any password that already appeared i
 2. App Store Connect **App Description** (or EULA field) must include:  
    `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
 3. Privacy Policy field: `https://garagegenius.cloud/privacy`
-4. **Attach all four IAP products to 1.0.4 (14)** with App Review screenshots, then submit IAPs **with** the new binary (Guideline 2.1(b)).
-5. Deploy web to `garagegenius.cloud`, then `npx cap sync ios` → Xcode Archive **1.0.4 (14)** → Upload. Confirm **In-App Purchase** is on the App ID / provisioning profile.
-6. iPhone smoke: cold launch stays open (no immediate quit); Sign in with Apple lands in `/app` and **stays** signed in.
+4. **Attach all four IAP products to 1.0.4 (15)** with App Review screenshots, then submit IAPs **with** the new binary (Guideline 2.1(b)).
+5. Deploy web to `garagegenius.cloud`, then `npx cap sync ios` → Xcode Archive **1.0.4 (15)** → Upload. Confirm **In-App Purchase** is on the App ID / provisioning profile.
+6. **Required smoke before upload:** physical iPhone **and iPad** — cold launch stays open ≥10s (no immediate quit); Sign in with Apple lands in `/app` and **stays** signed in.
 7. Demo account in ASC must be **Free** with DeepSeek consent unset. Never the 163 QA account.
 8. Bluetooth: Connect OBD may request Bluetooth permission; reviewers are not required to have an adapter.
 
@@ -34,7 +36,7 @@ In-App Purchase product IDs (attach all four to this version):
 
 How to review (iPhone or iPad):
 1. Tap Sign in with Apple (system sheet — not Safari). After success you should land on Home and stay signed in. Email/password also works.
-2. After login, an AI processing consent dialog names DeepSeek (chat) and Kimi (photos). Tap Agree to continue, or Not now to skip AI features.
+2. After login, an AI processing consent dialog names DeepSeek (chat and photos; Kimi may be a backup). Tap Agree to continue, or Not now to skip AI features.
 3. Open Account → View plans & subscribe (or open Subscribe with Apple). Localized App Store prices load from StoreKit. Tap Subscribe to Pro or Heavy to present the system purchase sheet.
 4. Restore purchases is on the same subscription page and on Account.
 5. Manage or cancel: Account → Manage Apple subscription, or Settings → Apple ID → Subscriptions.

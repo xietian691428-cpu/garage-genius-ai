@@ -37,14 +37,17 @@ const config: CapacitorConfig = {
       },
     },
     SplashScreen: {
-      // Keep short; JS also calls SplashScreen.hide() on login / AuthGate
-      launchShowDuration: 800,
+      // Keep short; JS also calls SplashScreen.hide() on login / AuthGate.
+      // Do NOT use splashFullScreen / splashImmersive — those status-bar /
+      // fullscreen overlays have caused cold-start crashes on App Review
+      // devices (incl. iPad). Prefer LaunchScreen.storyboard + auto-hide.
+      launchShowDuration: 600,
       launchAutoHide: true,
-      launchFadeOutDuration: 250,
+      launchFadeOutDuration: 200,
       backgroundColor: "#0a0f1c",
       showSpinner: false,
-      splashFullScreen: true,
-      splashImmersive: true,
+      splashFullScreen: false,
+      splashImmersive: false,
     },
     Browser: {
       // Used for Restore/manage fallbacks and non-iOS OAuth. iOS Sign in with Apple

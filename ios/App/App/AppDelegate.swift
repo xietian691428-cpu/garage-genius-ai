@@ -7,7 +7,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Storyboard loads CAPBridgeViewController. Keep this method free of
+        // plugin / StoreKit / Bluetooth work — early native calls here have
+        // caused App Review "crash on launch" reports on iPad.
         return true
     }
 

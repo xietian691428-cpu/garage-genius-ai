@@ -42,15 +42,27 @@ describe("store launch crash guards", () => {
     expect(plist).toMatch(/<string>arm64<\/string>/);
     expect(plist).not.toMatch(/<string>armv7<\/string>/);
     expect(plist).toMatch(/NSBluetoothAlwaysUsageDescription/);
+    expect(plist).toMatch(/UIRequiresFullScreen/);
+    expect(plist).toMatch(/UIApplicationSupportsIndirectInputEvents/);
 
     const privacy = readFileSync("ios/App/App/PrivacyInfo.xcprivacy", "utf8");
     expect(privacy).toMatch(/NSPrivacyAccessedAPITypes/);
 
     const pbx = readFileSync("ios/App/App.xcodeproj/project.pbxproj", "utf8");
     expect(pbx).toMatch(/MARKETING_VERSION = 1\.0\.4;/);
-    expect(pbx).toMatch(/CURRENT_PROJECT_VERSION = 14;/);
+    expect(pbx).toMatch(/CURRENT_PROJECT_VERSION = 15;/);
     expect(pbx).toMatch(/com\.apple\.InAppPurchase/);
     expect(pbx).toMatch(/PrivacyInfo\.xcprivacy in Resources/);
+  });
+
+  it("iOS SplashScreen avoids immersive/fullscreen overlays that crash on launch", () => {
+    const cap = readFileSync("capacitor.config.ts", "utf8");
+    expect(cap).toMatch(/splashFullScreen:\s*false/);
+    expect(cap).toMatch(/splashImmersive:\s*false/);
+
+    const iosCap = readFileSync("ios/App/App/capacitor.config.json", "utf8");
+    expect(iosCap).toMatch(/"splashFullScreen":\s*false/);
+    expect(iosCap).toMatch(/"splashImmersive":\s*false/);
   });
 
   it("Android store binary version is 1.0.4 (14)", () => {
