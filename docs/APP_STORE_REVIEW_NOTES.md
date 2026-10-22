@@ -1,11 +1,11 @@
-# App Store Review Notes — Garage Genius AI (v1.0.2 (12))
+# App Store Review Notes — Garage Genius AI (v1.0.4 (14))
 
 Use this file for **App Store Connect → App Review Information → Notes** and the resubmit checklist.
 
 Do **not** paste passwords into git. Rotate any password that already appeared in a previous Review Notes field or screenshot.
 
-**This submission:** Version **1.0.2**, Build **12**. Archive this binary (do not resubmit older builds).  
-**Also in this binary:** optional native BLE OBD (ELM327-compatible adapters) via `@capacitor-community/bluetooth-le`.
+**This submission:** Version **1.0.4**, Build **14**. Archive this binary (do not resubmit older builds).  
+**Also in this binary:** optional native BLE OBD (ELM327-compatible adapters) via `@capacitor-community/bluetooth-le`; Privacy Manifest; In-App Purchase capability enabled; `arm64` device requirement.
 
 ### Before Submit for Review
 
@@ -13,9 +13,9 @@ Do **not** paste passwords into git. Rotate any password that already appeared i
 2. App Store Connect **App Description** (or EULA field) must include:  
    `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
 3. Privacy Policy field: `https://garagegenius.cloud/privacy`
-4. **Attach all four IAP products to 1.0.2 (12)** with App Review screenshots, then submit IAPs **with** the new binary (Guideline 2.1(b)).
-5. Deploy web to `garagegenius.cloud`, then `npx cap sync ios` → Xcode Archive **1.0.2 (12)** → Upload.
-6. iPhone smoke: Sign in with Apple lands in `/app` and **stays** signed in (does not bounce to login).
+4. **Attach all four IAP products to 1.0.4 (14)** with App Review screenshots, then submit IAPs **with** the new binary (Guideline 2.1(b)).
+5. Deploy web to `garagegenius.cloud`, then `npx cap sync ios` → Xcode Archive **1.0.4 (14)** → Upload. Confirm **In-App Purchase** is on the App ID / provisioning profile.
+6. iPhone smoke: cold launch stays open (no immediate quit); Sign in with Apple lands in `/app` and **stays** signed in.
 7. Demo account in ASC must be **Free** with DeepSeek consent unset. Never the 163 QA account.
 8. Bluetooth: Connect OBD may request Bluetooth permission; reviewers are not required to have an adapter.
 

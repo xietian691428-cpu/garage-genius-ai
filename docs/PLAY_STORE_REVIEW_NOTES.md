@@ -1,13 +1,13 @@
-# Google Play Console — Garage Genius AI (v1.0.2 / versionCode 12)
+# Google Play Console — Garage Genius AI (v1.0.4 / versionCode 14)
 
 Use this file for **Play Console listing + Data safety + review notes**.
 
 Do **not** paste passwords into git.
 
-**This Android binary:** versionName **1.0.2**, versionCode **12** (aligned with iOS build 12).  
+**This Android binary:** versionName **1.0.4**, versionCode **14** (aligned with iOS build 14).  
 **Package:** `com.garagegenius.ai`  
 **This version does not sell subscriptions in the Play app.** No Play Billing SKUs. Do not add paid in-app products until Play Billing is implemented.  
-**Release notes for this binary:** R8 minify/obfuscation (Play DEX quality), light edge-to-edge system bars, optional native BLE OBD (ELM327-compatible adapters).
+**Release notes for this binary:** Cold-start splash/EdgeToEdge fix (Theme.SplashScreen + `installSplashScreen` before `EdgeToEdge`), R8 keep rules for Cap plugins + Classic BT OBD, optional native BLE/Classic OBD.
 
 Website Stripe Checkout stays on **Chrome / desktop / mobile Safari** only. The Android WebView must not start card checkout, and must not tell users to “buy on the website.”
 
