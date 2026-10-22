@@ -1,6 +1,7 @@
 /**
  * Kimi (Moonshot) vision client — server only.
- * Photos / screenshots use Kimi; DeepSeek remains the text coach.
+ * Optional backup when VISION_PRIMARY=deepseek (default) and DeepSeek VL fails.
+ * DeepSeek remains the text coach.
  */
 
 import {

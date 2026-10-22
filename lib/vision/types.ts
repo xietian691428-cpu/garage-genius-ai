@@ -1,5 +1,5 @@
 /**
- * Chat photo perception (Kimi → DeepSeek VL) — structured JSON only.
+ * Chat photo perception (DeepSeek VL → Kimi backup) — structured JSON only.
  * DeepSeek text coaches from this; vision models must not emit a repair plan.
  */
 

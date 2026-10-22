@@ -1,5 +1,5 @@
 /**
- * Vision orchestration: Kimi (then DeepSeek VL) reads photos as JSON;
+ * Vision orchestration: DeepSeek VL (default) or Kimi reads photos as JSON;
  * DeepSeek text coaches from the analysis block. Chat never sends raw
  * vision-model prose as the user-facing reply.
  */
@@ -7,6 +7,7 @@
 import {
   callDeepSeek,
   callDeepSeekVisionJson,
+  isDeepSeekConfigured,
   type DeepSeekMessage,
   type DeepSeekResult,
 } from "@/lib/deepseek";
@@ -17,6 +18,7 @@ import {
   isKimiVisionEnabled,
 } from "@/lib/kimi";
 import { analyzeChatImage } from "@/lib/vision/kimi-client";
+import { getVisionPrimary } from "@/lib/vision/primary";
 import {
   formatImageAnalysisBlock,
   formatPerceptionFailedBlock,
@@ -38,15 +40,40 @@ export type VisionPipelineResult = DeepSeekResult & {
   raisedVehicleFromImage?: boolean;
 };
 
+function errorCode(error: unknown): string {
+  return error && typeof error === "object" && "code" in error
+    ? String((error as { code?: string }).code)
+    : "unknown";
+}
+
 /**
- * Structured vision (dashboard / OBD / receipt) — prefer Kimi JSON.
- * Existing DeepSeek VL fallback stays for those routes only (not chat).
+ * Structured vision (dashboard / OBD / receipt).
+ * Default: DeepSeek VL → Kimi. VISION_PRIMARY=kimi reverses the order.
  */
 export async function callVisionJson(
   messages: DeepSeekMessage[],
   maxTokens = 800,
 ): Promise<VisionPipelineResult> {
-  if (isKimiConfigured() && isKimiVisionEnabled()) {
+  const primary = getVisionPrimary();
+  const tryDeepSeek = async (): Promise<VisionPipelineResult | null> => {
+    if (!isDeepSeekConfigured()) return null;
+    try {
+      const result = await callDeepSeekVisionJson(messages, maxTokens, {
+        allowTextFallback: false,
+      });
+      return {
+        ...result,
+        model: result.model || "deepseek-vision",
+        visionProvider: "deepseek",
+      };
+    } catch (error) {
+      console.warn("[vision] DeepSeek JSON failed", { code: errorCode(error) });
+      return null;
+    }
+  };
+
+  const tryKimi = async (): Promise<VisionPipelineResult | null> => {
+    if (!(isKimiConfigured() && isKimiVisionEnabled())) return null;
     try {
       const result = await callKimiVisionJson(messages, maxTokens);
       return {
@@ -54,19 +81,28 @@ export async function callVisionJson(
         visionProvider: "kimi",
       };
     } catch (error) {
-      console.warn("[vision] Kimi JSON failed, falling back to DeepSeek", {
-        code:
-          error && typeof error === "object" && "code" in error
-            ? String((error as { code?: string }).code)
-            : "unknown",
-      });
+      console.warn("[vision] Kimi JSON failed", { code: errorCode(error) });
+      return null;
     }
+  };
+
+  const order =
+    primary === "kimi"
+      ? ([tryKimi, tryDeepSeek] as const)
+      : ([tryDeepSeek, tryKimi] as const);
+
+  for (const run of order) {
+    const hit = await run();
+    if (hit) return hit;
   }
 
-  const result = await callDeepSeekVisionJson(messages, maxTokens);
+  // Last resort: DeepSeek with text-only fallback (OBD/receipt must return something).
+  const result = await callDeepSeekVisionJson(messages, maxTokens, {
+    allowTextFallback: true,
+  });
   return {
     ...result,
-    model: "deepseek-vision",
+    model: result.model || "deepseek-vision",
     visionProvider: "deepseek",
   };
 }
@@ -84,9 +120,8 @@ function stripImageParts(messages: DeepSeekMessage[]): DeepSeekMessage[] {
 }
 
 /**
- * Chat with photos: structured perception (Kimi → DeepSeek VL) → DeepSeek text coach.
+ * Chat with photos: structured perception (DeepSeek VL → Kimi) → DeepSeek text coach.
  * Perception is usually precomputed in /api/chat via analyzeChatImage.
- * If perception is still missing, analyzes here (same Kimi→DeepSeek cascade).
  * If perception ultimately fails: DeepSeek coaches from text only (no 500).
  */
 export async function callChatWithOptionalVision(
@@ -118,7 +153,7 @@ export async function callChatWithOptionalVision(
   let analysis = options?.analysis ?? null;
   let modelName = options?.analysisModel || "kimi-k3";
   let perceptionProvider: "kimi" | "deepseek" | null =
-    options?.analysisProvider ?? (analysis ? "kimi" : null);
+    options?.analysisProvider ?? (analysis ? getVisionPrimary() : null);
   let failed = Boolean(options?.perceptionFailed);
   let disabled = Boolean(options?.perceptionDisabled);
 

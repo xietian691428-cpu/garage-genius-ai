@@ -1,7 +1,7 @@
 /**
- * Chat photo → structured JSON perception (Kimi first, DeepSeek VL fallback).
- * HTTP for Kimi lives in lib/kimi.ts; DeepSeek VL in lib/deepseek.ts.
- * This module owns the schema prompt + parse + logs. Never throws.
+ * Chat photo → structured JSON perception.
+ * Default: DeepSeek VL first, Kimi (Moonshot) fallback — unified with chat coaching.
+ * Override with VISION_PRIMARY=kimi. Never throws. Never logs image bytes.
  */
 
 import {
@@ -15,9 +15,11 @@ import {
   kimiVisionTimeoutMs,
   kimiVisionModels,
 } from "@/lib/kimi";
+import { getVisionPrimary } from "@/lib/vision/primary";
 import { parseImageAnalysis } from "@/lib/vision/parse-analysis";
 import type { ImageAnalysis } from "@/lib/vision/types";
 
+/** Shared perception system prompt (DeepSeek VL + Kimi). */
 export const KIMI_PERCEPTION_SYSTEM = `You are a perception-only automotive image analyst for Garage Genius (US DIY).
 Output a single JSON object. No markdown, no repair plan, no coaching steps, no torque specs, no part numbers unless the text is printed in the photo.
 
@@ -67,6 +69,8 @@ Rules:
 - Output the JSON object only. No markdown fences.
 - Never prescribe a repair or name a root cause.`;
 
+export const VISION_PERCEPTION_SYSTEM = KIMI_PERCEPTION_SYSTEM;
+
 function visionLog(
   event: string,
   meta: Record<string, unknown>,
@@ -83,6 +87,9 @@ function visionLog(
 export type ChatVisionProvider = "kimi" | "deepseek";
 
 export type ChatVisionFallbackFrom =
+  | "deepseek_disabled"
+  | "deepseek_fail"
+  | "deepseek_unparsed"
   | "kimi_disabled"
   | "kimi_fail"
   | "kimi_unparsed"
@@ -94,7 +101,7 @@ export type AnalyzeChatImageResult = {
   elapsedMs: number;
   requestId: string;
   failed: boolean;
-  /** True only when no vision provider can run (no Kimi and no DeepSeek key). */
+  /** True only when no vision provider can run. */
   disabled: boolean;
   billed: boolean;
   provider: ChatVisionProvider | null;
@@ -111,7 +118,7 @@ function perceptionMessages(
   userText: string,
 ): DeepSeekMessage[] {
   return [
-    { role: "system", content: KIMI_PERCEPTION_SYSTEM },
+    { role: "system", content: VISION_PERCEPTION_SYSTEM },
     {
       role: "user",
       content: [
@@ -130,22 +137,37 @@ function perceptionMessages(
   ];
 }
 
-async function tryDeepSeekPerception(
+type AttemptOk = {
+  ok: true;
+  analysis: ImageAnalysis;
+  model: string;
+  usage: AnalyzeChatImageResult["usage"];
+};
+
+type AttemptFail = {
+  ok: false;
+  reason: Exclude<ChatVisionFallbackFrom, null>;
+};
+
+async function tryDeepSeek(
   messages: DeepSeekMessage[],
   requestId: string,
-  fallbackFrom: Exclude<ChatVisionFallbackFrom, null>,
   started: number,
-): Promise<AnalyzeChatImageResult | null> {
+  asFallbackFrom: ChatVisionFallbackFrom,
+): Promise<AttemptOk | AttemptFail> {
   if (!isDeepSeekConfigured()) {
-    visionLog("deepseek.fallback_skip", {
+    visionLog("deepseek.skip", {
       requestId,
       reason: "no_deepseek_key",
-      from: fallbackFrom,
+      asFallbackFrom,
     });
-    return null;
+    return { ok: false, reason: "deepseek_disabled" };
   }
 
-  visionLog("deepseek.fallback_start", { requestId, from: fallbackFrom });
+  visionLog(asFallbackFrom ? "deepseek.fallback_start" : "deepseek.start", {
+    requestId,
+    from: asFallbackFrom,
+  });
   try {
     const result = await callDeepSeekVisionJson(messages, 700, {
       allowTextFallback: false,
@@ -153,15 +175,15 @@ async function tryDeepSeekPerception(
     const analysis = parseImageAnalysis(result.content);
     const elapsedMs = Date.now() - started;
     if (!analysis) {
-      visionLog("deepseek.fallback_unparsed", {
+      visionLog("deepseek.unparsed", {
         requestId,
         elapsedMs,
         model: result.model,
-        from: fallbackFrom,
+        from: asFallbackFrom,
       });
-      return null;
+      return { ok: false, reason: "deepseek_unparsed" };
     }
-    visionLog("deepseek.fallback_ok", {
+    visionLog(asFallbackFrom ? "deepseek.fallback_ok" : "deepseek.ok", {
       requestId,
       model: result.model,
       elapsedMs,
@@ -169,18 +191,12 @@ async function tryDeepSeekPerception(
       condition: analysis.condition,
       scene: analysis.scene,
       dtcCount: analysis.dtc_codes.length,
-      from: fallbackFrom,
+      from: asFallbackFrom,
     });
     return {
+      ok: true,
       analysis,
       model: result.model || "deepseek-vision",
-      elapsedMs,
-      requestId,
-      failed: false,
-      disabled: false,
-      billed: true,
-      provider: "deepseek",
-      fallbackFrom,
       usage: result.usage,
     };
   } catch (err) {
@@ -188,19 +204,106 @@ async function tryDeepSeekPerception(
       err && typeof err === "object" && "code" in err
         ? String((err as { code?: string }).code)
         : "unknown";
-    visionLog("deepseek.fallback_fail", {
+    visionLog("deepseek.fail", {
       requestId,
       elapsedMs: Date.now() - started,
       code,
-      from: fallbackFrom,
+      from: asFallbackFrom,
     });
-    return null;
+    return { ok: false, reason: "deepseek_fail" };
   }
 }
 
+async function tryKimi(
+  messages: DeepSeekMessage[],
+  requestId: string,
+  started: number,
+  asFallbackFrom: ChatVisionFallbackFrom,
+): Promise<AttemptOk | AttemptFail> {
+  if (!isKimiVisionEnabled()) {
+    visionLog("kimi.skip", {
+      requestId,
+      reason: "disabled_or_no_key",
+      asFallbackFrom,
+    });
+    return { ok: false, reason: "kimi_disabled" };
+  }
+
+  visionLog(asFallbackFrom ? "kimi.fallback_start" : "kimi.start", {
+    requestId,
+    from: asFallbackFrom,
+  });
+  try {
+    const result = await callKimiVisionJson(messages, 700, {
+      timeoutMs: kimiVisionTimeoutMs(),
+      maxRetries: 0,
+    });
+    const analysis = parseImageAnalysis(result.content);
+    const elapsedMs = Date.now() - started;
+    if (!analysis) {
+      visionLog("kimi.unparsed", {
+        requestId,
+        elapsedMs,
+        model: result.model,
+        from: asFallbackFrom,
+      });
+      return { ok: false, reason: "kimi_unparsed" };
+    }
+    visionLog(asFallbackFrom ? "kimi.fallback_ok" : "kimi.ok", {
+      requestId,
+      model: result.model,
+      elapsedMs,
+      confidence: analysis.confidence,
+      condition: analysis.condition,
+      scene: analysis.scene,
+      dtcCount: analysis.dtc_codes.length,
+      from: asFallbackFrom,
+    });
+    return {
+      ok: true,
+      analysis,
+      model: result.model || kimiVisionModels()[0] || "kimi-k3",
+      usage: result.usage,
+    };
+  } catch (err) {
+    const code =
+      err && typeof err === "object" && "code" in err
+        ? String((err as { code?: string }).code)
+        : "unknown";
+    visionLog("kimi.fail", {
+      requestId,
+      elapsedMs: Date.now() - started,
+      code,
+      from: asFallbackFrom,
+    });
+    return { ok: false, reason: "kimi_fail" };
+  }
+}
+
+function toResult(
+  requestId: string,
+  started: number,
+  provider: ChatVisionProvider,
+  hit: AttemptOk,
+  fallbackFrom: ChatVisionFallbackFrom,
+): AnalyzeChatImageResult {
+  return {
+    analysis: hit.analysis,
+    model: hit.model,
+    elapsedMs: Date.now() - started,
+    requestId,
+    failed: false,
+    disabled: false,
+    billed: true,
+    provider,
+    fallbackFrom,
+    usage: hit.usage,
+  };
+}
+
 /**
- * One-photo structured analysis. Kimi first; DeepSeek VL if Kimi is off/fails.
- * Never throws. Never logs image bytes.
+ * One-photo structured analysis.
+ * Default order: DeepSeek VL → Kimi. Never throws.
  */
 export async function analyzeChatImage(
   imageDataUrl: string,
@@ -209,65 +312,41 @@ export async function analyzeChatImage(
   const requestId = crypto.randomUUID().slice(0, 8);
   const started = Date.now();
   const messages = perceptionMessages(imageDataUrl, userText);
+  const primary = getVisionPrimary();
 
-  let fallbackFrom: Exclude<ChatVisionFallbackFrom, null> | null = null;
+  visionLog("perception.start", { requestId, primary });
 
-  if (!isKimiVisionEnabled()) {
-    visionLog("kimi.skip", { requestId, reason: "disabled_or_no_key" });
-    fallbackFrom = "kimi_disabled";
-  } else {
-    try {
-      const result = await callKimiVisionJson(messages, 700, {
-        timeoutMs: kimiVisionTimeoutMs(),
-        maxRetries: 0,
-      });
-      const analysis = parseImageAnalysis(result.content);
-      const elapsedMs = Date.now() - started;
-      visionLog("kimi.ok", {
+  const order: ChatVisionProvider[] =
+    primary === "kimi" ? ["kimi", "deepseek"] : ["deepseek", "kimi"];
+
+  let fallbackFrom: ChatVisionFallbackFrom = null;
+
+  for (let i = 0; i < order.length; i++) {
+    const provider = order[i];
+    const asFallback = i === 0 ? null : fallbackFrom;
+    const attempt =
+      provider === "deepseek"
+        ? await tryDeepSeek(messages, requestId, started, asFallback)
+        : await tryKimi(messages, requestId, started, asFallback);
+
+    if (attempt.ok) {
+      return toResult(
         requestId,
-        model: result.model,
-        elapsedMs,
-        confidence: analysis?.confidence ?? null,
-        condition: analysis?.condition ?? null,
-        scene: analysis?.scene ?? null,
-        dtcCount: analysis?.dtc_codes.length ?? 0,
-        parsed: Boolean(analysis),
-      });
-      if (analysis) {
-        return {
-          analysis,
-          model: result.model || kimiVisionModels()[0] || "kimi-k3",
-          elapsedMs,
-          requestId,
-          failed: false,
-          disabled: false,
-          billed: true,
-          provider: "kimi",
-          fallbackFrom: null,
-          usage: result.usage,
-        };
-      }
-      fallbackFrom = "kimi_unparsed";
-    } catch (err) {
-      const elapsedMs = Date.now() - started;
-      const code =
-        err && typeof err === "object" && "code" in err
-          ? String((err as { code?: string }).code)
-          : "unknown";
-      visionLog("kimi.fail", { requestId, elapsedMs, code });
-      fallbackFrom = "kimi_fail";
+        started,
+        provider,
+        attempt,
+        i === 0 ? null : fallbackFrom,
+      );
     }
+    fallbackFrom = attempt.reason;
   }
 
-  const from = fallbackFrom ?? "kimi_fail";
-  const ds = await tryDeepSeekPerception(messages, requestId, from, started);
-  if (ds) return ds;
-
-  const bothUnavailable = !isKimiVisionEnabled() && !isDeepSeekConfigured();
+  const bothUnavailable = !isDeepSeekConfigured() && !isKimiVisionEnabled();
   visionLog("perception.unavailable", {
     requestId,
     elapsedMs: Date.now() - started,
-    from,
+    primary,
+    from: fallbackFrom,
     bothUnavailable,
   });
 
@@ -280,7 +359,7 @@ export async function analyzeChatImage(
     disabled: bothUnavailable,
     billed: false,
     provider: null,
-    fallbackFrom: from,
+    fallbackFrom,
     usage: null,
   };
 }

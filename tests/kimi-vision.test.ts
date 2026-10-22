@@ -82,5 +82,8 @@ describe("vision pipeline wiring", () => {
     const kimiClient = readFileSync("lib/vision/kimi-client.ts", "utf8");
     expect(kimiClient).toContain("callDeepSeekVisionJson");
     expect(kimiClient).toContain("allowTextFallback: false");
+    expect(kimiClient).toContain("getVisionPrimary");
+    const primary = readFileSync("lib/vision/primary.ts", "utf8");
+    expect(primary).toMatch(/deepseek/);
   });
 });

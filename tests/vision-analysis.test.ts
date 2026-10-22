@@ -228,10 +228,11 @@ describe("IMAGE_ANALYSIS prompt blocks", () => {
   });
 });
 
-describe("analyzeChatImage (mocked Kimi + DeepSeek VL fallback)", () => {
+describe("analyzeChatImage (DeepSeek VL primary + Kimi backup)", () => {
   const tiny = "data:image/jpeg;base64,QQ==";
 
-  it("marks disabled when neither Kimi nor DeepSeek is configured", async () => {
+  it("marks disabled when neither DeepSeek nor Kimi is configured", async () => {
+    vi.stubEnv("VISION_PRIMARY", "deepseek");
     vi.stubEnv("KIMI_API_KEY", "");
     vi.stubEnv("MOONSHOT_API_KEY", "");
     vi.stubEnv("DEEPSEEK_API_KEY", "");
@@ -246,9 +247,10 @@ describe("analyzeChatImage (mocked Kimi + DeepSeek VL fallback)", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("falls back to DeepSeek VL when Kimi is disabled", async () => {
-    vi.stubEnv("KIMI_API_KEY", "");
-    vi.stubEnv("MOONSHOT_API_KEY", "");
+  it("uses DeepSeek VL as primary when configured", async () => {
+    vi.stubEnv("VISION_PRIMARY", "deepseek");
+    vi.stubEnv("KIMI_API_KEY", "sk-kimi");
+    vi.stubEnv("KIMI_VISION_ENABLED", "true");
     vi.stubEnv("DEEPSEEK_API_KEY", "sk-ds");
     vi.stubGlobal(
       "fetch",
@@ -263,42 +265,49 @@ describe("analyzeChatImage (mocked Kimi + DeepSeek VL fallback)", () => {
         ),
       ),
     );
-    const result = await analyzeChatImage(tiny, "what is this?");
-    expect(result.failed).toBe(false);
-    expect(result.disabled).toBe(false);
-    expect(result.provider).toBe("deepseek");
-    expect(result.fallbackFrom).toBe("kimi_disabled");
-    expect(result.analysis?.dtc_codes).toEqual(["P0420"]);
-  });
-
-  it("parses a successful JSON completion", async () => {
-    vi.stubEnv("KIMI_API_KEY", "sk-test");
-    vi.stubEnv("KIMI_VISION_ENABLED", "true");
-    vi.stubEnv("DEEPSEEK_API_KEY", "sk-ds");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () =>
-        new Response(
-          JSON.stringify({
-            choices: [{ message: { content: JSON.stringify(CLEAR_JSON) } }],
-            usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 },
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        ),
-      ),
-    );
     const result = await analyzeChatImage(tiny, "OBD screen");
     expect(result.failed).toBe(false);
-    expect(result.provider).toBe("kimi");
+    expect(result.provider).toBe("deepseek");
     expect(result.fallbackFrom).toBeNull();
     expect(result.analysis?.dtc_codes).toEqual(["P0420"]);
     expect(result.requestId).toBeTruthy();
   });
 
-  it("does not keep fake P-codes from a low-confidence Kimi mock", async () => {
-    vi.stubEnv("KIMI_API_KEY", "sk-test");
+  it("falls back to Kimi when DeepSeek VL fails", async () => {
+    vi.stubEnv("VISION_PRIMARY", "deepseek");
+    vi.stubEnv("KIMI_API_KEY", "sk-kimi");
     vi.stubEnv("KIMI_VISION_ENABLED", "true");
-    vi.stubEnv("DEEPSEEK_API_KEY", "");
+    vi.stubEnv("DEEPSEEK_API_KEY", "sk-ds");
+    let calls = 0;
+    vi.stubGlobal("fetch", async (url: string | URL | Request) => {
+      calls += 1;
+      const u = String(url);
+      if (u.includes("deepseek")) {
+        const err = new Error("aborted");
+        err.name = "AbortError";
+        throw err;
+      }
+      return new Response(
+        JSON.stringify({
+          model: "kimi-k3",
+          choices: [{ message: { content: JSON.stringify(CLEAR_JSON) } }],
+          usage: { prompt_tokens: 5, completion_tokens: 10, total_tokens: 15 },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    });
+    const result = await analyzeChatImage(tiny, "blurry photo");
+    expect(result.failed).toBe(false);
+    expect(result.provider).toBe("kimi");
+    expect(result.fallbackFrom).toBe("deepseek_fail");
+    expect(result.analysis?.dtc_codes).toEqual(["P0420"]);
+    expect(calls).toBeGreaterThanOrEqual(2);
+  });
+
+  it("does not keep fake P-codes from a low-confidence mock", async () => {
+    vi.stubEnv("VISION_PRIMARY", "deepseek");
+    vi.stubEnv("KIMI_API_KEY", "");
+    vi.stubEnv("DEEPSEEK_API_KEY", "sk-ds");
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
@@ -329,7 +338,7 @@ describe("analyzeChatImage (mocked Kimi + DeepSeek VL fallback)", () => {
     );
     const result = await analyzeChatImage(tiny, "what code is this?");
     expect(result.failed).toBe(false);
-    expect(result.provider).toBe("kimi");
+    expect(result.provider).toBe("deepseek");
     expect(result.analysis?.dtc_codes).toEqual([]);
     expect(result.analysis?.readings).toEqual([]);
     expect(result.analysis?.notes).not.toMatch(/P0420/);
@@ -338,14 +347,16 @@ describe("analyzeChatImage (mocked Kimi + DeepSeek VL fallback)", () => {
     expect(injected).toMatch(/retake/i);
   });
 
-  it("falls back to DeepSeek when Kimi times out", async () => {
-    vi.stubEnv("KIMI_API_KEY", "sk-test");
+  it("respects VISION_PRIMARY=kimi then falls back to DeepSeek", async () => {
+    vi.stubEnv("VISION_PRIMARY", "kimi");
+    vi.stubEnv("KIMI_API_KEY", "sk-kimi");
     vi.stubEnv("KIMI_VISION_ENABLED", "true");
     vi.stubEnv("DEEPSEEK_API_KEY", "sk-ds");
     let calls = 0;
-    vi.stubGlobal("fetch", async () => {
+    vi.stubGlobal("fetch", async (url: string | URL | Request) => {
       calls += 1;
-      if (calls === 1) {
+      const u = String(url);
+      if (!u.includes("deepseek") && calls === 1) {
         const err = new Error("aborted");
         err.name = "AbortError";
         throw err;
@@ -359,15 +370,16 @@ describe("analyzeChatImage (mocked Kimi + DeepSeek VL fallback)", () => {
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
     });
-    const result = await analyzeChatImage(tiny, "blurry photo");
-    expect(result.failed).toBe(false);
+    const result = await analyzeChatImage(tiny, "OBD");
     expect(result.provider).toBe("deepseek");
     expect(result.fallbackFrom).toBe("kimi_fail");
     expect(result.analysis?.dtc_codes).toEqual(["P0420"]);
   });
 
-  it("fail-opens when both Kimi and DeepSeek VL fail", async () => {
+  it("fail-opens when both DeepSeek VL and Kimi fail", async () => {
+    vi.stubEnv("VISION_PRIMARY", "deepseek");
     vi.stubEnv("KIMI_API_KEY", "sk-test");
+    vi.stubEnv("KIMI_VISION_ENABLED", "true");
     vi.stubEnv("DEEPSEEK_API_KEY", "sk-ds");
     vi.stubGlobal("fetch", () => {
       const err = new Error("aborted");
@@ -392,10 +404,11 @@ describe("chat prompt + consent", () => {
     expect(prompt.content).toMatch(/confidence is below 0\.5/i);
   });
 
-  it("consent copy names Kimi for photos and DeepSeek for text", () => {
+  it("consent copy names DeepSeek for chat+photos and Kimi as backup", () => {
     expect(AI_CONSENT_COPY.recipient).toMatch(/DeepSeek/i);
     expect(AI_CONSENT_COPY.recipient).toMatch(/Kimi/i);
-    expect(AI_CONSENT_COPY.dataCategories.join(" ")).toMatch(/Moonshot\/Kimi/i);
+    expect(AI_CONSENT_COPY.dataCategories.join(" ")).toMatch(/DeepSeek vision/i);
+    expect(AI_CONSENT_COPY.dataCategories.join(" ")).toMatch(/backup/i);
     expect(AI_CONSENT_COPY.refuse).toMatch(/upload photos/i);
   });
 });

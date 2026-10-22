@@ -207,7 +207,7 @@ Rules:
       await assertAiTokenBudget(user.id, estimated, user.email);
     }
 
-    // Kimi vision first; DeepSeek VL fallback (lib/vision.ts)
+    // DeepSeek VL first (default); Kimi backup (lib/vision.ts)
     const { content, usage, model, visionProvider } = await callVisionJson(
       messages,
       800,

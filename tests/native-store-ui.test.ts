@@ -44,10 +44,12 @@ describe("billing modes", () => {
 });
 
 describe("DeepSeek consent copy", () => {
-  it("names DeepSeek + Kimi and requires affirmative agreement", () => {
+  it("names DeepSeek for chat+photos and Kimi as backup, requires agree", () => {
     expect(AI_CONSENT_COPY.recipient).toMatch(/DeepSeek/i);
+    expect(AI_CONSENT_COPY.recipient).toMatch(/photo/i);
     expect(AI_CONSENT_COPY.recipient).toMatch(/Kimi/i);
     expect(AI_CONSENT_COPY.agree.toLowerCase()).toContain("agree");
+    expect(AI_CONSENT_COPY.dataCategories.join(" ")).toMatch(/DeepSeek vision/i);
     expect(AI_CONSENT_COPY.dataCategories.length).toBeGreaterThanOrEqual(3);
   });
 });

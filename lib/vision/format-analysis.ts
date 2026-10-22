@@ -80,7 +80,7 @@ ${JSON.stringify(payload)}${retake}${housingNote}${conflict}`;
 export function formatPerceptionFailedBlock(): string {
   return `[IMAGE_ANALYSIS source=unavailable confidence=0]
 ${VERIFY}
-{"condition":"unreadable","confidence":0,"scene":"other","ocr_text":[],"dtc_codes":[],"readings":[],"objects":[],"safety_flags":["none"],"notes":"Image recognition failed after Kimi and DeepSeek VL attempts (or both providers are unavailable). Ask the owner to describe the photo in text or retake it. Do not invent what the photo shows."}`;
+{"condition":"unreadable","confidence":0,"scene":"other","ocr_text":[],"dtc_codes":[],"readings":[],"objects":[],"safety_flags":["none"],"notes":"Image recognition failed after DeepSeek VL and Kimi attempts (or both providers are unavailable). Ask the owner to describe the photo in text or retake it. Do not invent what the photo shows."}`;
 }
 
 export function formatRaisedVehicleImageSafety(): string {

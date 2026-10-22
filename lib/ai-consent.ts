@@ -39,19 +39,19 @@ export const AI_CONSENT_COPY = {
   title: "AI processing consent",
   lead: "Before we send anything to our AI providers, please review and agree.",
   recipient:
-    "DeepSeek (chat & coaching text) and Moonshot / Kimi (photo vision analysis)",
+    "DeepSeek (chat, coaching, and photo vision). Moonshot / Kimi may be used as a backup photo analyzer if DeepSeek vision is unavailable",
   purpose:
     "Vehicle diagnosis, repair coaching, OBD/photo analysis, and shop-report drafting.",
   dataCategories: [
     "Chat and coach message text you send — processed by DeepSeek",
-    "Optional photos (vehicle, OBD screen, receipts) — sent to Moonshot/Kimi for visual analysis, then DeepSeek coaches from that description",
+    "Optional photos (vehicle, OBD screen, receipts) — analyzed by DeepSeek vision (Moonshot/Kimi only as backup), then DeepSeek coaches from that description",
     "Vehicle context (year/make/model, mileage, tags, selected garage vehicle)",
     "Related diagnostic details needed for the feature you use",
   ],
   refuse:
-    "If you decline, we will not upload photos to Kimi or send chat text to DeepSeek. AI features stay unavailable until you agree.",
+    "If you decline, we will not upload photos or send chat text to DeepSeek (or backup photo providers). AI features stay unavailable until you agree.",
   agree:
-    "I agree — send chat text to DeepSeek and photos to Kimi/Moonshot for these features",
+    "I agree — send chat text and photos to DeepSeek for these features (backup photo provider if needed)",
   decline: "Not now",
   privacyHint: "Details are in our Privacy Policy (AI processing & processors).",
 } as const;

@@ -47,7 +47,7 @@ export type PlanEntitlements = {
   /** Soft daily voice turns for free (0 = locked) */
   voiceDailyLimit: number;
   /**
-   * Photo analyses per UTC month (Kimi vision). Not unlimited on paid plans.
+   * Photo analyses per UTC month (vision VL). Not unlimited on paid plans.
    */
   visionCallsPerMonth: number;
   /**

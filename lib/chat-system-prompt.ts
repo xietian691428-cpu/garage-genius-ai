@@ -102,7 +102,7 @@ export function buildChatSystemPrompt(
   const visionNote = hasImage
     ? `
 ## Photo diagnosis (garage DIY)
-- The user attached a vehicle photo. Kimi (Moonshot) may have produced a read-only [IMAGE_ANALYSIS] block — perception only, not a diagnosis.
+- The user attached a vehicle photo. Vision may have produced a read-only [IMAGE_ANALYSIS] block (DeepSeek VL, or Kimi backup) — perception only, not a diagnosis.
 - Treat IMAGE_ANALYSIS as observations. Do not invent torque, fluid capacity, or part numbers from the image alone.
 - Educational tone; no root-cause assertion such as "Replace X now".
 - If condition is blurry, dark, or unreadable, or confidence is below 0.5: ask for a clearer photo. Do not treat IMAGE_ANALYSIS readings, OCR, or dtc_codes as facts. Do not invent gauge or OCR readings.
