@@ -17,13 +17,22 @@
     "patterns": [
       "open brake line",
       "bleed abs",
+      "bleed the brakes",
+      "bleed brakes",
+      "bleeding brakes",
+      "drain brake fluid",
+      "open bleeder",
       "abs module replace",
       "brake hydraulic",
       "master cylinder rebuild",
+      "soft brake pedal",
+      "spongy pedal",
+      "brake light on soft",
+      "brake warning light",
       "abs deep"
     ],
-    "summary_en": "Opening brake hydraulic lines or deep ABS module work is stop-DIY — use a qualified shop. Observe-only: fluid level, pad thickness, warning lights.",
-    "owner_prep_en": "Record ABS/brake warning behavior, soft-pedal vs hard, and any recent pad/rotor work."
+    "summary_en": "Opening brake hydraulic lines, DIY bleeding, or deep ABS module work is stop-DIY — use a qualified shop. Soft/spongy pedal or brake warning light → do not drive; tow / pro inspection. Observe-only: cold reservoir sight level, warning lights, recent pad work.",
+    "owner_prep_en": "Record ABS/brake warning behavior, soft-pedal vs firm, cold reservoir sight level if visible, and any recent pad/rotor/fluid work. Do not open lines or bleed at home."
   },
   {
     "id": "hot_cooling_cap",

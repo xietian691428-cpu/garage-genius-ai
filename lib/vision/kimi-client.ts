@@ -20,13 +20,15 @@ JSON schema:
 {
   "condition": "clear" | "blurry" | "dark" | "partial" | "unreadable",
   "confidence": 0.0,
-  "scene": "obd_screen" | "engine" | "gauge" | "fluid_level" | "part_closeup" | "underbody" | "tire" | "other",
+  "scene": "obd_screen" | "engine" | "gauge" | "fluid_level" | "part_closeup" | "underbody" | "tire" | "headlight_housing" | "other",
   "ocr_text": ["visible text snippets"],
   "dtc_codes": ["P0420"],
   "readings": [{ "name": "oil_level", "value": "between_min_max", "unit": null }],
   "objects": ["dipstick"],
   "safety_flags": ["vehicle_raised" | "hot_surface" | "none"],
-  "notes": "short factual notes only"
+  "notes": "short factual notes only",
+  "housing_guess": "dust_cap" | "sealed_heatsink" | "unclear",
+  "housing_confidence": "high" | "low"
 }
 
 US scene examples (copy the shape; only fill what is actually visible):
@@ -43,8 +45,16 @@ US scene examples (copy the shape; only fill what is actually visible):
 4) Tire sidewall:
 {"condition":"clear","confidence":0.78,"scene":"tire","ocr_text":["P215/55R17"],"dtc_codes":[],"readings":[{"name":"tire_size","value":"P215/55R17","unit":null}],"objects":["tire sidewall"],"safety_flags":["none"],"notes":"Sidewall size P215/55R17 is readable."}
 
+Headlight housing (rear of lamp / under-hood back of headlamp) — optional assist only:
+- Use scene "headlight_housing" when the photo shows the back of a headlamp / dust cover / LED heatsink.
+- housing_guess=dust_cap only if a twist-off round dust cover / bulb access is clearly visible.
+- housing_guess=sealed_heatsink only if a sealed module / metal heat-sink fins with no plug-in bulb is clearly visible.
+- Otherwise housing_guess=unclear and housing_confidence=low.
+- housing_confidence=high ONLY when the structure is unambiguous and the photo is clear (not dark/blurry).
+- NEVER invent a bulb size (H11, 9005, etc.), OEM part number, or claim the photo proves a bulb type.
+
 Rules:
-- confidence is 0–1. If blurry, dark, or unreadable, set condition accordingly, set confidence below 0.5, leave ocr_text/dtc_codes/readings empty, and say the photo must be retaken.
+- confidence is 0–1. If blurry, dark, or unreadable, set condition accordingly, set confidence below 0.5, leave ocr_text/dtc_codes/readings empty, set housing_guess=unclear and housing_confidence=low, and say the photo must be retaken.
 - Never guess a DTC, oil quarts, PSI, DOT date, or load index that is not clearly printed.
 - dtc_codes must be OBD-II style (P/C/B/U + 4 hex digits) copied from the photo when visible.
 - safety_flags: vehicle_raised if the car appears jacked/lifted; hot_surface if steam/glowing metal is visible.

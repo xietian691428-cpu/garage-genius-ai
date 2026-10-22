@@ -48,11 +48,23 @@ export function formatImageAnalysisBlock(
     objects: safe.objects,
     safety_flags: safe.safety_flags,
     notes: safe.notes,
+    housing_guess: safe.housing_guess,
+    housing_confidence: safe.housing_confidence,
   };
 
+  const housingNote =
+    safe.scene === "headlight_housing" ||
+    safe.housing_guess === "dust_cap" ||
+    safe.housing_guess === "sealed_heatsink"
+      ? safe.housing_confidence === "high" &&
+        safe.housing_guess !== "unclear"
+        ? `\nHOUSING PHOTO ASSIST: housing_guess=${safe.housing_guess} (high). May assist structure path only — still ask a one-line owner confirm. NEVER output a bulb size (H11/etc.) from the photo alone.`
+        : `\nHOUSING PHOTO: low confidence or unclear. Ask for a clearer retake of the back of the lamp OR ask whether they can unscrew a dust cap. Do NOT conclude sealed vs replaceable from this photo. Do NOT invent bulb sizes.`
+      : "";
+
   const retake = analysisAsksRetake(safe)
-    ? `\nPhoto quality is insufficient (blurry, dark, or unreadable). Ask the owner to retake a clearer, well-lit photo before any DIY steps. Do not invent gauge/OCR/DTC values. Do not write a repair plan from this photo.`
-    : `\nPhoto is usable. Write a short educational summary (1–3 sentences) from visible facts only (codes, dipstick marks, tire size). DeepSeek coaches in education-only tone — no root-cause assertion such as “Replace X now”.`;
+    ? `\nPhoto quality is insufficient (blurry, dark, or unreadable). Ask the owner to retake a clearer, well-lit photo before any DIY steps. Do not invent gauge/OCR/DTC values or housing structure. Do not write a repair plan from this photo.`
+    : `\nPhoto is usable. Write a short educational summary (1–3 sentences) from visible facts only (codes, dipstick marks, tire size, housing shape). DeepSeek coaches in education-only tone — no root-cause assertion such as “Replace X now”.`;
 
   const conflict =
     userText && imageSceneConflictsWithUserText(userText, analysis)
@@ -62,7 +74,7 @@ export function formatImageAnalysisBlock(
   const confidence = Number(safe.confidence.toFixed(2));
   return `[IMAGE_ANALYSIS source=${sourceModel} confidence=${confidence}]
 ${VERIFY}
-${JSON.stringify(payload)}${retake}${conflict}`;
+${JSON.stringify(payload)}${retake}${housingNote}${conflict}`;
 }
 
 export function formatPerceptionFailedBlock(): string {
@@ -107,5 +119,7 @@ export function toClientImageSummary(
       : analysis.notes.slice(0, 180),
     askRetake: analysisAsksRetake(analysis),
     vehicleRaised: analysisHasRaisedVehicle(analysis),
+    housing_guess: analysis.housing_guess,
+    housing_confidence: low ? "low" : analysis.housing_confidence,
   };
 }

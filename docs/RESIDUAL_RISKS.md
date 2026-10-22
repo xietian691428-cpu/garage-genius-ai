@@ -61,6 +61,7 @@ W1–W5 leftovers still apply. Short index:
 | Lighting YMM ≠ VIN lighting options; weak bulb hints can still be wrong for a trim | W7 |
 | Intake honesty / no paid fitment / DTC check_order ≠ TSB | W8 |
 | Lighting weak table ≠ VIN config; battery/overheat intake honesty | W9 |
+| Housing photo misread; brake intake is education-only (no bleed DIY) | W10 |
 
 **Observe is not a second safety gate.** `[safety-observe]` / `metadata.safetyEvents` are counts. Blocking still happens in Chat gates, spec rewrite, and `needsExitUnderRepair`.
 
@@ -97,5 +98,13 @@ Details: [INTAKE_AND_EVIDENCE.md](./INTAKE_AND_EVIDENCE.md).
 **Battery / overheat intake is ephemeral and honesty-dependent.** Same derive path as lighting — no second persistence. Missing cranking pattern or steam/gauge slots → ask first; never “Replace battery now.” Steam → do-not-drive / no hot-cap (prompt + W9 output gate).
 
 **No paid fitment API / no matrix coding / no deep cooling teardown** in this wave.
+
+## W10 — Brake warning intake + housing photo assist + YMM +5–10
+
+**Brake coaching is education-only.** Soft/spongy/sinking pedal or brake warning light → do-not-drive / tow / shop (with `DRIVE_SAFETY` + `[STOP_RULE]` / BRAKE GATE). The product does **not** teach DIY bleeding, opening caliper lines, or “drain brake fluid first.” Cold reservoir sight-glass observation and recent-work history only. “Replace master cylinder now” / “definitely the master cylinder” are tone/gate-blocked — causes stay possible.
+
+**Housing photo assist can misread.** Kimi `housing_guess` + `housing_confidence` may label a dust cap or sealed heatsink wrongly. Only `confidence=high` with a clear guess advances ephemeral structure (still prefer a one-line owner confirm). Blurry/dark/low-confidence photos strip to unclear and never emit H11/OEM from the image. Photo alone must not skip multiConfig confirm or invent a bulb size.
+
+**Weak YMM rows added in W10** (Tacoma, Highlander, Pilot, HR-V, Escape, Explorer, Equinox, Malibu, Sierra, Sportage, Forte, CX-5, Tiguan) remain allowlisted hints after confirm — not VIN decode. Sierra vs Silverado packages can diverge.
 
 Regression pack: [tests/README.md](../tests/README.md). Invariants: [SAFETY_INVARIANTS.md](./SAFETY_INVARIANTS.md).

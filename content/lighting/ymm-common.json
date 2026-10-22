@@ -306,6 +306,241 @@
       ]
     },
     {
+      "id": "toyota-tacoma-2016-2023",
+      "yearMin": 2016,
+      "yearMax": 2023,
+      "make": "toyota",
+      "modelIncludes": ["tacoma"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "multiConfig": true,
+      "lowBeamHint": "Many US Tacoma halogen packages use H11 low beam — verify on the housing stamp / old bulb.",
+      "cautions": [
+        "SR / SR5 halogen vs higher trims with LED / projector packages — do not buy from YMM alone."
+      ],
+      "confirmPrompts": [
+        "Dust-cap plug-in bulb behind the lamp, or a sealed LED / projector module?",
+        "Which trim (SR / SR5 / TRD / Limited)?"
+      ]
+    },
+    {
+      "id": "toyota-highlander-2014-2019",
+      "yearMin": 2014,
+      "yearMax": 2019,
+      "make": "toyota",
+      "modelIncludes": ["highlander"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "multiConfig": true,
+      "lowBeamHint": "Halogen-trim Highlanders in this range often use H11 low beam — still verify.",
+      "cautions": ["LED packages appear on higher trims; confirm housing first."],
+      "confirmPrompts": [
+        "Twist-off dust cap with a plug-in bulb, or sealed LED assembly?"
+      ]
+    },
+    {
+      "id": "toyota-highlander-2020-2025",
+      "yearMin": 2020,
+      "yearMax": 2025,
+      "make": "toyota",
+      "modelIncludes": ["highlander"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "low",
+      "multiConfig": true,
+      "cautions": [
+        "Newer Highlander lighting is package-heavy (often LED on mid/high trims); do not invent a bulb size."
+      ],
+      "confirmPrompts": [
+        "Confirm dust-cap replaceable bulb vs sealed LED before any purchase."
+      ]
+    },
+    {
+      "id": "honda-pilot-2016-2022",
+      "yearMin": 2016,
+      "yearMax": 2022,
+      "make": "honda",
+      "modelIncludes": ["pilot"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "multiConfig": true,
+      "lowBeamHint": "Common US Pilot halogen low beam is often H11 — verify before buying.",
+      "cautions": ["Touring / Elite LED look may be sealed — confirm trim."],
+      "confirmPrompts": [
+        "Dust-cap bulb access or sealed LED module behind the lamp?"
+      ]
+    },
+    {
+      "id": "honda-hrv-2016-2022",
+      "yearMin": 2016,
+      "yearMax": 2022,
+      "make": "honda",
+      "modelIncludes": ["hr-v", "hrv"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "multiConfig": true,
+      "lowBeamHint": "Many HR-V halogen trims use H11 low beam — still verify on the vehicle.",
+      "cautions": ["Trim packages can differ; confirm dust-cap access first."],
+      "confirmPrompts": [
+        "Can you unscrew a dust cap and unplug a bulb, or is it a sealed module?"
+      ]
+    },
+    {
+      "id": "ford-escape-2013-2019",
+      "yearMin": 2013,
+      "yearMax": 2019,
+      "make": "ford",
+      "modelIncludes": ["escape"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "multiConfig": true,
+      "lowBeamHint": "Halogen Escapes in this range often use H11 low beam — verify the old bulb / manual.",
+      "cautions": ["HID/LED packages exist on some trims; confirm housing."],
+      "confirmPrompts": [
+        "Dust-cap replaceable bulb or sealed / projector module?"
+      ]
+    },
+    {
+      "id": "ford-explorer-2016-2019",
+      "yearMin": 2016,
+      "yearMax": 2019,
+      "make": "ford",
+      "modelIncludes": ["explorer"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "multiConfig": true,
+      "cautions": [
+        "Explorer lighting packages mix halogen and LED; do not invent a bulb size from YMM alone."
+      ],
+      "confirmPrompts": [
+        "Confirm dust-cap bulb vs sealed LED before buying."
+      ]
+    },
+    {
+      "id": "chevy-equinox-2018-2024",
+      "yearMin": 2018,
+      "yearMax": 2024,
+      "make": "chevrolet",
+      "modelIncludes": ["equinox"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "multiConfig": true,
+      "lowBeamHint": "Many Equinox halogen packages use H11-class low beam — verify on the housing / old bulb.",
+      "cautions": ["Higher trims may use LED assemblies; confirm first."],
+      "confirmPrompts": [
+        "Twist-off dust cap + plug-in bulb, or sealed LED module?"
+      ]
+    },
+    {
+      "id": "chevy-malibu-2016-2023",
+      "yearMin": 2016,
+      "yearMax": 2023,
+      "make": "chevrolet",
+      "modelIncludes": ["malibu"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "multiConfig": true,
+      "lowBeamHint": "Halogen Malibus often use H11 low beam — still verify.",
+      "cautions": ["LED packages appear on some trims; confirm housing type."],
+      "confirmPrompts": [
+        "Dust-cap replaceable bulb or sealed LED assembly?"
+      ]
+    },
+    {
+      "id": "gmc-sierra-2014-2018",
+      "yearMin": 2014,
+      "yearMax": 2018,
+      "make": "gmc",
+      "modelIncludes": ["sierra"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "multiConfig": true,
+      "lowBeamHint": "Common halogen low beams on this Sierra generation are often H11 — still verify (do not assume Silverado packaging).",
+      "cautions": [
+        "Sierra vs Silverado packages can diverge by trim — confirm on THIS truck.",
+        "HID/LED packages exist; confirm before buying."
+      ],
+      "confirmPrompts": [
+        "Confirm bulb access behind the housing on this Sierra (not a Silverado assumption)."
+      ]
+    },
+    {
+      "id": "gmc-sierra-2019-2024",
+      "yearMin": 2019,
+      "yearMax": 2024,
+      "make": "gmc",
+      "modelIncludes": ["sierra"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "low",
+      "multiConfig": true,
+      "cautions": [
+        "Newer Sierra lighting varies by trim; do not invent a bulb size or copy a Silverado part blindly."
+      ],
+      "confirmPrompts": [
+        "Replaceable bulb with dust cap, or sealed LED / projector module?"
+      ]
+    },
+    {
+      "id": "kia-sportage-2017-2022",
+      "yearMin": 2017,
+      "yearMax": 2022,
+      "make": "kia",
+      "modelIncludes": ["sportage"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "multiConfig": true,
+      "lowBeamHint": "Many Sportage halogen trims use H11 low beam — verify before purchase.",
+      "cautions": ["SX / higher packages may use LED; confirm housing."],
+      "confirmPrompts": [
+        "Dust-cap plug-in bulb or sealed LED module?"
+      ]
+    },
+    {
+      "id": "kia-forte-2019-2024",
+      "yearMin": 2019,
+      "yearMax": 2024,
+      "make": "kia",
+      "modelIncludes": ["forte"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "multiConfig": true,
+      "lowBeamHint": "Halogen Fortes often use H11 low beam — still verify on the old bulb / manual.",
+      "cautions": ["GT-Line / higher trims may differ; confirm dust-cap access."],
+      "confirmPrompts": [
+        "Can you unscrew a dust cap behind the lamp, or is it sealed LED?"
+      ]
+    },
+    {
+      "id": "mazda-cx5-2017-2021",
+      "yearMin": 2017,
+      "yearMax": 2021,
+      "make": "mazda",
+      "modelIncludes": ["cx-5", "cx5"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "medium",
+      "multiConfig": true,
+      "lowBeamHint": "Many CX-5 halogen packages use H11 low beam — verify.",
+      "cautions": ["LED headlamp packages on higher trims are not screw-in bulbs."],
+      "confirmPrompts": [
+        "Dust-cap replaceable bulb vs sealed LED / projector?"
+      ]
+    },
+    {
+      "id": "vw-tiguan-2018-2024",
+      "yearMin": 2018,
+      "yearMax": 2024,
+      "make": "volkswagen",
+      "modelIncludes": ["tiguan"],
+      "path": "ambiguous_needs_confirm",
+      "confidence": "low",
+      "multiConfig": true,
+      "cautions": [
+        "Tiguan lighting packages vary widely (halogen vs LED); prefer confirm over guessing — no allowlisted size without housing confirm."
+      ],
+      "confirmPrompts": [
+        "Confirm whether the low beam has a replaceable bulb behind a dust cover or a sealed LED module."
+      ]
+    },
+    {
       "id": "tesla-model3-any",
       "yearMin": 2017,
       "yearMax": 2030,

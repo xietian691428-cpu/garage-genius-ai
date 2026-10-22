@@ -1,9 +1,13 @@
 import { extractDtcCodesFromAny } from "@/lib/dtc-parse";
 import {
+  HOUSING_CONFIDENCES,
+  HOUSING_GUESSES,
   IMAGE_CONDITIONS,
   IMAGE_SAFETY_FLAGS,
   IMAGE_SCENES,
   isLowTrustAnalysis,
+  type HousingConfidence,
+  type HousingGuess,
   type ImageAnalysis,
   type ImageCondition,
   type ImageReading,
@@ -127,6 +131,16 @@ export function parseImageAnalysis(raw: string | null | undefined): ImageAnalysi
   }
   const rec = parsed as Record<string, unknown>;
   const ocr_text = asStringList(rec.ocr_text, 10);
+  const housing_guess = pickEnum<HousingGuess>(
+    rec.housing_guess,
+    HOUSING_GUESSES,
+    "unclear",
+  );
+  const housing_confidence = pickEnum<HousingConfidence>(
+    rec.housing_confidence,
+    HOUSING_CONFIDENCES,
+    "low",
+  );
   const analysis: ImageAnalysis = {
     condition: pickEnum<ImageCondition>(
       rec.condition,
@@ -141,6 +155,8 @@ export function parseImageAnalysis(raw: string | null | undefined): ImageAnalysi
     objects: asStringList(rec.objects, 10).map((s) => s.slice(0, 64)),
     safety_flags: parseSafetyFlags(rec.safety_flags),
     notes: clipNotes(rec.notes),
+    housing_guess,
+    housing_confidence,
   };
 
   return sanitizeAnalysisForCoach(analysis);
@@ -148,13 +164,24 @@ export function parseImageAnalysis(raw: string | null | undefined): ImageAnalysi
 
 /** Drop guessed readings and codes when the photo is not trustworthy. */
 export function sanitizeAnalysisForCoach(analysis: ImageAnalysis): ImageAnalysis {
-  if (!isLowTrustAnalysis(analysis)) return analysis;
+  if (!isLowTrustAnalysis(analysis)) {
+    // Never allow high housing confidence without a clear dust_cap/sealed guess
+    if (
+      analysis.housing_confidence === "high" &&
+      analysis.housing_guess === "unclear"
+    ) {
+      return { ...analysis, housing_confidence: "low" };
+    }
+    return analysis;
+  }
   return {
     ...analysis,
     ocr_text: [],
     dtc_codes: [],
     readings: [],
+    housing_guess: "unclear",
+    housing_confidence: "low",
     notes:
-      "Photo is unclear or low-confidence — do not treat any reading or DTC as fact; ask for a retake.",
+      "Photo is unclear or low-confidence — do not treat any reading, DTC, or housing structure as fact; ask for a retake or whether a dust cap can be unscrewed.",
   };
 }

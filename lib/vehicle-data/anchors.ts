@@ -197,6 +197,11 @@ export type GatherAnchorsOptions = {
   epa?: EpaMpgAnchor | null;
   /** Recent user turns for lighting structure confirm (no VIN). */
   transcriptBlob?: string;
+  /** W10b high-confidence housing photo assist (ephemeral). */
+  visionHousing?: {
+    housing_guess: "dust_cap" | "sealed_heatsink" | "unclear";
+    housing_confidence: "high" | "low";
+  } | null;
 };
 
 /**
@@ -296,6 +301,9 @@ The owner asked about recalls. Answer from [RECALL_HINTS] and [ANCHOR_STATUS] on
     if (diy) blocks.push(diy);
     const lighting = formatLightingPathBlock(userMessage, vehicle, {
       transcriptBlob: options?.transcriptBlob,
+      // Owner turns only — never assistant education copy
+      confirmBlob: options?.transcriptBlob || userMessage,
+      visionHousing: options?.visionHousing ?? null,
     });
     if (lighting) blocks.push(lighting);
 

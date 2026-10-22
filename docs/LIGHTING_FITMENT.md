@@ -33,19 +33,23 @@ Intake slots (`lighting_structure`, `housing_confirm`) are ephemeral — see [IN
 
 | Make | Models (year ranges in JSON) | Notes |
 | --- | --- | --- |
-| Toyota | Camry, Corolla, RAV4 | Often `multiConfig` (halogen vs LED by trim) |
-| Honda | Civic, Accord, CR-V | Often `multiConfig` |
-| Ford | F-150 | Halogen vs LED packages — confirm first |
-| Chevrolet | Silverado | Confirm before any H-number |
+| Toyota | Camry, Corolla, RAV4, Tacoma, Highlander | Often `multiConfig` (halogen vs LED by trim) |
+| Honda | Civic, Accord, CR-V, Pilot, HR-V | Often `multiConfig` |
+| Ford | F-150, Escape, Explorer | Halogen vs LED packages — confirm first |
+| Chevrolet | Silverado, Equinox, Malibu | Confirm before any H-number |
+| GMC | Sierra | Confirm on THIS truck — do not copy Silverado blindly |
 | Ram | 1500 | Package-heavy — no hard-coded bulb |
 | Nissan | Altima, Rogue | Confirm housing |
 | Hyundai | Tucson, Elantra | Confirm housing |
+| Kia | Sportage, Forte | Confirm housing; hint only after dust-cap |
+| Mazda | CX-5 | Confirm housing |
 | Subaru | Outback | Older rows may hint H11 **only after** dust-cap confirm |
 | Jeep | Grand Cherokee | Halogen / HID / LED mix |
+| Volkswagen | Tiguan | Path education only (low confidence) — confirm first |
 | Tesla | Model 3 | Sealed LED education |
 | BMW | 3 Series | Sealed LED education |
 
-`multiConfig: true` → path stays `ambiguous_needs_confirm` until the owner confirms dust-cap vs sealed; **no bulb size** until then. Missing rows are preferred over wrong H-numbers.
+`multiConfig: true` → path stays `ambiguous_needs_confirm` until the owner confirms dust-cap vs sealed (text/chips) **or** a high-confidence housing photo assist (W10b); **no bulb size** until then. Low-confidence photos never invent H-numbers. Missing rows are preferred over wrong H-numbers.
 
 ## YMM and VIN limits
 

@@ -8,6 +8,10 @@ import { isLightingIntent } from "@/lib/lighting/intent";
 import {
   EMPTY_INTAKE_SLOTS,
   type BatteryCrankSymptom,
+  type BrakeAfterEvent,
+  type BrakeLevelChecked,
+  type BrakePedalFeel,
+  type BrakeWarningLight,
   type HousingConfirmSlot,
   type IntakeDeriveResult,
   type IntakeFocusIntent,
@@ -16,6 +20,7 @@ import {
   type LightingFunctionSlot,
   type LightingStructureSlot,
   type SideSlot,
+  type VisionHousingAssist,
   type YesNoUnknown,
 } from "@/lib/intake/types";
 
@@ -36,6 +41,10 @@ const BATTERY_INTENT_RE =
 
 const OVERHEAT_INTENT_RE =
   /\b(overheat(?:ing)?|temp(?:erature)?\s+(?:gauge|light)|gauge\s+(?:in\s+)?red|running hot|coolant\s+(?:hot|steam|boiling)|steam\s+(?:from|under|coming)|hot\s+engine|cooling\s+system)\b/i;
+
+/** Soft pedal / brake warning / brake light (W10a) — not pad wear DIY alone. */
+const BRAKE_WARNING_INTENT_RE =
+  /\b(soft\s+(?:brake\s+)?pedal|spongy\s+(?:brake\s+)?pedal|pedal\s+(?:feels?\s+)?(?:soft|spongy|sinks?)|brake\s+pedal\s+(?:to\s+the\s+)?floor|brake\s+warning(?:\s+light)?|brake\s+(?:warning\s+)?light|brake\s+light\s+on|abs\s+(?:light|warning)|brake\s+system\s+warning|red\s+brake\s+(?:light|warning)|\!\s*brake|brake\s+alert)\b/i;
 
 const AFTER_EVENT_PATTERNS: Array<{ re: RegExp; label: string }> = [
   { re: /\b(collision|accident|hit|crash|撞)\b/i, label: "collision" },
@@ -103,6 +112,10 @@ export function isOverheatIntent(text: string): boolean {
   return OVERHEAT_INTENT_RE.test(text || "");
 }
 
+export function isBrakeWarningIntent(text: string): boolean {
+  return BRAKE_WARNING_INTENT_RE.test(text || "");
+}
+
 function parseLightingFunction(text: string): LightingFunctionSlot {
   const low = /\b(low\s*beam|dipped|近光)\b/i.test(text);
   const high = /\b(high\s*beam|main\s*beam|远光)\b/i.test(text);
@@ -150,6 +163,63 @@ function parseBatterySymptom(text: string): BatteryCrankSymptom {
   return "unknown";
 }
 
+function parsePedalFeel(text: string): BrakePedalFeel {
+  if (/\b(pedal\s+(?:goes\s+)?to\s+(?:the\s+)?floor|sinks?\s+(?:to\s+)?(?:the\s+)?floor|pedal\s+sinks)\b/i.test(text)) {
+    return "sinks";
+  }
+  if (/\b(soft|spongy)\s+(?:brake\s+)?pedal\b|\bpedal\s+(?:feels?\s+)?(?:soft|spongy)\b/i.test(text)) {
+    return "soft_spongy";
+  }
+  if (/\b(firm|hard|solid)\s+(?:brake\s+)?pedal\b|\bpedal\s+(?:feels?\s+)?(?:firm|hard|solid)\b/i.test(text)) {
+    return "firm";
+  }
+  return "unknown";
+}
+
+function parseBrakeWarningLight(text: string): BrakeWarningLight {
+  if (/\b(brake\s+(?:warning\s+)?light\s+(?:is\s+)?(?:on|lit|illuminated)|brake\s+light\s+on|abs\s+(?:light|warning)\s+on|red\s+brake\s+(?:light|warning)\s+on)\b/i.test(text)) {
+    return "on";
+  }
+  if (/\b(brake\s+(?:warning\s+)?light\s+(?:comes\s+and\s+goes|intermittent|flickers?)|abs\s+light\s+intermittent)\b/i.test(text)) {
+    return "intermittent";
+  }
+  if (/\b(brake\s+(?:warning\s+)?light\s+(?:is\s+)?(?:off|out)|no\s+brake\s+(?:warning\s+)?light|abs\s+light\s+off)\b/i.test(text)) {
+    return "off";
+  }
+  // "brake light on soft pedal" — explicit "brake light on" only (bare "brake warning" stays unknown → ask)
+  if (/\bbrake\s+light\s+on\b/i.test(text)) {
+    return "on";
+  }
+  return "unknown";
+}
+
+function parseBrakeLevelChecked(text: string): BrakeLevelChecked {
+  if (
+    /\b(checked?\s+(?:brake\s+)?(?:fluid\s+)?(?:level|reservoir)|sight\s+(?:glass|window)|cold\s+(?:engine\s+)?(?:brake\s+)?fluid\s+level|reservoir\s+(?:looks?|is)\s+(?:low|full|ok))\b/i.test(
+      text,
+    )
+  ) {
+    return "yes_cold_reservoir_sight";
+  }
+  if (/\b(haven'?t\s+checked\s+(?:brake\s+)?(?:fluid|level|reservoir)|did\s+not\s+check\s+(?:brake\s+)?fluid)\b/i.test(text)) {
+    return "no";
+  }
+  return "unknown";
+}
+
+function parseBrakeAfterEvent(text: string): BrakeAfterEvent {
+  if (/\b(recent\s+(?:brake\s+)?(?:pads?|rotors?|caliper)|just\s+(?:did|replaced|changed)\s+(?:the\s+)?(?:pads?|brakes?)|pads?\s+(?:just\s+)?(?:replaced|changed))\b/i.test(text)) {
+    return "recent_pads_work";
+  }
+  if (/\b(brake\s+fluid\s+(?:flush|change|service)|flushed?\s+(?:the\s+)?(?:brake\s+)?fluid|fluid\s+service)\b/i.test(text)) {
+    return "fluid_service";
+  }
+  if (/\b(no\s+recent\s+brake|haven'?t\s+(?:touched|done)\s+(?:the\s+)?brakes?)\b/i.test(text)) {
+    return "none";
+  }
+  return "unknown";
+}
+
 function ynFrom(
   yesRe: RegExp,
   noRe: RegExp,
@@ -170,26 +240,89 @@ function mergeBlob(current: string, recent: string[]): string {
   return [current, ...recent].filter(Boolean).join("\n");
 }
 
-/**
- * Build intake from this turn + optional recent user turns (no DB write).
- */
 function normalizeQuotes(s: string): string {
   return (s || "").replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"');
 }
 
+/**
+ * Apply high-confidence housing photo assist into slots (ephemeral).
+ * Low confidence / unclear → no path change.
+ */
+export function applyVisionHousingAssist(
+  slots: IntakeSlots,
+  assist: VisionHousingAssist | null | undefined,
+  evidenceItems: EvidenceItem[],
+): void {
+  if (!assist) return;
+  if (assist.housing_confidence !== "high") {
+    evidenceItems.push({
+      grade: "UNVERIFIED",
+      text: "Headlight housing photo is low-confidence or unclear — ask for a retake or whether a dust cap can be unscrewed. Do not invent bulb sizes from the photo.",
+    });
+    return;
+  }
+  if (assist.housing_guess === "dust_cap") {
+    // Photo assist can advance structure; still ask a one-line owner confirm when possible.
+    if (slots.lighting_structure === "unknown") {
+      slots.lighting_structure = "replaceable_bulb";
+    }
+    if (
+      slots.housing_confirm === "unset" ||
+      slots.housing_confirm === "photo_noted"
+    ) {
+      slots.housing_confirm = "photo_assist_dust_cap";
+    }
+    evidenceItems.push({
+      grade: "REPORTED",
+      text: "Photo assist (high confidence): dust-cap / replaceable-bulb style housing — still ask owner to confirm in one sentence; verify bulb size on the vehicle.",
+    });
+    return;
+  }
+  if (assist.housing_guess === "sealed_heatsink") {
+    if (slots.lighting_structure === "unknown") {
+      slots.lighting_structure = "sealed_or_integrated_led";
+    }
+    if (
+      slots.housing_confirm === "unset" ||
+      slots.housing_confirm === "photo_noted"
+    ) {
+      slots.housing_confirm = "photo_assist_sealed";
+    }
+    evidenceItems.push({
+      grade: "REPORTED",
+      text: "Photo assist (high confidence): sealed / heatsink-style module — assembly path; do not push halogen bulb sizes. Still invite a short owner confirm.",
+    });
+    return;
+  }
+  evidenceItems.push({
+    grade: "UNVERIFIED",
+    text: "Housing photo unclear — ask retake or dust-cap vs sealed question. No bulb size from the image.",
+  });
+}
+
+/**
+ * Build intake from this turn + optional recent user turns (no DB write).
+ */
 export function deriveIntake(options: {
   currentUserMessage: string;
   recentUserTexts?: string[];
+  /** W10b: high-confidence housing guess from vision (same request only). */
+  visionHousing?: VisionHousingAssist | null;
 }): IntakeDeriveResult {
   const current = normalizeQuotes(options.currentUserMessage || "");
   const recent = (options.recentUserTexts || []).map(normalizeQuotes);
   const blob = mergeBlob(current, recent);
   const lightingIntent = isLightingIntent(current) || isLightingIntent(blob);
+  const brakeIntent =
+    !lightingIntent &&
+    (isBrakeWarningIntent(current) || isBrakeWarningIntent(blob));
   const batteryIntent =
     !lightingIntent &&
+    !brakeIntent &&
     (isBatteryCrankingIntent(current) || isBatteryCrankingIntent(blob));
   const overheatIntent =
     !lightingIntent &&
+    !brakeIntent &&
     !batteryIntent &&
     (isOverheatIntent(current) || isOverheatIntent(blob));
 
@@ -292,6 +425,16 @@ export function deriveIntake(options: {
     blob,
   );
 
+  // Brake slots (W10a)
+  slots.pedal_feel = parsePedalFeel(blob);
+  slots.brake_warning_light = parseBrakeWarningLight(blob);
+  slots.brake_level_checked = parseBrakeLevelChecked(blob);
+  slots.brake_after_event = parseBrakeAfterEvent(blob);
+  if (/\b(pulls?\s+(?:left|right)|grinding|squeal(?:ing)?|scraping)\b/i.test(blob)) {
+    const m = blob.match(/\b((?:pulls?\s+(?:left|right)|grinding|squeal(?:ing)?|scraping)[^.!?\n]{0,40})/i);
+    slots.pulls_or_noise = (m?.[1] || "noise/pull mentioned").slice(0, 60);
+  }
+
   const evidenceItems: EvidenceItem[] = [];
   if (slots.dtc_list.length) {
     evidenceItems.push({
@@ -315,6 +458,12 @@ export function deriveIntake(options: {
       text: "Lighting housing structure not confirmed — bulb sizes and buy paths stay blocked.",
     });
   }
+
+  // W10b photo assist (after text parse; does not invent bulb sizes)
+  if (lightingIntent || options.visionHousing) {
+    applyVisionHousingAssist(slots, options.visionHousing, evidenceItems);
+  }
+
   if (batteryIntent && slots.battery_symptom !== "unknown") {
     evidenceItems.push({
       grade: "OBSERVED",
@@ -337,6 +486,26 @@ export function deriveIntake(options: {
       text: "Owner reports temp gauge/light concern.",
     });
   }
+
+  const brakeStopDrive =
+    brakeIntent &&
+    (slots.pedal_feel === "soft_spongy" ||
+      slots.pedal_feel === "sinks" ||
+      slots.brake_warning_light === "on" ||
+      slots.brake_warning_light === "intermittent");
+
+  if (brakeIntent && brakeStopDrive) {
+    evidenceItems.push({
+      grade: "OBSERVED",
+      text: "Soft/sinking pedal and/or brake warning light — do-not-drive / tow / professional inspection education.",
+    });
+  } else if (brakeIntent) {
+    evidenceItems.push({
+      grade: "UNVERIFIED",
+      text: "Brake warning / pedal concern — gather pedal feel and warning-light state before any DIY.",
+    });
+  }
+
   if (slots.after_event) {
     evidenceItems.push({
       grade: "REPORTED",
@@ -355,16 +524,25 @@ export function deriveIntake(options: {
     ? "OBSERVED"
     : evidenceItems.some((e) => e.grade === "REPORTED")
       ? "REPORTED"
-      : lightingIntent || batteryIntent || overheatIntent || slots.dtc_list.length
+      : lightingIntent ||
+          batteryIntent ||
+          overheatIntent ||
+          brakeIntent ||
+          slots.dtc_list.length
         ? "UNVERIFIED"
         : "INFERRED";
 
   const seekingRootCause = ROOT_CAUSE_ASK_RE.test(current);
   const missingCritical: IntakeMissingSlot[] = [];
 
-  if (lightingIntent && structure === "unknown") {
+  if (lightingIntent && slots.lighting_structure === "unknown") {
     missingCritical.push("lighting_structure");
-    if (slots.housing_confirm === "unset") missingCritical.push("housing_confirm");
+    if (
+      slots.housing_confirm === "unset" ||
+      slots.housing_confirm === "photo_noted"
+    ) {
+      missingCritical.push("housing_confirm");
+    }
   }
 
   if (batteryIntent) {
@@ -384,11 +562,33 @@ export function deriveIntake(options: {
     }
   }
 
+  if (brakeIntent) {
+    if (slots.pedal_feel === "unknown") missingCritical.push("pedal_feel");
+    if (slots.brake_warning_light === "unknown") {
+      missingCritical.push("brake_warning_light");
+    }
+    // Only ask level / recent work when not already in stop-drive mode with both key slots
+    if (
+      !brakeStopDrive &&
+      slots.brake_level_checked === "unknown" &&
+      missingCritical.length < 2
+    ) {
+      missingCritical.push("brake_level_checked");
+    }
+    if (
+      slots.brake_after_event === "unknown" &&
+      missingCritical.length < 2
+    ) {
+      missingCritical.push("brake_after_event");
+    }
+  }
+
   if (
     seekingRootCause &&
     !lightingIntent &&
     !batteryIntent &&
     !overheatIntent &&
+    !brakeIntent &&
     !slots.when_started &&
     slots.sudden_or_gradual === "unknown"
   ) {
@@ -399,6 +599,7 @@ export function deriveIntake(options: {
     !lightingIntent &&
     !batteryIntent &&
     !overheatIntent &&
+    !brakeIntent &&
     slots.intermittent_or_constant === "unknown"
   ) {
     missingCritical.push("intermittent_or_constant");
@@ -408,6 +609,7 @@ export function deriveIntake(options: {
     !lightingIntent &&
     !batteryIntent &&
     !overheatIntent &&
+    !brakeIntent &&
     slots.side === "unknown" &&
     /\b(light|lamp|side|mirror|wheel|brake|turn)\b/i.test(blob)
   ) {
@@ -416,19 +618,22 @@ export function deriveIntake(options: {
 
   const focusIntent: IntakeFocusIntent = lightingIntent
     ? "lighting"
-    : batteryIntent
-      ? "battery_cranking"
-      : overheatIntent
-        ? "overheat"
-        : seekingRootCause
-          ? "generic_root_cause"
-          : "none";
+    : brakeIntent
+      ? "brake_warning"
+      : batteryIntent
+        ? "battery_cranking"
+        : overheatIntent
+          ? "overheat"
+          : seekingRootCause
+            ? "generic_root_cause"
+            : "none";
 
   const preferIntakeQuestions =
     missingCritical.length > 0 &&
     (lightingIntent ||
       batteryIntent ||
       overheatIntent ||
+      brakeIntent ||
       seekingRootCause) &&
     missingCritical.slice(0, 2).length > 0;
 
@@ -440,8 +645,10 @@ export function deriveIntake(options: {
     lightingIntent,
     batteryIntent,
     overheatIntent,
+    brakeIntent,
     seekingRootCause,
     preferIntakeQuestions,
+    brakeStopDrive,
   };
 }
 
@@ -452,12 +659,14 @@ export function intakeChipPrompts(
     lightingIntent?: boolean;
     batteryIntent?: boolean;
     overheatIntent?: boolean;
+    brakeIntent?: boolean;
   },
 ): string[] {
   const chips: string[] = [];
   const lightingIntent = opts?.lightingIntent ?? false;
   const batteryIntent = opts?.batteryIntent ?? false;
   const overheatIntent = opts?.overheatIntent ?? false;
+  const brakeIntent = opts?.brakeIntent ?? false;
 
   for (const m of missing) {
     if (m === "lighting_structure" || m === "housing_confirm") {
@@ -474,6 +683,12 @@ export function intakeChipPrompts(
     if (m === "temp_gauge_or_light") chips.push("Gauge in red / temp light");
     if (m === "steam") chips.push("Seeing steam");
     if (m === "level_checked_cold") chips.push("Checked level only when cold");
+    if (m === "pedal_feel") chips.push("Soft or firm pedal?");
+    if (m === "brake_warning_light") chips.push("Warning light on?");
+    if (m === "brake_after_event") chips.push("Recent brake work?");
+    if (m === "brake_level_checked") {
+      chips.push("Checked reservoir sight glass (cold)?");
+    }
     if (m === "when_started") chips.push("Started suddenly");
     if (m === "intermittent_or_constant") chips.push("It comes and goes");
     if (m === "side") chips.push("Left side only");
@@ -486,6 +701,9 @@ export function intakeChipPrompts(
   }
   if (overheatIntent && !chips.some((c) => /steam|gauge|cold/i.test(c))) {
     chips.unshift("Gauge in red?");
+  }
+  if (brakeIntent && !chips.some((c) => /pedal|warning|brake work/i.test(c))) {
+    chips.unshift("Soft or firm pedal?");
   }
   return [...new Set(chips)].slice(0, 4);
 }

@@ -48,6 +48,8 @@ export const DIAGNOSTIC_TONE_PHRASES: ReadonlyArray<{
   { id: "replace_the_converter", needle: "replace the converter" },
   { id: "replace_the_battery_now", needle: "replace the battery now" },
   { id: "replace_battery_now", needle: "replace battery now" },
+  { id: "replace_the_master_cylinder_now", needle: "replace the master cylinder now" },
+  { id: "replace_master_cylinder_now", needle: "replace master cylinder now" },
   { id: "guaranteed_fix", needle: "guaranteed fix" },
 ];
 
@@ -143,6 +145,16 @@ const REWRITE_RULES: RewriteRule[] = [
   {
     pattern: /\bguaranteed fix\b/gi,
     replacement: "educational check, not a guaranteed fix",
+  },
+  {
+    pattern: /\breplace the master cylinder now\b/gi,
+    replacement:
+      "inspect for leaks and pedal feel with a shop — do not assume the master cylinder",
+  },
+  {
+    pattern: /\breplace master cylinder now\b/gi,
+    replacement:
+      "inspect for leaks and pedal feel with a shop — do not assume the master cylinder",
   },
 ];
 

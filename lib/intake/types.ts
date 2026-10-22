@@ -24,7 +24,9 @@ export type HousingConfirmSlot =
   | "unset"
   | "dust_cap_visible"
   | "heatsink_sealed_module"
-  | "photo_noted";
+  | "photo_noted"
+  | "photo_assist_dust_cap"
+  | "photo_assist_sealed";
 
 export type SideSlot = "left" | "right" | "both" | "na" | "unknown";
 
@@ -41,11 +43,36 @@ export type BatteryCrankSymptom =
 
 export type YesNoUnknown = "yes" | "no" | "unknown";
 
+/** Brake warning / soft pedal (W10a). */
+export type BrakePedalFeel =
+  | "unknown"
+  | "firm"
+  | "soft_spongy"
+  | "sinks";
+
+export type BrakeWarningLight =
+  | "unknown"
+  | "on"
+  | "intermittent"
+  | "off";
+
+export type BrakeLevelChecked =
+  | "unknown"
+  | "yes_cold_reservoir_sight"
+  | "no";
+
+export type BrakeAfterEvent =
+  | "unknown"
+  | "recent_pads_work"
+  | "fluid_service"
+  | "none";
+
 export type IntakeFocusIntent =
   | "none"
   | "lighting"
   | "battery_cranking"
   | "overheat"
+  | "brake_warning"
   | "generic_root_cause";
 
 export type IntakeSlots = {
@@ -75,6 +102,12 @@ export type IntakeSlots = {
   steam: YesNoUnknown;
   level_checked_cold: YesNoUnknown;
   recent_cooling_work: YesNoUnknown;
+  /** Brake warning (W10a). */
+  pedal_feel: BrakePedalFeel;
+  brake_warning_light: BrakeWarningLight;
+  brake_level_checked: BrakeLevelChecked;
+  brake_after_event: BrakeAfterEvent;
+  pulls_or_noise: string | null;
 };
 
 export type IntakeMissingSlot =
@@ -87,7 +120,11 @@ export type IntakeMissingSlot =
   | "lights_dim"
   | "temp_gauge_or_light"
   | "steam"
-  | "level_checked_cold";
+  | "level_checked_cold"
+  | "pedal_feel"
+  | "brake_warning_light"
+  | "brake_level_checked"
+  | "brake_after_event";
 
 export type IntakeDeriveResult = {
   slots: IntakeSlots;
@@ -97,9 +134,18 @@ export type IntakeDeriveResult = {
   lightingIntent: boolean;
   batteryIntent: boolean;
   overheatIntent: boolean;
+  brakeIntent: boolean;
   seekingRootCause: boolean;
   /** Prefer ask-first over long diagnosis dump. */
   preferIntakeQuestions: boolean;
+  /** Soft pedal / sinks / warning-on → do-not-drive education. */
+  brakeStopDrive: boolean;
+};
+
+/** Optional W10b housing assist from vision (ephemeral). */
+export type VisionHousingAssist = {
+  housing_guess: "dust_cap" | "sealed_heatsink" | "unclear";
+  housing_confidence: "high" | "low";
 };
 
 export const EMPTY_INTAKE_SLOTS: IntakeSlots = {
@@ -126,4 +172,9 @@ export const EMPTY_INTAKE_SLOTS: IntakeSlots = {
   steam: "unknown",
   level_checked_cold: "unknown",
   recent_cooling_work: "unknown",
+  pedal_feel: "unknown",
+  brake_warning_light: "unknown",
+  brake_level_checked: "unknown",
+  brake_after_event: "unknown",
+  pulls_or_noise: null,
 };

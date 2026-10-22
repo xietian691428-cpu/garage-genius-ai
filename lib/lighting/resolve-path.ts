@@ -127,6 +127,14 @@ export type ResolveLightingOptions = {
    * would false-confirm the path.
    */
   confirmBlob?: string;
+  /**
+   * W10b: high-confidence photo housing assist (same request).
+   * Never invent bulb sizes; still verify after replaceable path.
+   */
+  visionHousing?: {
+    housing_guess: "dust_cap" | "sealed_heatsink" | "unclear";
+    housing_confidence: "high" | "low";
+  } | null;
 };
 
 /**
@@ -160,23 +168,40 @@ export function resolveLightingPath(
     (fromText === "sealed_or_integrated_led" ||
       parseSealedHousingConfirm(confirmSrc));
 
+  const vh = options?.visionHousing;
+  const photoReplaceable =
+    vh?.housing_confidence === "high" && vh.housing_guess === "dust_cap";
+  const photoSealed =
+    vh?.housing_confidence === "high" &&
+    vh.housing_guess === "sealed_heatsink";
+
   let path: LightingStructurePath = "ambiguous_needs_confirm";
   let confidence: LightingPathResult["confidence"] = "low";
   let structureConfirmed = false;
 
   if (
     userConfirmedReplaceable ||
+    photoReplaceable ||
     override === "likely_replaceable_bulb"
   ) {
     path = "likely_replaceable_bulb";
-    confidence = userConfirmedReplaceable ? "high" : "medium";
+    confidence = userConfirmedReplaceable
+      ? "high"
+      : photoReplaceable
+        ? "medium"
+        : "medium";
     structureConfirmed = true;
   } else if (
     userConfirmedSealed ||
+    photoSealed ||
     override === "likely_sealed_or_integrated_led"
   ) {
     path = "likely_sealed_or_integrated_led";
-    confidence = userConfirmedSealed ? "high" : "medium";
+    confidence = userConfirmedSealed
+      ? "high"
+      : photoSealed
+        ? "medium"
+        : "medium";
     structureConfirmed = true;
   } else {
     // Table may suggest a weak prior — never promote to confirmed; cap path

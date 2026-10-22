@@ -6,7 +6,11 @@
 import type { LightingIntentKind } from "@/lib/lighting/types";
 
 const LIGHTING_CORE =
-  /\b(head\s*lights?|head\s*lamps?|headlamps?|low\s*beam|high\s*beam|fog\s*lights?|fog\s*lamps?|drl|daytime\s+running\s+lights?|turn\s+signals?|tail\s*lights?|brake\s+lights?|exterior\s+lights?|lamp\s+assembly|light\s+assembly|bulb\s+socket)\b/i;
+  /\b(head\s*lights?|head\s*lamps?|headlamps?|low\s*beam|high\s*beam|fog\s*lights?|fog\s*lamps?|drl|daytime\s+running\s+lights?|turn\s+signals?|tail\s*lights?|brake\s+lights|(?:rear|third|center|centre)\s+brake\s+light|exterior\s+lights?|lamp\s+assembly|light\s+assembly|bulb\s+socket)\b/i;
+
+/** Dash brake warning / soft pedal (W10a) — not exterior brake lamps. */
+const BRAKE_DASH_WARN =
+  /\b((?:soft|spongy)\s+(?:brake\s+)?pedal|pedal\s+(?:feels?\s+)?(?:soft|spongy|sinks?)|brake\s+pedal\s+(?:to\s+the\s+)?floor|brake\s+warning(?:\s+light)?|brake\s+light\s+on|abs\s+(?:light|warning)|brake\s+system\s+warning|red\s+brake\s+(?:light|warning))\b/i;
 
 const ES_LIGHTING =
   /\b(faros?|luces?\s+delanteras?|luz\s+baja|luz\s+alta|antiniebla|luz\s+diurna|intermitentes?|calaveras?|foco|bombilla\s+del\s+faro)\b/i;
@@ -35,6 +39,8 @@ const TROUBLESHOOT =
 export function isLightingIntent(text: string): boolean {
   const raw = (text || "").trim();
   if (!raw) return false;
+  // Soft pedal / dash brake warning → brake intake (W10a), not lamp buy path
+  if (BRAKE_DASH_WARN.test(raw)) return false;
   // Avoid CEL / warning-lamp false positives when no exterior lighting cue
   if (
     /\bcheck\s+engine\s+light\b|\bcel\b|\bmil\b|\bservice\s+engine\b/i.test(raw) &&

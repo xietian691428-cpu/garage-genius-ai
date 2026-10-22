@@ -1,6 +1,7 @@
 /**
  * W9 post-reply guards: hot cooling-cap encouragement + unconfirmed bulb sizes.
  * Deterministic — no extra model call.
+ * W10 brake / photo gates live in w10-output-gates.ts and compose after this.
  */
 
 const HOT_OPEN_ENCOURAGE_RE =

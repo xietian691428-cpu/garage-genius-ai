@@ -258,6 +258,7 @@ export function getFollowUpChips(options?: {
       lightingIntent: intake.lightingIntent,
       batteryIntent: intake.batteryIntent,
       overheatIntent: intake.overheatIntent,
+      brakeIntent: intake.brakeIntent,
     });
     for (const [i, p] of prompts.entries()) {
       out.push({

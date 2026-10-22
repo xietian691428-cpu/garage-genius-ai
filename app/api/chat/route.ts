@@ -89,6 +89,7 @@ import { isVehicleDataDebug } from "@/lib/vehicle-data/config";
 import { maskVin } from "@/lib/vehicle-data/vin";
 import {
   applyW9OutputGuards,
+  applyW10OutputGuards,
   deriveIntake,
   formatIntakeStateBlock,
 } from "@/lib/intake";
@@ -99,7 +100,11 @@ import { applySpecOutputGate, inventedSpecFailures } from "@/lib/spec-discipline
 import { applyDiagnosticToneGuards } from "@/lib/diagnostic-tone";
 import { analyzeChatImage } from "@/lib/vision/kimi-client";
 import { dtcTextFromAnalysis } from "@/lib/vision/format-analysis";
-import { CHAT_VISION_MAX_IMAGES, isLowTrustAnalysis } from "@/lib/vision/types";
+import {
+  CHAT_VISION_MAX_IMAGES,
+  highConfidenceHousingAssist,
+  isLowTrustAnalysis,
+} from "@/lib/vision/types";
 import { logTokenUsage } from "@/lib/log-token-usage";
 import {
   bindChatVehicleIdentity,
@@ -336,6 +341,13 @@ export async function POST(request: NextRequest) {
     }
 
     const visionDtcBlob = dtcTextFromAnalysis(visionPrep?.analysis ?? null);
+    const lightingPhotoTurn =
+      /\b(headlight|headlamp|low\s*beam|high\s*beam|dust\s*cap|sealed\s+led|housing)\b/i.test(
+        content || "",
+      ) || visionPrep?.analysis?.scene === "headlight_housing";
+    const visionHousing = lightingPhotoTurn
+      ? highConfidenceHousingAssist(visionPrep?.analysis ?? null)
+      : null;
     const textForFacts = [content, visionDtcBlob].filter(Boolean).join("\n");
 
     // ── RAG retrieval (plan depth → match limit) ─────────
@@ -470,7 +482,7 @@ export async function POST(request: NextRequest) {
       factAnchors = await gatherVehicleFactAnchors(
         currentVehicle,
         textForFacts,
-        { transcriptBlob },
+        { transcriptBlob, visionHousing },
       );
       if (isVehicleDataDebug()) {
         console.log("[vehicle-data] chat.anchors", {
@@ -522,6 +534,7 @@ export async function POST(request: NextRequest) {
     const intake = deriveIntake({
       currentUserMessage: userPlainForLang,
       recentUserTexts,
+      visionHousing,
     });
     const w8Blocks = [
       formatIntakeStateBlock(intake),
@@ -771,21 +784,37 @@ export async function POST(request: NextRequest) {
 
     const gatedContent = ensureDisclaimer(
       applyObdHonestyGuards(
-        applyW9OutputGuards(
-          applyDiagnosticToneGuards(
-            applySpecOutputGate(
-              applyAffiliatePartsToReply(reply, prioritized, currentVehicle),
-              specCtx,
+        applyW10OutputGuards(
+          applyW9OutputGuards(
+            applyDiagnosticToneGuards(
+              applySpecOutputGate(
+                applyAffiliatePartsToReply(reply, prioritized, currentVehicle),
+                specCtx,
+              ),
             ),
+            {
+              userText: userPlainForLang,
+              lightingStructureUnknown:
+                intake.lightingIntent &&
+                intake.slots.lighting_structure === "unknown",
+              overheatIntent: intake.overheatIntent,
+              steamReported: intake.slots.steam === "yes",
+              batteryIntent: intake.batteryIntent,
+            },
           ),
           {
             userText: userPlainForLang,
+            brakeIntent: intake.brakeIntent,
+            brakeStopDrive: intake.brakeStopDrive,
             lightingStructureUnknown:
               intake.lightingIntent &&
               intake.slots.lighting_structure === "unknown",
-            overheatIntent: intake.overheatIntent,
-            steamReported: intake.slots.steam === "yes",
-            batteryIntent: intake.batteryIntent,
+            housingPhotoLowTrust: Boolean(
+              visionPrep?.analysis &&
+                (isLowTrustAnalysis(visionPrep.analysis) ||
+                  visionPrep.analysis.housing_confidence === "low" ||
+                  visionPrep.analysis.housing_guess === "unclear"),
+            ),
           },
         ),
         hasLiveObdAdapter(obdPreference),

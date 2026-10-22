@@ -64,6 +64,20 @@ export function formatIntakeStateBlock(result: IntakeDeriveResult): string {
       "recent_cooling_work",
       s.recent_cooling_work !== "unknown" ? s.recent_cooling_work : null,
     ),
+    slotLine("pedal_feel", s.pedal_feel !== "unknown" ? s.pedal_feel : null),
+    slotLine(
+      "brake_warning_light",
+      s.brake_warning_light !== "unknown" ? s.brake_warning_light : null,
+    ),
+    slotLine(
+      "brake_level_checked",
+      s.brake_level_checked !== "unknown" ? s.brake_level_checked : null,
+    ),
+    slotLine(
+      "brake_after_event",
+      s.brake_after_event !== "unknown" ? s.brake_after_event : null,
+    ),
+    slotLine("pulls_or_noise", s.pulls_or_noise),
   ].filter(Boolean);
 
   const missing =
@@ -72,16 +86,16 @@ export function formatIntakeStateBlock(result: IntakeDeriveResult): string {
       : "No critical intake gaps for this turn.";
 
   const askFirst = result.preferIntakeQuestions
-    ? "PRIORITY: Ask the missing high-value questions first (chips OK). Do not dump a long parts/cause list until slots above are filled or owner declines. Never say Replace battery now / Replace converter now."
+    ? "PRIORITY: Ask the missing high-value questions first (chips OK). Do not dump a long parts/cause list until slots above are filled or owner declines. Never say Replace battery now / Replace converter now / Replace master cylinder now."
     : "Intake sufficient to proceed with educational narrowing — still no root-cause assertions.";
 
   const lightingGate =
     result.lightingIntent && s.lighting_structure === "unknown"
-      ? "LIGHTING GATE: structure unknown — do NOT output bulb sizes (H11/9005/etc.), buy links as definitive fitment, or OEM part numbers. Confirm dust-cap vs sealed/integrated module first."
+      ? "LIGHTING GATE: structure unknown — do NOT output bulb sizes (H11/9005/etc.), buy links as definitive fitment, or OEM part numbers. Confirm dust-cap vs sealed/integrated module first. Low-confidence housing photos must NOT invent structure or bulb size — ask retake or dust-cap question."
       : result.lightingIntent && s.lighting_structure === "sealed_or_integrated_led"
-        ? "LIGHTING GATE: sealed/integrated confirmed — do NOT push halogen bulb sizes; assembly / shop-vs-DIY path only."
+        ? "LIGHTING GATE: sealed/integrated confirmed (owner or high-confidence photo assist) — do NOT push halogen bulb sizes; assembly / shop-vs-DIY path only. Still invite a short verbal confirm if only photo-assisted."
         : result.lightingIntent
-          ? "LIGHTING GATE: replaceable path allowed only with verify disclaimer; still not VIN-proven fitment."
+          ? "LIGHTING GATE: replaceable path allowed only with verify disclaimer; still not VIN-proven fitment. Never say the photo alone proves an H-number."
           : null;
 
   const batteryGate = result.batteryIntent
@@ -102,6 +116,18 @@ export function formatIntakeStateBlock(result: IntakeDeriveResult): string {
       ].join(" ")
     : null;
 
+  const brakeGate = result.brakeIntent
+    ? [
+        "BRAKE GATE: Soft/spongy/sinking pedal or brake warning light ON → do not drive if unsafe; arrange a tow / professional inspection (coordinate with DRIVE_SAFETY).",
+        "FORBIDDEN DIY: bleeding brakes, opening caliper lines/hoses, teaching “drain the brake fluid first,” ABS module deep work.",
+        "Education only: cold reservoir sight-glass level observation, recent pad/fluid work history, gather info for the shop.",
+        "Causes are possible only — never “It’s definitely the master cylinder” or Replace master cylinder now.",
+        result.brakeStopDrive
+          ? "STOP-DRIVE active this turn: lead with safety / tow; do not coach highway driving or limp-to-shop."
+          : "If pedal feel or warning light still unknown, ask ≤2 intake questions first.",
+      ].join(" ")
+    : null;
+
   return [
     "[INTAKE_STATE]",
     "Ephemeral session slots (no VIN). Use to ask like a tech — then narrow. Never invent missing facts.",
@@ -111,6 +137,7 @@ export function formatIntakeStateBlock(result: IntakeDeriveResult): string {
     lightingGate,
     batteryGate,
     overheatGate,
+    brakeGate,
   ]
     .filter(Boolean)
     .join("\n");
@@ -129,6 +156,10 @@ export function summarizeIntakeForShopNote(slots: IntakeSlots): string {
       ? `battery=${slots.battery_symptom}`
       : null,
     slots.steam === "yes" ? "steam=yes" : null,
+    slots.pedal_feel !== "unknown" ? `pedal=${slots.pedal_feel}` : null,
+    slots.brake_warning_light !== "unknown"
+      ? `brake_light=${slots.brake_warning_light}`
+      : null,
     slots.dtc_list.length ? `dtc=${slots.dtc_list.join(",")}` : null,
     slots.already_tried ? "owner_tried=yes" : null,
   ].filter(Boolean);
