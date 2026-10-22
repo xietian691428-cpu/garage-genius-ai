@@ -266,7 +266,8 @@ async function fetchOnce(
     attempt: number;
   },
 ): Promise<DeepSeekResult> {
-  if (!DEEPSEEK_API_KEY) {
+  const apiKey = (process.env.DEEPSEEK_API_KEY || DEEPSEEK_API_KEY || "").trim();
+  if (!apiKey) {
     throw new DeepSeekRequestError("DEEPSEEK_API_KEY is not configured", {
       code: "config",
       retryable: false,
@@ -283,7 +284,7 @@ async function fetchOnce(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+          Authorization: `Bearer ${apiKey}`,
         },
         signal: controller.signal,
         body: JSON.stringify({
@@ -465,12 +466,16 @@ export async function callDeepSeekJson(
 
 /**
  * Vision + JSON (dashboard / OBD screenshot).
- * Tries Vision models + json_object; falls back to text JSON.
+ * Tries Vision models + json_object; optionally falls back to text JSON
+ * (OBD/receipt). Chat photo perception should pass allowTextFallback: false
+ * so a blind text model cannot invent OCR / housing guesses.
  */
 export async function callDeepSeekVisionJson(
   messages: DeepSeekMessage[],
   maxTokens = 1200,
+  options?: { allowTextFallback?: boolean },
 ): Promise<DeepSeekResult> {
+  const allowTextFallback = options?.allowTextFallback !== false;
   const hasImage = messageHasImage(messages);
 
   if (!hasImage) {
@@ -481,6 +486,7 @@ export async function callDeepSeekVisionJson(
     });
   }
 
+  let lastError: unknown;
   for (const model of VISION_MODELS) {
     try {
       return await requestDeepSeek(messages, model, {
@@ -489,8 +495,19 @@ export async function callDeepSeekVisionJson(
         timeoutMs: DEEPSEEK_VISION_TIMEOUT_MS,
       });
     } catch (error) {
+      lastError = error;
       console.warn(`[deepseek] Vision JSON model "${model}" failed:`, error);
     }
+  }
+
+  if (!allowTextFallback) {
+    throw (
+      lastError ??
+      new DeepSeekRequestError("All DeepSeek vision models failed", {
+        code: "vision_unavailable",
+        status: 503,
+      })
+    );
   }
 
   console.warn("[deepseek] Vision JSON fallback to text-only");
@@ -499,4 +516,12 @@ export async function callDeepSeekVisionJson(
     maxTokens,
     timeoutMs: DEEPSEEK_VISION_TIMEOUT_MS,
   });
+}
+
+/** True when DEEPSEEK_API_KEY is present (chat photo VL fallback). */
+export function isDeepSeekConfigured(): boolean {
+  // Read env at call time so tests can stub DEEPSEEK_API_KEY.
+  return Boolean(
+    (process.env.DEEPSEEK_API_KEY || DEEPSEEK_API_KEY || "").trim(),
+  );
 }

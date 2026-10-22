@@ -326,8 +326,12 @@ export async function POST(request: NextRequest) {
         await logTokenUsage({
           userId: user.id,
           route: "vision",
-          provider: "kimi",
-          model: visionPrep.model || "kimi-k3",
+          provider: visionPrep.provider === "deepseek" ? "deepseek" : "kimi",
+          model:
+            visionPrep.model ||
+            (visionPrep.provider === "deepseek"
+              ? "deepseek-vision"
+              : "kimi-k3"),
           promptTokens: visionPrep.usage?.prompt_tokens,
           completionTokens: visionPrep.usage?.completion_tokens,
           totalTokens: Math.max(
@@ -335,7 +339,20 @@ export async function POST(request: NextRequest) {
             visionPrep.usage?.total_tokens || 1,
           ),
           feature: "Chat photo",
-          metadata: { kind: "chat_photo", requestId: visionPrep.requestId },
+          metadata: {
+            kind: "chat_photo",
+            requestId: visionPrep.requestId,
+            perceptionProvider: visionPrep.provider,
+            fallbackFrom: visionPrep.fallbackFrom,
+          },
+        });
+      } else if (uniqueImages.length > 0) {
+        console.warn("[/api/chat] chat photo perception unavailable", {
+          requestId: visionPrep.requestId,
+          failed: visionPrep.failed,
+          disabled: visionPrep.disabled,
+          fallbackFrom: visionPrep.fallbackFrom,
+          elapsedMs: visionPrep.elapsedMs,
         });
       }
     }
@@ -588,6 +605,7 @@ export async function POST(request: NextRequest) {
     } = await callChatWithOptionalVision(fullMessages, {
       analysis: visionPrep?.analysis ?? null,
       analysisModel: visionPrep?.model,
+      analysisProvider: visionPrep?.provider ?? undefined,
       perceptionFailed: Boolean(visionPrep?.failed),
       perceptionDisabled: Boolean(visionPrep?.disabled),
     });
@@ -775,6 +793,10 @@ export async function POST(request: NextRequest) {
           hasImages: uniqueImages.length > 0,
           imageCondition: imageAnalysisSummary?.condition ?? null,
           imageConfidence: imageAnalysisSummary?.confidence ?? null,
+          perceptionProvider: visionPrep?.provider ?? null,
+          perceptionFallbackFrom: visionPrep?.fallbackFrom ?? null,
+          perceptionFailed: Boolean(visionPrep?.failed),
+          perceptionDisabled: Boolean(visionPrep?.disabled),
           ...specGapMetadata(classifySpecGapIntents(userPlainForLang)),
           ...safetyEventsMetadata(safetyEvents),
         },

@@ -1,6 +1,6 @@
 /**
- * Chat photo perception (Kimi) — structured JSON only.
- * DeepSeek coaches from this; Kimi must not emit a repair plan.
+ * Chat photo perception (Kimi → DeepSeek VL) — structured JSON only.
+ * DeepSeek text coaches from this; vision models must not emit a repair plan.
  */
 
 export const CHAT_VISION_MAX_IMAGES = 1;
@@ -84,6 +84,8 @@ export type ImageAnalysisClientSummary = {
   vehicleRaised: boolean;
   housing_guess?: HousingGuess;
   housing_confidence?: HousingConfidence;
+  /** Which VL produced the structured analysis (Kimi first, DeepSeek fallback). */
+  provider?: "kimi" | "deepseek";
 };
 
 export function isLowTrustAnalysis(a: ImageAnalysis): boolean {

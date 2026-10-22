@@ -228,23 +228,53 @@ describe("IMAGE_ANALYSIS prompt blocks", () => {
   });
 });
 
-describe("analyzeChatImage (mocked Kimi)", () => {
+describe("analyzeChatImage (mocked Kimi + DeepSeek VL fallback)", () => {
   const tiny = "data:image/jpeg;base64,QQ==";
 
-  it("does not call fetch when vision is disabled", async () => {
+  it("marks disabled when neither Kimi nor DeepSeek is configured", async () => {
     vi.stubEnv("KIMI_API_KEY", "");
     vi.stubEnv("MOONSHOT_API_KEY", "");
+    vi.stubEnv("DEEPSEEK_API_KEY", "");
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     const result = await analyzeChatImage(tiny, "what is this?");
     expect(result.disabled).toBe(true);
+    expect(result.failed).toBe(false);
     expect(result.analysis).toBeNull();
+    expect(result.provider).toBeNull();
+    expect(result.fallbackFrom).toBe("kimi_disabled");
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("falls back to DeepSeek VL when Kimi is disabled", async () => {
+    vi.stubEnv("KIMI_API_KEY", "");
+    vi.stubEnv("MOONSHOT_API_KEY", "");
+    vi.stubEnv("DEEPSEEK_API_KEY", "sk-ds");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            model: "deepseek-v4-flash-vision-exp",
+            choices: [{ message: { content: JSON.stringify(CLEAR_JSON) } }],
+            usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+    const result = await analyzeChatImage(tiny, "what is this?");
+    expect(result.failed).toBe(false);
+    expect(result.disabled).toBe(false);
+    expect(result.provider).toBe("deepseek");
+    expect(result.fallbackFrom).toBe("kimi_disabled");
+    expect(result.analysis?.dtc_codes).toEqual(["P0420"]);
   });
 
   it("parses a successful JSON completion", async () => {
     vi.stubEnv("KIMI_API_KEY", "sk-test");
     vi.stubEnv("KIMI_VISION_ENABLED", "true");
+    vi.stubEnv("DEEPSEEK_API_KEY", "sk-ds");
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
@@ -259,6 +289,8 @@ describe("analyzeChatImage (mocked Kimi)", () => {
     );
     const result = await analyzeChatImage(tiny, "OBD screen");
     expect(result.failed).toBe(false);
+    expect(result.provider).toBe("kimi");
+    expect(result.fallbackFrom).toBeNull();
     expect(result.analysis?.dtc_codes).toEqual(["P0420"]);
     expect(result.requestId).toBeTruthy();
   });
@@ -266,6 +298,7 @@ describe("analyzeChatImage (mocked Kimi)", () => {
   it("does not keep fake P-codes from a low-confidence Kimi mock", async () => {
     vi.stubEnv("KIMI_API_KEY", "sk-test");
     vi.stubEnv("KIMI_VISION_ENABLED", "true");
+    vi.stubEnv("DEEPSEEK_API_KEY", "");
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
@@ -296,6 +329,7 @@ describe("analyzeChatImage (mocked Kimi)", () => {
     );
     const result = await analyzeChatImage(tiny, "what code is this?");
     expect(result.failed).toBe(false);
+    expect(result.provider).toBe("kimi");
     expect(result.analysis?.dtc_codes).toEqual([]);
     expect(result.analysis?.readings).toEqual([]);
     expect(result.analysis?.notes).not.toMatch(/P0420/);
@@ -304,8 +338,37 @@ describe("analyzeChatImage (mocked Kimi)", () => {
     expect(injected).toMatch(/retake/i);
   });
 
-  it("fail-opens on timeout / abort", async () => {
+  it("falls back to DeepSeek when Kimi times out", async () => {
     vi.stubEnv("KIMI_API_KEY", "sk-test");
+    vi.stubEnv("KIMI_VISION_ENABLED", "true");
+    vi.stubEnv("DEEPSEEK_API_KEY", "sk-ds");
+    let calls = 0;
+    vi.stubGlobal("fetch", async () => {
+      calls += 1;
+      if (calls === 1) {
+        const err = new Error("aborted");
+        err.name = "AbortError";
+        throw err;
+      }
+      return new Response(
+        JSON.stringify({
+          model: "deepseek-v4-flash-vision-exp",
+          choices: [{ message: { content: JSON.stringify(CLEAR_JSON) } }],
+          usage: { prompt_tokens: 5, completion_tokens: 10, total_tokens: 15 },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    });
+    const result = await analyzeChatImage(tiny, "blurry photo");
+    expect(result.failed).toBe(false);
+    expect(result.provider).toBe("deepseek");
+    expect(result.fallbackFrom).toBe("kimi_fail");
+    expect(result.analysis?.dtc_codes).toEqual(["P0420"]);
+  });
+
+  it("fail-opens when both Kimi and DeepSeek VL fail", async () => {
+    vi.stubEnv("KIMI_API_KEY", "sk-test");
+    vi.stubEnv("DEEPSEEK_API_KEY", "sk-ds");
     vi.stubGlobal("fetch", () => {
       const err = new Error("aborted");
       err.name = "AbortError";
@@ -313,7 +376,10 @@ describe("analyzeChatImage (mocked Kimi)", () => {
     });
     const result = await analyzeChatImage(tiny, "blurry photo");
     expect(result.failed).toBe(true);
+    expect(result.disabled).toBe(false);
     expect(result.analysis).toBeNull();
+    expect(result.provider).toBeNull();
+    expect(result.fallbackFrom).toBe("kimi_fail");
   });
 });
 

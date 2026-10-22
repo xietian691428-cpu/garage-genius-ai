@@ -77,6 +77,10 @@ describe("vision pipeline wiring", () => {
     expect(chat).toContain("callChatWithOptionalVision");
     expect(chat).toContain("analyzeChatImage");
     expect(chat).toContain("assertAiSpendGate");
+    // Chat must not call DeepSeek VL directly — cascade lives in analyzeChatImage.
     expect(chat).not.toContain("callDeepSeekVisionJson");
+    const kimiClient = readFileSync("lib/vision/kimi-client.ts", "utf8");
+    expect(kimiClient).toContain("callDeepSeekVisionJson");
+    expect(kimiClient).toContain("allowTextFallback: false");
   });
 });

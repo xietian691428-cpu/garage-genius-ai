@@ -1,6 +1,7 @@
 /**
- * Vision orchestration: Kimi reads photos as JSON; DeepSeek coaches from text.
- * Chat never sends Kimi's output as the user-facing reply.
+ * Vision orchestration: Kimi (then DeepSeek VL) reads photos as JSON;
+ * DeepSeek text coaches from the analysis block. Chat never sends raw
+ * vision-model prose as the user-facing reply.
  */
 
 import {
@@ -83,15 +84,18 @@ function stripImageParts(messages: DeepSeekMessage[]): DeepSeekMessage[] {
 }
 
 /**
- * Chat with photos: Kimi structured perception → DeepSeek text coach.
- * On Kimi failure: DeepSeek still answers from text (no 500, no DeepSeek VL).
+ * Chat with photos: structured perception (Kimi → DeepSeek VL) → DeepSeek text coach.
+ * Perception is usually precomputed in /api/chat via analyzeChatImage.
+ * If perception is still missing, analyzes here (same Kimi→DeepSeek cascade).
+ * If perception ultimately fails: DeepSeek coaches from text only (no 500).
  */
 export async function callChatWithOptionalVision(
   messages: DeepSeekMessage[],
   options?: {
-    /** Precomputed chat perception (preferred — one Kimi call in the route). */
+    /** Precomputed chat perception (preferred — one call in the route). */
     analysis?: ImageAnalysis | null;
     analysisModel?: string;
+    analysisProvider?: "kimi" | "deepseek";
     perceptionFailed?: boolean;
     perceptionDisabled?: boolean;
   },
@@ -113,25 +117,25 @@ export async function callChatWithOptionalVision(
 
   let analysis = options?.analysis ?? null;
   let modelName = options?.analysisModel || "kimi-k3";
+  let perceptionProvider: "kimi" | "deepseek" | null =
+    options?.analysisProvider ?? (analysis ? "kimi" : null);
   let failed = Boolean(options?.perceptionFailed);
   let disabled = Boolean(options?.perceptionDisabled);
 
-  if (hasImage && analysis == null && !failed && !disabled && isKimiVisionEnabled()) {
+  if (hasImage && analysis == null && !failed && !disabled) {
     try {
       const vision = await analyzeChatImage(
-        // analyzeChatImage expects a data URL; extract first image from messages
         firstImageUrl(messages) || "",
         latestUserText(messages),
       );
       analysis = vision.analysis;
       modelName = vision.model || modelName;
+      perceptionProvider = vision.provider;
       failed = vision.failed;
       disabled = vision.disabled;
     } catch {
       failed = true;
     }
-  } else if (hasImage && !isKimiVisionEnabled()) {
-    disabled = true;
   }
 
   const block =
@@ -149,7 +153,9 @@ export async function callChatWithOptionalVision(
   }
 
   const coach = await callDeepSeek(coachMessages);
-  const summary = analysis ? toClientImageSummary(analysis) : null;
+  const summary = analysis
+    ? toClientImageSummary(analysis, perceptionProvider)
+    : null;
 
   return {
     content: coach.content,
@@ -158,7 +164,9 @@ export async function callChatWithOptionalVision(
       ? `${modelName}+deepseek-chat`
       : "deepseek-chat",
     visionProvider: analysis
-      ? "kimi"
+      ? perceptionProvider === "deepseek"
+        ? "deepseek"
+        : "kimi"
       : disabled
         ? "unavailable"
         : "deepseek_text_fallback",
