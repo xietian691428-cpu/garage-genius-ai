@@ -7,10 +7,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Storyboard loads CAPBridgeViewController. Keep this method free of
-        // plugin / StoreKit / Bluetooth work — early native calls here have
-        // caused App Review "crash on launch" reports on iPad.
+        // SceneDelegate owns the window / CAPBridgeViewController under UIScene.
+        // Keep this method free of plugin / StoreKit / Bluetooth work.
         return true
+    }
+
+    func application(_ application: UIApplication,
+                     configurationForConnecting connectingSceneSession: UISceneSession,
+                     options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        let config = UISceneConfiguration(name: "Default Configuration",
+                                          sessionRole: connectingSceneSession.role)
+        config.delegateClass = SceneDelegate.self
+        return config
+    }
+
+    func application(_ application: UIApplication, didDiscardSceneSessions sceneSessions: Set<UISceneSession>) {
     }
 
     func applicationWillResignActive(_ application: UIApplication) {

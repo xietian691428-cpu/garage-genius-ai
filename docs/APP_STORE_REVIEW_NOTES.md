@@ -1,13 +1,13 @@
-# App Store Review Notes — Garage Genius AI (v1.0.4 (15))
+# App Store Review Notes — Garage Genius AI (v1.0.4 (16))
 
 Use this file for **App Store Connect → App Review Information → Notes** and the resubmit checklist.
 
 Do **not** paste passwords into git. Rotate any password that already appeared in a previous Review Notes field or screenshot.
 
-**This submission:** Version **1.0.4**, Build **15**. Archive this binary (do not resubmit older builds).  
+**This submission:** Version **1.0.4**, Build **16**. Archive this binary (do not resubmit older builds).  
 **Also in this binary:** optional native BLE OBD (ELM327-compatible adapters) via `@capacitor-community/bluetooth-le`; Privacy Manifest; In-App Purchase capability enabled; `arm64` device requirement.
 
-**Guideline 2.1(a) resubmit (build 14 → 15):** Cold-launch crash reported on iPad Air (M3) / iPadOS. Build 15 disables Capacitor SplashScreen immersive/fullscreen overlays (same class of handoff risk as the Android splash fix), sets `UIRequiresFullScreen`, and keeps launch work out of `AppDelegate`.
+**Guideline 2.1(a) resubmit (build 15 → 16):** App Review crash logs (iPhone 17 Pro Max + iPad Air M3 / iOS·iPadOS 27) show `EXC_BREAKPOINT` in `UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`. Build 16 adopts UIScene (`SceneDelegate` + `UIApplicationSceneManifest`) via Capacitor 8.5, which is required for binaries built with Xcode 27 / iOS 27 SDK.
 
 ### Before Submit for Review
 
@@ -15,9 +15,9 @@ Do **not** paste passwords into git. Rotate any password that already appeared i
 2. App Store Connect **App Description** (or EULA field) must include:  
    `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
 3. Privacy Policy field: `https://garagegenius.cloud/privacy`
-4. **Attach all four IAP products to 1.0.4 (15)** with App Review screenshots, then submit IAPs **with** the new binary (Guideline 2.1(b)).
-5. Deploy web to `garagegenius.cloud`, then `npx cap sync ios` → Xcode Archive **1.0.4 (15)** → Upload. Confirm **In-App Purchase** is on the App ID / provisioning profile.
-6. **Required smoke before upload:** physical iPhone **and iPad** — cold launch stays open ≥10s (no immediate quit); Sign in with Apple lands in `/app` and **stays** signed in.
+4. **Attach all four IAP products to 1.0.4 (16)** with App Review screenshots, then submit IAPs **with** the new binary (Guideline 2.1(b)).
+5. Deploy web to `garagegenius.cloud`, then `npx cap sync ios` → Xcode Archive **1.0.4 (16)** → Upload. Confirm **In-App Purchase** is on the App ID / provisioning profile.
+6. **Required smoke before upload:** physical iPhone **and iPad** on **iOS/iPadOS 27 if available** — cold launch stays open ≥10s (no immediate quit); Sign in with Apple lands in `/app` and **stays** signed in.
 7. Demo account in ASC must be **Free** with DeepSeek consent unset. Never the 163 QA account.
 8. Bluetooth: Connect OBD may request Bluetooth permission; reviewers are not required to have an adapter.
 

@@ -44,15 +44,30 @@ describe("store launch crash guards", () => {
     expect(plist).toMatch(/NSBluetoothAlwaysUsageDescription/);
     expect(plist).toMatch(/UIRequiresFullScreen/);
     expect(plist).toMatch(/UIApplicationSupportsIndirectInputEvents/);
+    // iOS 27 / Xcode 27: missing UIScene crashes at launch
+    // (UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption).
+    expect(plist).toMatch(/UIApplicationSceneManifest/);
+    expect(plist).toMatch(/UISceneDelegateClassName/);
+    expect(plist).toMatch(/SceneDelegate/);
 
     const privacy = readFileSync("ios/App/App/PrivacyInfo.xcprivacy", "utf8");
     expect(privacy).toMatch(/NSPrivacyAccessedAPITypes/);
 
     const pbx = readFileSync("ios/App/App.xcodeproj/project.pbxproj", "utf8");
     expect(pbx).toMatch(/MARKETING_VERSION = 1\.0\.4;/);
-    expect(pbx).toMatch(/CURRENT_PROJECT_VERSION = 15;/);
+    expect(pbx).toMatch(/CURRENT_PROJECT_VERSION = 16;/);
+    expect(pbx).toMatch(/SceneDelegate\.swift in Sources/);
     expect(pbx).toMatch(/com\.apple\.InAppPurchase/);
     expect(pbx).toMatch(/PrivacyInfo\.xcprivacy in Resources/);
+
+    const scene = readFileSync("ios/App/App/SceneDelegate.swift", "utf8");
+    expect(scene).toMatch(/UIWindowSceneDelegate/);
+    expect(scene).toMatch(/CAPBridgeViewController/);
+    expect(scene).toMatch(/SceneDelegateProxy/);
+
+    const appDelegate = readFileSync("ios/App/App/AppDelegate.swift", "utf8");
+    expect(appDelegate).toMatch(/configurationForConnecting/);
+    expect(appDelegate).toMatch(/SceneDelegate\.self/);
   });
 
   it("iOS SplashScreen avoids immersive/fullscreen overlays that crash on launch", () => {
