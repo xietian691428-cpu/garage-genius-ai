@@ -5,7 +5,9 @@ Use this file for **App Store Connect → App Review Information → Notes** and
 Do **not** paste passwords into git. Rotate any password that already appeared in a previous Review Notes field or screenshot.
 
 **This submission:** Version **1.0.4**, Build **16**. Archive this binary (do not resubmit older builds).  
-**Also in this binary:** optional native BLE OBD (ELM327-compatible adapters) via `@capacitor-community/bluetooth-le`; Privacy Manifest; In-App Purchase capability enabled; `arm64` device requirement.
+**Also in this binary:** optional native BLE OBD (ELM327-compatible adapters) via `@capacitor-community/bluetooth-le`; Privacy Manifest; In-App Purchase capability enabled; `arm64` device requirement; **Mac (Designed for iPad)** enabled so Apple silicon Macs can install from the Mac App Store (not a separate Mac Catalyst binary).
+
+**Mac App Store (Apple silicon):** In App Store Connect → Pricing and Availability → **iPhone and iPad Apps on Apple Silicon Mac** → keep **Make this app available** checked, then optionally **Verify Compatibility**. Smoke on a Mac: cold launch, Sign in with Apple, chat/photo; OBD BLE may be limited on Mac — that is OK (optional).
 
 **Guideline 2.1(a) resubmit (build 15 → 16):** App Review crash logs (iPhone 17 Pro Max + iPad Air M3 / iOS·iPadOS 27) show `EXC_BREAKPOINT` in `UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`. Build 16 adopts UIScene (`SceneDelegate` + `UIApplicationSceneManifest`) via Capacitor 8.5, which is required for binaries built with Xcode 27 / iOS 27 SDK.
 
@@ -34,7 +36,7 @@ In-App Purchase product IDs (attach all four to this version):
 • com.garagegenius.ai.heavy.monthly
 • com.garagegenius.ai.heavy.yearly
 
-How to review (iPhone or iPad):
+How to review (iPhone, iPad, or Apple silicon Mac “Designed for iPad”):
 1. Tap Sign in with Apple (system sheet — not Safari). After success you should land on Home and stay signed in. Email/password also works.
 2. After login, an AI processing consent dialog names DeepSeek (chat and photos; Kimi may be a backup). Tap Agree to continue, or Not now to skip AI features.
 3. Open Account → View plans & subscribe (or open Subscribe with Apple). Localized App Store prices load from StoreKit. Tap Subscribe to Pro or Heavy to present the system purchase sheet.

@@ -57,6 +57,9 @@ describe("store launch crash guards", () => {
     expect(pbx).toMatch(/MARKETING_VERSION = 1\.0\.4;/);
     expect(pbx).toMatch(/CURRENT_PROJECT_VERSION = 16;/);
     expect(pbx).toMatch(/SceneDelegate\.swift in Sources/);
+    expect(pbx).toMatch(/SUPPORTS_MAC_DESIGNED_FOR_IPAD = YES/);
+    expect(pbx).toMatch(/SUPPORTS_MACCATALYST = NO/);
+    expect(pbx).toMatch(/TARGETED_DEVICE_FAMILY = "1,2"/);
     expect(pbx).toMatch(/com\.apple\.InAppPurchase/);
     expect(pbx).toMatch(/PrivacyInfo\.xcprivacy in Resources/);
 
