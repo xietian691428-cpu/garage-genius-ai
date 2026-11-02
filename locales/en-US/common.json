@@ -149,7 +149,15 @@
     "budgetExceeded": "This month's AI allowance is used up. Upgrade for a larger budget.",
     "visionQuotaExceeded": "Monthly photo analysis limit reached. Upgrade for a higher photo quota.",
     "limitedMode": "Limited — quota exceeded. This is not a full coaching reply.",
-    "vehicleThreadIsolated": "Chat is per vehicle — history from the previous car won’t be sent to the AI."
+    "vehicleThreadIsolated": "Chat is per vehicle — history from the previous car won’t be sent to the AI.",
+    "newTopic": "New topic",
+    "newTopicToast": "New topic — chat for this vehicle starts fresh",
+    "topics": "Topics",
+    "topicsTitle": "Topics for this vehicle",
+    "topicEmpty": "No topics yet — send a message or start a new topic.",
+    "topicHint": "Starting a different job? New topic keeps steps from mixing",
+    "topicHintDismiss": "Dismiss",
+    "topicActive": "Current"
   },
   "dtc": {
     "enterCode": "Enter fault code",

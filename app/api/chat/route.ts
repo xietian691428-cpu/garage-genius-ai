@@ -115,13 +115,22 @@ import { logTokenUsage } from "@/lib/log-token-usage";
 import {
   bindChatVehicleIdentity,
   bindConversationFocusToVehicle,
-  isolateMessagesForVehicleThreadReset,
   loadOwnedGarageVehicle,
   resolveVehicleThreadIsolation,
   vehicleSelectionMismatch,
   VEHICLE_NOT_OWNED_CODE,
   VEHICLE_SELECTION_MISMATCH_CODE,
 } from "@/lib/chat-vehicle-ownership";
+import {
+  capAuthoritativeHistory,
+  clientTranscriptLooksTampered,
+  extractCurrentUserMessage,
+  loadAuthoritativeThreadMessages,
+  persistAssistantMessage,
+  persistUserMessage,
+  resolveChatThread,
+  shouldForceNewChatThread,
+} from "@/lib/chat-history-authority";
 import { formatVehicleIdentityPrompt } from "@/lib/vehicle-data/ymm-conflict";
 import {
   formatExitUnderRepairPrompt,
@@ -166,6 +175,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       messages,
+      message: messageRaw,
+      threadId: threadIdRaw,
+      clientMessageId: clientMessageIdRaw,
       image,
       images,
       selectedVehicleId,
@@ -177,7 +189,14 @@ export async function POST(request: NextRequest) {
       vehicleChanged: vehicleChangedRaw,
       previousVehicleId: previousVehicleIdRaw,
     } = body as {
+      /** @deprecated Ignored for model history (debug compare only). */
       messages?: DeepSeekMessage[];
+      /** Current user turn only — required for server-authoritative history. */
+      message?: string;
+      /** Optional chat_threads id; must belong to user + this vehicle. */
+      threadId?: string | null;
+      /** Idempotent client id for the user turn. */
+      clientMessageId?: string | null;
       /** @deprecated prefer `images` */
       image?: string;
       images?: string[];
@@ -218,13 +237,6 @@ export async function POST(request: NextRequest) {
           error: "Select a garage vehicle before chatting.",
           code: VEHICLE_NOT_OWNED_CODE,
         },
-        { status: 400 },
-      );
-    }
-
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return Response.json(
-        { error: "Messages are required" },
         { status: 400 },
       );
     }
@@ -306,8 +318,29 @@ export async function POST(request: NextRequest) {
     }
     currentVehicle = bindChatVehicleIdentity(currentVehicle, owned);
 
-    // Dual-insurance: client flag / previousVehicleId / dirty foreign-YMM history.
-    // Runs before drift so weak follow-up cannot resurrect pre-switch turns.
+    // Current user turn only — client messages[] is never model history.
+    const content = extractCurrentUserMessage(messageRaw);
+    if (!content.trim()) {
+      return Response.json(
+        {
+          error: "message is required (server-authoritative history).",
+          code: "MESSAGE_REQUIRED",
+        },
+        { status: 400 },
+      );
+    }
+    if (
+      process.env.NODE_ENV !== "production" &&
+      clientTranscriptLooksTampered({ message: content, messages })
+    ) {
+      console.warn("[/api/chat] ignoring client messages[] transcript", {
+        vehicleId: currentVehicle.id,
+        clientTurns: Array.isArray(messages) ? messages.length : 0,
+      });
+    }
+
+    // Vehicle switch: clear focus; resume that car's default/latest thread
+    // (never close sibling topics — New topic keeps them for switch-back).
     const isolation = resolveVehicleThreadIsolation({
       vehicleThreadReset: vehicleThreadResetRaw,
       vehicleChanged: vehicleChangedRaw,
@@ -316,12 +349,107 @@ export async function POST(request: NextRequest) {
       messages,
       currentVehicle,
     });
-    const vehicleThreadReset = isolation.reset;
+    const vehicleSwitched =
+      isolation.reset ||
+      shouldForceNewChatThread({
+        vehicleThreadReset: vehicleThreadResetRaw === true,
+        vehicleChanged: vehicleChangedRaw === true,
+        previousVehicleId: previousVehicleIdRaw,
+        currentVehicleId: currentVehicle.id,
+      });
+    const vehicleThreadReset = vehicleSwitched;
     if (vehicleThreadReset) {
       console.info("[/api/chat] vehicle-thread isolation", {
-        reason: isolation.reason,
+        reason: isolation.reason ?? "vehicle_switch",
         vehicleId: currentVehicle.id,
       });
+    }
+
+    const visionImages = [
+      ...(Array.isArray(images) ? images : []),
+      ...(image ? [image] : []),
+    ].filter(Boolean);
+    const uniqueImages = [...new Set(visionImages)].slice(
+      0,
+      CHAT_VISION_MAX_IMAGES,
+    );
+
+    let chatThreadId: string | null = null;
+    let threadMessages: DeepSeekMessage[] = [];
+    try {
+      // On vehicle switch the client omits threadId → getOrCreate default for this car.
+      const resolved = await resolveChatThread({
+        client: userClient,
+        userId: user.id,
+        vehicleId: currentVehicle.id,
+        threadId: vehicleSwitched
+          ? null
+          : typeof threadIdRaw === "string"
+            ? threadIdRaw
+            : null,
+        forceNew: false,
+      });
+      chatThreadId = resolved.thread.id;
+
+      // 1) Persist this user turn first (idempotent via clientMessageId).
+      await persistUserMessage({
+        client: userClient,
+        userId: user.id,
+        vehicleId: currentVehicle.id,
+        threadId: resolved.thread.id,
+        content,
+        clientMessageId:
+          typeof clientMessageIdRaw === "string" ? clientMessageIdRaw : null,
+        image: uniqueImages[0] ?? null,
+      });
+
+      // 2) Assemble model history from DB only (includes the turn just written).
+      const fromDb = await loadAuthoritativeThreadMessages({
+        client: userClient,
+        userId: user.id,
+        threadId: resolved.thread.id,
+        vehicleId: currentVehicle.id,
+      });
+      threadMessages = capAuthoritativeHistory(fromDb);
+    } catch (err) {
+      const status =
+        err && typeof err === "object" && "status" in err
+          ? Number((err as { status?: number }).status)
+          : 0;
+      const code =
+        err && typeof err === "object" && "code" in err
+          ? String((err as { code?: string }).code || "")
+          : "";
+      if (status === 403 || code.startsWith("THREAD_")) {
+        return Response.json(
+          {
+            error:
+              err instanceof Error
+                ? err.message
+                : "Chat thread is invalid for this vehicle.",
+            code: code || "THREAD_FORBIDDEN",
+          },
+          { status: 403 },
+        );
+      }
+      console.warn("[/api/chat] authoritative history unavailable", {
+        message: err instanceof Error ? err.message : String(err),
+      });
+      return Response.json(
+        {
+          error:
+            "Chat history service is unavailable. Refresh and try again.",
+          code: "CHAT_HISTORY_UNAVAILABLE",
+        },
+        { status: 503 },
+      );
+    }
+
+    if (!threadMessages.length) {
+      return Response.json(
+        { error: "Messages are required", code: "MESSAGE_REQUIRED" },
+        { status: 400 },
+      );
     }
 
     const conversationFocus = bindConversationFocusToVehicle(
@@ -334,36 +462,6 @@ export async function POST(request: NextRequest) {
           }
         : conversationFocusRaw,
       currentVehicle.id,
-    );
-
-    // Hard isolation: only the latest user turn (system / anchors added later).
-    const threadMessages = isolateMessagesForVehicleThreadReset(
-      messages,
-      vehicleThreadReset,
-    );
-    if (!threadMessages.length) {
-      return Response.json(
-        { error: "Messages are required" },
-        { status: 400 },
-      );
-    }
-
-    const lastUserMessage = [...threadMessages]
-      .reverse()
-      .find((m) => m.role === "user");
-    const content =
-      typeof lastUserMessage?.content === "string"
-        ? lastUserMessage.content
-        : "";
-
-    const visionImages = [
-      ...(Array.isArray(images) ? images : []),
-      ...(image ? [image] : []),
-    ].filter(Boolean);
-    // de-dupe while preserving order
-    const uniqueImages = [...new Set(visionImages)].slice(
-      0,
-      CHAT_VISION_MAX_IMAGES,
     );
 
     await assertAiSpendGate(user.id, {
@@ -945,8 +1043,31 @@ export async function POST(request: NextRequest) {
     );
     const suggestedFocus = resolveFocusCommand(finalContent, ragHits);
 
+    if (chatThreadId) {
+      try {
+        await persistAssistantMessage({
+          client: userClient,
+          userId: user.id,
+          vehicleId: currentVehicle.id,
+          threadId: chatThreadId,
+          content: finalContent,
+          provider: pipelineModel ? "deepseek" : null,
+          model: pipelineModel || null,
+        });
+      } catch (persistErr) {
+        console.warn("[/api/chat] persist assistant failed", {
+          message:
+            persistErr instanceof Error
+              ? persistErr.message
+              : String(persistErr),
+          threadId: chatThreadId,
+        });
+      }
+    }
+
     return Response.json({
       content: finalContent,
+      threadId: chatThreadId,
       usage: {
         prompt_tokens: promptTokens,
         completion_tokens: completionTokens,

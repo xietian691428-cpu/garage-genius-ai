@@ -37,10 +37,7 @@ import type { RagKnowledgeHit } from "@/lib/types/rag";
 import { maintenanceService } from "@/lib/maintenance-records";
 import { useTranslation } from "react-i18next";
 import { hideStorePurchaseUi } from "@/lib/native-platform";
-import {
-  formatMaintenanceHistoryForPrompt,
-  trimMessagesForApi,
-} from "@/lib/chat-repair-loop";
+import { formatMaintenanceHistoryForPrompt } from "@/lib/chat-repair-loop";
 import {
   detectIntentDrift,
   logChatDrift,
@@ -49,6 +46,7 @@ import {
   type TurnFocus,
 } from "@/lib/chat-intent-drift";
 import {
+  clearChatFocus,
   driftHistoryOptions,
   loadChatFocus,
   nextChatFocusStore,
@@ -103,7 +101,19 @@ import AddVehicleModal from "@/components/vehicles/AddVehicleModal";
 import UpgradeModal, {
   type UpgradeReason,
 } from "@/components/ui/UpgradeModal";
-import { FileText } from "lucide-react";
+import { FileText, MessageSquarePlus, ListTree, X } from "lucide-react";
+import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
+import {
+  createVehicleThread,
+  fetchThreadMessages,
+  fetchVehicleThreads,
+  type ChatThreadSummary,
+} from "@/lib/chat-threads-client";
+import {
+  isContextSwitchAbort,
+  shouldCommitChatResponse,
+  type ChatRequestAbortReason,
+} from "@/lib/chat-request-commit";
 import { useAiConsentGate } from "@/components/legal/AiConsentProvider";
 import {
   getUsHighFreqDtcChips,
@@ -204,6 +214,13 @@ export default function ChatApp({
   const [postSaveNudge, setPostSaveNudge] = useState(false);
   /** Soft toast after garage vehicle switch — history is per vehicle_id. */
   const [vehicleIsolatedToast, setVehicleIsolatedToast] = useState(false);
+  /** Soft toast after New topic on the same vehicle. */
+  const [newTopicToast, setNewTopicToast] = useState(false);
+  const [threadSheetOpen, setThreadSheetOpen] = useState(false);
+  const [threadList, setThreadList] = useState<ChatThreadSummary[]>([]);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [topicHintDismissed, setTopicHintDismissed] = useState(false);
+  useBodyScrollLock(threadSheetOpen);
   const [postSaveDtcOpen, setPostSaveDtcOpen] = useState(false);
   const [addVehicleSeed, setAddVehicleSeed] = useState<{
     make?: string;
@@ -222,11 +239,17 @@ export default function ChatApp({
   const playbookSlugRef = useRef<string | null>(playbookSlug ?? null);
   const abortRef = useRef<AbortController | null>(null);
   const stoppedByUserRef = useRef(false);
-  type ChatAbortReason = "none" | "user" | "timeout" | "vehicle_switch";
-  const abortReasonRef = useRef<ChatAbortReason>("none");
-  const readAbortReason = (): ChatAbortReason => abortReasonRef.current;
+  const abortReasonRef = useRef<ChatRequestAbortReason>("none");
+  const readAbortReason = (): ChatRequestAbortReason => abortReasonRef.current;
+  /**
+   * Bumped on 切车 / New topic / Topics switch so a late 200 from the old
+   * request cannot append into the new vehicle/thread UI.
+   */
+  const chatRequestEpochRef = useRef(0);
   const currentVehicleIdRef = useRef<string | null>(null);
+  const activeThreadIdRef = useRef<string | null>(null);
   const inFlightVehicleIdRef = useRef<string | null>(null);
+  const inFlightThreadIdRef = useRef<string | null>(null);
   /** After vehicle switch/add, send only once the new vehicle's history is loaded. */
   const pendingSendAfterLoadRef = useRef<{
     vehicleId: string;
@@ -240,6 +263,8 @@ export default function ChatApp({
   const pendingVehicleThreadResetRef = useRef(false);
   /** Last vehicle id that successfully opened a Chat API turn. */
   const lastApiVehicleIdRef = useRef<string | null>(null);
+  /** Server chat_threads id per vehicle — cleared on switch / force-new. */
+  const threadIdByVehicleRef = useRef<Record<string, string>>({});
   const messagesRef = useRef<ChatMessage[]>([]);
   const pendingPersistRef = useRef<{
     vehicleId: string;
@@ -282,10 +307,20 @@ export default function ChatApp({
   }, [currentVehicle?.id]);
 
   useEffect(() => {
+    activeThreadIdRef.current = activeThreadId;
+  }, [activeThreadId]);
+
+  useEffect(() => {
     if (!vehicleIsolatedToast) return;
     const timer = window.setTimeout(() => setVehicleIsolatedToast(false), 8_000);
     return () => window.clearTimeout(timer);
   }, [vehicleIsolatedToast]);
+
+  useEffect(() => {
+    if (!newTopicToast) return;
+    const timer = window.setTimeout(() => setNewTopicToast(false), 8_000);
+    return () => window.clearTimeout(timer);
+  }, [newTopicToast]);
 
   useEffect(() => {
     playbookSlugRef.current = playbookSlug ?? null;
@@ -310,11 +345,13 @@ export default function ChatApp({
     })();
   }, [vehiclesLoading, vehicles]);
 
-  // Load cloud chat when vehicle or plan window changes
+  // Load default/latest thread for this vehicle (server-authoritative).
   useEffect(() => {
     if (vehiclesLoading) return;
     if (!currentVehicle) {
       setMessages([createWelcomeMessage()]);
+      setActiveThreadId(null);
+      setThreadList([]);
       setReady(true);
       loadedKeyRef.current = null;
       return;
@@ -330,27 +367,60 @@ export default function ChatApp({
     void (async () => {
       setReady(false);
       skipNextPersistRef.current = true;
-      let cloud: ChatMessage[] | null = null;
-      let cloudFailed = false;
       try {
-        cloud = await chatCloudService.load(vehicleId, { isPro });
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) {
+          const resolved = resolveLoadedChat({
+            cloud: null,
+            local: loadChatMessages(vehicleId),
+            cloudFailed: true,
+            welcome: createWelcomeMessage(),
+          });
+          if (cancelled || loadGenRef.current !== gen) return;
+          setMessages(resolved.messages);
+          setActiveThreadId(null);
+          return;
+        }
+        const threads = await fetchVehicleThreads(token, vehicleId);
+        if (cancelled || loadGenRef.current !== gen) return;
+        setThreadList(threads);
+        const latest = threads[0];
+        if (latest) {
+          const packed = await fetchThreadMessages(token, latest.id);
+          if (cancelled || loadGenRef.current !== gen) return;
+          threadIdByVehicleRef.current[vehicleId] = packed.threadId;
+          setActiveThreadId(packed.threadId);
+          setMessages(
+            packed.messages.length
+              ? packed.messages
+              : [createWelcomeMessage()],
+          );
+          skipNextPersistRef.current = true;
+        } else {
+          delete threadIdByVehicleRef.current[vehicleId];
+          setActiveThreadId(null);
+          setMessages([createWelcomeMessage()]);
+        }
       } catch (err) {
-        cloudFailed = true;
-        console.warn("[ChatApp] cloud load failed, using local cache:", err);
-      }
-      if (cancelled || loadGenRef.current !== gen) return;
-      const resolved = resolveLoadedChat({
-        cloud,
-        local: loadChatMessages(vehicleId),
-        cloudFailed,
-        welcome: createWelcomeMessage(),
-      });
-      skipNextPersistRef.current = resolved.skipPersist;
-      setMessages(resolved.messages);
-      if (!cancelled && loadGenRef.current === gen) {
-        loadedKeyRef.current = loadKey;
-        setAutoSpeak(loadAutoSpeakPreference(true));
-        setReady(true);
+        console.warn("[ChatApp] thread load failed, using local cache:", err);
+        if (cancelled || loadGenRef.current !== gen) return;
+        const resolved = resolveLoadedChat({
+          cloud: null,
+          local: loadChatMessages(vehicleId),
+          cloudFailed: true,
+          welcome: createWelcomeMessage(),
+        });
+        setMessages(resolved.messages);
+        setActiveThreadId(threadIdByVehicleRef.current[vehicleId] ?? null);
+      } finally {
+        if (!cancelled && loadGenRef.current === gen) {
+          loadedKeyRef.current = loadKey;
+          setAutoSpeak(loadAutoSpeakPreference(true));
+          setReady(true);
+        }
       }
     })();
 
@@ -561,17 +631,25 @@ export default function ChatApp({
     }
   };
 
-  const abortInFlightForVehicleSwitch = () => {
-    abortReasonRef.current = "vehicle_switch";
+  /**
+   * Abort in-flight /api/chat when the target vehicle or thread changes.
+   * Hand-test: send a long prompt → immediately New topic or 切车 → old
+   * assistant must not appear on the new session (epoch + AbortController).
+   */
+  const abortInFlightForContextSwitch = () => {
+    chatRequestEpochRef.current += 1;
+    abortReasonRef.current = "context_switch";
     abortRef.current?.abort();
     abortRef.current = null;
     stoppedByUserRef.current = false;
+    inFlightVehicleIdRef.current = null;
+    inFlightThreadIdRef.current = null;
     setIsLoading(false);
     stopSpeaking();
   };
 
   const handleVehicleChange = async (vehicle: VehicleInfo) => {
-    abortInFlightForVehicleSwitch();
+    abortInFlightForContextSwitch();
     if (
       pendingSendAfterLoadRef.current &&
       pendingSendAfterLoadRef.current.vehicleId !== vehicle.id
@@ -588,16 +666,102 @@ export default function ChatApp({
     setMessages([createWelcomeMessage()]);
     setMaintenanceSummary("");
     pendingVehicleThreadResetRef.current = true;
+    delete threadIdByVehicleRef.current[vehicle.id];
+    setActiveThreadId(null);
+    setThreadList([]);
+    setTopicHintDismissed(false);
     setVehicleIsolatedToast(true);
-    saveChatFocus(vehicle.id, {
-      vehicleId: vehicle.id,
-      recent: [],
-      apiHistoryFromId: null,
-      abandonedFocus: null,
-    });
+    clearChatFocus(vehicle.id, null);
     await onVehicleChange(vehicle);
     saveCurrentVehicleId(vehicle.id);
     // load effect will run for new vehicle id
+  };
+
+  const handleNewTopic = async () => {
+    if (!currentVehicle) return;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      alert(t("ai.signInRequired"));
+      return;
+    }
+    try {
+      abortInFlightForContextSwitch();
+      const { threadId } = await createVehicleThread(
+        token,
+        currentVehicle.id,
+      );
+      threadIdByVehicleRef.current[currentVehicle.id] = threadId;
+      setActiveThreadId(threadId);
+      clearChatFocus(currentVehicle.id, threadId);
+      setMessages([createWelcomeMessage()]);
+      skipNextPersistRef.current = true;
+      setTopicHintDismissed(false);
+      setNewTopicToast(true);
+      setThreadSheetOpen(false);
+      // Refresh list in background
+      void fetchVehicleThreads(token, currentVehicle.id)
+        .then(setThreadList)
+        .catch(() => {});
+    } catch (err) {
+      console.error("[ChatApp] new topic failed:", err);
+      alert(
+        err instanceof Error ? err.message : t("ai.requestFailed"),
+      );
+    }
+  };
+
+  const handleSelectThread = async (threadId: string) => {
+    if (!currentVehicle) return;
+    if (threadId === activeThreadId) {
+      setThreadSheetOpen(false);
+      return;
+    }
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      alert(t("ai.signInRequired"));
+      return;
+    }
+    try {
+      abortInFlightForContextSwitch();
+      const packed = await fetchThreadMessages(token, threadId);
+      if (packed.vehicleId !== currentVehicle.id) {
+        throw new Error(t("ai.vehicleSelectionMismatch"));
+      }
+      threadIdByVehicleRef.current[currentVehicle.id] = packed.threadId;
+      setActiveThreadId(packed.threadId);
+      setMessages(
+        packed.messages.length ? packed.messages : [createWelcomeMessage()],
+      );
+      skipNextPersistRef.current = true;
+      setThreadSheetOpen(false);
+    } catch (err) {
+      console.error("[ChatApp] select topic failed:", err);
+      alert(
+        err instanceof Error ? err.message : t("ai.requestFailed"),
+      );
+    }
+  };
+
+  const openThreadSheet = async () => {
+    if (!currentVehicle) return;
+    setThreadSheetOpen(true);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
+    try {
+      const threads = await fetchVehicleThreads(token, currentVehicle.id);
+      setThreadList(threads);
+    } catch (err) {
+      console.warn("[ChatApp] list topics:", err);
+    }
   };
 
   const handleAddVehicle = async (newVehicle: VehicleInfo) => {
@@ -613,7 +777,7 @@ export default function ChatApp({
       return;
     }
 
-    abortInFlightForVehicleSwitch();
+    abortInFlightForContextSwitch();
     if (currentVehicle) {
       await persistNow(currentVehicle.id, messages);
     }
@@ -622,6 +786,7 @@ export default function ChatApp({
     setMessages([createWelcomeMessage()]);
     setMaintenanceSummary("");
     pendingVehicleThreadResetRef.current = true;
+    delete threadIdByVehicleRef.current[newVehicle.id];
     setVehicleIsolatedToast(true);
     try {
       await onAddVehicle(newVehicle);
@@ -676,7 +841,11 @@ export default function ChatApp({
     abortRef.current = controller;
     stoppedByUserRef.current = false;
     abortReasonRef.current = "none";
+    const requestEpoch = chatRequestEpochRef.current;
+    const boundThreadIdAtStart =
+      threadIdByVehicleRef.current[activeVehicle.id] ?? activeThreadId;
     inFlightVehicleIdRef.current = activeVehicle.id;
+    inFlightThreadIdRef.current = boundThreadIdAtStart;
 
     shouldSpeakNextAssistantRef.current = Boolean(
       autoSpeak && features.voiceEnabled,
@@ -691,6 +860,19 @@ export default function ChatApp({
         controller.abort();
       }
     }, CLIENT_TIMEOUT_MS);
+
+    const stillCurrentRequest = () =>
+      shouldCommitChatResponse({
+        requestEpoch,
+        currentEpoch: chatRequestEpochRef.current,
+        abortReason: readAbortReason(),
+        requestVehicleId: activeVehicle.id,
+        activeVehicleId: currentVehicleIdRef.current,
+        // Capture at send start — do not read mutable inFlightThreadIdRef
+        // (context switch nulls it; late 200 must still fail via epoch).
+        requestThreadId: boundThreadIdAtStart,
+        activeThreadId: activeThreadIdRef.current,
+      });
 
     try {
       const imagePayloads: string[] = [];
@@ -708,7 +890,9 @@ export default function ChatApp({
         throw new Error(t("ai.signInRequired"));
       }
 
-      const focusStore = loadChatFocus(activeVehicle.id);
+      const boundThreadId =
+        threadIdByVehicleRef.current[activeVehicle.id] ?? activeThreadId;
+      const focusStore = loadChatFocus(activeVehicle.id, boundThreadId);
       const lastUser = [...nextMessages]
         .reverse()
         .find((m) => m.role === "user");
@@ -719,18 +903,15 @@ export default function ChatApp({
           lastApiVehicleIdRef.current !== activeVehicle.id);
       if (vehicleThreadReset) {
         pendingVehicleThreadResetRef.current = false;
-        // Drop prior-car focus so drift does not reconstruct oil/PB from the
-        // previous vehicle's transcript that might still be on screen briefly.
-        saveChatFocus(activeVehicle.id, {
-          vehicleId: activeVehicle.id,
-          recent: [],
-          apiHistoryFromId: null,
-          abandonedFocus: null,
-        });
+        delete threadIdByVehicleRef.current[activeVehicle.id];
+        setActiveThreadId(null);
+        // Drop prior-car focus — New topic / other threads stay in their own keys.
+        clearChatFocus(activeVehicle.id, boundThreadId);
       }
       const focusForTurn = vehicleThreadReset
         ? {
             vehicleId: activeVehicle.id,
+            threadId: null as string | null,
             recent: [] as ReturnType<typeof loadChatFocus>["recent"],
             apiHistoryFromId: null,
             abandonedFocus: null,
@@ -777,11 +958,12 @@ export default function ChatApp({
         },
         signal: controller.signal,
         body: JSON.stringify({
-          messages: trimMessagesForApi(nextMessages, undefined, {
-            imageHeavy: imagePayloads.length > 0,
-            latestUserOnly: historyOpts.latestUserOnly,
-            fromMessageId: historyOpts.fromMessageId,
-          }),
+          // Server-authoritative history: this turn only — never full transcript.
+          message: userText,
+          clientMessageId: lastUser?.id,
+          threadId: vehicleThreadReset
+            ? undefined
+            : threadIdByVehicleRef.current[activeVehicle.id],
           images: imagePayloads,
           image: imagePayloads[0],
           currentVehicle: activeVehicle,
@@ -790,7 +972,6 @@ export default function ChatApp({
           vehicleChanged: vehicleThreadReset || undefined,
           previousVehicleId: previousVehicleId || undefined,
           playbookSlug: playbookSlugRef.current || undefined,
-          // Never send prior car's maintenance blob on a switch turn.
           maintenanceSummary: vehicleThreadReset
             ? undefined
             : maintenanceSummary || undefined,
@@ -802,6 +983,9 @@ export default function ChatApp({
               ? null
               : focusForTurn.abandonedFocus,
             vehicleId: activeVehicle.id,
+            threadId: vehicleThreadReset
+              ? null
+              : threadIdByVehicleRef.current[activeVehicle.id] ?? null,
             apiHistoryFromId: vehicleThreadReset
               ? null
               : focusForTurn.apiHistoryFromId,
@@ -811,6 +995,7 @@ export default function ChatApp({
 
       let data: {
         content?: string;
+        threadId?: string | null;
         error?: string;
         code?: string;
         retryable?: boolean;
@@ -855,10 +1040,18 @@ export default function ChatApp({
         throw new Error(t("ai.emptyReply"));
       }
 
-      const assistantContent = data.content.trim();
-      if (currentVehicleIdRef.current !== inFlightVehicleIdRef.current) {
+      // Late 200 after 切车 / New topic / Topics: drop — do not touch new UI.
+      if (!stillCurrentRequest()) {
         return;
       }
+
+      if (data.threadId) {
+        threadIdByVehicleRef.current[activeVehicle.id] = data.threadId;
+        setActiveThreadId(data.threadId);
+        inFlightThreadIdRef.current = data.threadId;
+      }
+
+      const assistantContent = data.content.trim();
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
@@ -878,25 +1071,28 @@ export default function ChatApp({
           reason: data.drift?.reason ?? intentDrift.reason,
           currentFocus: data.conversationFocus ?? intentDrift.currentFocus,
         };
+        const tid =
+          data.threadId ||
+          threadIdByVehicleRef.current[activeVehicle.id] ||
+          null;
         saveChatFocus(
           activeVehicle.id,
           nextChatFocusStore({
             vehicleId: activeVehicle.id,
+            threadId: tid,
             store: focusForTurn,
             drift: resolved,
             latestUserId: lastUser.id,
             vehicleThreadReset,
           }),
+          tid,
         );
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
-        // Read via helper so TS does not narrow away "vehicle_switch"
-        // after earlier `abortReasonRef.current = "none"` in this function.
-        if (readAbortReason() === "vehicle_switch") {
-          return;
-        }
-        if (currentVehicleIdRef.current !== inFlightVehicleIdRef.current) {
+        // Context switch (vehicle / New topic / Topics): never write stop/timeout
+        // bubbles into the new session.
+        if (isContextSwitchAbort(readAbortReason()) || !stillCurrentRequest()) {
           return;
         }
         if (stoppedByUserRef.current) {
@@ -924,7 +1120,7 @@ export default function ChatApp({
         }
         return;
       }
-      if (currentVehicleIdRef.current !== inFlightVehicleIdRef.current) {
+      if (!stillCurrentRequest()) {
         return;
       }
       const classified = classifyChatFetchError(err);
@@ -944,8 +1140,13 @@ export default function ChatApp({
       ]);
     } finally {
       window.clearTimeout(timeoutId);
-      if (abortRef.current === controller) abortRef.current = null;
-      setIsLoading(false);
+      // Do not clear loading if a newer send owns the controller / epoch.
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
+      if (requestEpoch === chatRequestEpochRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -1027,7 +1228,7 @@ export default function ChatApp({
     content: string,
     images: string[],
   ) => {
-    abortInFlightForVehicleSwitch();
+    abortInFlightForContextSwitch();
 
     if (currentVehicle) {
       await persistNow(currentVehicle.id, messagesRef.current);
@@ -1043,6 +1244,7 @@ export default function ChatApp({
     setMessages([createWelcomeMessage()]);
     setMaintenanceSummary("");
     pendingVehicleThreadResetRef.current = true;
+    delete threadIdByVehicleRef.current[target.id];
     setVehicleIsolatedToast(true);
     saveChatFocus(target.id, {
       vehicleId: target.id,
@@ -1415,16 +1617,38 @@ export default function ChatApp({
           </button>
           <div className="flex shrink-0 items-center gap-1.5">
             {currentVehicle && (
-              <button
-                type="button"
-                data-testid="shop-report-open"
-                onClick={() => setShopReportOpen(true)}
-                className="inline-flex min-h-[44px] touch-manipulation items-center gap-1 rounded-xl border border-slate-700 px-3 py-2 text-xs font-medium text-cyan-300 hover:bg-slate-800"
-                title={t("shopReport.openCta")}
-              >
-                <FileText className="h-3.5 w-3.5" />
-                {t("shopReport.headerCta")}
-              </button>
+              <>
+                <button
+                  type="button"
+                  data-testid="chat-topics-open"
+                  onClick={() => void openThreadSheet()}
+                  className="inline-flex min-h-[44px] touch-manipulation items-center gap-1 rounded-xl border border-slate-700 px-2.5 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800"
+                  title={t("ai.topics")}
+                >
+                  <ListTree className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{t("ai.topics")}</span>
+                </button>
+                <button
+                  type="button"
+                  data-testid="chat-new-topic"
+                  onClick={() => void handleNewTopic()}
+                  className="inline-flex min-h-[44px] touch-manipulation items-center gap-1 rounded-xl border border-slate-700 px-2.5 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800"
+                  title={t("ai.newTopic")}
+                >
+                  <MessageSquarePlus className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{t("ai.newTopic")}</span>
+                </button>
+                <button
+                  type="button"
+                  data-testid="shop-report-open"
+                  onClick={() => setShopReportOpen(true)}
+                  className="inline-flex min-h-[44px] touch-manipulation items-center gap-1 rounded-xl border border-slate-700 px-3 py-2 text-xs font-medium text-cyan-300 hover:bg-slate-800"
+                  title={t("shopReport.openCta")}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  {t("shopReport.headerCta")}
+                </button>
+              </>
             )}
             {isFree && <UpgradeButton size="sm" label="Pro" />}
           </div>
@@ -1469,15 +1693,35 @@ export default function ChatApp({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {currentVehicle && (
-              <button
-                type="button"
-                data-testid="shop-report-open-desktop"
-                onClick={() => setShopReportOpen(true)}
-                className="inline-flex min-h-[44px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-cyan-300 hover:bg-slate-800"
-              >
-                <FileText className="h-3.5 w-3.5" />
-                {t("shopReport.openCta")}
-              </button>
+              <>
+                <button
+                  type="button"
+                  data-testid="chat-topics-open-desktop"
+                  onClick={() => void openThreadSheet()}
+                  className="inline-flex min-h-[44px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+                >
+                  <ListTree className="h-3.5 w-3.5" />
+                  {t("ai.topics")}
+                </button>
+                <button
+                  type="button"
+                  data-testid="chat-new-topic-desktop"
+                  onClick={() => void handleNewTopic()}
+                  className="inline-flex min-h-[44px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800"
+                >
+                  <MessageSquarePlus className="h-3.5 w-3.5" />
+                  {t("ai.newTopic")}
+                </button>
+                <button
+                  type="button"
+                  data-testid="shop-report-open-desktop"
+                  onClick={() => setShopReportOpen(true)}
+                  className="inline-flex min-h-[44px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-cyan-300 hover:bg-slate-800"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  {t("shopReport.openCta")}
+                </button>
+              </>
             )}
             {isFree && <UpgradeButton label="Upgrade to Pro" />}
           </div>
@@ -1660,8 +1904,61 @@ export default function ChatApp({
                 onClick={() => setVehicleIsolatedToast(false)}
                 className={GATE_CTA_GHOST}
               >
-                Dismiss
+                {t("ai.topicHintDismiss")}
               </button>
+            </div>
+          </div>
+        ) : null}
+        {newTopicToast ? (
+          <div
+            className="shrink-0 border-t border-slate-700/60 bg-slate-900/80 px-3 py-2 sm:px-4"
+            data-testid="chat-new-topic-toast"
+            role="status"
+          >
+            <div className="mx-auto flex max-w-3xl items-center justify-between gap-2">
+              <p className="text-sm text-slate-200">{t("ai.newTopicToast")}</p>
+              <button
+                type="button"
+                data-testid="chat-new-topic-toast-dismiss"
+                onClick={() => setNewTopicToast(false)}
+                className={GATE_CTA_GHOST}
+              >
+                {t("ai.topicHintDismiss")}
+              </button>
+            </div>
+          </div>
+        ) : null}
+        {!topicHintDismissed &&
+        !newTopicToast &&
+        !vehicleIsolatedToast &&
+        messages.filter((m) => m.id !== "welcome").length >= 6 ? (
+          <div
+            className="shrink-0 border-t border-slate-800/80 bg-slate-950/40 px-3 py-2 sm:px-4"
+            data-testid="chat-topic-hint"
+            role="status"
+          >
+            <div className="mx-auto flex max-w-3xl items-center justify-between gap-2">
+              <p className="text-xs leading-snug text-slate-400">
+                {t("ai.topicHint")}
+              </p>
+              <div className="flex shrink-0 items-center gap-1">
+                <button
+                  type="button"
+                  data-testid="chat-topic-hint-new"
+                  onClick={() => void handleNewTopic()}
+                  className={GATE_CTA_SECONDARY}
+                >
+                  {t("ai.newTopic")}
+                </button>
+                <button
+                  type="button"
+                  data-testid="chat-topic-hint-dismiss"
+                  onClick={() => setTopicHintDismissed(true)}
+                  className={GATE_CTA_GHOST}
+                >
+                  {t("ai.topicHintDismiss")}
+                </button>
+              </div>
             </div>
           </div>
         ) : null}
@@ -1839,6 +2136,87 @@ export default function ChatApp({
         onClose={() => setUpgradeOpen(false)}
         reason={upgradeReason}
       />
+
+      {threadSheetOpen ? (
+        <div
+          className="fixed inset-0 z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("ai.topicsTitle")}
+          data-testid="chat-topics-sheet"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/60"
+            aria-label="Close"
+            onClick={() => setThreadSheetOpen(false)}
+          />
+          <div className="absolute inset-x-0 bottom-0 max-h-[min(72dvh,32rem)] overflow-hidden rounded-t-2xl border border-slate-700 bg-[#111827] shadow-2xl sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+              <h2 className="text-sm font-semibold text-slate-100">
+                {t("ai.topicsTitle")}
+              </h2>
+              <button
+                type="button"
+                data-testid="chat-topics-close"
+                onClick={() => setThreadSheetOpen(false)}
+                className="inline-flex min-h-[44px] min-w-[44px] touch-manipulation items-center justify-center rounded-xl text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="max-h-[min(56dvh,24rem)] overflow-y-auto overscroll-contain p-3">
+              <button
+                type="button"
+                data-testid="chat-topics-new"
+                onClick={() => void handleNewTopic()}
+                className="mb-3 flex w-full min-h-[44px] touch-manipulation items-center justify-center gap-2 rounded-xl border border-cyan-800/60 bg-cyan-950/40 px-3 py-2.5 text-sm font-medium text-cyan-100 hover:bg-cyan-950/70"
+              >
+                <MessageSquarePlus className="h-4 w-4" />
+                {t("ai.newTopic")}
+              </button>
+              {threadList.length === 0 ? (
+                <p className="px-1 py-4 text-center text-sm text-slate-500">
+                  {t("ai.topicEmpty")}
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-1.5">
+                  {threadList.map((thread) => {
+                    const active = thread.id === activeThreadId;
+                    return (
+                      <li key={thread.id}>
+                        <button
+                          type="button"
+                          data-testid="chat-topic-item"
+                          data-thread-id={thread.id}
+                          data-active={active ? "true" : "false"}
+                          onClick={() => void handleSelectThread(thread.id)}
+                          className={`flex w-full min-h-[44px] touch-manipulation flex-col items-start gap-0.5 rounded-xl border px-3 py-2.5 text-left ${
+                            active
+                              ? "border-cyan-700/70 bg-cyan-950/35 text-cyan-50"
+                              : "border-slate-800 bg-slate-900/40 text-slate-200 hover:bg-slate-800/60"
+                          }`}
+                        >
+                          <span className="line-clamp-2 text-sm font-medium">
+                            {thread.displayTitle}
+                          </span>
+                          <span className="text-[11px] text-slate-500">
+                            {active ? t("ai.topicActive") : null}
+                            {active ? " · " : null}
+                            {new Date(
+                              thread.updatedAt || thread.createdAt,
+                            ).toLocaleString()}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

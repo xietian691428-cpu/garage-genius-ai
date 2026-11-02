@@ -149,7 +149,15 @@
     "budgetExceeded": "La asignación de IA de este mes se agotó. Mejora el plan para un presupuesto mayor.",
     "visionQuotaExceeded": "Se alcanzó el límite mensual de análisis de fotos. Mejora el plan para más fotos.",
     "limitedMode": "Limitado — cuota agotada. Esto no es una respuesta completa de coaching.",
-    "vehicleThreadIsolated": "El chat es por vehículo: el historial del auto anterior no se enviará a la IA."
+    "vehicleThreadIsolated": "El chat es por vehículo: el historial del auto anterior no se enviará a la IA.",
+    "newTopic": "Nuevo tema",
+    "newTopicToast": "Nuevo tema — el chat de este vehículo empieza de cero",
+    "topics": "Temas",
+    "topicsTitle": "Temas de este vehículo",
+    "topicEmpty": "Aún no hay temas — envía un mensaje o inicia un nuevo tema.",
+    "topicHint": "¿Empiezas otro trabajo? Un nuevo tema evita mezclar los pasos",
+    "topicHintDismiss": "Cerrar",
+    "topicActive": "Actual"
   },
   "dtc": {
     "enterCode": "Introducir código de fallo",

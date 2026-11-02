@@ -18,7 +18,7 @@ import { PLAN_ENTITLEMENTS } from "@/lib/types/subscription";
 import { APP_LOCALES } from "@/lib/i18n";
 
 /** Expected shippable production playbook count (Phase 1–3). */
-export const EXPECTED_PRODUCTION_PLAYBOOK_COUNT = 27;
+export const EXPECTED_PRODUCTION_PLAYBOOK_COUNT = 30;
 
 export type AppTabId =
   | "dashboard"
