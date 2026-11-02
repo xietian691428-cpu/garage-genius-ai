@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { FileText, Trash2, Upload } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { VehicleInfo } from "@/lib/types/chat";
+import { dismissManualNudge } from "@/lib/vehicle-manual-nudge";
 
 export type ManualClientDto = {
   id: string;
@@ -95,6 +96,9 @@ export default function VehicleManualPanel({
       }
       setManual(data.manual ?? null);
       onChanged?.(data.manual ?? null);
+      if (data.manual?.searchable) {
+        dismissManualNudge(vehicle.id);
+      }
       if (data.error) setError(data.error);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("vehicles.manualUploadFailed"));
@@ -175,7 +179,13 @@ export default function VehicleManualPanel({
             {t("vehicles.manualTitle")}
           </h3>
           <p className="mt-1 text-[11px] leading-snug text-slate-400">
-            {t("vehicles.manualHint")}
+            {t("vehicles.manualWhyUpload")}
+          </p>
+          <p className="mt-1.5 text-[11px] leading-snug text-slate-500">
+            {t("vehicles.manualUploadSubtitle")}
+          </p>
+          <p className="mt-0.5 text-[11px] leading-snug text-slate-500">
+            {t("vehicles.manualUploadDisclaimer")}
           </p>
         </div>
       </div>
@@ -266,22 +276,27 @@ export default function VehicleManualPanel({
       ) : null}
 
       {!loading && !manual ? (
-        <label className="mt-3 flex min-h-[48px] cursor-pointer touch-manipulation items-center justify-center gap-2 rounded-xl border border-dashed border-cyan-800/70 bg-cyan-950/20 px-3 text-sm font-medium text-cyan-100 hover:bg-cyan-950/40">
-          <Upload className="h-4 w-4" />
-          {busy ? t("vehicles.manualUploading") : t("vehicles.manualUploadCta")}
-          <input
-            type="file"
-            accept="application/pdf,.pdf"
-            className="hidden"
-            disabled={busy}
-            data-testid="vehicle-manual-file"
-            onChange={(e) => {
-              const f = e.target.files?.[0] ?? null;
-              e.target.value = "";
-              void onUpload(f);
-            }}
-          />
-        </label>
+        <div className="mt-3 space-y-2">
+          <p className="text-[11px] leading-snug text-slate-500">
+            {t("vehicles.manualEmpty")}
+          </p>
+          <label className="flex min-h-[48px] cursor-pointer touch-manipulation items-center justify-center gap-2 rounded-xl border border-dashed border-cyan-800/70 bg-cyan-950/20 px-3 text-sm font-medium text-cyan-100 hover:bg-cyan-950/40">
+            <Upload className="h-4 w-4" />
+            {busy ? t("vehicles.manualUploading") : t("vehicles.manualUploadCta")}
+            <input
+              type="file"
+              accept="application/pdf,.pdf"
+              className="hidden"
+              disabled={busy}
+              data-testid="vehicle-manual-file"
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                e.target.value = "";
+                void onUpload(f);
+              }}
+            />
+          </label>
+        </div>
       ) : null}
 
       {error ? (

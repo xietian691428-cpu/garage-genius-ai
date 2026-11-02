@@ -106,6 +106,7 @@ import { FileText, MessageSquarePlus, ListTree, X } from "lucide-react";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import {
   dismissManualNudge,
+  dismissManualNudgeNoCopy,
   noteNoAnchorSpecReply,
   shouldShowManualNudge,
 } from "@/lib/vehicle-manual-nudge";
@@ -228,6 +229,7 @@ export default function ChatApp({
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [topicHintDismissed, setTopicHintDismissed] = useState(false);
   const [manualNudgeOpen, setManualNudgeOpen] = useState(false);
+  const [manualNudgeNoCopyOpen, setManualNudgeNoCopyOpen] = useState(false);
   const [hasSearchableManual, setHasSearchableManual] = useState(false);
   const [manualUploadOpen, setManualUploadOpen] = useState(false);
   useBodyScrollLock(threadSheetOpen || manualUploadOpen);
@@ -325,8 +327,10 @@ export default function ChatApp({
     if (!currentVehicle?.id) {
       setHasSearchableManual(false);
       setManualNudgeOpen(false);
+      setManualNudgeNoCopyOpen(false);
       return;
     }
+    setManualNudgeNoCopyOpen(false);
     let cancelled = false;
     void (async () => {
       try {
@@ -2002,34 +2006,70 @@ export default function ChatApp({
             data-testid="chat-manual-nudge"
             role="status"
           >
-            <div className="mx-auto flex max-w-3xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs leading-snug text-cyan-50/90">
-                {t("ai.manualNudge")}
-              </p>
-              <div className="flex shrink-0 items-center gap-1">
-                <button
-                  type="button"
-                  data-testid="chat-manual-nudge-upload"
-                  onClick={() => {
-                    setManualNudgeOpen(false);
-                    setManualUploadOpen(true);
-                  }}
-                  className={GATE_CTA_PRIMARY}
-                >
-                  {t("ai.manualNudgeUpload")}
-                </button>
-                <button
-                  type="button"
-                  data-testid="chat-manual-nudge-dismiss"
-                  onClick={() => {
-                    dismissManualNudge(currentVehicle.id);
-                    setManualNudgeOpen(false);
-                  }}
-                  className={GATE_CTA_GHOST}
-                >
-                  {t("ai.manualNudgeDismiss")}
-                </button>
+            <div className="mx-auto flex max-w-3xl flex-col gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs leading-snug text-cyan-50/90">
+                  {t("ai.manualNudge")}
+                </p>
+                <div className="flex shrink-0 flex-wrap items-center gap-1">
+                  <button
+                    type="button"
+                    data-testid="chat-manual-nudge-upload"
+                    onClick={() => {
+                      setManualNudgeOpen(false);
+                      setManualNudgeNoCopyOpen(false);
+                      setManualUploadOpen(true);
+                    }}
+                    className={GATE_CTA_PRIMARY}
+                  >
+                    {t("ai.manualNudgeUpload")}
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="chat-manual-nudge-dismiss"
+                    onClick={() => {
+                      dismissManualNudge(currentVehicle.id);
+                      setManualNudgeOpen(false);
+                      setManualNudgeNoCopyOpen(false);
+                    }}
+                    className={GATE_CTA_GHOST}
+                  >
+                    {t("ai.manualNudgeDismiss")}
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="chat-manual-nudge-no-copy"
+                    onClick={() =>
+                      setManualNudgeNoCopyOpen((open) => !open)
+                    }
+                    className="min-h-[44px] touch-manipulation px-2 text-[11px] text-cyan-200/80 underline-offset-2 hover:underline"
+                  >
+                    {t("ai.manualNudgeNoCopy")}
+                  </button>
+                </div>
               </div>
+              {manualNudgeNoCopyOpen ? (
+                <div
+                  className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                  data-testid="chat-manual-nudge-no-copy-hint"
+                >
+                  <p className="text-[11px] leading-snug text-slate-300">
+                    {t("ai.manualNudgeNoCopyHint")}
+                  </p>
+                  <button
+                    type="button"
+                    data-testid="chat-manual-nudge-no-copy-ack"
+                    onClick={() => {
+                      dismissManualNudgeNoCopy(currentVehicle.id);
+                      setManualNudgeOpen(false);
+                      setManualNudgeNoCopyOpen(false);
+                    }}
+                    className={GATE_CTA_GHOST}
+                  >
+                    {t("ai.manualNudgeDismiss")}
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
         ) : null}

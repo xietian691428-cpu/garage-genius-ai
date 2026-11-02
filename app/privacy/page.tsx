@@ -84,7 +84,10 @@ export default async function PrivacyPage() {
             PDF files you upload for a specific garage vehicle. Scoped to your
             user ID and that vehicle only — not shared with other accounts, not
             added to the public knowledge base, and not used to train third-party
-            models. You can delete them in vehicle settings / Settings → My manuals.
+            models. User-uploaded manuals are private per vehicle; not used to
+            build a public manual library. We cannot provide manufacturer manuals
+            for download (copyright). You can delete uploads in vehicle settings /
+            Settings → My manuals.
           </li>
           <li>
             <strong className="text-slate-200">Billing:</strong>{" "}

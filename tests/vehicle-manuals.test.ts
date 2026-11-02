@@ -12,11 +12,16 @@ import {
 } from "@/lib/vehicle-manuals";
 import {
   dismissManualNudge,
+  dismissManualNudgeNoCopy,
   loadManualNudgeState,
+  MANUAL_NUDGE_DISMISS_COOLDOWN_MS,
+  MANUAL_NUDGE_NO_MANUAL_COOLDOWN_MS,
   noteNoAnchorSpecReply,
   saveManualNudgeState,
   shouldShowManualNudge,
 } from "@/lib/vehicle-manual-nudge";
+import en from "@/locales/en-US/common.json";
+import es from "@/locales/es/common.json";
 
 describe("private vehicle manuals — isolation & gates", () => {
   it("mismatch without confirm is not searchable", () => {
@@ -205,7 +210,7 @@ describe("manual nudge", () => {
     ).toBe(false);
   });
 
-  it("dismiss cools down nudge", () => {
+  it("Not now cools down for 14 days, then can return", () => {
     dismissManualNudge("camry");
     expect(loadManualNudgeState("camry").dismissedAt).toBeTruthy();
     expect(
@@ -217,10 +222,50 @@ describe("manual nudge", () => {
         quotaBlocked: false,
       }),
     ).toBe(false);
+    const after = Date.now() + MANUAL_NUDGE_DISMISS_COOLDOWN_MS + 1_000;
+    expect(
+      shouldShowManualNudge({
+        vehicleId: "camry",
+        hasSearchableManual: false,
+        isSpecQuestion: true,
+        highRiskStop: false,
+        quotaBlocked: false,
+        now: after,
+      }),
+    ).toBe(true);
+  });
+
+  it("Don't have it cools down for 90 days", () => {
+    dismissManualNudgeNoCopy("camry");
+    expect(loadManualNudgeState("camry").noManualUntil).toBeTruthy();
+    expect(
+      shouldShowManualNudge({
+        vehicleId: "camry",
+        hasSearchableManual: false,
+        isSpecQuestion: true,
+        highRiskStop: false,
+        quotaBlocked: false,
+        now: Date.now() + MANUAL_NUDGE_DISMISS_COOLDOWN_MS + 1_000,
+      }),
+    ).toBe(false);
+    expect(
+      shouldShowManualNudge({
+        vehicleId: "camry",
+        hasSearchableManual: false,
+        isSpecQuestion: true,
+        highRiskStop: false,
+        quotaBlocked: false,
+        now: Date.now() + MANUAL_NUDGE_NO_MANUAL_COOLDOWN_MS + 1_000,
+      }),
+    ).toBe(true);
   });
 
   it("two no-anchor streaks can trigger without a fresh spec ask", () => {
-    saveManualNudgeState("camry", { dismissedAt: null, noAnchorSpecStreak: 0 });
+    saveManualNudgeState("camry", {
+      dismissedAt: null,
+      noManualUntil: null,
+      noAnchorSpecStreak: 0,
+    });
     noteNoAnchorSpecReply("camry");
     noteNoAnchorSpecReply("camry");
     expect(
@@ -232,5 +277,50 @@ describe("manual nudge", () => {
         quotaBlocked: false,
       }),
     ).toBe(true);
+  });
+});
+
+describe("manual copy keys (en + es)", () => {
+  const enKeys = [
+    "manualTitle",
+    "manualWhyUpload",
+    "manualUploadSubtitle",
+    "manualUploadDisclaimer",
+    "manualEmpty",
+    "manualReady",
+    "manualMismatchWarn",
+    "manualsSettingsHint",
+  ] as const;
+  const aiKeys = [
+    "manualNudge",
+    "manualNudgeUpload",
+    "manualNudgeDismiss",
+    "manualNudgeNoCopy",
+    "manualNudgeNoCopyHint",
+  ] as const;
+
+  it("en-US keys exist and stay non-coercive", () => {
+    for (const k of enKeys) {
+      expect(String((en.vehicles as Record<string, string>)[k]).length).toBeGreaterThan(8);
+    }
+    for (const k of aiKeys) {
+      expect(String((en.ai as Record<string, string>)[k]).length).toBeGreaterThan(2);
+    }
+    expect(en.vehicles.manualTitle).toMatch(/optional/i);
+    expect(en.vehicles.manualWhyUpload).toMatch(/copyright/i);
+    expect(en.ai.manualNudge).toMatch(/optional/i);
+    expect(en.ai.manualNudge).not.toMatch(/must upload|required to use/i);
+    expect(en.ai.manualNudgeNoCopyHint).toMatch(/keep going|under-hood/i);
+  });
+
+  it("es keys mirror the same surface", () => {
+    for (const k of enKeys) {
+      expect(String((es.vehicles as Record<string, string>)[k]).length).toBeGreaterThan(8);
+    }
+    for (const k of aiKeys) {
+      expect(String((es.ai as Record<string, string>)[k]).length).toBeGreaterThan(2);
+    }
+    expect(es.vehicles.manualTitle).toMatch(/opcional/i);
+    expect(es.ai.manualNudgeDismiss).toMatch(/ahora no/i);
   });
 });
