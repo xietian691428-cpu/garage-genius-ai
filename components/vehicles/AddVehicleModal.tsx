@@ -34,6 +34,7 @@ import {
   detectVpicYmmConflict,
   tagsWithYmmUnverified,
 } from "@/lib/vehicle-data/ymm-conflict";
+import VehicleManualPanel from "@/components/vehicles/VehicleManualPanel";
 
 interface Props {
   open: boolean;
@@ -657,6 +658,12 @@ export default function AddVehicleModal({
             </div>
           </div>
         </details>
+
+        {isEdit && initialVehicle?.id ? (
+          <div className="mt-4">
+            <VehicleManualPanel vehicle={initialVehicle} />
+          </div>
+        ) : null}
 
         {!picker.make && (
           <details className="mt-3 rounded-xl border border-slate-700/60 p-3">

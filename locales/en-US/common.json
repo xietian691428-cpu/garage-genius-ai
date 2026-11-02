@@ -157,7 +157,11 @@
     "topicEmpty": "No topics yet — send a message or start a new topic.",
     "topicHint": "Starting a different job? New topic keeps steps from mixing",
     "topicHintDismiss": "Dismiss",
-    "topicActive": "Current"
+    "topicActive": "Current",
+    "manualNudge": "For more specific steps and capacities, upload this vehicle’s owner’s manual. Used only for your account and this vehicle.",
+    "manualNudgeUpload": "Upload manual",
+    "manualNudgeDismiss": "Dismiss",
+    "manualCiteBadge": "Your manual"
   },
   "dtc": {
     "enterCode": "Enter fault code",
@@ -466,7 +470,27 @@
     "limitReachedStore": "Vehicle limit reached.",
     "couldNotSave": "Could not save vehicle.",
     "vpicYmmConflict": "Saved year/make/model does not match the VIN decode. Confirm the vehicle before coaching.",
-    "ymmUnverified": "Year/make/model were entered by hand (VIN decode unavailable). Confirm before quoting specs."
+    "ymmUnverified": "Year/make/model were entered by hand (VIN decode unavailable). Confirm before quoting specs.",
+    "manualTitle": "Owner’s manual",
+    "manualHint": "PDF only · used only for your account and this vehicle. Not shared or used to train third parties. Text-layer PDFs work best.",
+    "manualLoading": "Checking manual…",
+    "manualUploadCta": "Upload owner’s manual",
+    "manualUploading": "Uploading…",
+    "manualReplace": "Replace PDF",
+    "manualDelete": "Delete",
+    "manualDeleteConfirm": "Delete this vehicle’s uploaded manual? Chat will stop using it.",
+    "manualReady": "Ready for Chat on this vehicle",
+    "manualProcessing": "Processing…",
+    "manualFailed": "Processing failed",
+    "manualMismatch": "May not match this vehicle",
+    "manualUnknownYmm": "Could not confirm year/make/model from the file",
+    "manualMismatchWarn": "This file may be for a different vehicle. Change vehicle or replace the file — or confirm you still want Chat to use it for this car.",
+    "manualConfirmUse": "Use for this vehicle anyway",
+    "manualUploadFailed": "Could not upload the manual.",
+    "manualConfirmFailed": "Could not confirm the manual.",
+    "manualDeleteFailed": "Could not delete the manual.",
+    "manualsSettingsTitle": "My manuals",
+    "manualsSettingsHint": "Private PDFs bound to each garage vehicle. Never shared across accounts."
   },
   "shopReport": {
     "eyebrow": "Shop handoff",

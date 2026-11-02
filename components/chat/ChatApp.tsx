@@ -98,11 +98,18 @@ import {
 } from "@/lib/gate-copy";
 import type { ReplyLanguageHint } from "@/lib/reply-language";
 import AddVehicleModal from "@/components/vehicles/AddVehicleModal";
+import VehicleManualPanel from "@/components/vehicles/VehicleManualPanel";
 import UpgradeModal, {
   type UpgradeReason,
 } from "@/components/ui/UpgradeModal";
 import { FileText, MessageSquarePlus, ListTree, X } from "lucide-react";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
+import {
+  dismissManualNudge,
+  noteNoAnchorSpecReply,
+  shouldShowManualNudge,
+} from "@/lib/vehicle-manual-nudge";
+import { isManualSpecQuestion } from "@/lib/vehicle-manuals";
 import {
   createVehicleThread,
   fetchThreadMessages,
@@ -220,7 +227,10 @@ export default function ChatApp({
   const [threadList, setThreadList] = useState<ChatThreadSummary[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [topicHintDismissed, setTopicHintDismissed] = useState(false);
-  useBodyScrollLock(threadSheetOpen);
+  const [manualNudgeOpen, setManualNudgeOpen] = useState(false);
+  const [hasSearchableManual, setHasSearchableManual] = useState(false);
+  const [manualUploadOpen, setManualUploadOpen] = useState(false);
+  useBodyScrollLock(threadSheetOpen || manualUploadOpen);
   const [postSaveDtcOpen, setPostSaveDtcOpen] = useState(false);
   const [addVehicleSeed, setAddVehicleSeed] = useState<{
     make?: string;
@@ -309,6 +319,41 @@ export default function ChatApp({
   useEffect(() => {
     activeThreadIdRef.current = activeThreadId;
   }, [activeThreadId]);
+
+  // Private manual status for nudge (this vehicle only).
+  useEffect(() => {
+    if (!currentVehicle?.id) {
+      setHasSearchableManual(false);
+      setManualNudgeOpen(false);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) return;
+        const res = await fetch(
+          `/api/vehicles/${currentVehicle.id}/manual`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          manual?: { searchable?: boolean } | null;
+        };
+        if (!cancelled) {
+          setHasSearchableManual(Boolean(data.manual?.searchable));
+        }
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentVehicle?.id]);
 
   useEffect(() => {
     if (!vehicleIsolatedToast) return;
@@ -1063,6 +1108,25 @@ export default function ChatApp({
       setMessages((prev) => [...prev, assistantMessage]);
       setRequestError(null);
       void refreshTokenUsage();
+
+      if (
+        lastUser &&
+        isManualSpecQuestion(lastUser.content || "") &&
+        !hasSearchableManual &&
+        shouldShowManualNudge({
+          vehicleId: activeVehicle.id,
+          hasSearchableManual: false,
+          isSpecQuestion: true,
+          highRiskStop: Boolean(
+            data.content &&
+              /STOP_RULE|do not drive|get clear from under/i.test(data.content),
+          ),
+          quotaBlocked: false,
+        })
+      ) {
+        noteNoAnchorSpecReply(activeVehicle.id);
+        setManualNudgeOpen(true);
+      }
 
       if (lastUser && (data.conversationFocus || intentDrift.currentFocus)) {
         const resolved: DriftCheckResult = {
@@ -1928,9 +1992,51 @@ export default function ChatApp({
             </div>
           </div>
         ) : null}
+        {manualNudgeOpen &&
+        currentVehicle &&
+        !hasSearchableManual &&
+        !newTopicToast &&
+        !vehicleIsolatedToast ? (
+          <div
+            className="shrink-0 border-t border-cyan-900/40 bg-cyan-950/30 px-3 py-2 sm:px-4"
+            data-testid="chat-manual-nudge"
+            role="status"
+          >
+            <div className="mx-auto flex max-w-3xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs leading-snug text-cyan-50/90">
+                {t("ai.manualNudge")}
+              </p>
+              <div className="flex shrink-0 items-center gap-1">
+                <button
+                  type="button"
+                  data-testid="chat-manual-nudge-upload"
+                  onClick={() => {
+                    setManualNudgeOpen(false);
+                    setManualUploadOpen(true);
+                  }}
+                  className={GATE_CTA_PRIMARY}
+                >
+                  {t("ai.manualNudgeUpload")}
+                </button>
+                <button
+                  type="button"
+                  data-testid="chat-manual-nudge-dismiss"
+                  onClick={() => {
+                    dismissManualNudge(currentVehicle.id);
+                    setManualNudgeOpen(false);
+                  }}
+                  className={GATE_CTA_GHOST}
+                >
+                  {t("ai.manualNudgeDismiss")}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
         {!topicHintDismissed &&
         !newTopicToast &&
         !vehicleIsolatedToast &&
+        !manualNudgeOpen &&
         messages.filter((m) => m.id !== "welcome").length >= 6 ? (
           <div
             className="shrink-0 border-t border-slate-800/80 bg-slate-950/40 px-3 py-2 sm:px-4"
@@ -2130,6 +2236,46 @@ export default function ChatApp({
         seedHint={addVehicleSeed}
         onAdd={(v) => void handleAddVehicleFromGate(v)}
       />
+
+      {manualUploadOpen && currentVehicle ? (
+        <div
+          className="fixed inset-0 z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("vehicles.manualTitle")}
+          data-testid="chat-manual-upload-sheet"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/60"
+            aria-label="Close"
+            onClick={() => setManualUploadOpen(false)}
+          />
+          <div className="absolute inset-x-0 bottom-0 max-h-[min(78dvh,36rem)] overflow-y-auto rounded-t-2xl border border-slate-700 bg-[#111827] p-4 shadow-2xl sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-slate-100">
+                {t("vehicles.manualTitle")}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setManualUploadOpen(false)}
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-slate-400 hover:bg-slate-800"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <VehicleManualPanel
+              vehicle={currentVehicle}
+              onChanged={(m) => {
+                setHasSearchableManual(Boolean(m?.searchable));
+                if (m?.searchable) {
+                  setManualNudgeOpen(false);
+                }
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
 
       <UpgradeModal
         open={upgradeOpen}

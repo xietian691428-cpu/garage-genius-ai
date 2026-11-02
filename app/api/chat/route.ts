@@ -582,7 +582,7 @@ export async function POST(request: NextRequest) {
       }),
     );
 
-    const ragContext = ragService.formatKnowledgeForPrompt(ragHits, {
+    const ragContextBase = ragService.formatKnowledgeForPrompt(ragHits, {
       market: currentVehicle.market,
       diySkill,
       make: currentVehicle.make,
@@ -593,6 +593,34 @@ export async function POST(request: NextRequest) {
           ? currentVehicle.mileage
           : null,
     });
+    // Private owner manual — strict user_id + vehicle_id (never global knowledge_base).
+    let userManualHits: Awaited<
+      ReturnType<
+        typeof import("@/lib/vehicle-manuals").retrieveVehicleManualHits
+      >
+    > = [];
+    let userManualBlock = "";
+    try {
+      const {
+        retrieveVehicleManualHits,
+        formatUserManualForPrompt,
+      } = await import("@/lib/vehicle-manuals");
+      userManualHits = await retrieveVehicleManualHits({
+        client: userClient,
+        userId: user.id,
+        vehicleId: currentVehicle.id,
+        query: ragQuery,
+        limit: 4,
+      });
+      userManualBlock = formatUserManualForPrompt(userManualHits);
+    } catch (err) {
+      console.warn("[/api/chat] private manual retrieve skipped", {
+        message: err instanceof Error ? err.message : String(err),
+      });
+    }
+    const ragContext = [ragContextBase, userManualBlock]
+      .filter((s) => s?.trim())
+      .join("\n\n");
     const ragFocusHint = extractFocusFromRagHits(ragHits);
 
     // ── Affiliate catalog first (Admin affiliate_parts) ──
@@ -934,9 +962,17 @@ export async function POST(request: NextRequest) {
       currentFocus: drift.currentFocus,
     });
 
+    const manualAllow = userManualHits.length
+      ? (
+          await import("@/lib/vehicle-manuals")
+        ).extractManualSpecAllowlist(userManualHits)
+      : {};
     const specCtx = {
-      oilCapacity: currentVehicle.oilCapacity,
-      oilViscosity: currentVehicle.oilViscosity,
+      oilCapacity:
+        currentVehicle.oilCapacity || manualAllow.oilCapacity || null,
+      oilViscosity:
+        currentVehicle.oilViscosity || manualAllow.oilViscosity || null,
+      torqueSpec: manualAllow.torqueSpec || null,
       oemNumbers: prioritized.map((p) => p.oem_number),
     };
     const safetyEvents: SafetyObserveEvent[] = [];

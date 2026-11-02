@@ -43,7 +43,10 @@ export default async function PrivacyPage() {
             xietian691428@gmail.com
           </a>
           , in-app Settings, or the support email on your store listing /
-          billing receipt.
+          billing receipt. Private owner&apos;s manuals you upload are stored
+          only for your account and the selected garage vehicle, can be deleted
+          anytime, and are not used to train third-party models. Full VIN is not
+          sent in AI prompts or logs.
         </p>
       </section>
 
@@ -75,6 +78,13 @@ export default async function PrivacyPage() {
             photos, and repair / parts receipts or invoices. Images may be stored
             with your chat or maintenance history (often as image data attached
             to those records) so the feature can work across sessions.
+          </li>
+          <li>
+            <strong className="text-slate-200">Owner&apos;s manuals (optional):</strong>{" "}
+            PDF files you upload for a specific garage vehicle. Scoped to your
+            user ID and that vehicle only — not shared with other accounts, not
+            added to the public knowledge base, and not used to train third-party
+            models. You can delete them in vehicle settings / Settings → My manuals.
           </li>
           <li>
             <strong className="text-slate-200">Billing:</strong>{" "}

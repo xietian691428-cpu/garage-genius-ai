@@ -21,6 +21,7 @@ import ShareAppCard from "@/components/settings/ShareAppCard";
 import ShopReportsPanel from "@/components/shop-report/ShopReportsPanel";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 import InsuranceSafetySettings from "@/components/settings/InsuranceSafetySettings";
+import VehicleManualPanel from "@/components/vehicles/VehicleManualPanel";
 import { supabase } from "@/lib/supabase";
 import type { VehicleInfo } from "@/lib/types/chat";
 import {
@@ -246,6 +247,24 @@ export default function SettingsPanel({
             onSave={onUpdateVehicle}
           />
         ) : null}
+
+        <section className="rounded-3xl border border-slate-800 bg-[#111827] p-5">
+          <h2 className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            {t("vehicles.manualsSettingsTitle")}
+          </h2>
+          <p className="mt-2 text-sm text-slate-400">
+            {t("vehicles.manualsSettingsHint")}
+          </p>
+          <div className="mt-4">
+            {vehiclesLoading ? (
+              <p className="text-sm text-slate-500">{t("vehicles.manualLoading")}</p>
+            ) : currentVehicle ? (
+              <VehicleManualPanel vehicle={currentVehicle} compact />
+            ) : (
+              <p className="text-sm text-slate-500">{t("ai.gateNoVehicle")}</p>
+            )}
+          </div>
+        </section>
 
         <ShopReportsPanel
           vehicle={currentVehicle}
