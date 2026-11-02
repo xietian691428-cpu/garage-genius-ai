@@ -148,7 +148,8 @@
     "vehicleSelectionMismatch": "La selección del vehículo cambió. Actualiza el chat e inténtalo de nuevo.",
     "budgetExceeded": "La asignación de IA de este mes se agotó. Mejora el plan para un presupuesto mayor.",
     "visionQuotaExceeded": "Se alcanzó el límite mensual de análisis de fotos. Mejora el plan para más fotos.",
-    "limitedMode": "Limitado — cuota agotada. Esto no es una respuesta completa de coaching."
+    "limitedMode": "Limitado — cuota agotada. Esto no es una respuesta completa de coaching.",
+    "vehicleThreadIsolated": "El chat es por vehículo: el historial del auto anterior no se enviará a la IA."
   },
   "dtc": {
     "enterCode": "Introducir código de fallo",

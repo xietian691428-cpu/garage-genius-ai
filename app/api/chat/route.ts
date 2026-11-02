@@ -115,7 +115,9 @@ import { logTokenUsage } from "@/lib/log-token-usage";
 import {
   bindChatVehicleIdentity,
   bindConversationFocusToVehicle,
+  isolateMessagesForVehicleThreadReset,
   loadOwnedGarageVehicle,
+  resolveVehicleThreadIsolation,
   vehicleSelectionMismatch,
   VEHICLE_NOT_OWNED_CODE,
   VEHICLE_SELECTION_MISMATCH_CODE,
@@ -171,6 +173,9 @@ export async function POST(request: NextRequest) {
       coachSlug,
       maintenanceSummary,
       conversationFocus: conversationFocusRaw,
+      vehicleThreadReset: vehicleThreadResetRaw,
+      vehicleChanged: vehicleChangedRaw,
+      previousVehicleId: previousVehicleIdRaw,
     } = body as {
       messages?: DeepSeekMessage[];
       /** @deprecated prefer `images` */
@@ -191,6 +196,12 @@ export async function POST(request: NextRequest) {
         vehicleId?: string;
         apiHistoryFromId?: string | null;
       } | null;
+      /** True on the first Chat turn after selectedVehicleId changes. */
+      vehicleThreadReset?: boolean;
+      /** Alias for vehicleThreadReset (older / explicit client wording). */
+      vehicleChanged?: boolean;
+      /** Last vehicle_id that successfully opened a Chat API turn on this client. */
+      previousVehicleId?: string | null;
     };
     let currentVehicle = (body as { currentVehicle?: VehicleInfo }).currentVehicle;
 
@@ -295,12 +306,49 @@ export async function POST(request: NextRequest) {
     }
     currentVehicle = bindChatVehicleIdentity(currentVehicle, owned);
 
+    // Dual-insurance: client flag / previousVehicleId / dirty foreign-YMM history.
+    // Runs before drift so weak follow-up cannot resurrect pre-switch turns.
+    const isolation = resolveVehicleThreadIsolation({
+      vehicleThreadReset: vehicleThreadResetRaw,
+      vehicleChanged: vehicleChangedRaw,
+      previousVehicleId: previousVehicleIdRaw,
+      currentVehicleId: currentVehicle.id,
+      messages,
+      currentVehicle,
+    });
+    const vehicleThreadReset = isolation.reset;
+    if (vehicleThreadReset) {
+      console.info("[/api/chat] vehicle-thread isolation", {
+        reason: isolation.reason,
+        vehicleId: currentVehicle.id,
+      });
+    }
+
     const conversationFocus = bindConversationFocusToVehicle(
-      conversationFocusRaw,
+      vehicleThreadReset
+        ? {
+            vehicleId: currentVehicle.id,
+            previous: null,
+            abandoned: null,
+            apiHistoryFromId: null,
+          }
+        : conversationFocusRaw,
       currentVehicle.id,
     );
 
-    const lastUserMessage = [...messages]
+    // Hard isolation: only the latest user turn (system / anchors added later).
+    const threadMessages = isolateMessagesForVehicleThreadReset(
+      messages,
+      vehicleThreadReset,
+    );
+    if (!threadMessages.length) {
+      return Response.json(
+        { error: "Messages are required" },
+        { status: 400 },
+      );
+    }
+
+    const lastUserMessage = [...threadMessages]
       .reverse()
       .find((m) => m.role === "user");
     const content =
@@ -323,7 +371,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
     });
 
-    let userMessages = [...messages];
+    let userMessages = [...threadMessages];
 
     let visionPrep: Awaited<ReturnType<typeof analyzeChatImage>> | null = null;
     if (uniqueImages[0]) {
@@ -468,8 +516,10 @@ export async function POST(request: NextRequest) {
       currentVehicle,
     );
 
-    const maintenanceCap =
-      typeof maintenanceSummary === "string"
+    // Never carry another vehicle's shop/maintenance narrative across a switch.
+    const maintenanceCap = vehicleThreadReset
+      ? null
+      : typeof maintenanceSummary === "string"
         ? maintenanceSummary.length > 3_000
           ? `${maintenanceSummary.slice(0, 3_000)}\n…[truncated]`
           : maintenanceSummary
@@ -517,7 +567,10 @@ export async function POST(request: NextRequest) {
       factAnchors = null;
     }
 
-    const identityPrompt = formatVehicleIdentityPrompt(currentVehicle);
+    const identityPrompt = formatVehicleIdentityPrompt(
+      currentVehicle,
+      userPlainForLang,
+    );
     if (identityPrompt) {
       factAnchors = factAnchors
         ? `${identityPrompt}\n\n${factAnchors}`

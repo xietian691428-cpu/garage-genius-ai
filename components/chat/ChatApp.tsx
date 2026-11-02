@@ -202,6 +202,8 @@ export default function ChatApp({
   } | null>(null);
   const [addVehicleOpen, setAddVehicleOpen] = useState(false);
   const [postSaveNudge, setPostSaveNudge] = useState(false);
+  /** Soft toast after garage vehicle switch — history is per vehicle_id. */
+  const [vehicleIsolatedToast, setVehicleIsolatedToast] = useState(false);
   const [postSaveDtcOpen, setPostSaveDtcOpen] = useState(false);
   const [addVehicleSeed, setAddVehicleSeed] = useState<{
     make?: string;
@@ -231,6 +233,13 @@ export default function ChatApp({
     content: string;
     images: string[];
   } | null>(null);
+  /**
+   * First API turn after selectedVehicleId changes must not include pre-switch
+   * user/assistant history (server also enforces via vehicleThreadReset).
+   */
+  const pendingVehicleThreadResetRef = useRef(false);
+  /** Last vehicle id that successfully opened a Chat API turn. */
+  const lastApiVehicleIdRef = useRef<string | null>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
   const pendingPersistRef = useRef<{
     vehicleId: string;
@@ -271,6 +280,12 @@ export default function ChatApp({
   useEffect(() => {
     currentVehicleIdRef.current = currentVehicle?.id ?? null;
   }, [currentVehicle?.id]);
+
+  useEffect(() => {
+    if (!vehicleIsolatedToast) return;
+    const timer = window.setTimeout(() => setVehicleIsolatedToast(false), 8_000);
+    return () => window.clearTimeout(timer);
+  }, [vehicleIsolatedToast]);
 
   useEffect(() => {
     playbookSlugRef.current = playbookSlug ?? null;
@@ -571,6 +586,15 @@ export default function ChatApp({
     setReady(false);
     loadedKeyRef.current = null;
     setMessages([createWelcomeMessage()]);
+    setMaintenanceSummary("");
+    pendingVehicleThreadResetRef.current = true;
+    setVehicleIsolatedToast(true);
+    saveChatFocus(vehicle.id, {
+      vehicleId: vehicle.id,
+      recent: [],
+      apiHistoryFromId: null,
+      abandonedFocus: null,
+    });
     await onVehicleChange(vehicle);
     saveCurrentVehicleId(vehicle.id);
     // load effect will run for new vehicle id
@@ -596,6 +620,9 @@ export default function ChatApp({
     setReady(false);
     loadedKeyRef.current = null;
     setMessages([createWelcomeMessage()]);
+    setMaintenanceSummary("");
+    pendingVehicleThreadResetRef.current = true;
+    setVehicleIsolatedToast(true);
     try {
       await onAddVehicle(newVehicle);
       setPostSaveNudge(true);
@@ -686,13 +713,42 @@ export default function ChatApp({
         .reverse()
         .find((m) => m.role === "user");
       const userText = lastUser?.content?.trim() || "";
+      const vehicleThreadReset =
+        pendingVehicleThreadResetRef.current ||
+        (lastApiVehicleIdRef.current != null &&
+          lastApiVehicleIdRef.current !== activeVehicle.id);
+      if (vehicleThreadReset) {
+        pendingVehicleThreadResetRef.current = false;
+        // Drop prior-car focus so drift does not reconstruct oil/PB from the
+        // previous vehicle's transcript that might still be on screen briefly.
+        saveChatFocus(activeVehicle.id, {
+          vehicleId: activeVehicle.id,
+          recent: [],
+          apiHistoryFromId: null,
+          abandonedFocus: null,
+        });
+      }
+      const focusForTurn = vehicleThreadReset
+        ? {
+            vehicleId: activeVehicle.id,
+            recent: [] as ReturnType<typeof loadChatFocus>["recent"],
+            apiHistoryFromId: null,
+            abandonedFocus: null,
+          }
+        : focusStore;
       const intentDrift = detectIntentDrift(
         userText,
-        nextMessages,
-        previousFocusFromStore(focusStore),
+        vehicleThreadReset
+          ? lastUser
+            ? [lastUser]
+            : []
+          : nextMessages,
+        previousFocusFromStore(focusForTurn),
         matchDriftSafetyTopics(userText),
       );
-      const historyOpts = driftHistoryOptions(intentDrift, focusStore);
+      const historyOpts = vehicleThreadReset
+        ? { latestUserOnly: true as const }
+        : driftHistoryOptions(intentDrift, focusForTurn);
       logChatDrift(
         {
           shouldReset: intentDrift.shouldReset,
@@ -703,10 +759,15 @@ export default function ChatApp({
             intentDrift.currentFocus.parkingBrakeState ?? "unknown",
           latestUserOnly: historyOpts.latestUserOnly,
           fromMessageId: historyOpts.fromMessageId,
-          apiHistoryFromId: focusStore.apiHistoryFromId,
+          apiHistoryFromId: focusForTurn.apiHistoryFromId,
+          vehicleThreadReset,
         },
         activeVehicle.id,
       );
+
+      const previousVehicleId = lastApiVehicleIdRef.current;
+      lastApiVehicleIdRef.current = activeVehicle.id;
+      if (vehicleThreadReset) setVehicleIsolatedToast(false);
 
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -725,13 +786,25 @@ export default function ChatApp({
           image: imagePayloads[0],
           currentVehicle: activeVehicle,
           selectedVehicleId: activeVehicle.id,
+          vehicleThreadReset: vehicleThreadReset || undefined,
+          vehicleChanged: vehicleThreadReset || undefined,
+          previousVehicleId: previousVehicleId || undefined,
           playbookSlug: playbookSlugRef.current || undefined,
-          maintenanceSummary: maintenanceSummary || undefined,
+          // Never send prior car's maintenance blob on a switch turn.
+          maintenanceSummary: vehicleThreadReset
+            ? undefined
+            : maintenanceSummary || undefined,
           conversationFocus: {
-            previous: previousFocusFromStore(focusStore),
-            abandoned: focusStore.abandonedFocus,
+            previous: vehicleThreadReset
+              ? null
+              : previousFocusFromStore(focusForTurn),
+            abandoned: vehicleThreadReset
+              ? null
+              : focusForTurn.abandonedFocus,
             vehicleId: activeVehicle.id,
-            apiHistoryFromId: focusStore.apiHistoryFromId,
+            apiHistoryFromId: vehicleThreadReset
+              ? null
+              : focusForTurn.apiHistoryFromId,
           },
         }),
       });
@@ -809,9 +882,10 @@ export default function ChatApp({
           activeVehicle.id,
           nextChatFocusStore({
             vehicleId: activeVehicle.id,
-            store: focusStore,
+            store: focusForTurn,
             drift: resolved,
             latestUserId: lastUser.id,
+            vehicleThreadReset,
           }),
         );
       }
@@ -966,6 +1040,16 @@ export default function ChatApp({
     };
     // Force reload even if somehow same key
     loadedKeyRef.current = null;
+    setMessages([createWelcomeMessage()]);
+    setMaintenanceSummary("");
+    pendingVehicleThreadResetRef.current = true;
+    setVehicleIsolatedToast(true);
+    saveChatFocus(target.id, {
+      vehicleId: target.id,
+      recent: [],
+      apiHistoryFromId: null,
+      abandonedFocus: null,
+    });
     await onVehicleChange(target);
     saveCurrentVehicleId(target.id);
   };
@@ -1557,6 +1641,27 @@ export default function ChatApp({
                   {gateCopy(pendingGarageSwitch.lang, "switchConfirmYes")}
                 </button>
               </div>
+            </div>
+          </div>
+        ) : null}
+        {vehicleIsolatedToast ? (
+          <div
+            className="shrink-0 border-t border-slate-700/60 bg-slate-900/80 px-3 py-2 sm:px-4"
+            data-testid="chat-vehicle-isolated-toast"
+            role="status"
+          >
+            <div className="mx-auto flex max-w-3xl items-center justify-between gap-2">
+              <p className="text-sm text-slate-200">
+                {t("ai.vehicleThreadIsolated")}
+              </p>
+              <button
+                type="button"
+                data-testid="chat-vehicle-isolated-dismiss"
+                onClick={() => setVehicleIsolatedToast(false)}
+                className={GATE_CTA_GHOST}
+              >
+                Dismiss
+              </button>
             </div>
           </div>
         ) : null}

@@ -6,7 +6,9 @@ Living list of known product gaps after each safety/cost wave. Keep entries shor
 
 **Raised premise not stated.** If the owner never says the vehicle is already on jack stands / raised, Chat cannot force exit-under from history alone. Ask a generic stability premise (level ground, chocked, rated stands, never jack-only) before under-car steps.
 
-**Header vs request.** `/api/chat` now 403s if `vehicle_id` is not in the signed-in garage and 409s if `selectedVehicleId` ≠ request `currentVehicle.id`. Older clients that omit `selectedVehicleId` still get ownership bind from the request id. Switching cars loads that vehicle’s cloud/local thread; it does not scrub a previously polluted BMW/Camry mix. After a switch, ask important questions (recalls, oil spec) as a **new topic** so sticky raised/CRITICAL and old assistant turns stay off the request.
+**Header vs request.** `/api/chat` 403s if `vehicle_id` is not in the signed-in garage and 409s if `selectedVehicleId` ≠ request `currentVehicle.id`. Older clients that omit `selectedVehicleId` still get ownership bind from the request id.
+
+**Vehicle switch = cross-vehicle history zero-carry.** Client clears the send window / flags `vehicleThreadReset` (+ `previousVehicleId`); server dual-insurance truncates to the latest user turn and nulls TurnFocus before drift. Same `vehicle_id` multi-turn is not cleared. UI may still show that car’s saved thread locally; only the **model-bound** messages are isolated. If the owner mixes two cars in one bubble (“my truck” while the archive is a Corolla), `[VEHICLE_ANCHOR]` + `[SPOKEN_VEHICLE_CONFLICT]` win — confirm switch or rephrase; never fitment from spoken YMM.
 
 **vPIC vs garage YMM.** Conflict inject (`[VEHICLE_CONFLICT]`) and the garage warning require a saved vPIC snapshot. Hand-fill after decode failure is `[YMM_UNVERIFIED]`, not a snapshot mismatch.
 

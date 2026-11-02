@@ -14,6 +14,14 @@ import type { PlanEntitlements, SubscriptionTier } from "@/lib/types/subscriptio
 import { entitlementsForTier } from "@/lib/types/subscription";
 import type { UpgradeReason } from "@/lib/upgrade-copy";
 
+export {
+  PLAN_COOKIE,
+  SOFT_GATED_APP_TABS,
+  isProPlanCookie,
+  planCookieValue,
+  pricingUrlForReason,
+} from "@/lib/subscription-soft-gate";
+
 export class PaywallError extends Error {
   status = 402;
   code = "paywall";
@@ -135,30 +143,3 @@ export function paywallResponse(err: unknown): Response | null {
   return null;
 }
 
-/** Soft cookie name — written by client for middleware soft-paywall. */
-export const PLAN_COOKIE = "gg_plan";
-
-/**
- * App tabs soft-gated for Free (cookie-based UX; APIs enforce hard gates).
- * History is intentionally NOT listed — Free users get a read-only preview
- * (see FREE_MAINTENANCE_PREVIEW + UpgradeModal in MaintenanceHistory).
- */
-export const SOFT_GATED_APP_TABS: Record<string, UpgradeReason> = {};
-
-export function isProPlanCookie(value: string | undefined | null): boolean {
-  const plan = value || "free";
-  return (
-    plan === "pro" ||
-    plan === "pro_heavy" ||
-    plan === "trialing" ||
-    plan === "active"
-  );
-}
-
-export function planCookieValue(tier: SubscriptionTier | "free"): string {
-  return tier;
-}
-
-export function pricingUrlForReason(reason: UpgradeReason): string {
-  return `/pricing?from=${encodeURIComponent(reason)}`;
-}

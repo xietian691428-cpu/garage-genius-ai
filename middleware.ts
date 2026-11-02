@@ -4,7 +4,7 @@ import {
   PLAN_COOKIE,
   pricingUrlForReason,
   SOFT_GATED_APP_TABS,
-} from "@/lib/subscription-guard";
+} from "@/lib/subscription-soft-gate";
 
 /**
  * Soft subscription paywall (cookie-based).

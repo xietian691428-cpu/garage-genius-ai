@@ -148,7 +148,8 @@
     "vehicleSelectionMismatch": "Vehicle selection changed. Refresh chat and try again.",
     "budgetExceeded": "This month's AI allowance is used up. Upgrade for a larger budget.",
     "visionQuotaExceeded": "Monthly photo analysis limit reached. Upgrade for a higher photo quota.",
-    "limitedMode": "Limited — quota exceeded. This is not a full coaching reply."
+    "limitedMode": "Limited — quota exceeded. This is not a full coaching reply.",
+    "vehicleThreadIsolated": "Chat is per vehicle — history from the previous car won’t be sent to the AI."
   },
   "dtc": {
     "enterCode": "Enter fault code",

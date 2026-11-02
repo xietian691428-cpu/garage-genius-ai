@@ -110,8 +110,10 @@ export function nextChatFocusStore(opts: {
   store: ChatFocusStore;
   drift: DriftCheckResult;
   latestUserId: string;
+  /** Garage vehicle switch — start API history at this user turn. */
+  vehicleThreadReset?: boolean;
 }): ChatFocusStore {
-  const { vehicleId, store, drift, latestUserId } = opts;
+  const { vehicleId, store, drift, latestUserId, vehicleThreadReset } = opts;
   const hard =
     drift.shouldReset &&
     (drift.reason === "new_high_risk" ||
@@ -122,15 +124,20 @@ export function nextChatFocusStore(opts: {
     !store.apiHistoryFromId;
 
   let apiHistoryFromId = store.apiHistoryFromId;
-  if (hard || topicShiftNewEpoch) {
+  if (vehicleThreadReset || hard || topicShiftNewEpoch) {
     apiHistoryFromId = latestUserId;
   }
 
-  const abandonedFocus = hard
-    ? (drift.previousFocus ?? store.abandonedFocus)
-    : store.abandonedFocus;
+  const abandonedFocus =
+    vehicleThreadReset
+      ? null
+      : hard
+        ? (drift.previousFocus ?? store.abandonedFocus)
+        : store.abandonedFocus;
 
-  const recent = [drift.currentFocus, ...store.recent].slice(0, 2);
+  const recent = vehicleThreadReset
+    ? [drift.currentFocus]
+    : [drift.currentFocus, ...store.recent].slice(0, 2);
 
   if (isChatDriftDebugEnabled()) {
     console.debug("[chat-drift] persist", {

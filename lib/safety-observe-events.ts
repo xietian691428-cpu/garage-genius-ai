@@ -6,7 +6,6 @@
  * Admin: token_usage_events.metadata.safetyEvents (event names only).
  */
 
-import { createHash } from "crypto";
 import { isChatDriftDebugEnabled } from "@/lib/chat-intent-drift";
 
 export const SAFETY_OBSERVE_EVENTS = [
@@ -53,11 +52,19 @@ export function parseSafetyObserveEvents(raw: unknown): SafetyObserveEvent[] {
   return out;
 }
 
-/** First 12 hex of sha256 — optional, never the raw user id. */
+/**
+ * Short non-crypto observe hash — Edge + Node safe (no `crypto` import).
+ * Never log the raw user id.
+ */
 export function hashUserIdForObserve(userId?: string | null): string | undefined {
   const id = userId?.trim();
   if (!id) return undefined;
-  return createHash("sha256").update(id).digest("hex").slice(0, 12);
+  let h = 0x811c9dc5;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16).padStart(8, "0");
 }
 
 function looksLikeVin(value: string): boolean {
