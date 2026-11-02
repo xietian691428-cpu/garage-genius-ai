@@ -81,7 +81,9 @@ Details: [LIGHTING_FITMENT.md](./LIGHTING_FITMENT.md).
 
 ## W8 — Intake slots, evidence grades, stop rules, DTC check_order
 
-**No paid fitment API.** Housing confirm and weak YMM hints are session education only. Structure unconfirmed → `[LIGHTING_PATH]` stays `ambiguous_needs_confirm` and bulb sizes stay blocked.
+**No paid all-industry fitment API.** Housing confirm and weak YMM hints are session education only. Structure unconfirmed → `[LIGHTING_PATH]` stays `ambiguous_needs_confirm` and bulb sizes stay blocked.
+
+**Putco AI Fitment is a brand catalog only (US/CA).** Read-only `GET /ai/fitment` may inject `[PUTCO_FITMENT]` for accessory/fitment asks. It is **not** OEM factory parts data, **not** a full aftermarket bulb library, and **not** EU/UK type approval. Timeout/empty → degrade without inventing SKUs. Never send VIN. Must not override structure-unconfirmed lighting gates.
 
 **Intake depends on owner honesty.** Ephemeral slots are derived from the transcript (not a second DB). Wrong or incomplete answers → wrong narrowing. Prefer ≤2–3 questions over inventing causes.
 
@@ -97,7 +99,7 @@ Details: [INTAKE_AND_EVIDENCE.md](./INTAKE_AND_EVIDENCE.md).
 
 **Battery / overheat intake is ephemeral and honesty-dependent.** Same derive path as lighting — no second persistence. Missing cranking pattern or steam/gauge slots → ask first; never “Replace battery now.” Steam → do-not-drive / no hot-cap (prompt + W9 output gate).
 
-**No paid fitment API / no matrix coding / no deep cooling teardown** in this wave.
+**No paid multi-brand fitment API / no matrix coding / no deep cooling teardown** in this wave. Putco (if enabled) remains a single-brand US/CA catalog tool — see Putco residual note under W8.
 
 ## W10 — Brake warning intake + housing photo assist + YMM +5–10
 

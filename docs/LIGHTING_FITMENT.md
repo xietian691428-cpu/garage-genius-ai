@@ -96,6 +96,36 @@ Vehicle = obscure/unsupported YMM: “What bulb size is my low beam?”
 
 Expect: no H11/9005 invention; confirm prompts; generic path.
 
+## Putco fitment tool (read-only brand catalog)
+
+When the owner asks whether **Putco** / truck lighting accessories **fit** this YMM (or explicit fitment), Chat may call Putco’s public AI API once:
+
+- Endpoint: `GET https://www.putco.com/ai/fitment?year=&make=&model=&country=us|ca&schema=brief`
+- OpenAPI: https://www.putco.com/ai/openapi.json — **no auth**, US/CA store only
+- Inject: `[PUTCO_FITMENT]` with product titles/SKUs/urls (capped) +  
+  `Source: Putco fitment API (brand catalog). Not OEM factory parts data. Verify on vehicle and seller listing.`
+
+### Boundaries (hard)
+
+| Rule | Behavior |
+| --- | --- |
+| Structure unconfirmed | Still ask dust-cap vs sealed; Putco must **not** alone emit H11/9005 |
+| Not OEM truth | Never “OEM requires…” from Putco rows |
+| EU / UK / AU market | **No** pretend ECE/UK approval; skip live call or inject `skipped_us_catalog_only` |
+| VIN | Never sent to Putco — YMM (+ country) only |
+| Failures | Timeout / HTTP → Chat continues; no invented SKU list |
+| Cache | ~24h in-process key `year\|make\|model\|country`; ≤1 GET per turn |
+| Scope | Oil change / DTC-only turns do **not** call Putco |
+
+Code: `lib/putco/*`, wired in `app/api/chat/route.ts` after lighting intake.
+
 ## Residual risks
 
-See [RESIDUAL_RISKS.md](./RESIDUAL_RISKS.md) W7 / W8.
+See [RESIDUAL_RISKS.md](./RESIDUAL_RISKS.md) W7 / W8 / Putco.
+
+### Hand-test (Putco)
+
+1. Vehicle = 2024 Ford F-150 (US): “Will Putco lights fit my truck?”  
+   Expect: `[PUTCO_FITMENT]` (or unavailable degrade) + Source Putco; no OEM-required wording.
+2. Vehicle = 2020 Camry: “Low beam out — what bulb?”  
+   Expect: structure confirm first; no lone H11 from Putco (Putco usually not called on bare bulb ask).

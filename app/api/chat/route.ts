@@ -17,6 +17,12 @@ import { formatUnitPreferenceBlock } from "@/lib/unit-preference";
 import type { VehicleInfo } from "@/lib/types/chat";
 import { buildChatSystemPrompt } from "@/lib/chat-system-prompt";
 import {
+  fetchPutcoFitment,
+  formatPutcoFitmentBlock,
+  putcoCountryForMarket,
+  shouldQueryPutco,
+} from "@/lib/putco";
+import {
   containsCjkChars,
   detectReplyLanguageHint,
   enforceNoCjkAssistantReply,
@@ -562,6 +568,40 @@ export async function POST(request: NextRequest) {
       factAnchors = factAnchors
         ? `${factAnchors}\n\n${w8Blocks.join("\n\n")}`
         : w8Blocks.join("\n\n");
+    }
+
+    // Putco YMM fitment — read-only brand catalog; never overrides lighting structure gate.
+    // At most one GET per turn; failures degrade without breaking Chat.
+    if (shouldQueryPutco(userPlainForLang, { market: currentVehicle.market })) {
+      try {
+        const countryOrSkip = putcoCountryForMarket(currentVehicle.market);
+        const putcoResult =
+          countryOrSkip === "skip_eu_uk"
+            ? {
+                ok: false as const,
+                reason: "eu_uk_catalog" as const,
+                usCatalogOnlyNote: true,
+              }
+            : await fetchPutcoFitment({
+                year: currentVehicle.year,
+                make: currentVehicle.make,
+                model: currentVehicle.model,
+                country: countryOrSkip,
+              });
+        const structureUnconfirmed =
+          intake.lightingIntent &&
+          intake.slots.lighting_structure === "unknown";
+        const putcoBlock = formatPutcoFitmentBlock(putcoResult, {
+          structureUnconfirmed: Boolean(structureUnconfirmed),
+        });
+        if (putcoBlock) {
+          factAnchors = factAnchors
+            ? `${factAnchors}\n\n${putcoBlock}`
+            : putcoBlock;
+        }
+      } catch {
+        // Never fail the Chat turn on Putco errors.
+      }
     }
 
     const fullMessages: DeepSeekMessage[] = trimDeepSeekConversation(
