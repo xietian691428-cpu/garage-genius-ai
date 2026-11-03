@@ -4,7 +4,6 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { PDFParse } from "pdf-parse";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type { VehicleInfo } from "@/lib/types/chat";
@@ -16,10 +15,64 @@ import {
   clearManualConfirmedFluids,
 } from "@/lib/vehicle-manual-extract";
 
+type PdfParseCtor = {
+  new (opts: { data: Uint8Array }): {
+    getText: () => Promise<{
+      text?: string;
+      pages?: Array<{ num: number; text?: string }>;
+    }>;
+    destroy: () => Promise<void>;
+  };
+  setWorker: (workerSrc: string) => void;
+};
+
+let pdfParseMod: PdfParseCtor | null = null;
 let pdfWorkerConfigured = false;
 
+/**
+ * pdfjs (via pdf-parse) expects browser canvas globals. Vercel Node has none —
+ * polyfill just enough so module evaluation does not throw DOMMatrix.
+ * Lazy-import so GET /manual status does not load pdfjs at all.
+ */
+function ensurePdfjsNodePolyfills() {
+  const g = globalThis as Record<string, unknown>;
+  if (typeof g.DOMMatrix === "undefined") {
+    g.DOMMatrix = class DOMMatrix {
+      a = 1;
+      b = 0;
+      c = 0;
+      d = 1;
+      e = 0;
+      f = 0;
+    };
+  }
+  if (typeof g.ImageData === "undefined") {
+    g.ImageData = class ImageData {
+      data: Uint8ClampedArray;
+      width: number;
+      height: number;
+      constructor(sw: number, sh: number) {
+        this.width = sw;
+        this.height = sh;
+        this.data = new Uint8ClampedArray(sw * sh * 4);
+      }
+    };
+  }
+  if (typeof g.Path2D === "undefined") {
+    g.Path2D = class Path2D {};
+  }
+}
+
+async function loadPdfParse(): Promise<PdfParseCtor> {
+  if (pdfParseMod) return pdfParseMod;
+  ensurePdfjsNodePolyfills();
+  const mod = await import("pdf-parse");
+  pdfParseMod = (mod as { PDFParse: PdfParseCtor }).PDFParse;
+  return pdfParseMod;
+}
+
 /** Next.js turbopack cannot resolve pdfjs fake-worker; pin worker to package file. */
-function ensurePdfWorker() {
+async function ensurePdfWorker(PDFParse: PdfParseCtor) {
   if (pdfWorkerConfigured) return;
   const candidates = [
     path.join(
@@ -153,7 +206,8 @@ export type ManualPage = { page: number; text: string };
 export async function extractManualPages(
   bytes: Buffer | Uint8Array,
 ): Promise<ManualPage[]> {
-  ensurePdfWorker();
+  const PDFParse = await loadPdfParse();
+  await ensurePdfWorker(PDFParse);
   const parser = new PDFParse({ data: new Uint8Array(bytes) });
   try {
     const result = await parser.getText();
