@@ -2,6 +2,8 @@
 
 Garage Genius is an **educational lighting coach** (buy path → install → troubleshoot). It is not a parts marketplace, not a repair shop verdict, and not a legal ruling on FMVSS 108 / local lighting laws.
 
+**Evidence order (lighting included):** safety stop-rules / drive-safety / exit-under > unsafe or live `[OBD_STATE]` > `[USER_MANUAL]` (this vehicle) > `[GARAGE_PROFILE_FLUIDS]` (owner-confirmed) > model guess. A retrieved owner-manual page **does not** skip dust-cap vs sealed structure confirm and must not emit H11/9005 while `[LIGHTING_PATH]` is `ambiguous_needs_confirm`.
+
 ## What `[LIGHTING_PATH]` is
 
 When Chat detects an exterior-lighting intent, `gatherVehicleFactAnchors` may inject a `[LIGHTING_PATH]` block from:

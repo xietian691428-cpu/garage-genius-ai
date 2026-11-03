@@ -5,8 +5,43 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PDFParse } from "pdf-parse";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import type { VehicleInfo } from "@/lib/types/chat";
 import { ragService } from "@/lib/rag";
+import { rerankManualHitsByHeading } from "@/lib/vehicle-manual-intent";
+import {
+  persistOilExtractCandidates,
+  supersedeExtractsForVehicle,
+  clearManualConfirmedFluids,
+} from "@/lib/vehicle-manual-extract";
+
+let pdfWorkerConfigured = false;
+
+/** Next.js turbopack cannot resolve pdfjs fake-worker; pin worker to package file. */
+function ensurePdfWorker() {
+  if (pdfWorkerConfigured) return;
+  const candidates = [
+    path.join(
+      process.cwd(),
+      "node_modules/pdf-parse/dist/pdf-parse/esm/pdf.worker.mjs",
+    ),
+    path.join(process.cwd(), "node_modules/pdf-parse/dist/worker/pdf.worker.mjs"),
+    path.join(
+      process.cwd(),
+      "node_modules/pdf-parse/dist/pdf-parse/web/pdf.worker.mjs",
+    ),
+  ];
+  for (const workerPath of candidates) {
+    try {
+      PDFParse.setWorker(pathToFileURL(workerPath).href);
+      pdfWorkerConfigured = true;
+      return;
+    } catch {
+      /* try next */
+    }
+  }
+}
 
 export const VEHICLE_MANUAL_BUCKET = "vehicle-manuals";
 export const VEHICLE_MANUAL_MAX_BYTES = 40 * 1024 * 1024; // 40 MB
@@ -16,7 +51,8 @@ export const USER_MANUAL_SOURCE_LINE =
 
 const TARGET_CHARS = 1400;
 const OVERLAP_CHARS = 120;
-const MIN_CHUNK_CHARS = 180;
+/** Short oil-spec excerpts (one page of capacities) must still index. */
+const MIN_CHUNK_CHARS = 80;
 
 export type ManualStatus = "processing" | "ready" | "failed";
 export type ManualYmmMatch = "match" | "mismatch" | "unknown";
@@ -117,13 +153,15 @@ export type ManualPage = { page: number; text: string };
 export async function extractManualPages(
   bytes: Buffer | Uint8Array,
 ): Promise<ManualPage[]> {
+  ensurePdfWorker();
   const parser = new PDFParse({ data: new Uint8Array(bytes) });
   try {
     const result = await parser.getText();
     if (result.pages?.length) {
-      return result.pages
+      const fromPages = result.pages
         .map((p) => ({ page: p.num, text: p.text || "" }))
         .filter((p) => cleanText(p.text).length > 0);
+      if (fromPages.length) return fromPages;
     }
     const text = result.text || "";
     const parts = text.includes("\f") ? text.split("\f") : [text];
@@ -169,7 +207,8 @@ export function chunkManualPages(pages: ManualPage[]): BuiltChunk[] {
   for (const page of pages) {
     const pageText = cleanText(page.text);
     // Skip near-empty pages (covers/blanks) so page ranges stay meaningful.
-    if (pageText.length < 40) continue;
+    // Keep a low floor so short but real oil-spec excerpts still index.
+    if (pageText.length < 24) continue;
     if (!buffer) {
       pageStart = page.page;
       pageEnd = page.page;
@@ -333,19 +372,34 @@ export async function softDeleteVehicleManual(opts: {
   );
   if (!existing) return null;
 
+  await supersedeExtractsForVehicle({
+    client: opts.client,
+    userId: opts.userId,
+    vehicleId: opts.vehicleId,
+    manualId: existing.id,
+  }).catch(() => undefined);
+  await clearManualConfirmedFluids({
+    client: opts.client,
+    userId: opts.userId,
+    vehicleId: opts.vehicleId,
+  }).catch(() => undefined);
+
   await opts.client
     .from("vehicle_manual_chunks")
     .delete()
     .eq("manual_id", existing.id)
     .eq("user_id", opts.userId);
 
-  const { data, error } = await opts.client
+  // Soft-delete via service role after ownership was proven by the user-scoped
+  // getActiveVehicleManual above. Some DBs still have UPDATE WITH CHECK
+  // requiring deleted_at IS NULL (migration 058 recreates policies).
+  const { createSupabaseAdmin } = await import("@/lib/supabase-admin");
+  const admin = createSupabaseAdmin();
+  const { error } = await admin
     .from("vehicle_manuals")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", existing.id)
-    .eq("user_id", opts.userId)
-    .select("*")
-    .maybeSingle();
+    .eq("user_id", opts.userId);
   if (error) throw error;
 
   if (opts.removeStorage !== false && existing.storage_path) {
@@ -354,7 +408,10 @@ export async function softDeleteVehicleManual(opts: {
       .remove([existing.storage_path])
       .catch(() => undefined);
   }
-  return (data as VehicleManualRow | null) ?? existing;
+  return {
+    ...existing,
+    deleted_at: new Date().toISOString(),
+  };
 }
 
 export async function retrieveVehicleManualHits(opts: {
@@ -373,16 +430,17 @@ export async function retrieveVehicleManualHits(opts: {
 
   const q = opts.query.trim().slice(0, 500);
   if (!q) return [];
+  const limit = Math.max(1, Math.min(opts.limit ?? 4, 5));
 
   const { data, error } = await opts.client.rpc("match_vehicle_manual_chunks", {
     p_user_id: opts.userId,
     p_vehicle_id: opts.vehicleId,
     p_query: q,
-    p_limit: opts.limit ?? 4,
+    p_limit: limit,
   });
 
   if (!error && Array.isArray(data) && data.length) {
-    return data.map((row: Record<string, unknown>) => ({
+    const mapped = data.map((row: Record<string, unknown>) => ({
       id: String(row.id),
       manualId: String(row.manual_id),
       pageFrom: (row.page_from as number | null) ?? null,
@@ -391,6 +449,7 @@ export async function retrieveVehicleManualHits(opts: {
       content: String(row.content || ""),
       rank: Number(row.rank) || 0,
     }));
+    return rerankManualHitsByHeading(mapped, limit);
   }
 
   // Fallback: keyword scan within this user×vehicle only (never global).
@@ -419,9 +478,9 @@ export async function retrieveVehicleManualHits(opts: {
     })
     .filter((x) => x.score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, opts.limit ?? 4);
+    .slice(0, 12);
 
-  return scored.map(({ r, score }) => ({
+  const mapped = scored.map(({ r, score }) => ({
     id: r.id as string,
     manualId: r.manual_id as string,
     pageFrom: (r.page_from as number | null) ?? null,
@@ -430,6 +489,7 @@ export async function retrieveVehicleManualHits(opts: {
     content: String(r.content || ""),
     rank: score,
   }));
+  return rerankManualHitsByHeading(mapped, limit);
 }
 
 export async function processUploadedManual(opts: {
@@ -482,6 +542,24 @@ export async function processUploadedManual(opts: {
   );
   const ymmMatch = compareManualYmmToVehicle(guess, opts.vehicle);
   const built = chunkManualPages(pages);
+  if (!built.length) {
+    const { data, error } = await opts.client
+      .from("vehicle_manuals")
+      .update({
+        status: "failed",
+        error_message:
+          "PDF text was too sparse to index. Try a text-layer PDF with fuller pages.",
+        page_count: pages.length,
+        ymm_guess: guess,
+        ymm_match: ymmMatch,
+      })
+      .eq("id", opts.manualId)
+      .eq("user_id", opts.userId)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data as VehicleManualRow;
+  }
 
   await opts.client
     .from("vehicle_manual_chunks")
@@ -537,7 +615,15 @@ export async function processUploadedManual(opts: {
     .select("*")
     .single();
   if (error) throw error;
-  return data as VehicleManualRow;
+  const ready = data as VehicleManualRow;
+  await persistOilExtractCandidates({
+    client: opts.client,
+    userId: opts.userId,
+    vehicleId: opts.vehicleId,
+    manualId: opts.manualId,
+    chunks: built,
+  }).catch(() => undefined);
+  return ready;
 }
 
 export function toManualClientDto(row: VehicleManualRow) {

@@ -25,6 +25,15 @@ import {
 } from "@/lib/vehicle-data/ymm-conflict";
 
 const LOCAL_VEHICLES_KEY = "garageGenius_vehicles";
+
+function asFluidsSource(
+  raw: string | null | undefined,
+): VehicleInfo["oilCapacitySource"] | undefined {
+  if (raw === "user_entered" || raw === "vcdb" || raw === "user_manual_confirmed") {
+    return raw;
+  }
+  return undefined;
+}
 const MIGRATED_KEY_PREFIX = "garageGenius_vehicles_migrated_";
 
 export type UserVehicleRow = {
@@ -46,6 +55,9 @@ export type UserVehicleRow = {
   fuel_grade: string | null;
   oil_capacity: string | null;
   oil_viscosity: string | null;
+  oil_capacity_source?: string | null;
+  oil_viscosity_source?: string | null;
+  oil_specs_confirmed_at?: string | null;
   vin: string | null;
   license_plate?: string | null;
   last_maintenance: string | null;
@@ -92,6 +104,9 @@ export function rowToVehicleInfo(row: UserVehicleRow): VehicleInfo {
     fuelGrade: row.fuel_grade ?? undefined,
     oilCapacity: row.oil_capacity ?? undefined,
     oilViscosity: row.oil_viscosity ?? undefined,
+    oilCapacitySource: asFluidsSource(row.oil_capacity_source),
+    oilViscositySource: asFluidsSource(row.oil_viscosity_source),
+    oilSpecsConfirmedAt: row.oil_specs_confirmed_at ?? undefined,
     vin: row.vin ?? undefined,
     licensePlate: row.license_plate?.trim() || undefined,
     lastMaintenance: row.last_maintenance ?? undefined,

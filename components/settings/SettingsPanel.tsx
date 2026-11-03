@@ -259,7 +259,11 @@ export default function SettingsPanel({
             {vehiclesLoading ? (
               <p className="text-sm text-slate-500">{t("vehicles.manualLoading")}</p>
             ) : currentVehicle ? (
-              <VehicleManualPanel vehicle={currentVehicle} compact />
+              <VehicleManualPanel
+                vehicle={currentVehicle}
+                compact
+                onFluidsSaved={(v) => void onUpdateVehicle?.(v)}
+              />
             ) : (
               <p className="text-sm text-slate-500">{t("ai.gateNoVehicle")}</p>
             )}

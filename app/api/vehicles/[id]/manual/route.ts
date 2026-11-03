@@ -74,8 +74,17 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     > & { userClient: ReturnType<typeof createSupabaseUserClient>; user: { id: string } };
 
     const row = await getActiveVehicleManual(userClient, user.id, vehicleId);
+    const { listPendingExtracts, toExtractClientDto } = await import(
+      "@/lib/vehicle-manual-extract"
+    );
+    const extracts = row
+      ? (await listPendingExtracts(userClient, user.id, vehicleId)).map(
+          toExtractClientDto,
+        )
+      : [];
     return NextResponse.json({
       manual: row ? toManualClientDto(row) : null,
+      extracts,
     });
   } catch (err) {
     const blocked = aiAbuseResponse(err);

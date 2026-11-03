@@ -6,6 +6,7 @@ import { FileText, Trash2, Upload } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { VehicleInfo } from "@/lib/types/chat";
 import { dismissManualNudge } from "@/lib/vehicle-manual-nudge";
+import type { ManualExtractClientDto } from "@/lib/vehicle-manual-extract";
 
 export type ManualClientDto = {
   id: string;
@@ -27,6 +28,8 @@ type Props = {
   vehicle: VehicleInfo;
   compact?: boolean;
   onChanged?: (manual: ManualClientDto | null) => void;
+  onFluidsSaved?: (vehicle: VehicleInfo) => void;
+  onExtractsChanged?: (extracts: ManualExtractClientDto[]) => void;
 };
 
 async function authToken(): Promise<string | null> {
@@ -40,9 +43,14 @@ export default function VehicleManualPanel({
   vehicle,
   compact = false,
   onChanged,
+  onFluidsSaved,
+  onExtractsChanged,
 }: Props) {
   const { t } = useTranslation();
   const [manual, setManual] = useState<ManualClientDto | null>(null);
+  const [extracts, setExtracts] = useState<ManualExtractClientDto[]>([]);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,16 +65,22 @@ export default function VehicleManualPanel({
       const res = await fetch(`/api/vehicles/${vehicle.id}/manual`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = (await res.json()) as { manual?: ManualClientDto | null };
+      const data = (await res.json()) as {
+        manual?: ManualClientDto | null;
+        extracts?: ManualExtractClientDto[];
+      };
       const next = data.manual ?? null;
+      const nextExtracts = data.extracts ?? [];
       setManual(next);
+      setExtracts(nextExtracts);
       onChanged?.(next);
+      onExtractsChanged?.(nextExtracts);
     } catch {
       /* ignore */
     } finally {
       setLoading(false);
     }
-  }, [vehicle.id, onChanged]);
+  }, [vehicle.id, onChanged, onExtractsChanged]);
 
   useEffect(() => {
     setLoading(true);
@@ -89,6 +103,7 @@ export default function VehicleManualPanel({
       });
       const data = (await res.json()) as {
         manual?: ManualClientDto | null;
+        extracts?: ManualExtractClientDto[];
         error?: string;
       };
       if (!res.ok && !data.manual) {
@@ -99,6 +114,7 @@ export default function VehicleManualPanel({
       if (data.manual?.searchable) {
         dismissManualNudge(vehicle.id);
       }
+      await refresh();
       if (data.error) setError(data.error);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("vehicles.manualUploadFailed"));
@@ -153,10 +169,54 @@ export default function VehicleManualPanel({
         throw new Error(data.error || t("vehicles.manualDeleteFailed"));
       }
       setManual(null);
+      setExtracts([]);
       onChanged?.(null);
+      onExtractsChanged?.([]);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("vehicles.manualDeleteFailed"),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resolveExtract = async (
+    candidate: ManualExtractClientDto,
+    action: "confirm" | "reject" | "edit",
+    value?: string,
+  ) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const token = await authToken();
+      if (!token) throw new Error(t("ai.signInRequired"));
+      const res = await fetch(`/api/vehicles/${vehicle.id}/manual/extracts`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action,
+          candidateId: candidate.id,
+          value,
+        }),
+      });
+      const data = (await res.json()) as {
+        extracts?: ManualExtractClientDto[];
+        vehicle?: VehicleInfo | null;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(data.error || t("vehicles.manualExtractFailed"));
+      const nextExtracts = data.extracts ?? [];
+      setExtracts(nextExtracts);
+      setEditId(null);
+      onExtractsChanged?.(nextExtracts);
+      if (data.vehicle) onFluidsSaved?.(data.vehicle);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : t("vehicles.manualExtractFailed"),
       );
     } finally {
       setBusy(false);
@@ -222,6 +282,103 @@ export default function VehicleManualPanel({
           </p>
           {manual.errorMessage ? (
             <p className="text-[11px] text-amber-200">{manual.errorMessage}</p>
+          ) : null}
+          {extracts.length > 0 ? (
+            <div
+              className="rounded-xl border border-cyan-800/60 bg-cyan-950/30 p-3"
+              data-testid="vehicle-manual-extract"
+            >
+              <p className="text-xs font-medium text-cyan-50">
+                {t("vehicles.manualExtractTitle")}
+              </p>
+              <p className="mt-1 text-[11px] leading-snug text-slate-400">
+                {t("vehicles.manualExtractHint")}
+              </p>
+              <ul className="mt-2 space-y-2">
+                {extracts.map((ex) => (
+                  <li
+                    key={ex.id}
+                    className="rounded-lg border border-slate-700/70 bg-slate-950/40 p-2"
+                    data-testid={`vehicle-manual-extract-${ex.field}`}
+                  >
+                    <p className="text-xs text-slate-100">
+                      {ex.field === "viscosity"
+                        ? t("vehicles.manualExtractViscosity", { value: ex.value })
+                        : t("vehicles.manualExtractCapacity", { value: ex.value })}
+                    </p>
+                    {ex.excerpt ? (
+                      <p className="mt-0.5 text-[11px] leading-snug text-slate-500">
+                        {ex.excerpt}
+                      </p>
+                    ) : null}
+                    {editId === ex.id ? (
+                      <div className="mt-2 flex flex-col gap-2">
+                        <input
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="min-h-[44px] rounded-lg border border-slate-600 bg-slate-900 px-2 text-sm text-slate-100"
+                          data-testid="vehicle-manual-extract-edit-input"
+                        />
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            disabled={busy || !editValue.trim()}
+                            data-testid="vehicle-manual-extract-edit-save"
+                            onClick={() =>
+                              void resolveExtract(ex, "edit", editValue.trim())
+                            }
+                            className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl bg-cyan-600 px-3 text-xs font-semibold text-white disabled:opacity-50"
+                          >
+                            {t("vehicles.manualExtractSaveEdited")}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setEditId(null)}
+                            className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl border border-slate-600 px-3 text-xs text-slate-200"
+                          >
+                            {t("ai.manualNudgeDismiss")}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={busy}
+                          data-testid={`vehicle-manual-extract-confirm-${ex.field}`}
+                          onClick={() => void resolveExtract(ex, "confirm")}
+                          className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl bg-cyan-600 px-3 text-xs font-semibold text-white disabled:opacity-50"
+                        >
+                          {t("vehicles.manualExtractSave")}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          data-testid={`vehicle-manual-extract-edit-${ex.field}`}
+                          onClick={() => {
+                            setEditId(ex.id);
+                            setEditValue(ex.value);
+                          }}
+                          className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl border border-slate-600 px-3 text-xs text-slate-200 disabled:opacity-50"
+                        >
+                          {t("vehicles.manualExtractEdit")}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          data-testid={`vehicle-manual-extract-reject-${ex.field}`}
+                          onClick={() => void resolveExtract(ex, "reject")}
+                          className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl border border-slate-700 px-3 text-xs text-slate-400 disabled:opacity-50"
+                        >
+                          {t("vehicles.manualExtractReject")}
+                        </button>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : null}
           {manual.status === "ready" &&
           manual.ymmMatch === "mismatch" &&

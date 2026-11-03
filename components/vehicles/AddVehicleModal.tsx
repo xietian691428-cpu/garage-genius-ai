@@ -661,7 +661,10 @@ export default function AddVehicleModal({
 
         {isEdit && initialVehicle?.id ? (
           <div className="mt-4">
-            <VehicleManualPanel vehicle={initialVehicle} />
+            <VehicleManualPanel
+              vehicle={initialVehicle}
+              onFluidsSaved={(v) => void onSave?.(v)}
+            />
           </div>
         ) : null}
 

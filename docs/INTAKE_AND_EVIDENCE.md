@@ -42,6 +42,8 @@ Rules:
 
 Preferred reply shape: What we know → What we still need → Likely directions → Next safest checks → Stop / see a pro.
 
+When `[MANUAL_REPLY_FRAME]` is present (maintenance / spec / DTC), prefer **Now (OBD)** → **Per your manual / garage profile** → **Do next** → **Stop if**, still bounded by the evidence order **safety > OBD unsafe > manual > garage (confirmed) > model**.
+
 ## Stop rules (`[STOP_RULE]`)
 
 `content/safety/stop-rules.json` + `lib/safety/stop-rules.ts`. On hit: no deep DIY / coding steps; arrange qualified tech; optional pre-shop recording tips.

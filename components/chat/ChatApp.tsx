@@ -231,6 +231,8 @@ export default function ChatApp({
   const [manualNudgeOpen, setManualNudgeOpen] = useState(false);
   const [manualNudgeNoCopyOpen, setManualNudgeNoCopyOpen] = useState(false);
   const [hasSearchableManual, setHasSearchableManual] = useState(false);
+  const [pendingOilExtracts, setPendingOilExtracts] = useState(0);
+  const [extractBadgeDismissed, setExtractBadgeDismissed] = useState(false);
   const [manualUploadOpen, setManualUploadOpen] = useState(false);
   useBodyScrollLock(threadSheetOpen || manualUploadOpen);
   const [postSaveDtcOpen, setPostSaveDtcOpen] = useState(false);
@@ -326,11 +328,14 @@ export default function ChatApp({
   useEffect(() => {
     if (!currentVehicle?.id) {
       setHasSearchableManual(false);
+      setPendingOilExtracts(0);
+      setExtractBadgeDismissed(false);
       setManualNudgeOpen(false);
       setManualNudgeNoCopyOpen(false);
       return;
     }
     setManualNudgeNoCopyOpen(false);
+    setExtractBadgeDismissed(false);
     let cancelled = false;
     void (async () => {
       try {
@@ -346,9 +351,13 @@ export default function ChatApp({
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as {
           manual?: { searchable?: boolean } | null;
+          extracts?: unknown[];
         };
         if (!cancelled) {
           setHasSearchableManual(Boolean(data.manual?.searchable));
+          setPendingOilExtracts(
+            Array.isArray(data.extracts) ? data.extracts.length : 0,
+          );
         }
       } catch {
         /* ignore */
@@ -2073,10 +2082,47 @@ export default function ChatApp({
             </div>
           </div>
         ) : null}
+        {pendingOilExtracts > 0 &&
+        currentVehicle &&
+        !extractBadgeDismissed &&
+        !manualNudgeOpen &&
+        !newTopicToast &&
+        !vehicleIsolatedToast ? (
+          <div
+            className="shrink-0 border-t border-cyan-900/40 bg-cyan-950/25 px-3 py-2 sm:px-4"
+            data-testid="chat-manual-extract-badge"
+            role="status"
+          >
+            <div className="mx-auto flex max-w-3xl items-center justify-between gap-2">
+              <p className="text-xs leading-snug text-cyan-50/90">
+                {t("ai.manualExtractBadge")}
+              </p>
+              <div className="flex shrink-0 items-center gap-1">
+                <button
+                  type="button"
+                  data-testid="chat-manual-extract-review"
+                  onClick={() => setManualUploadOpen(true)}
+                  className={GATE_CTA_PRIMARY}
+                >
+                  {t("ai.manualExtractReview")}
+                </button>
+                <button
+                  type="button"
+                  data-testid="chat-manual-extract-dismiss"
+                  onClick={() => setExtractBadgeDismissed(true)}
+                  className={GATE_CTA_GHOST}
+                >
+                  {t("ai.manualNudgeDismiss")}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
         {!topicHintDismissed &&
         !newTopicToast &&
         !vehicleIsolatedToast &&
         !manualNudgeOpen &&
+        pendingOilExtracts === 0 &&
         messages.filter((m) => m.id !== "welcome").length >= 6 ? (
           <div
             className="shrink-0 border-t border-slate-800/80 bg-slate-950/40 px-3 py-2 sm:px-4"
@@ -2312,6 +2358,8 @@ export default function ChatApp({
                   setManualNudgeOpen(false);
                 }
               }}
+              onExtractsChanged={(rows) => setPendingOilExtracts(rows.length)}
+              onFluidsSaved={(v) => void onVehicleChange(v)}
             />
           </div>
         </div>

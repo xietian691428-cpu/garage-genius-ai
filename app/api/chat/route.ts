@@ -599,28 +599,34 @@ export async function POST(request: NextRequest) {
         typeof import("@/lib/vehicle-manuals").retrieveVehicleManualHits
       >
     > = [];
-    let userManualBlock = "";
+    let manualIntent: import("@/lib/vehicle-manual-intent").ManualIntent =
+      "general";
     try {
-      const {
-        retrieveVehicleManualHits,
-        formatUserManualForPrompt,
-      } = await import("@/lib/vehicle-manuals");
+      const { retrieveVehicleManualHits } = await import(
+        "@/lib/vehicle-manuals"
+      );
+      const { buildManualRetrievalQuery } = await import(
+        "@/lib/vehicle-manual-intent"
+      );
+      const { extractDtcCodes } = await import("@/lib/dtc-parse");
+      const planned = buildManualRetrievalQuery({
+        userText: textForFacts,
+        dtcs: extractDtcCodes(textForFacts),
+      });
+      manualIntent = planned.intent;
       userManualHits = await retrieveVehicleManualHits({
         client: userClient,
         userId: user.id,
         vehicleId: currentVehicle.id,
-        query: ragQuery,
+        query: planned.query,
         limit: 4,
       });
-      userManualBlock = formatUserManualForPrompt(userManualHits);
     } catch (err) {
       console.warn("[/api/chat] private manual retrieve skipped", {
         message: err instanceof Error ? err.message : String(err),
       });
     }
-    const ragContext = [ragContextBase, userManualBlock]
-      .filter((s) => s?.trim())
-      .join("\n\n");
+    const ragContext = ragContextBase;
     const ragFocusHint = extractFocusFromRagHits(ragHits);
 
     // ── Affiliate catalog first (Admin affiliate_parts) ──
@@ -781,6 +787,57 @@ export async function POST(request: NextRequest) {
       } catch {
         // Never fail the Chat turn on Putco errors.
       }
+    }
+
+    try {
+      const { assembleManualSameFrame, resolveObdStateForPrompt } = await import(
+        "@/lib/vehicle-manual-frame"
+      );
+      let vitals: {
+        dtc_codes?: unknown;
+        source?: string | null;
+        snapshot_at?: string | null;
+        notes?: string | null;
+      } | null = null;
+      try {
+        const { data } = await userClient
+          .from("vehicle_vitals")
+          .select("dtc_codes, source, snapshot_at, notes")
+          .eq("user_id", user.id)
+          .eq("vehicle_id", currentVehicle.id)
+          .order("snapshot_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        vitals = data ?? null;
+      } catch {
+        vitals = null;
+      }
+      const sameFrame = assembleManualSameFrame({
+        intent: manualIntent,
+        userText: userPlainForLang,
+        obd: resolveObdStateForPrompt({
+          vitals,
+          userText: userPlainForLang,
+          hasLiveAdapter: hasLiveObdAdapter(obdPreference),
+        }),
+        manualHits: userManualHits,
+        garageFluids: {
+          oilCapacity: currentVehicle.oilCapacity,
+          oilViscosity: currentVehicle.oilViscosity,
+          oilCapacitySource: currentVehicle.oilCapacitySource,
+          oilViscositySource: currentVehicle.oilViscositySource,
+          oilSpecsConfirmedAt: currentVehicle.oilSpecsConfirmedAt,
+        },
+      });
+      if (sameFrame.trim()) {
+        factAnchors = factAnchors
+          ? `${factAnchors}\n\n${sameFrame}`
+          : sameFrame;
+      }
+    } catch (err) {
+      console.warn("[/api/chat] manual same-frame skipped", {
+        message: err instanceof Error ? err.message : String(err),
+      });
     }
 
     const fullMessages: DeepSeekMessage[] = trimDeepSeekConversation(
@@ -962,16 +1019,21 @@ export async function POST(request: NextRequest) {
       currentFocus: drift.currentFocus,
     });
 
-    const manualAllow = userManualHits.length
-      ? (
-          await import("@/lib/vehicle-manuals")
-        ).extractManualSpecAllowlist(userManualHits)
-      : {};
+    const { buildManualSpecAnchors } = await import(
+      "@/lib/vehicle-manual-frame"
+    );
+    const manualAllow = buildManualSpecAnchors({
+      retrievedHits: userManualHits,
+      garage: {
+        oilCapacity: currentVehicle.oilCapacity,
+        oilViscosity: currentVehicle.oilViscosity,
+        oilCapacitySource: currentVehicle.oilCapacitySource,
+        oilViscositySource: currentVehicle.oilViscositySource,
+      },
+    });
     const specCtx = {
-      oilCapacity:
-        currentVehicle.oilCapacity || manualAllow.oilCapacity || null,
-      oilViscosity:
-        currentVehicle.oilViscosity || manualAllow.oilViscosity || null,
+      oilCapacity: manualAllow.oilCapacity,
+      oilViscosity: manualAllow.oilViscosity,
       torqueSpec: manualAllow.torqueSpec || null,
       oemNumbers: prioritized.map((p) => p.oem_number),
     };

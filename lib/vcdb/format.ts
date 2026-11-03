@@ -151,8 +151,13 @@ export function formatVehicleConfigCard(vehicle: VehicleInfo): string {
     lines.push(`- Fuel: ${fluids.fuelGrade}`);
   }
   if (chatOilLine) {
+    const fromManual =
+      vehicle.oilCapacitySource === "user_manual_confirmed" ||
+      vehicle.oilViscositySource === "user_manual_confirmed";
     lines.push(
-      `- Engine oil: ${chatOilLine} (garage profile — verify on the under-hood fill cap / owner's manual; garage hand-fill can be wrong)`,
+      fromManual
+        ? `- Engine oil: ${chatOilLine} (Garage profile (from your manual) — verify on the under-hood fill cap; confirm the PDF matches this vehicle)`
+        : `- Engine oil: ${chatOilLine} (garage profile — verify on the under-hood fill cap / owner's manual; garage hand-fill can be wrong)`,
     );
   }
 

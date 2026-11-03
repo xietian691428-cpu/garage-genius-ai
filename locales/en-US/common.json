@@ -163,7 +163,9 @@
     "manualNudgeDismiss": "Not now",
     "manualNudgeNoCopy": "Don’t have it?",
     "manualNudgeNoCopyHint": "No problem — use the under-hood label and keep going. Upload later if you find a copy.",
-    "manualCiteBadge": "Your manual"
+    "manualCiteBadge": "Your manual",
+    "manualExtractBadge": "Save oil specs from your manual?",
+    "manualExtractReview": "Review"
   },
   "dtc": {
     "enterCode": "Enter fault code",
@@ -496,7 +498,16 @@
     "manualConfirmFailed": "Could not confirm the manual.",
     "manualDeleteFailed": "Could not delete the manual.",
     "manualsSettingsTitle": "My manuals",
-    "manualsSettingsHint": "We can’t provide OEM manuals (copyright). Upload your PDF for this vehicle only — private to your account."
+    "manualsSettingsHint": "We can’t provide OEM manuals (copyright). Upload your PDF for this vehicle only — private to your account.",
+    "manualExtractTitle": "We found in your manual",
+    "manualExtractHint": "Save to this vehicle’s profile? We’ll label it Garage profile (from your manual). You can edit or skip.",
+    "manualExtractViscosity": "Oil viscosity: {{value}}",
+    "manualExtractCapacity": "Oil capacity: {{value}}",
+    "manualExtractSave": "Save to this vehicle",
+    "manualExtractSaveEdited": "Save my value",
+    "manualExtractEdit": "Edit",
+    "manualExtractReject": "Don’t save",
+    "manualExtractFailed": "Could not save oil specs."
   },
   "shopReport": {
     "eyebrow": "Shop handoff",

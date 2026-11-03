@@ -21,5 +21,6 @@ Playwright smoke exists (`e2e/p1-smoke.spec.ts`, `e2e/chat-shop-report.spec.ts`)
 | W5 | Guide↔Chat 同锚点 | `tests/coach-guide-chat.test.ts` |
 | W6 | raised + stay-under 矛盾; observe 无 VIN | `tests/safety-topics.test.ts`, `tests/safety-observe-events.test.ts` |
 | Funnel | US 高频码 chips / 空车库文案 | `tests/us-completion-funnel.test.ts`, `tests/chat-repair-loop.test.ts` |
+| Manual | 私有手册意图检索 / 同框 / 机油确认 | `tests/vehicle-manuals.test.ts`, `tests/vehicle-manual-frame.test.ts` |
 
 Invariants: `docs/SAFETY_INVARIANTS.md`. Residual gaps: `docs/RESIDUAL_RISKS.md`. QA vs paid quotas: `docs/INTERNAL_TEST_QUOTAS.md`.

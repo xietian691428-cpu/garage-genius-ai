@@ -29,6 +29,10 @@ export interface VehicleInfo {
   oilCapacity?: string;
   /** e.g. "0W-16" */
   oilViscosity?: string;
+  /** How oilCapacity was set — user_manual_confirmed only after owner confirm. */
+  oilCapacitySource?: "user_entered" | "vcdb" | "user_manual_confirmed";
+  oilViscositySource?: "user_entered" | "vcdb" | "user_manual_confirmed";
+  oilSpecsConfirmedAt?: string;
   vin?: string;
   /** Optional license / number plate for shop handoff */
   licensePlate?: string;

@@ -290,6 +290,9 @@ describe("manual copy keys (en + es)", () => {
     "manualReady",
     "manualMismatchWarn",
     "manualsSettingsHint",
+    "manualExtractTitle",
+    "manualExtractHint",
+    "manualExtractSave",
   ] as const;
   const aiKeys = [
     "manualNudge",
@@ -297,6 +300,7 @@ describe("manual copy keys (en + es)", () => {
     "manualNudgeDismiss",
     "manualNudgeNoCopy",
     "manualNudgeNoCopyHint",
+    "manualExtractBadge",
   ] as const;
 
   it("en-US keys exist and stay non-coercive", () => {

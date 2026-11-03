@@ -163,7 +163,9 @@
     "manualNudgeDismiss": "Ahora no",
     "manualNudgeNoCopy": "¿No lo tengo?",
     "manualNudgeNoCopyHint": "Sin problema — usa la etiqueta bajo el capó y sigue. Puedes subirlo más tarde si encuentras una copia.",
-    "manualCiteBadge": "Tu manual"
+    "manualCiteBadge": "Tu manual",
+    "manualExtractBadge": "¿Guardar datos de aceite de tu manual?",
+    "manualExtractReview": "Revisar"
   },
   "dtc": {
     "enterCode": "Introducir código de fallo",
@@ -496,7 +498,16 @@
     "manualConfirmFailed": "No se pudo confirmar el manual.",
     "manualDeleteFailed": "No se pudo eliminar el manual.",
     "manualsSettingsTitle": "Mis manuales",
-    "manualsSettingsHint": "No podemos ofrecer manuales OEM (copyright). Sube tu PDF solo para este vehículo — privado en tu cuenta."
+    "manualsSettingsHint": "No podemos ofrecer manuales OEM (copyright). Sube tu PDF solo para este vehículo — privado en tu cuenta.",
+    "manualExtractTitle": "Encontramos en tu manual",
+    "manualExtractHint": "¿Guardar en el perfil de este vehículo? Lo etiquetaremos como Perfil del garaje (de tu manual). Puedes editar o omitir.",
+    "manualExtractViscosity": "Viscosidad: {{value}}",
+    "manualExtractCapacity": "Capacidad de aceite: {{value}}",
+    "manualExtractSave": "Guardar en este vehículo",
+    "manualExtractSaveEdited": "Guardar mi valor",
+    "manualExtractEdit": "Editar",
+    "manualExtractReject": "No guardar",
+    "manualExtractFailed": "No se pudieron guardar los datos de aceite."
   },
   "shopReport": {
     "eyebrow": "Entrega al taller",
