@@ -18,6 +18,7 @@ import {
   storagePathForManual,
   toManualClientDto,
 } from "@/lib/vehicle-manuals";
+import { logManualObserve } from "@/lib/manual-observe";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -116,6 +117,11 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     const form = await req.formData();
     const file = form.get("file");
     if (!(file instanceof File)) {
+      logManualObserve(
+        "upload_reject",
+        { reason: "missing_file" },
+        { userId: user.id },
+      );
       return NextResponse.json(
         { error: "PDF file is required (field: file)." },
         { status: 400 },
@@ -124,18 +130,33 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     const filename = (file.name || "manual.pdf").slice(0, 180);
     const mime = (file.type || "").toLowerCase();
     if (mime && mime !== "application/pdf") {
+      logManualObserve(
+        "upload_reject",
+        { reason: "not_pdf", mime },
+        { userId: user.id },
+      );
       return NextResponse.json(
         { error: "PDF only. Text-layer PDFs work best." },
         { status: 400 },
       );
     }
     if (!/\.pdf$/i.test(filename) && mime !== "application/pdf") {
+      logManualObserve(
+        "upload_reject",
+        { reason: "not_pdf_ext" },
+        { userId: user.id },
+      );
       return NextResponse.json(
         { error: "PDF only. Text-layer PDFs work best." },
         { status: 400 },
       );
     }
     if (file.size <= 0 || file.size > VEHICLE_MANUAL_MAX_BYTES) {
+      logManualObserve(
+        "upload_reject",
+        { reason: "size", fileSize: file.size },
+        { userId: user.id },
+      );
       return NextResponse.json(
         {
           error: `File must be under ${Math.floor(VEHICLE_MANUAL_MAX_BYTES / (1024 * 1024))} MB.`,
@@ -168,6 +189,11 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       });
     if (upErr) {
       console.error("[manual upload storage]", upErr);
+      logManualObserve(
+        "upload_storage_fail",
+        { reason: upErr.message?.slice(0, 120) || "storage" },
+        { userId: user.id },
+      );
       return NextResponse.json(
         { error: "Could not store PDF. Try again." },
         { status: 500 },
@@ -192,6 +218,11 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     if (insErr || !inserted) {
       await userClient.storage.from(VEHICLE_MANUAL_BUCKET).remove([path]);
       console.error("[manual insert]", insErr);
+      logManualObserve(
+        "upload_insert_fail",
+        { reason: insErr?.message?.slice(0, 120) || "insert" },
+        { userId: user.id },
+      );
       return NextResponse.json(
         { error: "Could not save manual record." },
         { status: 500 },
@@ -210,6 +241,16 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       return NextResponse.json({ manual: toManualClientDto(ready) });
     } catch (err) {
       console.error("[manual process]", err);
+      logManualObserve(
+        "process_failed",
+        {
+          reason:
+            err instanceof Error
+              ? err.message.slice(0, 120)
+              : "process_exception",
+        },
+        { userId: user.id },
+      );
       const { data: failed } = await userClient
         .from("vehicle_manuals")
         .update({
@@ -258,6 +299,7 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
       vehicleId,
       removeStorage: true,
     });
+    logManualObserve("manual_deleted", {}, { userId: user.id });
     return NextResponse.json({ ok: true });
   } catch (err) {
     const blocked = aiAbuseResponse(err);

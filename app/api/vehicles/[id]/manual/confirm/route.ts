@@ -13,6 +13,7 @@ import {
   getActiveVehicleManual,
   toManualClientDto,
 } from "@/lib/vehicle-manuals";
+import { logManualObserve } from "@/lib/manual-observe";
 
 export const runtime = "nodejs";
 
@@ -77,6 +78,12 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       .select("*")
       .single();
     if (error) throw error;
+
+    logManualObserve(
+      "mismatch_confirmed",
+      { ymmMatch: row.ymm_match },
+      { userId: user.id },
+    );
 
     return NextResponse.json({ manual: toManualClientDto(data as never) });
   } catch (err) {

@@ -82,6 +82,12 @@ export default function OpsOverviewPanel() {
             Token 用量
           </Link>
           <Link
+            href="/admin/ops/manuals"
+            className="rounded-full bg-slate-900 px-3 py-1.5 text-xs text-slate-300"
+          >
+            手册观察
+          </Link>
+          <Link
             href="/admin/ops/revenue"
             className="rounded-full bg-slate-900 px-3 py-1.5 text-xs text-slate-300"
           >

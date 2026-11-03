@@ -14,6 +14,7 @@ import {
   supersedeExtractsForVehicle,
   clearManualConfirmedFluids,
 } from "@/lib/vehicle-manual-extract";
+import { logManualObserve } from "@/lib/manual-observe";
 
 type PdfParseCtor = {
   new (opts: { data: Uint8Array }): {
@@ -570,6 +571,11 @@ export async function processUploadedManual(opts: {
       .select("*")
       .single();
     if (error) throw error;
+    logManualObserve(
+      "process_failed",
+      { reason: "no_text", pageCount: 0, chunkCount: 0 },
+      { userId: opts.userId },
+    );
     return data as VehicleManualRow;
   }
   if (pages.length > VEHICLE_MANUAL_MAX_PAGES) {
@@ -585,6 +591,11 @@ export async function processUploadedManual(opts: {
       .select("*")
       .single();
     if (error) throw error;
+    logManualObserve(
+      "process_failed",
+      { reason: "too_many_pages", pageCount: pages.length, chunkCount: 0 },
+      { userId: opts.userId },
+    );
     return data as VehicleManualRow;
   }
 
@@ -612,6 +623,16 @@ export async function processUploadedManual(opts: {
       .select("*")
       .single();
     if (error) throw error;
+    logManualObserve(
+      "process_sparse",
+      {
+        reason: "no_chunks",
+        pageCount: pages.length,
+        chunkCount: 0,
+        ymmMatch,
+      },
+      { userId: opts.userId },
+    );
     return data as VehicleManualRow;
   }
 
@@ -677,6 +698,19 @@ export async function processUploadedManual(opts: {
     manualId: opts.manualId,
     chunks: built,
   }).catch(() => undefined);
+  logManualObserve(
+    "process_ready",
+    {
+      pageCount: pages.length,
+      chunkCount: built.length,
+      ymmMatch,
+      searchable: isManualSearchable(ready),
+    },
+    { userId: opts.userId },
+  );
+  if (ymmMatch === "mismatch") {
+    logManualObserve("mismatch", { ymmMatch }, { userId: opts.userId });
+  }
   return ready;
 }
 

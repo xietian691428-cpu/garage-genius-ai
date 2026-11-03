@@ -16,6 +16,7 @@ import {
   type FluidsSource,
 } from "@/lib/vehicle-manual-extract";
 import { rowToVehicleInfo, type UserVehicleRow } from "@/lib/user-vehicles";
+import { logManualObserve } from "@/lib/manual-observe";
 
 export const runtime = "nodejs";
 
@@ -140,6 +141,11 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         .eq("id", candidateId)
         .eq("user_id", user.id);
       if (error) throw error;
+      logManualObserve(
+        "extract_reject",
+        { field },
+        { userId: user.id },
+      );
     } else {
       const useEdited = action === "edit" || (edited && edited !== candidate.value);
       const value = useEdited ? edited || candidate.value : candidate.value;
@@ -179,6 +185,11 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         .eq("id", candidateId)
         .eq("user_id", user.id);
       if (error) throw error;
+      logManualObserve(
+        useEdited ? "extract_edit" : "extract_confirm",
+        { field, source },
+        { userId: user.id },
+      );
     }
 
     const remaining = await listPendingExtracts(userClient, user.id, vehicleId);
