@@ -18,6 +18,9 @@ export const INVENTED_NM_RE =
 /** "4.5 liters" — not bare "2.5L" engine displacement. */
 export const INVENTED_LITER_RE = /\b\d+(?:\.\d+)?\s*(?:liters?|litres)\b/gi;
 
+/** DOT-3 / DOT 4 / DOT-5.1 — only when anchored this turn. */
+export const INVENTED_DOT_RE = /\bDOT[\s-]?[345](?:\.1)?\b/gi;
+
 /** 0W-16 as “this vehicle must use” — quoting a garage grade without “required” is ok. */
 export const INVENTED_VISC_REQUIRED_RE =
   /\b\d+\s*w\s*-?\s*\d+\s+(?:required|only)\b|\b(?:must use|required viscosity(?:\s+is)?|only use)\s+\d+\s*w\s*-?\s*\d+\b/gi;
@@ -34,19 +37,42 @@ export const SPEC_TORQUE_REWRITE = "the torque spec in the owner's manual";
 export const SPEC_OEM_REWRITE =
   "an OEM number verified with your VIN / dealer EPC";
 
+export const SPEC_DOT_REWRITE =
+  "the brake fluid type in your owner's manual";
+
 export type SpecAnchorContext = {
   oilCapacity?: string | null;
   oilViscosity?: string | null;
+  /** Confirmed or retrieved coolant capacity text (as written). */
+  coolantCapacity?: string | null;
+  /** Confirmed or retrieved brake fluid DOT type. */
+  brakeFluidSpec?: string | null;
   /** Explicit torque anchors only — oil capacity must never unlock ft-lb / N·m. */
   torqueSpec?: string | null;
   oemNumbers?: Array<string | null | undefined>;
 };
 
+function expandBrakeFluidSpecAllow(raw: string): string[] {
+  const s = raw.trim();
+  if (!s) return [];
+  const m = s.match(/DOT[\s-]?([345](?:\.1)?)/i);
+  if (!m) return [s];
+  const n = m[1];
+  return [`DOT-${n}`, `DOT ${n}`, `DOT${n}`, s];
+}
+
 /** Fluid / viscosity / OEM allowlist (not torque). */
 export function specFluidAllowlistBlob(ctx?: SpecAnchorContext | null): string {
   if (!ctx) return "";
   const oems = (ctx.oemNumbers ?? []).map((n) => String(n || "").trim());
-  return [ctx.oilCapacity, ctx.oilViscosity, ...oems]
+  const brake = expandBrakeFluidSpecAllow(String(ctx.brakeFluidSpec || ""));
+  return [
+    ctx.oilCapacity,
+    ctx.oilViscosity,
+    ctx.coolantCapacity,
+    ...brake,
+    ...oems,
+  ]
     .filter((s) => s && String(s).trim())
     .join("\n")
     .toLowerCase();
@@ -149,6 +175,7 @@ export function inventedSpecFailures(
 
   pushIfUnallowed(INVENTED_QT_RE, "invented_spec:qt", fluidAllow);
   pushIfUnallowed(INVENTED_LITER_RE, "invented_spec:liter", fluidAllow);
+  pushIfUnallowed(INVENTED_DOT_RE, "invented_spec:dot", fluidAllow);
   // Torque never inherits oil capacity / viscosity allowlist.
   pushIfUnallowed(INVENTED_FTLB_RE, "invented_spec:ft-lb", torqueAllow);
   pushIfUnallowed(INVENTED_NM_RE, "invented_spec:n-m", torqueAllow);
@@ -238,6 +265,7 @@ export function rewriteInventedSpecs(
       let out = chunk.value;
       out = replaceUnallowed(out, INVENTED_QT_RE, SPEC_MANUAL_REWRITE, fluidAllow);
       out = replaceUnallowed(out, INVENTED_LITER_RE, SPEC_MANUAL_REWRITE, fluidAllow);
+      out = replaceUnallowed(out, INVENTED_DOT_RE, SPEC_DOT_REWRITE, fluidAllow);
       out = replaceUnallowed(out, INVENTED_FTLB_RE, SPEC_TORQUE_REWRITE, torqueAllow);
       out = replaceUnallowed(out, INVENTED_NM_RE, SPEC_TORQUE_REWRITE, torqueAllow);
       out = replaceUnallowed(

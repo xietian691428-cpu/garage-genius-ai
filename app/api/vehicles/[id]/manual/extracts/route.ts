@@ -10,7 +10,9 @@ import {
   VEHICLE_NOT_OWNED_CODE,
 } from "@/lib/chat-vehicle-ownership";
 import {
+  garagePatchForExtractConfirm,
   listPendingExtracts,
+  normalizeExtractKind,
   toExtractClientDto,
   type ExtractField,
   type FluidsSource,
@@ -61,7 +63,7 @@ async function requireOwned(req: NextRequest, vehicleId: string) {
   return { userClient, user, vehicle: owned };
 }
 
-/** GET pending oil extract candidates for this vehicle. */
+/** GET pending oil/coolant extract candidates for this vehicle. */
 export async function GET(req: NextRequest, ctx: Ctx) {
   try {
     const { id: vehicleId } = await ctx.params;
@@ -131,6 +133,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     }
 
     const field = candidate.field as ExtractField;
+    const kind = normalizeExtractKind(candidate.kind, field);
     const edited = (body.value || "").trim().slice(0, 80);
     const now = new Date().toISOString();
 
@@ -143,7 +146,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       if (error) throw error;
       logManualObserve(
         "extract_reject",
-        { field },
+        { field, kind },
         { userId: user.id },
       );
     } else {
@@ -158,16 +161,13 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       const source: FluidsSource = useEdited
         ? "user_entered"
         : "user_manual_confirmed";
-      const patch: Record<string, unknown> = {
-        oil_specs_confirmed_at: now,
-      };
-      if (field === "capacity") {
-        patch.oil_capacity = value;
-        patch.oil_capacity_source = source;
-      } else {
-        patch.oil_viscosity = value;
-        patch.oil_viscosity_source = source;
-      }
+      const patch = garagePatchForExtractConfirm({
+        field,
+        kind,
+        value,
+        source,
+        now,
+      });
       const { error: vehErr } = await userClient
         .from("user_vehicles")
         .update(patch)
@@ -187,7 +187,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       if (error) throw error;
       logManualObserve(
         useEdited ? "extract_edit" : "extract_confirm",
-        { field, source },
+        { field, kind, source },
         { userId: user.id },
       );
     }

@@ -9,7 +9,12 @@ import {
   resolveObdStateForPrompt,
 } from "@/lib/vehicle-manual-frame";
 import {
+  extractBrakeFluidGuessesFromText,
+  extractCoolantGuessesFromText,
   extractOilGuessesFromText,
+  garagePatchForExtractConfirm,
+  pickBestBrakeFluidGuesses,
+  pickBestCoolantGuesses,
   pickBestGuesses,
 } from "@/lib/vehicle-manual-extract";
 import {
@@ -79,6 +84,38 @@ describe("intent retrieval query", () => {
 
   it("lighting intent stays weak (does not become fluids)", () => {
     expect(classifyManualIntent("low beam out, dust cap?")).toBe("lighting");
+  });
+
+  it("coolant capacity → fluids_coolant with mixture/reservoir terms", () => {
+    const q = buildManualRetrievalQuery({
+      userText: "what coolant mixture and capacity?",
+    });
+    expect(q.intent).toBe("fluids_coolant");
+    expect(q.query).toMatch(/coolant|antifreeze|mixture|reservoir/i);
+  });
+
+  it("overheating steam → overheat intent (before plain coolant)", () => {
+    const q = buildManualRetrievalQuery({
+      userText: "overheating with steam from the hood",
+    });
+    expect(q.intent).toBe("overheat");
+    expect(q.query).toMatch(/coolant|steam|cold check/i);
+  });
+
+  it("brake fluid / DOT → fluids_brake", () => {
+    const q = buildManualRetrievalQuery({
+      userText: "what brake fluid DOT does this car take?",
+    });
+    expect(q.intent).toBe("fluids_brake");
+    expect(q.query).toMatch(/brake fluid|DOT/i);
+  });
+
+  it("soft brake pedal → brake_warning before lighting", () => {
+    const q = buildManualRetrievalQuery({
+      userText: "soft brake pedal and brake warning light on",
+    });
+    expect(q.intent).toBe("brake_warning");
+    expect(q.query).toMatch(/do not drive|professional|DOT/i);
   });
 });
 
@@ -153,7 +190,7 @@ describe("same-frame injection", () => {
 
   it("7. steam / stop-if outranks retrieved manual chunk", () => {
     const block = assembleManualSameFrame({
-      intent: "fluids_coolant",
+      intent: "overheat",
       userText: "steam from the hood, overheating",
       obd: resolveObdStateForPrompt({
         userText: "steam from the hood",
@@ -164,6 +201,7 @@ describe("same-frame injection", () => {
     });
     expect(block).toMatch(/STOP_RULE|stop-rules still win|Stop if/i);
     expect(block).toMatch(/even if a manual chunk was retrieved/i);
+    expect(block).toMatch(/Never open a hot|hot coolant|Stop if.*before/i);
   });
 });
 
@@ -188,6 +226,14 @@ describe("oil extract → confirm contract", () => {
       { heading: "Coolant", pageFrom: 20, pageTo: 20 },
     );
     expect(guesses).toEqual([]);
+  });
+
+  it("E7: ATF liters are not engine oil capacity", () => {
+    const guesses = extractOilGuessesFromText(
+      "ATF capacity 9.0 liters. Transmission fluid refill.",
+      { heading: "Transmission", pageFrom: 30, pageTo: 30 },
+    );
+    expect(guesses.filter((g) => g.field === "capacity")).toEqual([]);
   });
 
   it("5. pending extracts do not unlock spec allowlist", () => {
@@ -248,6 +294,155 @@ describe("oil extract → confirm contract", () => {
         oilCapacitySource: "vcdb",
       }),
     ).toBe("");
+  });
+});
+
+describe("coolant extract → confirm contract", () => {
+  it("1. extracts coolant capacity + spec + mix from coolant context", () => {
+    const guesses = extractCoolantGuessesFromText(
+      "Engine coolant capacity 7.1 liters. Use ethylene glycol coolant. Mixture 50/50.",
+      { heading: "Coolant", pageFrom: 22, pageTo: 22 },
+    );
+    const best = pickBestCoolantGuesses(guesses);
+    expect(
+      best.some((g) => g.field === "coolant_capacity_text" && /7\.1/.test(g.value)),
+    ).toBe(true);
+    expect(
+      best.some(
+        (g) =>
+          g.field === "coolant_spec_text" && /ethylene glycol/i.test(g.value),
+      ),
+    ).toBe(true);
+    expect(
+      best.some((g) => g.field === "coolant_mix" && g.value === "50/50"),
+    ).toBe(true);
+  });
+
+  it("2. washer fluid only → no engine coolant capacity", () => {
+    const guesses = extractCoolantGuessesFromText(
+      "Windshield washer fluid capacity 4.5 liters. Fill washer reservoir.",
+      { heading: "Washer", pageFrom: 40, pageTo: 40 },
+    );
+    expect(guesses).toEqual([]);
+  });
+
+  it("confirm patch writes coolant garage columns (never silent)", () => {
+    const patch = garagePatchForExtractConfirm({
+      field: "coolant_capacity_text",
+      kind: "coolant",
+      value: "7.1 L",
+      source: "user_manual_confirmed",
+      now: "2026-11-04T00:00:00.000Z",
+    });
+    expect(patch.coolant_capacity_text).toBe("7.1 L");
+    expect(patch.coolant_capacity_source).toBe("user_manual_confirmed");
+    expect(patch.coolant_specs_confirmed_at).toBeTruthy();
+    expect(patch).not.toHaveProperty("oil_capacity");
+  });
+
+  it("6. confirmed coolant cites Garage profile (from your manual)", () => {
+    const block = formatGarageProfileFluidsForPrompt({
+      coolantCapacityText: "7.1 L",
+      coolantSpecText: "ethylene glycol",
+      coolantCapacitySource: "user_manual_confirmed",
+      coolantSpecSource: "user_manual_confirmed",
+      coolantSpecsConfirmedAt: "2026-11-04T00:00:00.000Z",
+    });
+    expect(block).toMatch(/\[GARAGE_PROFILE_FLUIDS\]/);
+    expect(block).toMatch(/coolant_capacity: 7\.1 L/);
+    expect(block).toContain(GARAGE_PROFILE_MANUAL_SOURCE_LINE);
+    expect(block).toMatch(/Never open a hot coolant reservoir/i);
+  });
+
+  it("7. no manual no garage → do not invent coolant liters", () => {
+    const ctx = buildManualSpecAnchors({ retrievedHits: [], garage: {} });
+    expect(applySpecOutputGate("Add 7.1 liters of coolant.", ctx)).not.toMatch(
+      /7\.1/,
+    );
+  });
+});
+
+describe("brake fluid extract → confirm contract", () => {
+  it("1. extracts DOT-4 from brake fluid context", () => {
+    const guesses = extractBrakeFluidGuessesFromText(
+      "Use only brake fluid DOT-4 from a sealed container. Check the brake reservoir level.",
+      { heading: "Brake fluid", pageFrom: 50, pageTo: 50 },
+    );
+    const best = pickBestBrakeFluidGuesses(guesses);
+    expect(
+      best.some(
+        (g) => g.field === "brake_fluid_spec_text" && g.value === "DOT-4",
+      ),
+    ).toBe(true);
+  });
+
+  it("2. engine oil only PDF → no brake fluid extract", () => {
+    const guesses = extractBrakeFluidGuessesFromText(
+      "Engine oil capacity with filter is 4.8 quarts. Use 0W-16 SAE.",
+      { heading: "Capacities", pageFrom: 10, pageTo: 10 },
+    );
+    expect(guesses).toEqual([]);
+  });
+
+  it("clutch fluid without shared reservoir → skip", () => {
+    const guesses = extractBrakeFluidGuessesFromText(
+      "Clutch fluid: use DOT-4 hydraulic clutch fluid only.",
+      { heading: "Clutch", pageFrom: 60, pageTo: 60 },
+    );
+    expect(guesses).toEqual([]);
+  });
+
+  it("confirm patch writes brake_fluid garage columns", () => {
+    const patch = garagePatchForExtractConfirm({
+      field: "brake_fluid_spec_text",
+      kind: "brake_fluid",
+      value: "DOT-4",
+      source: "user_manual_confirmed",
+      now: "2026-11-04T00:00:00.000Z",
+    });
+    expect(patch.brake_fluid_spec_text).toBe("DOT-4");
+    expect(patch.brake_fluid_spec_source).toBe("user_manual_confirmed");
+    expect(patch).not.toHaveProperty("oil_capacity");
+    expect(patch).not.toHaveProperty("coolant_spec_text");
+  });
+
+  it("3. brake_warning frame forbids bleed / open lines", () => {
+    const block = assembleManualSameFrame({
+      intent: "brake_warning",
+      userText: "soft brake pedal",
+      obd: resolveObdStateForPrompt({
+        userText: "soft brake pedal",
+        hasLiveAdapter: false,
+      }),
+      manualHits: [],
+      garageFluids: {
+        brakeFluidSpecText: "DOT-4",
+        brakeFluidSpecSource: "user_manual_confirmed",
+      },
+    });
+    expect(block).toMatch(/soft pedal|STOP|do not drive|never instruct brake bleeding|Never instruct brake bleeding/i);
+    expect(block).toMatch(/brake_fluid_spec: DOT-4/);
+    expect(block).toMatch(/bleeding|hydraulic lines/i);
+  });
+
+  it("no inject → do not invent DOT grade", () => {
+    const ctx = buildManualSpecAnchors({ retrievedHits: [], garage: {} });
+    expect(applySpecOutputGate("Use DOT-4 brake fluid.", ctx)).not.toMatch(
+      /DOT-4/i,
+    );
+  });
+
+  it("confirmed DOT unlocks allowlist", () => {
+    const ctx = buildManualSpecAnchors({
+      retrievedHits: [],
+      garage: {
+        brakeFluidSpecText: "DOT-4",
+        brakeFluidSpecSource: "user_manual_confirmed",
+      },
+    });
+    expect(applySpecOutputGate("Your manual lists DOT-4.", ctx)).toMatch(
+      /DOT-4/i,
+    );
   });
 });
 

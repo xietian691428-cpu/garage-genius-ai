@@ -8,6 +8,9 @@ import { extractDtcCodes } from "@/lib/dtc-parse";
 export const MANUAL_INTENTS = [
   "fluids_oil",
   "fluids_coolant",
+  "overheat",
+  "fluids_brake",
+  "brake_warning",
   "fluids_other",
   "torque_spec",
   "scheduled_maintenance",
@@ -23,9 +26,15 @@ const INTENT_EXPAND: Record<ManualIntent, string> = {
   fluids_oil:
     "engine oil motor oil viscosity capacity quarts liters SAE 0W 5W with filter crankcase refill dipstick",
   fluids_coolant:
-    "coolant capacity mixture antifreeze reservoir overflow radiator",
+    "coolant antifreeze capacity mixture reservoir overflow radiator engine coolant level",
+  overheat:
+    "coolant antifreeze overheating steam radiator reservoir cold check level after cool down overflow",
+  fluids_brake:
+    "brake fluid DOT reservoir DOT-3 DOT-4 DOT-5.1 hydraulic brake fluid type",
+  brake_warning:
+    "brake fluid DOT reservoir soft pedal warning light do not drive professional inspection",
   fluids_other:
-    "transmission fluid ATF brake fluid power steering washer fluid",
+    "transmission fluid ATF power steering washer fluid",
   torque_spec: "torque specification ft-lb N·m tighten drain plug",
   scheduled_maintenance:
     "maintenance schedule interval miles km service replace inspect",
@@ -53,10 +62,16 @@ const DTC_FAMILY_QUERY: Array<{ re: RegExp; terms: string }> = [
 
 const OIL_RE =
   /\b(oil change|engine oil|motor oil|how much oil|oil (?:type|grade|capaci)|viscosit|0w-?\d+|5w-?\d+|quart|qts?\b|dipstick|drain plug|oil filter)\b/i;
+const OVERHEAT_RE =
+  /\b(overheat(?:ing)?|steam(?:ing)?|temp(?:erature)?\s+(?:gauge|light)|gauge\s+(?:in\s+)?red|running hot|boiling coolant|hot (?:engine|radiator))\b/i;
 const COOLANT_RE =
-  /\b(coolant|antifreeze|radiator (?:cap|flush)|overflow tank)\b/i;
+  /\b(coolant|antifreeze|radiator (?:cap|flush)|overflow (?:tank|reservoir)|coolant (?:capacity|mixture|level|type|spec))\b/i;
+const BRAKE_WARNING_RE =
+  /\b((?:soft|spongy)\s+(?:brake\s+)?pedal|pedal\s+(?:feels?\s+)?(?:soft|spongy)|pedal\s+sinks|brake\s+(?:warning\s+)?light\s+(?:is\s+)?on)\b/i;
+const BRAKE_FLUID_RE =
+  /\b(brake fluid|DOT[\s-]?[345](?:\.1)?|brake reservoir)\b/i;
 const OTHER_FLUID_RE =
-  /\b(transmission fluid|atf\b|brake fluid|power steering|washer fluid)\b/i;
+  /\b(transmission fluid|atf\b|power steering|washer fluid)\b/i;
 const TORQUE_RE = /\b(torque|ft-?lb|n[·.\s-]*m|foot[-\s]?pound)\b/i;
 const MAINT_RE =
   /\b(maintenance schedule|service interval|when (?:do|should) i (?:change|replace)|scheduled maintenance|miles.*service)\b/i;
@@ -74,7 +89,10 @@ export function classifyManualIntent(
 ): ManualIntent {
   const t = text || "";
   if (OIL_RE.test(t)) return "fluids_oil";
+  if (OVERHEAT_RE.test(t)) return "overheat";
   if (COOLANT_RE.test(t)) return "fluids_coolant";
+  if (BRAKE_WARNING_RE.test(t)) return "brake_warning";
+  if (BRAKE_FLUID_RE.test(t)) return "fluids_brake";
   if (OTHER_FLUID_RE.test(t)) return "fluids_other";
   if (TORQUE_RE.test(t)) return "torque_spec";
   if (MAINT_RE.test(t)) return "scheduled_maintenance";
@@ -136,7 +154,7 @@ export function buildManualRetrievalQuery(opts: {
 }
 
 const HEADING_BOOST_RE =
-  /\b(specifications?|capacit(?:y|ies)|maintenance|fluids?|engine oil|lubricants?|capacities)\b/i;
+  /\b(specifications?|capacit(?:y|ies)|maintenance|fluids?|engine oil|coolant|antifreeze|brake fluid|lubricants?|capacities)\b/i;
 
 export function headingRetrievalBoost(heading: string | null | undefined): number {
   if (!heading) return 0;

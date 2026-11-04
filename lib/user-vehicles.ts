@@ -34,6 +34,24 @@ function asFluidsSource(
   }
   return undefined;
 }
+
+function asCoolantSource(
+  raw: string | null | undefined,
+): VehicleInfo["coolantSpecSource"] | undefined {
+  if (raw === "user_entered" || raw === "user_manual_confirmed") {
+    return raw;
+  }
+  return undefined;
+}
+
+function asBrakeFluidSource(
+  raw: string | null | undefined,
+): VehicleInfo["brakeFluidSpecSource"] | undefined {
+  if (raw === "user_entered" || raw === "user_manual_confirmed") {
+    return raw;
+  }
+  return undefined;
+}
 const MIGRATED_KEY_PREFIX = "garageGenius_vehicles_migrated_";
 
 export type UserVehicleRow = {
@@ -58,6 +76,18 @@ export type UserVehicleRow = {
   oil_capacity_source?: string | null;
   oil_viscosity_source?: string | null;
   oil_specs_confirmed_at?: string | null;
+  coolant_spec_text?: string | null;
+  coolant_capacity_text?: string | null;
+  coolant_mix_text?: string | null;
+  coolant_spec_source?: string | null;
+  coolant_capacity_source?: string | null;
+  coolant_mix_source?: string | null;
+  coolant_specs_confirmed_at?: string | null;
+  brake_fluid_spec_text?: string | null;
+  brake_fluid_notes_text?: string | null;
+  brake_fluid_spec_source?: string | null;
+  brake_fluid_notes_source?: string | null;
+  brake_fluid_specs_confirmed_at?: string | null;
   vin: string | null;
   license_plate?: string | null;
   last_maintenance: string | null;
@@ -107,6 +137,18 @@ export function rowToVehicleInfo(row: UserVehicleRow): VehicleInfo {
     oilCapacitySource: asFluidsSource(row.oil_capacity_source),
     oilViscositySource: asFluidsSource(row.oil_viscosity_source),
     oilSpecsConfirmedAt: row.oil_specs_confirmed_at ?? undefined,
+    coolantSpecText: row.coolant_spec_text ?? undefined,
+    coolantCapacityText: row.coolant_capacity_text ?? undefined,
+    coolantMixText: row.coolant_mix_text ?? undefined,
+    coolantSpecSource: asCoolantSource(row.coolant_spec_source),
+    coolantCapacitySource: asCoolantSource(row.coolant_capacity_source),
+    coolantMixSource: asCoolantSource(row.coolant_mix_source),
+    coolantSpecsConfirmedAt: row.coolant_specs_confirmed_at ?? undefined,
+    brakeFluidSpecText: row.brake_fluid_spec_text ?? undefined,
+    brakeFluidNotesText: row.brake_fluid_notes_text ?? undefined,
+    brakeFluidSpecSource: asBrakeFluidSource(row.brake_fluid_spec_source),
+    brakeFluidNotesSource: asBrakeFluidSource(row.brake_fluid_notes_source),
+    brakeFluidSpecsConfirmedAt: row.brake_fluid_specs_confirmed_at ?? undefined,
     vin: row.vin ?? undefined,
     licensePlate: row.license_plate?.trim() || undefined,
     lastMaintenance: row.last_maintenance ?? undefined,

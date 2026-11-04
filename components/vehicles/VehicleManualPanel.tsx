@@ -285,99 +285,220 @@ export default function VehicleManualPanel({
           ) : null}
           {extracts.length > 0 ? (
             <div
-              className="rounded-xl border border-cyan-800/60 bg-cyan-950/30 p-3"
+              className="space-y-3"
               data-testid="vehicle-manual-extract"
             >
-              <p className="text-xs font-medium text-cyan-50">
-                {t("vehicles.manualExtractTitle")}
-              </p>
-              <p className="mt-1 text-[11px] leading-snug text-slate-400">
-                {t("vehicles.manualExtractHint")}
-              </p>
-              <ul className="mt-2 space-y-2">
-                {extracts.map((ex) => (
-                  <li
-                    key={ex.id}
-                    className="rounded-lg border border-slate-700/70 bg-slate-950/40 p-2"
-                    data-testid={`vehicle-manual-extract-${ex.field}`}
+              {(["oil", "coolant", "brake_fluid"] as const).map((kind) => {
+                const group = extracts.filter(
+                  (ex) => (ex.kind || "oil") === kind,
+                );
+                if (!group.length) return null;
+                return (
+                  <div
+                    key={kind}
+                    className="rounded-xl border border-cyan-800/60 bg-cyan-950/30 p-3"
+                    data-testid={`vehicle-manual-extract-${kind}`}
                   >
-                    <p className="text-xs text-slate-100">
-                      {ex.field === "viscosity"
-                        ? t("vehicles.manualExtractViscosity", { value: ex.value })
-                        : t("vehicles.manualExtractCapacity", { value: ex.value })}
+                    <p className="text-xs font-medium text-cyan-50">
+                      {kind === "coolant"
+                        ? t("vehicles.manualExtractCoolantTitle")
+                        : kind === "brake_fluid"
+                          ? t("vehicles.manualExtractBrakeTitle")
+                          : t("vehicles.manualExtractOilTitle")}
                     </p>
-                    {ex.excerpt ? (
-                      <p className="mt-0.5 text-[11px] leading-snug text-slate-500">
-                        {ex.excerpt}
+                    {kind === "coolant" ? (
+                      <p className="mt-1 text-[11px] font-medium leading-snug text-amber-200">
+                        {t("vehicles.manualExtractCoolantSafety")}
                       </p>
-                    ) : null}
-                    {editId === ex.id ? (
-                      <div className="mt-2 flex flex-col gap-2">
-                        <input
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          className="min-h-[44px] rounded-lg border border-slate-600 bg-slate-900 px-2 text-sm text-slate-100"
-                          data-testid="vehicle-manual-extract-edit-input"
-                        />
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            disabled={busy || !editValue.trim()}
-                            data-testid="vehicle-manual-extract-edit-save"
-                            onClick={() =>
-                              void resolveExtract(ex, "edit", editValue.trim())
-                            }
-                            className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl bg-cyan-600 px-3 text-xs font-semibold text-white disabled:opacity-50"
-                          >
-                            {t("vehicles.manualExtractSaveEdited")}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => setEditId(null)}
-                            className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl border border-slate-600 px-3 text-xs text-slate-200"
-                          >
-                            {t("ai.manualNudgeDismiss")}
-                          </button>
-                        </div>
-                      </div>
+                    ) : kind === "brake_fluid" ? (
+                      <p className="mt-1 text-[11px] font-medium leading-snug text-amber-200">
+                        {t("vehicles.manualExtractBrakeSafety")}
+                      </p>
                     ) : (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          disabled={busy}
-                          data-testid={`vehicle-manual-extract-confirm-${ex.field}`}
-                          onClick={() => void resolveExtract(ex, "confirm")}
-                          className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl bg-cyan-600 px-3 text-xs font-semibold text-white disabled:opacity-50"
-                        >
-                          {t("vehicles.manualExtractSave")}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busy}
-                          data-testid={`vehicle-manual-extract-edit-${ex.field}`}
-                          onClick={() => {
-                            setEditId(ex.id);
-                            setEditValue(ex.value);
-                          }}
-                          className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl border border-slate-600 px-3 text-xs text-slate-200 disabled:opacity-50"
-                        >
-                          {t("vehicles.manualExtractEdit")}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busy}
-                          data-testid={`vehicle-manual-extract-reject-${ex.field}`}
-                          onClick={() => void resolveExtract(ex, "reject")}
-                          className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl border border-slate-700 px-3 text-xs text-slate-400 disabled:opacity-50"
-                        >
-                          {t("vehicles.manualExtractReject")}
-                        </button>
-                      </div>
+                      <p className="mt-1 text-[11px] leading-snug text-slate-400">
+                        {t("vehicles.manualExtractHint")}
+                      </p>
                     )}
-                  </li>
-                ))}
-              </ul>
+                    <ul className="mt-2 space-y-2">
+                      {group.map((ex) => (
+                        <li
+                          key={ex.id}
+                          className="rounded-lg border border-slate-700/70 bg-slate-950/40 p-2"
+                          data-testid={`vehicle-manual-extract-${ex.field}`}
+                        >
+                          <p className="text-xs text-slate-100">
+                            {ex.field === "viscosity"
+                              ? t("vehicles.manualExtractViscosity", {
+                                  value: ex.value,
+                                })
+                              : ex.field === "capacity"
+                                ? t("vehicles.manualExtractCapacity", {
+                                    value: ex.value,
+                                  })
+                                : ex.field === "coolant_capacity_text"
+                                  ? t("vehicles.manualExtractCoolantCapacity", {
+                                      value: ex.value,
+                                    })
+                                  : ex.field === "coolant_mix"
+                                    ? t("vehicles.manualExtractCoolantMix", {
+                                        value: ex.value,
+                                      })
+                                    : ex.field === "coolant_spec_text"
+                                      ? t("vehicles.manualExtractCoolantSpec", {
+                                          value: ex.value,
+                                        })
+                                      : ex.field === "brake_fluid_notes_text"
+                                        ? t("vehicles.manualExtractBrakeNotes", {
+                                            value: ex.value,
+                                          })
+                                        : ex.field === "brake_fluid_spec_text"
+                                          ? t("vehicles.manualExtractBrakeSpec", {
+                                              value: ex.value,
+                                            })
+                                          : ex.value}
+                          </p>
+                          {ex.excerpt ? (
+                            <p className="mt-0.5 text-[11px] leading-snug text-slate-500">
+                              {ex.excerpt}
+                            </p>
+                          ) : null}
+                          {editId === ex.id ? (
+                            <div className="mt-2 flex flex-col gap-2">
+                              <input
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                className="min-h-[44px] rounded-lg border border-slate-600 bg-slate-900 px-2 text-sm text-slate-100"
+                                data-testid="vehicle-manual-extract-edit-input"
+                              />
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  disabled={busy || !editValue.trim()}
+                                  data-testid="vehicle-manual-extract-edit-save"
+                                  onClick={() =>
+                                    void resolveExtract(
+                                      ex,
+                                      "edit",
+                                      editValue.trim(),
+                                    )
+                                  }
+                                  className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl bg-cyan-600 px-3 text-xs font-semibold text-white disabled:opacity-50"
+                                >
+                                  {t("vehicles.manualExtractSaveEdited")}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={busy}
+                                  onClick={() => setEditId(null)}
+                                  className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl border border-slate-600 px-3 text-xs text-slate-200"
+                                >
+                                  {t("ai.manualNudgeDismiss")}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                disabled={busy}
+                                data-testid={`vehicle-manual-extract-confirm-${ex.field}`}
+                                onClick={() => void resolveExtract(ex, "confirm")}
+                                className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl bg-cyan-600 px-3 text-xs font-semibold text-white disabled:opacity-50"
+                              >
+                                {t("vehicles.manualExtractSave")}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busy}
+                                data-testid={`vehicle-manual-extract-edit-${ex.field}`}
+                                onClick={() => {
+                                  setEditId(ex.id);
+                                  setEditValue(ex.value);
+                                }}
+                                className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl border border-slate-600 px-3 text-xs text-slate-200 disabled:opacity-50"
+                              >
+                                {t("vehicles.manualExtractEdit")}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busy}
+                                data-testid={`vehicle-manual-extract-reject-${ex.field}`}
+                                onClick={() => void resolveExtract(ex, "reject")}
+                                className="inline-flex min-h-[44px] touch-manipulation items-center rounded-xl border border-slate-700 px-3 text-xs text-slate-400 disabled:opacity-50"
+                              >
+                                {t("vehicles.manualExtractReject")}
+                              </button>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+          {vehicle.coolantSpecText ||
+          vehicle.coolantCapacityText ||
+          vehicle.coolantMixText ? (
+            <div
+              className="rounded-xl border border-slate-700/80 bg-slate-950/40 p-3"
+              data-testid="vehicle-manual-saved-coolant"
+            >
+              <p className="text-xs font-medium text-slate-100">
+                {t("vehicles.manualSavedCoolantTitle")}
+              </p>
+              {vehicle.coolantSpecText ? (
+                <p className="mt-1 text-[11px] text-slate-300">
+                  {t("vehicles.manualSavedCoolantSpec", {
+                    value: vehicle.coolantSpecText,
+                  })}
+                </p>
+              ) : null}
+              {vehicle.coolantCapacityText ? (
+                <p className="mt-0.5 text-[11px] text-slate-300">
+                  {t("vehicles.manualSavedCoolantCapacity", {
+                    value: vehicle.coolantCapacityText,
+                  })}
+                </p>
+              ) : null}
+              {vehicle.coolantMixText ? (
+                <p className="mt-0.5 text-[11px] text-slate-300">
+                  {t("vehicles.manualSavedCoolantMix", {
+                    value: vehicle.coolantMixText,
+                  })}
+                </p>
+              ) : null}
+              <p className="mt-1 text-[11px] text-amber-200/90">
+                {t("vehicles.manualExtractCoolantSafety")}
+              </p>
+            </div>
+          ) : null}
+          {vehicle.brakeFluidSpecText || vehicle.brakeFluidNotesText ? (
+            <div
+              className="rounded-xl border border-slate-700/80 bg-slate-950/40 p-3"
+              data-testid="vehicle-manual-saved-brake"
+            >
+              <p className="text-xs font-medium text-slate-100">
+                {t("vehicles.manualSavedBrakeTitle")}
+              </p>
+              {vehicle.brakeFluidSpecText ? (
+                <p className="mt-1 text-[11px] text-slate-300">
+                  {t("vehicles.manualSavedBrakeSpec", {
+                    value: vehicle.brakeFluidSpecText,
+                  })}
+                </p>
+              ) : null}
+              {vehicle.brakeFluidNotesText ? (
+                <p className="mt-0.5 text-[11px] text-slate-300">
+                  {t("vehicles.manualSavedBrakeNotes", {
+                    value: vehicle.brakeFluidNotesText,
+                  })}
+                </p>
+              ) : null}
+              <p className="mt-1 text-[11px] text-amber-200/90">
+                {t("vehicles.manualExtractBrakeSafety")}
+              </p>
             </div>
           ) : null}
           {manual.status === "ready" &&

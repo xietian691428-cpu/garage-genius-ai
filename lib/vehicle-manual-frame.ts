@@ -44,6 +44,18 @@ export type GarageFluidsForPrompt = {
   oilCapacitySource?: string | null;
   oilViscositySource?: string | null;
   oilSpecsConfirmedAt?: string | null;
+  coolantSpecText?: string | null;
+  coolantCapacityText?: string | null;
+  coolantMixText?: string | null;
+  coolantSpecSource?: string | null;
+  coolantCapacitySource?: string | null;
+  coolantMixSource?: string | null;
+  coolantSpecsConfirmedAt?: string | null;
+  brakeFluidSpecText?: string | null;
+  brakeFluidNotesText?: string | null;
+  brakeFluidSpecSource?: string | null;
+  brakeFluidNotesSource?: string | null;
+  brakeFluidSpecsConfirmedAt?: string | null;
 };
 
 function codesFromVitals(raw: unknown): string[] {
@@ -147,17 +159,55 @@ export function formatGarageProfileFluidsForPrompt(
   const viscOk =
     Boolean(fluids.oilViscosity?.trim()) &&
     isManualConfirmedSource(fluids.oilViscositySource);
-  if (!capOk && !viscOk) return "";
+  const coolSpecOk =
+    Boolean(fluids.coolantSpecText?.trim()) &&
+    isManualConfirmedSource(fluids.coolantSpecSource);
+  const coolCapOk =
+    Boolean(fluids.coolantCapacityText?.trim()) &&
+    isManualConfirmedSource(fluids.coolantCapacitySource);
+  const coolMixOk =
+    Boolean(fluids.coolantMixText?.trim()) &&
+    isManualConfirmedSource(fluids.coolantMixSource);
+  const brakeSpecOk =
+    Boolean(fluids.brakeFluidSpecText?.trim()) &&
+    isManualConfirmedSource(fluids.brakeFluidSpecSource);
+  const brakeNotesOk =
+    Boolean(fluids.brakeFluidNotesText?.trim()) &&
+    isManualConfirmedSource(fluids.brakeFluidNotesSource);
+  if (
+    !capOk &&
+    !viscOk &&
+    !coolSpecOk &&
+    !coolCapOk &&
+    !coolMixOk &&
+    !brakeSpecOk &&
+    !brakeNotesOk
+  ) {
+    return "";
+  }
   const lines = [
     "[GARAGE_PROFILE_FLUIDS]",
     capOk ? `oil_capacity: ${fluids.oilCapacity}` : null,
     viscOk ? `oil_viscosity: ${fluids.oilViscosity}` : null,
+    coolSpecOk ? `coolant_spec: ${fluids.coolantSpecText}` : null,
+    coolCapOk ? `coolant_capacity: ${fluids.coolantCapacityText}` : null,
+    coolMixOk ? `coolant_mix: ${fluids.coolantMixText}` : null,
+    brakeSpecOk ? `brake_fluid_spec: ${fluids.brakeFluidSpecText}` : null,
+    brakeNotesOk ? `brake_fluid_notes: ${fluids.brakeFluidNotesText}` : null,
     "source=user_manual_confirmed",
     fluids.oilSpecsConfirmedAt
-      ? `confirmed_at: ${fluids.oilSpecsConfirmedAt}`
+      ? `oil_confirmed_at: ${fluids.oilSpecsConfirmedAt}`
+      : null,
+    fluids.coolantSpecsConfirmedAt
+      ? `coolant_confirmed_at: ${fluids.coolantSpecsConfirmedAt}`
+      : null,
+    fluids.brakeFluidSpecsConfirmedAt
+      ? `brake_fluid_confirmed_at: ${fluids.brakeFluidSpecsConfirmedAt}`
       : null,
     GARAGE_PROFILE_MANUAL_SOURCE_LINE,
-    "Cite as Garage profile (from your manual). Still require under-hood fill-cap verify.",
+    "Cite as Garage profile (from your manual). Still require under-hood fill-cap / cold-reservoir verify.",
+    "Never open a hot coolant reservoir. Steam / red temp gauge → stop driving / tow education first.",
+    "Brake fluid: visual level check when cold/safe only. Do not instruct bleeding, opening hydraulic lines, or DIY ABS work — recommend professional service for soft pedal or fluid service beyond a safe visual check.",
   ];
   return lines.filter(Boolean).join("\n");
 }
@@ -181,6 +231,22 @@ export function formatRepairFrameForPrompt(opts: {
     opts.intent === "fluids_oil"
       ? "Oil-change: cite capacity/viscosity only from [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS]. Do not bind unrelated DTCs to the oil job."
       : null;
+  const coolantBind =
+    opts.intent === "fluids_coolant"
+      ? "Coolant: cite type/capacity/mix only from [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS]. Never invent brand, freeze point, or liters. Never open a hot coolant reservoir."
+      : null;
+  const overheatBind =
+    opts.intent === "overheat"
+      ? "Overheat: Stop if (steam / red gauge / do not drive / never open a hot cap) MUST come before any manual capacity or mixture detail. Manual may only add cold-check / after-cool guidance when present."
+      : null;
+  const brakeFluidBind =
+    opts.intent === "fluids_brake"
+      ? "Brake fluid: cite DOT type / notes only from [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS]. Never invent DOT grade. Visual cold reservoir level only — never bleed brakes or open lines."
+      : null;
+  const brakeWarningBind =
+    opts.intent === "brake_warning"
+      ? "Brake warning / soft pedal: STOP / do-not-drive / tow education FIRST (drive-safety). A manual DOT line may be cited after stop rules — never teach bleeding, opening hydraulic lines, or DIY ABS."
+      : null;
   const dtcFirst =
     opts.intent === "dtc_related"
       ? "Diagnosis: list [OBD_STATE] codes first, then any [USER_MANUAL] hit, then local check_order. Never “Replace converter now”."
@@ -191,14 +257,18 @@ export function formatRepairFrameForPrompt(opts: {
     "- Now: OBD/state from [OBD_STATE] only (none → say not connected; never fake live).",
     "- Per your manual or garage profile: quote numbers/steps only if they appear in [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS] this turn. Label Your manual vs Garage profile (from your manual).",
     "- Do next: 2–5 ordered steps (align with [DTC_REF] check_order when present).",
-    "- Stop if: existing [STOP_RULE] / drive-safety / exit-under / steam / soft brakes still win — even if a manual chunk was retrieved.",
+    "- Stop if: existing [STOP_RULE] / drive-safety / exit-under / steam / soft brakes still win — even if a manual chunk was retrieved. Never teach opening a hot coolant reservoir. Never instruct brake bleeding or opening hydraulic lines.",
     "Evidence order: safety stop-rules > unsafe OBD / live [OBD_STATE] > [USER_MANUAL] > [GARAGE_PROFILE_FLUIDS] > model guess.",
-    "Forbidden: invent qt / L / ft-lb / required 0W-xx not in those blocks. Forbidden: “based on live OBD” unless source=live.",
+    "Forbidden: invent qt / L / ft-lb / required 0W-xx / coolant liters or brands / DOT grades not in those blocks. Forbidden: “based on live OBD” unless source=live.",
     clearCodes
       ? "Clear-code ask: educate not to clear codes only to pass inspection. A maintenance table in the manual is not a reason to erase DTCs."
       : null,
     lighting,
     oilBind,
+    coolantBind,
+    overheatBind,
+    brakeFluidBind,
+    brakeWarningBind,
     dtcFirst,
     !opts.hasUserManual
       ? "No [USER_MANUAL] this turn — do not pretend you read their PDF."
@@ -253,9 +323,19 @@ export function buildManualSpecAnchors(opts: {
     : {};
   const garageCap = opts.garage.oilCapacity?.trim() || null;
   const garageVisc = opts.garage.oilViscosity?.trim() || null;
+  const garageCoolCap =
+    isManualConfirmedSource(opts.garage.coolantCapacitySource)
+      ? opts.garage.coolantCapacityText?.trim() || null
+      : null;
+  const garageBrakeSpec =
+    isManualConfirmedSource(opts.garage.brakeFluidSpecSource)
+      ? opts.garage.brakeFluidSpecText?.trim() || null
+      : null;
   return {
     oilCapacity: garageCap || fromHits.oilCapacity || null,
     oilViscosity: garageVisc || fromHits.oilViscosity || null,
+    coolantCapacity: garageCoolCap || fromHits.coolantCapacity || null,
+    brakeFluidSpec: garageBrakeSpec || fromHits.brakeFluidSpec || null,
     torqueSpec: fromHits.torqueSpec || null,
   };
 }

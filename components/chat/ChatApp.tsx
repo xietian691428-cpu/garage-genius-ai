@@ -232,6 +232,8 @@ export default function ChatApp({
   const [manualNudgeNoCopyOpen, setManualNudgeNoCopyOpen] = useState(false);
   const [hasSearchableManual, setHasSearchableManual] = useState(false);
   const [pendingOilExtracts, setPendingOilExtracts] = useState(0);
+  const [pendingCoolantExtracts, setPendingCoolantExtracts] = useState(0);
+  const [pendingBrakeExtracts, setPendingBrakeExtracts] = useState(0);
   const [extractBadgeDismissed, setExtractBadgeDismissed] = useState(false);
   const [manualUploadOpen, setManualUploadOpen] = useState(false);
   useBodyScrollLock(threadSheetOpen || manualUploadOpen);
@@ -329,6 +331,8 @@ export default function ChatApp({
     if (!currentVehicle?.id) {
       setHasSearchableManual(false);
       setPendingOilExtracts(0);
+      setPendingCoolantExtracts(0);
+      setPendingBrakeExtracts(0);
       setExtractBadgeDismissed(false);
       setManualNudgeOpen(false);
       setManualNudgeNoCopyOpen(false);
@@ -351,13 +355,30 @@ export default function ChatApp({
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as {
           manual?: { searchable?: boolean } | null;
-          extracts?: unknown[];
+          extracts?: Array<{ kind?: string; field?: string }>;
         };
         if (!cancelled) {
           setHasSearchableManual(Boolean(data.manual?.searchable));
-          setPendingOilExtracts(
-            Array.isArray(data.extracts) ? data.extracts.length : 0,
-          );
+          const rows = Array.isArray(data.extracts) ? data.extracts : [];
+          const oil = rows.filter(
+            (ex) =>
+              (ex.kind || "oil") === "oil" ||
+              ex.field === "viscosity" ||
+              ex.field === "capacity",
+          ).length;
+          const coolant = rows.filter(
+            (ex) =>
+              ex.kind === "coolant" ||
+              String(ex.field || "").startsWith("coolant_"),
+          ).length;
+          const brake = rows.filter(
+            (ex) =>
+              ex.kind === "brake_fluid" ||
+              String(ex.field || "").startsWith("brake_fluid_"),
+          ).length;
+          setPendingOilExtracts(oil);
+          setPendingCoolantExtracts(coolant);
+          setPendingBrakeExtracts(brake);
         }
       } catch {
         /* ignore */
@@ -2082,7 +2103,9 @@ export default function ChatApp({
             </div>
           </div>
         ) : null}
-        {pendingOilExtracts > 0 &&
+        {(pendingOilExtracts > 0 ||
+          pendingCoolantExtracts > 0 ||
+          pendingBrakeExtracts > 0) &&
         currentVehicle &&
         !extractBadgeDismissed &&
         !manualNudgeOpen &&
@@ -2095,7 +2118,17 @@ export default function ChatApp({
           >
             <div className="mx-auto flex max-w-3xl items-center justify-between gap-2">
               <p className="text-xs leading-snug text-cyan-50/90">
-                {t("ai.manualExtractBadge")}
+                {[
+                  pendingOilExtracts > 0,
+                  pendingCoolantExtracts > 0,
+                  pendingBrakeExtracts > 0,
+                ].filter(Boolean).length > 1
+                  ? t("ai.manualExtractBadgeBoth")
+                  : pendingBrakeExtracts > 0
+                    ? t("ai.manualExtractBadgeBrake")
+                    : pendingCoolantExtracts > 0
+                      ? t("ai.manualExtractBadgeCoolant")
+                      : t("ai.manualExtractBadge")}
               </p>
               <div className="flex shrink-0 items-center gap-1">
                 <button
@@ -2123,6 +2156,8 @@ export default function ChatApp({
         !vehicleIsolatedToast &&
         !manualNudgeOpen &&
         pendingOilExtracts === 0 &&
+        pendingCoolantExtracts === 0 &&
+        pendingBrakeExtracts === 0 &&
         messages.filter((m) => m.id !== "welcome").length >= 6 ? (
           <div
             className="shrink-0 border-t border-slate-800/80 bg-slate-950/40 px-3 py-2 sm:px-4"
@@ -2358,7 +2393,27 @@ export default function ChatApp({
                   setManualNudgeOpen(false);
                 }
               }}
-              onExtractsChanged={(rows) => setPendingOilExtracts(rows.length)}
+              onExtractsChanged={(rows) => {
+                const oil = rows.filter(
+                  (ex) =>
+                    (ex.kind || "oil") === "oil" ||
+                    ex.field === "viscosity" ||
+                    ex.field === "capacity",
+                ).length;
+                const coolant = rows.filter(
+                  (ex) =>
+                    ex.kind === "coolant" ||
+                    String(ex.field || "").startsWith("coolant_"),
+                ).length;
+                const brake = rows.filter(
+                  (ex) =>
+                    ex.kind === "brake_fluid" ||
+                    String(ex.field || "").startsWith("brake_fluid_"),
+                ).length;
+                setPendingOilExtracts(oil);
+                setPendingCoolantExtracts(coolant);
+                setPendingBrakeExtracts(brake);
+              }}
               onFluidsSaved={(v) => void onVehicleChange(v)}
             />
           </div>

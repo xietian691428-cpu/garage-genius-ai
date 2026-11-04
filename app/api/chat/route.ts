@@ -827,6 +827,18 @@ export async function POST(request: NextRequest) {
           oilCapacitySource: currentVehicle.oilCapacitySource,
           oilViscositySource: currentVehicle.oilViscositySource,
           oilSpecsConfirmedAt: currentVehicle.oilSpecsConfirmedAt,
+          coolantSpecText: currentVehicle.coolantSpecText,
+          coolantCapacityText: currentVehicle.coolantCapacityText,
+          coolantMixText: currentVehicle.coolantMixText,
+          coolantSpecSource: currentVehicle.coolantSpecSource,
+          coolantCapacitySource: currentVehicle.coolantCapacitySource,
+          coolantMixSource: currentVehicle.coolantMixSource,
+          coolantSpecsConfirmedAt: currentVehicle.coolantSpecsConfirmedAt,
+          brakeFluidSpecText: currentVehicle.brakeFluidSpecText,
+          brakeFluidNotesText: currentVehicle.brakeFluidNotesText,
+          brakeFluidSpecSource: currentVehicle.brakeFluidSpecSource,
+          brakeFluidNotesSource: currentVehicle.brakeFluidNotesSource,
+          brakeFluidSpecsConfirmedAt: currentVehicle.brakeFluidSpecsConfirmedAt,
         },
       });
       if (sameFrame.trim()) {

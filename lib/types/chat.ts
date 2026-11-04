@@ -33,6 +33,23 @@ export interface VehicleInfo {
   oilCapacitySource?: "user_entered" | "vcdb" | "user_manual_confirmed";
   oilViscositySource?: "user_entered" | "vcdb" | "user_manual_confirmed";
   oilSpecsConfirmedAt?: string;
+  /** Coolant type/spec phrase (e.g. ethylene glycol / LLC) — owner-confirmed. */
+  coolantSpecText?: string;
+  /** Coolant capacity as written in the manual (no forced conversion). */
+  coolantCapacityText?: string;
+  /** Mix/concentration only when the manual stated it (e.g. 50/50). */
+  coolantMixText?: string;
+  coolantSpecSource?: "user_entered" | "user_manual_confirmed";
+  coolantCapacitySource?: "user_entered" | "user_manual_confirmed";
+  coolantMixSource?: "user_entered" | "user_manual_confirmed";
+  coolantSpecsConfirmedAt?: string;
+  /** Brake fluid DOT type/spec — owner-confirmed. */
+  brakeFluidSpecText?: string;
+  /** Optional check/interval note from the manual. */
+  brakeFluidNotesText?: string;
+  brakeFluidSpecSource?: "user_entered" | "user_manual_confirmed";
+  brakeFluidNotesSource?: "user_entered" | "user_manual_confirmed";
+  brakeFluidSpecsConfirmedAt?: string;
   vin?: string;
   /** Optional license / number plate for shop handoff */
   licensePlate?: string;

@@ -10,7 +10,7 @@ import type { VehicleInfo } from "@/lib/types/chat";
 import { ragService } from "@/lib/rag";
 import { rerankManualHitsByHeading } from "@/lib/vehicle-manual-intent";
 import {
-  persistOilExtractCandidates,
+  persistManualExtractCandidates,
   supersedeExtractsForVehicle,
   clearManualConfirmedFluids,
 } from "@/lib/vehicle-manual-extract";
@@ -381,17 +381,53 @@ export function formatUserManualForPrompt(hits: ManualChunkHit[]): string {
 export function extractManualSpecAllowlist(hits: ManualChunkHit[]): {
   oilCapacity?: string;
   oilViscosity?: string;
+  coolantCapacity?: string;
+  brakeFluidSpec?: string;
   torqueSpec?: string;
 } {
-  const blob = hits.map((h) => h.content).join("\n");
+  const blob = hits.map((h) => `${h.heading || ""}\n${h.content}`).join("\n");
   const oilCapacity = blob.match(/\b\d+(?:\.\d+)?\s*(?:qts?|quarts?|liters?|litres)\b/i)?.[0];
   const oilViscosity = blob.match(/\b\d+\s*w\s*-?\s*\d+\b/i)?.[0];
   const torqueSpec = blob.match(
     /\b\d+(?:\.\d+)?\s*(?:ft-?lbs?|foot[-\s]?pounds?|n[·.\s-]*m)\b/i,
   )?.[0];
+  let coolantCapacity: string | undefined;
+  for (const m of blob.matchAll(
+    /\b(\d+(?:\.\d+)?)\s*(?:US\s+|Imp\.?\s+)?(qts?|quarts?|liters?|litres)\b/gi,
+  )) {
+    const left = blob.slice(Math.max(0, (m.index ?? 0) - 56), m.index ?? 0);
+    const right = blob.slice(
+      m.index ?? 0,
+      (m.index ?? 0) + m[0].length + 40,
+    );
+    const window = `${left}${right}`;
+    if (
+      /\b(coolant|antifreeze)\b/i.test(window) &&
+      !/\b(washer|brake fluid|engine oil|motor oil)\b/i.test(window)
+    ) {
+      coolantCapacity = m[0];
+      break;
+    }
+  }
+  let brakeFluidSpec: string | undefined;
+  for (const m of blob.matchAll(/\b(DOT[\s-]?[345](?:\.1)?)\b/gi)) {
+    const left = blob.slice(Math.max(0, (m.index ?? 0) - 48), m.index ?? 0);
+    const right = blob.slice(
+      m.index ?? 0,
+      (m.index ?? 0) + m[0].length + 36,
+    );
+    const window = `${left}${right}`;
+    if (/\b(brake fluid|brake reservoir)\b/i.test(window)) {
+      const num = m[0].match(/DOT[\s-]?([345](?:\.1)?)/i)?.[1];
+      brakeFluidSpec = num ? `DOT-${num}` : m[0];
+      break;
+    }
+  }
   return {
     oilCapacity: oilCapacity || undefined,
     oilViscosity: oilViscosity || undefined,
+    coolantCapacity,
+    brakeFluidSpec,
     torqueSpec: torqueSpec || undefined,
   };
 }
@@ -691,7 +727,7 @@ export async function processUploadedManual(opts: {
     .single();
   if (error) throw error;
   const ready = data as VehicleManualRow;
-  await persistOilExtractCandidates({
+  await persistManualExtractCandidates({
     client: opts.client,
     userId: opts.userId,
     vehicleId: opts.vehicleId,
