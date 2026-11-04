@@ -167,6 +167,7 @@
     "manualExtractBadge": "¿Guardar datos de aceite de tu manual?",
     "manualExtractBadgeCoolant": "¿Guardar datos de refrigerante de tu manual?",
     "manualExtractBadgeBrake": "¿Guardar espec. de líquido de frenos de tu manual?",
+    "manualExtractBadgeAtf": "¿Guardar espec. de líquido de transmisión de tu manual?",
     "manualExtractBadgeBoth": "¿Guardar fluidos de tu manual?",
     "manualExtractReview": "Revisar"
   },
@@ -509,6 +510,10 @@
     "manualExtractCoolantSafety": "Nunca abras el depósito de refrigerante en caliente.",
     "manualExtractBrakeTitle": "Encontramos líquido de frenos en tu manual. ¿Guardar en el perfil de este vehículo?",
     "manualExtractBrakeSafety": "Más allá de una revisión visual del nivel, el servicio de líquido de frenos conviene dejarlo a un profesional.",
+    "manualExtractAtfTitle": "Líquido de transmisión (ATF/CVT)",
+    "manualExtractAtfSafety": "Revisar o cambiar el líquido de transmisión suele hacerse mejor en un taller — solo guardamos lo que dice tu manual.",
+    "manualExtractAtfCvtHint": "Específico CVT — no uses ATF convencional",
+    "manualExtractAtfConfirmHint": "¿Guardar espec. de líquido de transmisión de tu manual?",
     "manualExtractViscosity": "Viscosidad: {{value}}",
     "manualExtractCapacity": "Capacidad de aceite: {{value}}",
     "manualExtractCoolantSpec": "Tipo/espec. refrigerante: {{value}}",
@@ -516,6 +521,9 @@
     "manualExtractCoolantMix": "Mezcla: {{value}}",
     "manualExtractBrakeSpec": "Líquido de frenos: {{value}}",
     "manualExtractBrakeNotes": "Nota líquido de frenos: {{value}}",
+    "manualExtractAtfSpec": "Líquido de transmisión: {{value}}",
+    "manualExtractAtfCapacity": "Capacidad líquido de transmisión: {{value}}",
+    "manualExtractAtfNotes": "Nota líquido de transmisión: {{value}}",
     "manualExtractSave": "Guardar en este vehículo",
     "manualExtractSaveEdited": "Guardar mi valor",
     "manualExtractEdit": "Editar",
@@ -527,7 +535,12 @@
     "manualSavedCoolantMix": "Mezcla: {{value}}",
     "manualSavedBrakeTitle": "Líquido de frenos guardado (este vehículo)",
     "manualSavedBrakeSpec": "Espec.: {{value}}",
-    "manualSavedBrakeNotes": "Nota: {{value}}"
+    "manualSavedBrakeNotes": "Nota: {{value}}",
+    "manualSavedAtfTitle": "Líquido de transmisión (ATF/CVT) guardado (este vehículo)",
+    "manualSavedAtfSpec": "Espec.: {{value}}",
+    "manualSavedAtfCapacity": "Capacidad: {{value}}",
+    "manualSavedAtfNotes": "Nota: {{value}}",
+    "manualSavedAtfCvtHint": "Específico CVT — no uses ATF convencional"
   },
   "shopReport": {
     "eyebrow": "Entrega al taller",

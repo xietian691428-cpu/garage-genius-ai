@@ -1,12 +1,13 @@
 /**
- * Heuristic oil / coolant / brake-fluid extract from private manual chunks.
+ * Heuristic oil / coolant / brake-fluid / ATF extract from private manual chunks.
  * Staging only — never silent garage writes. user_id × vehicle_id.
+ * ATF candidates never write oil_* columns.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BuiltChunk } from "@/lib/vehicle-manuals";
 
-export type ExtractKind = "oil" | "coolant" | "brake_fluid";
+export type ExtractKind = "oil" | "coolant" | "brake_fluid" | "atf";
 
 export type OilExtractField = "viscosity" | "capacity";
 export type CoolantExtractField =
@@ -16,12 +17,19 @@ export type CoolantExtractField =
 export type BrakeFluidExtractField =
   | "brake_fluid_spec_text"
   | "brake_fluid_notes_text";
+export type AtfExtractField =
+  | "atf_spec_text"
+  | "atf_capacity_text"
+  | "atf_notes_text";
 export type ExtractField =
   | OilExtractField
   | CoolantExtractField
-  | BrakeFluidExtractField;
+  | BrakeFluidExtractField
+  | AtfExtractField;
 export type ExtractStatus = "pending" | "confirmed" | "rejected" | "superseded";
 export type FluidsSource = "user_entered" | "vcdb" | "user_manual_confirmed";
+/** CVT vs conventional ATF on kind=atf — never a separate kind=cvt. */
+export type TransmissionKind = "atf" | "cvt" | "unknown";
 
 export type OilExtractGuess = {
   kind: "oil";
@@ -56,10 +64,23 @@ export type BrakeFluidExtractGuess = {
   score: number;
 };
 
+export type AtfExtractGuess = {
+  kind: "atf";
+  field: AtfExtractField;
+  value: string;
+  unit: string | null;
+  excerpt: string;
+  pageFrom: number | null;
+  pageTo: number | null;
+  score: number;
+  transmissionKind: TransmissionKind;
+};
+
 export type ManualExtractGuess =
   | OilExtractGuess
   | CoolantExtractGuess
-  | BrakeFluidExtractGuess;
+  | BrakeFluidExtractGuess
+  | AtfExtractGuess;
 
 export type ManualExtractCandidateRow = {
   id: string;
@@ -74,6 +95,7 @@ export type ManualExtractCandidateRow = {
   page_from: number | null;
   page_to: number | null;
   status: ExtractStatus;
+  transmission_kind?: TransmissionKind | null;
   created_at: string;
   resolved_at: string | null;
 };
@@ -88,6 +110,7 @@ export type ManualExtractClientDto = {
   pageFrom: number | null;
   pageTo: number | null;
   status: ExtractStatus;
+  transmissionKind?: TransmissionKind | null;
 };
 
 const OIL_CONTEXT_RE =
@@ -117,6 +140,21 @@ const SHARED_BRAKE_CLUTCH_RE =
 const BRAKE_DOT_RE = /\b(DOT[\s-]?[345](?:\.1)?)\b/gi;
 const BRAKE_NOTES_RE =
   /\b((?:every|each)\s+\d+\s*(?:months?|years?|miles?|km)|replace(?:ment)?\s+interval|inspect(?:ion)?\s+(?:interval|every)|check\s+(?:the\s+)?(?:brake\s+)?fluid\s+level)\b/gi;
+
+const ATF_CONTEXT_RE =
+  /\b(atf\b|automatic transmission fluid|transmission fluid|cvt fluid|cvt[\s-]?fluid|automatic trans(?:mission)? fluid|continuously variable)\b/i;
+const NON_ATF_RE =
+  /\b(engine oil|motor oil|crankcase|sae\s*\d|0w-?\d+|5w-?\d+|coolant|antifreeze|brake fluid|washer fluid|washer\b|differential|rear axle|gear oil|power steering|refrigerant)\b/i;
+/** Spec phrases kept as written — CVT names stay CVT, never remapped to Dexron/Mercon. */
+const ATF_SPEC_RE =
+  /\b((?:Toyota\s+)?ATF\s*WS|ATF[\s-]?WS|World Standard|Mercon(?:\s*[LV]+)?|Dexron(?:[\s-]?[III|VI0-9]+)?|CVT[\s-]?fluid(?:\s+FE)?|Genuine\s+CVT(?:\s+fluid)?|CVT[\s-]?FE|CVTF|NS[\s-]?[0-9]|HCF-?2|JWS\s*\d+|T-?IV|ATF[\s-]?Type[\s-]?[A-Z0-9]+|Genuine\s+ATF)\b/gi;
+const ATF_NOTES_RE =
+  /\b((?:check|inspect)\s+(?:the\s+)?(?:ATF|CVT|transmission)\s+(?:fluid\s+)?level|dipstick|fill\s+plug|drain[\s-]and[\s-]fill)\b/gi;
+
+const CVT_SIGNAL_RE =
+  /\b(CVT\b|continuously variable|CVT[\s-]?fluid|CVT[\s-]?FE\b|CVTF\b|Genuine\s+CVT|NS-?[23]\b|HCF-?2)\b/i;
+const CONVENTIONAL_ATF_SIGNAL_RE =
+  /\b(Mercon|Dexron|(?:Toyota\s+)?ATF\s*WS|ATF[\s-]?WS|World Standard|T-?IV|automatic transmission fluid|ATF)\b/i;
 
 function isOilContext(text: string): boolean {
   const t = text || "";
@@ -150,6 +188,62 @@ function normalizeDotSpec(raw: string): string {
   return `DOT-${m[1]}`;
 }
 
+function isAtfContext(text: string): boolean {
+  const t = text || "";
+  if (!ATF_CONTEXT_RE.test(t)) return false;
+  if (NON_ATF_RE.test(t) && !ATF_CONTEXT_RE.test(t)) return false;
+  return true;
+}
+
+/**
+ * Bucket CVT vs conventional ATF vs unknown. Prefer unknown on conflict.
+ * Spec text is always kept verbatim elsewhere — this only labels the class.
+ */
+export function classifyTransmissionKind(text: string): TransmissionKind {
+  const t = text || "";
+  const hasCvt = CVT_SIGNAL_RE.test(t);
+  const hasConventional = CONVENTIONAL_ATF_SIGNAL_RE.test(t);
+  if (hasCvt && hasConventional) {
+    // Manual forbids substituting ATF into a CVT → still CVT.
+    if (
+      /\b(do not|don't|never|not)\b[\s\S]{0,48}\b(ATF|Dexron|Mercon|regular ATF)\b/i.test(
+        t,
+      ) ||
+      /\b(ATF|Dexron|Mercon|regular ATF)\b[\s\S]{0,48}\b(do not|don't|never|not)\b/i.test(
+        t,
+      )
+    ) {
+      return "cvt";
+    }
+    // Both Mercon/Dexron and CVT named as specs → unclear.
+    if (/\b(Mercon|Dexron)\b/i.test(t)) return "unknown";
+    return "unknown";
+  }
+  if (hasCvt) return "cvt";
+  if (hasConventional) return "atf";
+  if (/\btransmission fluid\b/i.test(t)) return "unknown";
+  return "unknown";
+}
+
+export function mergeTransmissionKinds(
+  kinds: Array<TransmissionKind | null | undefined>,
+): TransmissionKind {
+  const set = new Set(
+    kinds.filter((k): k is TransmissionKind => k === "atf" || k === "cvt" || k === "unknown"),
+  );
+  if (set.has("cvt") && set.has("atf")) return "unknown";
+  if (set.has("cvt")) return "cvt";
+  if (set.has("atf")) return "atf";
+  return "unknown";
+}
+
+export function normalizeTransmissionKind(
+  raw: string | null | undefined,
+): TransmissionKind | null {
+  if (raw === "atf" || raw === "cvt" || raw === "unknown") return raw;
+  return null;
+}
+
 export function normalizeExtractKind(
   kind: string | null | undefined,
   field?: string | null,
@@ -162,6 +256,9 @@ export function normalizeExtractKind(
     String(field || "").startsWith("brake_fluid_")
   ) {
     return "brake_fluid";
+  }
+  if (kind === "atf" || String(field || "").startsWith("atf_")) {
+    return "atf";
   }
   return "oil";
 }
@@ -423,6 +520,134 @@ export function extractBrakeFluidGuessesFromText(
   return out;
 }
 
+export function extractAtfGuessesFromText(
+  text: string,
+  pages?: { pageFrom?: number | null; pageTo?: number | null; heading?: string | null },
+): AtfExtractGuess[] {
+  if (!text) return [];
+  const heading = pages?.heading || "";
+  const blob = `${heading}\n${text}`;
+  if (!isAtfContext(blob)) return [];
+
+  const out: AtfExtractGuess[] = [];
+  const headingBoost = ATF_CONTEXT_RE.test(pages?.heading || "") ? 2 : 0;
+  const transmissionKind = classifyTransmissionKind(blob);
+
+  for (const m of blob.matchAll(new RegExp(ATF_SPEC_RE.source, "gi"))) {
+    const left = blob.slice(Math.max(0, (m.index ?? 0) - 48), m.index ?? 0);
+    const right = blob.slice(
+      m.index ?? 0,
+      (m.index ?? 0) + m[0].length + 48,
+    );
+    const window = `${left}${right}`;
+    if (/\b(engine oil|motor oil|coolant|brake fluid|differential|washer)\b/i.test(window)) {
+      continue;
+    }
+    const nearAtf =
+      ATF_CONTEXT_RE.test(window) ||
+      ATF_CONTEXT_RE.test(heading) ||
+      /\b(use|recommended|specified|type)\b/i.test(left);
+    if (!nearAtf) continue;
+    // Prefer local window class when a single match is clearly CVT- or ATF-only.
+    const localKind = classifyTransmissionKind(window);
+    const value = m[0].replace(/\s+/g, " ").trim().slice(0, 80);
+    out.push({
+      kind: "atf",
+      field: "atf_spec_text",
+      value,
+      unit: null,
+      excerpt: excerptAround(blob, m.index ?? 0),
+      pageFrom: pages?.pageFrom ?? null,
+      pageTo: pages?.pageTo ?? null,
+      score: 4 + headingBoost,
+      transmissionKind:
+        localKind !== "unknown" ? localKind : transmissionKind,
+    });
+  }
+
+  // Also keep a short ATF/CVT fluid label when named without a brand token.
+  // Prefer CVT fluid wording so UI never titles CVT as generic ATF alone.
+  if (
+    !out.some((g) => g.field === "atf_spec_text") &&
+    /\b(CVT fluid|automatic transmission fluid|ATF)\b/i.test(blob)
+  ) {
+    const m =
+      blob.match(/\bCVT fluid\b/i) ||
+      blob.match(/\b(automatic transmission fluid|ATF)\b/i);
+    if (m && m.index != null) {
+      out.push({
+        kind: "atf",
+        field: "atf_spec_text",
+        value: m[0].replace(/\s+/g, " ").trim().slice(0, 80),
+        unit: null,
+        excerpt: excerptAround(blob, m.index),
+        pageFrom: pages?.pageFrom ?? null,
+        pageTo: pages?.pageTo ?? null,
+        score: 2 + headingBoost,
+        transmissionKind: classifyTransmissionKind(
+          `${m[0]} ${excerptAround(blob, m.index, 80)}`,
+        ),
+      });
+    }
+  }
+
+  for (const m of blob.matchAll(new RegExp(CAP_RE.source, "gi"))) {
+    const left = blob.slice(Math.max(0, (m.index ?? 0) - 56), m.index ?? 0);
+    const right = blob.slice(
+      m.index ?? 0,
+      (m.index ?? 0) + m[0].length + 40,
+    );
+    const window = `${left}${right}`;
+    if (NON_ATF_RE.test(window) && !ATF_CONTEXT_RE.test(window)) continue;
+    if (/\b(engine oil|motor oil|with filter|oil capacity|coolant|brake fluid)\b/i.test(left)) {
+      continue;
+    }
+    const nearAtf =
+      /\b(ATF|transmission fluid|CVT|automatic transmission)\b/i.test(window) ||
+      ATF_CONTEXT_RE.test(heading);
+    if (!nearAtf) continue;
+    const { value, unit } = coolantCapacityAsWritten(m[1], m[2]);
+    out.push({
+      kind: "atf",
+      field: "atf_capacity_text",
+      value,
+      unit,
+      excerpt: excerptAround(blob, m.index ?? 0),
+      pageFrom: pages?.pageFrom ?? null,
+      pageTo: pages?.pageTo ?? null,
+      score: 4 + headingBoost,
+      transmissionKind:
+        classifyTransmissionKind(window) !== "unknown"
+          ? classifyTransmissionKind(window)
+          : transmissionKind,
+    });
+  }
+
+  for (const m of blob.matchAll(new RegExp(ATF_NOTES_RE.source, "gi"))) {
+    const left = blob.slice(Math.max(0, (m.index ?? 0) - 48), m.index ?? 0);
+    const right = blob.slice(
+      m.index ?? 0,
+      (m.index ?? 0) + m[0].length + 40,
+    );
+    const window = `${left}${right}`;
+    if (!ATF_CONTEXT_RE.test(window) && !ATF_CONTEXT_RE.test(heading)) continue;
+    if (/\b(engine oil|motor oil)\b/i.test(window)) continue;
+    out.push({
+      kind: "atf",
+      field: "atf_notes_text",
+      value: excerptAround(blob, m.index ?? 0, 120).slice(0, 80),
+      unit: null,
+      excerpt: excerptAround(blob, m.index ?? 0),
+      pageFrom: pages?.pageFrom ?? null,
+      pageTo: pages?.pageTo ?? null,
+      score: 2 + headingBoost,
+      transmissionKind,
+    });
+  }
+
+  return out;
+}
+
 export function extractOilGuessesFromChunks(
   chunks: Array<
     Pick<BuiltChunk, "content" | "heading" | "pageFrom" | "pageTo">
@@ -477,6 +702,24 @@ export function extractBrakeFluidGuessesFromChunks(
   return pickBestBrakeFluidGuesses(all);
 }
 
+export function extractAtfGuessesFromChunks(
+  chunks: Array<
+    Pick<BuiltChunk, "content" | "heading" | "pageFrom" | "pageTo">
+  >,
+): AtfExtractGuess[] {
+  const all: AtfExtractGuess[] = [];
+  for (const ch of chunks) {
+    all.push(
+      ...extractAtfGuessesFromText(ch.content, {
+        heading: ch.heading,
+        pageFrom: ch.pageFrom,
+        pageTo: ch.pageTo,
+      }),
+    );
+  }
+  return pickBestAtfGuesses(all);
+}
+
 /** One best guess per oil field — staging, not truth. */
 export function pickBestGuesses(guesses: OilExtractGuess[]): OilExtractGuess[] {
   return pickBestOilGuesses(guesses);
@@ -513,6 +756,21 @@ export function pickBestBrakeFluidGuesses(
   return [...best.values()];
 }
 
+export function pickBestAtfGuesses(guesses: AtfExtractGuess[]): AtfExtractGuess[] {
+  const mergedKind = mergeTransmissionKinds(
+    guesses.map((g) => g.transmissionKind),
+  );
+  const best = new Map<AtfExtractField, AtfExtractGuess>();
+  for (const g of guesses) {
+    const prev = best.get(g.field);
+    if (!prev || g.score > prev.score) best.set(g.field, g);
+  }
+  return [...best.values()].map((g) => ({
+    ...g,
+    transmissionKind: mergedKind,
+  }));
+}
+
 export function toExtractClientDto(
   row: ManualExtractCandidateRow,
 ): ManualExtractClientDto {
@@ -526,6 +784,7 @@ export function toExtractClientDto(
     pageFrom: row.page_from,
     pageTo: row.page_to,
     status: row.status,
+    transmissionKind: normalizeTransmissionKind(row.transmission_kind),
   };
 }
 
@@ -542,6 +801,14 @@ export function isBrakeFluidExtractField(
 ): field is BrakeFluidExtractField {
   return (
     field === "brake_fluid_spec_text" || field === "brake_fluid_notes_text"
+  );
+}
+
+export function isAtfExtractField(field: string): field is AtfExtractField {
+  return (
+    field === "atf_spec_text" ||
+    field === "atf_capacity_text" ||
+    field === "atf_notes_text"
   );
 }
 
@@ -735,7 +1002,62 @@ export async function persistBrakeFluidExtractCandidates(opts: {
   return (data as ManualExtractCandidateRow[]) || [];
 }
 
-/** After PDF process: supersede old staging, then stage oil + coolant + brake. */
+export async function persistAtfExtractCandidates(opts: {
+  client: SupabaseClient;
+  userId: string;
+  vehicleId: string;
+  manualId: string;
+  chunks: Array<Pick<BuiltChunk, "content" | "heading" | "pageFrom" | "pageTo">>;
+  supersede?: boolean;
+}): Promise<ManualExtractCandidateRow[]> {
+  const guesses = extractAtfGuessesFromChunks(opts.chunks);
+  if (opts.supersede !== false) {
+    await supersedeExtractsForVehicle({
+      client: opts.client,
+      userId: opts.userId,
+      vehicleId: opts.vehicleId,
+      kind: "atf",
+    });
+  }
+  if (!guesses.length) return [];
+
+  const rows = guesses.map((g) => ({
+    user_id: opts.userId,
+    vehicle_id: opts.vehicleId,
+    manual_id: opts.manualId,
+    kind: "atf" as const,
+    field: g.field,
+    value: g.value.slice(0, 80),
+    unit: g.unit,
+    excerpt: g.excerpt.slice(0, 280),
+    page_from: g.pageFrom,
+    page_to: g.pageTo,
+    status: "pending" as const,
+    transmission_kind: g.transmissionKind,
+  }));
+
+  const { data, error } = await opts.client
+    .from("vehicle_manual_extract_candidates")
+    .insert(rows)
+    .select("*");
+  if (error) {
+    if (
+      /vehicle_manual_extract_candidates|kind|atf_|transmission_kind/i.test(
+        error.message,
+      )
+    ) {
+      return [];
+    }
+    throw error;
+  }
+  return ((data as ManualExtractCandidateRow[]) || []).map((row) => ({
+    ...row,
+    kind: "atf" as const,
+    transmission_kind: normalizeTransmissionKind(row.transmission_kind),
+  }));
+}
+
+/** After PDF process: supersede old staging, then stage oil + coolant + brake + atf. */
 export async function persistManualExtractCandidates(opts: {
   client: SupabaseClient;
   userId: string;
@@ -760,7 +1082,11 @@ export async function persistManualExtractCandidates(opts: {
     ...opts,
     supersede: false,
   });
-  return [...oil, ...coolant, ...brake];
+  const atf = await persistAtfExtractCandidates({
+    ...opts,
+    supersede: false,
+  });
+  return [...oil, ...coolant, ...brake, ...atf];
 }
 
 export async function clearManualConfirmedFluids(opts: {
@@ -771,14 +1097,14 @@ export async function clearManualConfirmedFluids(opts: {
   const { data, error } = await opts.client
     .from("user_vehicles")
     .select(
-      "oil_capacity_source, oil_viscosity_source, coolant_spec_source, coolant_capacity_source, coolant_mix_source, brake_fluid_spec_source, brake_fluid_notes_source",
+      "oil_capacity_source, oil_viscosity_source, coolant_spec_source, coolant_capacity_source, coolant_mix_source, brake_fluid_spec_source, brake_fluid_notes_source, atf_spec_source, atf_capacity_source, atf_notes_source, transmission_kind",
     )
     .eq("id", opts.vehicleId)
     .eq("user_id", opts.userId)
     .maybeSingle();
   if (error) {
     if (
-      /oil_capacity_source|oil_viscosity_source|coolant_|brake_fluid_/i.test(
+      /oil_capacity_source|oil_viscosity_source|coolant_|brake_fluid_|atf_|transmission_kind/i.test(
         error.message,
       )
     ) {
@@ -834,6 +1160,26 @@ export async function clearManualConfirmedFluids(opts: {
   ) {
     patch.brake_fluid_specs_confirmed_at = null;
   }
+  if (data.atf_spec_source === "user_manual_confirmed") {
+    patch.atf_spec_text = null;
+    patch.atf_spec_source = null;
+  }
+  if (data.atf_capacity_source === "user_manual_confirmed") {
+    patch.atf_capacity_text = null;
+    patch.atf_capacity_source = null;
+  }
+  if (data.atf_notes_source === "user_manual_confirmed") {
+    patch.atf_notes_text = null;
+    patch.atf_notes_source = null;
+  }
+  if (
+    Object.keys(patch).some(
+      (k) => k.startsWith("atf_") && k !== "atf_specs_confirmed_at",
+    )
+  ) {
+    patch.atf_specs_confirmed_at = null;
+    patch.transmission_kind = null;
+  }
   if (Object.keys(patch).length === 0) return;
   const { error: upErr } = await opts.client
     .from("user_vehicles")
@@ -842,7 +1188,7 @@ export async function clearManualConfirmedFluids(opts: {
     .eq("user_id", opts.userId);
   if (
     upErr &&
-    !/oil_capacity_source|oil_specs_confirmed_at|coolant_|brake_fluid_/i.test(
+    !/oil_capacity_source|oil_specs_confirmed_at|coolant_|brake_fluid_|atf_|transmission_kind/i.test(
       upErr.message,
     )
   ) {
@@ -862,6 +1208,7 @@ export function garagePatchForExtractConfirm(opts: {
   value: string;
   source: FluidsSource;
   now: string;
+  transmissionKind?: TransmissionKind | null;
 }): Record<string, unknown> {
   const { field, kind, value, source, now } = opts;
   if (kind === "coolant" || isCoolantExtractField(field)) {
@@ -890,6 +1237,28 @@ export function garagePatchForExtractConfirm(opts: {
     } else {
       patch.brake_fluid_spec_text = value;
       patch.brake_fluid_spec_source = source;
+    }
+    return patch;
+  }
+  if (kind === "atf" || isAtfExtractField(field)) {
+    // Physical isolation: never write oil_* from ATF/CVT confirms.
+    const patch: Record<string, unknown> = {
+      atf_specs_confirmed_at: now,
+    };
+    const tk = normalizeTransmissionKind(opts.transmissionKind);
+    if (tk) patch.transmission_kind = tk;
+    else if (field === "atf_spec_text") {
+      patch.transmission_kind = classifyTransmissionKind(value);
+    }
+    if (field === "atf_capacity_text") {
+      patch.atf_capacity_text = value;
+      patch.atf_capacity_source = source;
+    } else if (field === "atf_notes_text") {
+      patch.atf_notes_text = value;
+      patch.atf_notes_source = source;
+    } else {
+      patch.atf_spec_text = value;
+      patch.atf_spec_source = source;
     }
     return patch;
   }

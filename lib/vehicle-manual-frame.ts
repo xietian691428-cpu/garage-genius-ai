@@ -56,6 +56,14 @@ export type GarageFluidsForPrompt = {
   brakeFluidSpecSource?: string | null;
   brakeFluidNotesSource?: string | null;
   brakeFluidSpecsConfirmedAt?: string | null;
+  atfSpecText?: string | null;
+  atfCapacityText?: string | null;
+  atfNotesText?: string | null;
+  atfSpecSource?: string | null;
+  atfCapacitySource?: string | null;
+  atfNotesSource?: string | null;
+  atfSpecsConfirmedAt?: string | null;
+  transmissionKind?: "atf" | "cvt" | "unknown" | null;
 };
 
 function codesFromVitals(raw: unknown): string[] {
@@ -174,6 +182,22 @@ export function formatGarageProfileFluidsForPrompt(
   const brakeNotesOk =
     Boolean(fluids.brakeFluidNotesText?.trim()) &&
     isManualConfirmedSource(fluids.brakeFluidNotesSource);
+  const atfSpecOk =
+    Boolean(fluids.atfSpecText?.trim()) &&
+    isManualConfirmedSource(fluids.atfSpecSource);
+  const atfCapOk =
+    Boolean(fluids.atfCapacityText?.trim()) &&
+    isManualConfirmedSource(fluids.atfCapacitySource);
+  const atfNotesOk =
+    Boolean(fluids.atfNotesText?.trim()) &&
+    isManualConfirmedSource(fluids.atfNotesSource);
+  const transmissionKind =
+    fluids.transmissionKind === "atf" ||
+    fluids.transmissionKind === "cvt" ||
+    fluids.transmissionKind === "unknown"
+      ? fluids.transmissionKind
+      : null;
+  const atfAny = atfSpecOk || atfCapOk || atfNotesOk;
   if (
     !capOk &&
     !viscOk &&
@@ -181,10 +205,26 @@ export function formatGarageProfileFluidsForPrompt(
     !coolCapOk &&
     !coolMixOk &&
     !brakeSpecOk &&
-    !brakeNotesOk
+    !brakeNotesOk &&
+    !atfAny
   ) {
     return "";
   }
+  const cvtLines =
+    atfAny && transmissionKind === "cvt"
+      ? [
+          "This vehicle uses CVT-specific fluid — cite as CVT fluid / CVT-specific (never title it as generic ATF alone).",
+          "Never recommend substituting conventional ATF (Dexron/Mercon/etc.) for CVT fluid. Never say any ATF is fine.",
+        ]
+      : atfAny && transmissionKind === "atf"
+        ? [
+            "Transmission fluid class: conventional ATF / automatic transmission fluid — still quote the exact garage spec text.",
+          ]
+        : atfAny
+          ? [
+              "Transmission fluid class unknown — quote the garage spec text only; do not invent ATF vs CVT or suggest Dexron/Mercon substitutes.",
+            ]
+          : [];
   const lines = [
     "[GARAGE_PROFILE_FLUIDS]",
     capOk ? `oil_capacity: ${fluids.oilCapacity}` : null,
@@ -194,6 +234,12 @@ export function formatGarageProfileFluidsForPrompt(
     coolMixOk ? `coolant_mix: ${fluids.coolantMixText}` : null,
     brakeSpecOk ? `brake_fluid_spec: ${fluids.brakeFluidSpecText}` : null,
     brakeNotesOk ? `brake_fluid_notes: ${fluids.brakeFluidNotesText}` : null,
+    atfAny && transmissionKind
+      ? `transmission_kind: ${transmissionKind}`
+      : null,
+    atfSpecOk ? `atf_spec: ${fluids.atfSpecText}` : null,
+    atfCapOk ? `atf_capacity: ${fluids.atfCapacityText}` : null,
+    atfNotesOk ? `atf_notes: ${fluids.atfNotesText}` : null,
     "source=user_manual_confirmed",
     fluids.oilSpecsConfirmedAt
       ? `oil_confirmed_at: ${fluids.oilSpecsConfirmedAt}`
@@ -204,10 +250,15 @@ export function formatGarageProfileFluidsForPrompt(
     fluids.brakeFluidSpecsConfirmedAt
       ? `brake_fluid_confirmed_at: ${fluids.brakeFluidSpecsConfirmedAt}`
       : null,
+    fluids.atfSpecsConfirmedAt
+      ? `atf_confirmed_at: ${fluids.atfSpecsConfirmedAt}`
+      : null,
     GARAGE_PROFILE_MANUAL_SOURCE_LINE,
     "Cite as Garage profile (from your manual). Still require under-hood fill-cap / cold-reservoir verify.",
     "Never open a hot coolant reservoir. Steam / red temp gauge → stop driving / tow education first.",
     "Brake fluid: visual level check when cold/safe only. Do not instruct bleeding, opening hydraulic lines, or DIY ABS work — recommend professional service for soft pedal or fluid service beyond a safe visual check.",
+    "ATF/CVT: never treat as engine oil. Do not invent drain-and-fill procedures; recommend professional service when equipment-heavy. No absolute “lifetime fluid never change” or “replace ATF now” without evidence.",
+    ...cvtLines,
   ];
   return lines.filter(Boolean).join("\n");
 }
@@ -247,6 +298,10 @@ export function formatRepairFrameForPrompt(opts: {
     opts.intent === "brake_warning"
       ? "Brake warning / soft pedal: STOP / do-not-drive / tow education FIRST (drive-safety). A manual DOT line may be cited after stop rules — never teach bleeding, opening hydraulic lines, or DIY ABS."
       : null;
+  const atfBind =
+    opts.intent === "fluids_atf"
+      ? "ATF/CVT: cite type/capacity only from [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS] transmission_kind + atf_* fields. Never treat transmission fluid as engine oil quarts. If transmission_kind=cvt: say CVT fluid / CVT-specific; never recommend Dexron/Mercon/conventional ATF as a substitute; never say any ATF is fine. If atf: may say ATF / automatic transmission fluid with the exact spec text. Do not invent drain-and-fill steps; prefer shop when equipment-heavy. No absolute lifetime-never / replace-now claims."
+      : null;
   const dtcFirst =
     opts.intent === "dtc_related"
       ? "Diagnosis: list [OBD_STATE] codes first, then any [USER_MANUAL] hit, then local check_order. Never “Replace converter now”."
@@ -259,7 +314,7 @@ export function formatRepairFrameForPrompt(opts: {
     "- Do next: 2–5 ordered steps (align with [DTC_REF] check_order when present).",
     "- Stop if: existing [STOP_RULE] / drive-safety / exit-under / steam / soft brakes still win — even if a manual chunk was retrieved. Never teach opening a hot coolant reservoir. Never instruct brake bleeding or opening hydraulic lines.",
     "Evidence order: safety stop-rules > unsafe OBD / live [OBD_STATE] > [USER_MANUAL] > [GARAGE_PROFILE_FLUIDS] > model guess.",
-    "Forbidden: invent qt / L / ft-lb / required 0W-xx / coolant liters or brands / DOT grades not in those blocks. Forbidden: “based on live OBD” unless source=live.",
+    "Forbidden: invent qt / L / ft-lb / required 0W-xx / coolant liters or brands / DOT grades / ATF type or liters not in those blocks. Forbidden: use atf_capacity as engine oil quarts. Forbidden: “based on live OBD” unless source=live.",
     clearCodes
       ? "Clear-code ask: educate not to clear codes only to pass inspection. A maintenance table in the manual is not a reason to erase DTCs."
       : null,
@@ -269,6 +324,7 @@ export function formatRepairFrameForPrompt(opts: {
     overheatBind,
     brakeFluidBind,
     brakeWarningBind,
+    atfBind,
     dtcFirst,
     !opts.hasUserManual
       ? "No [USER_MANUAL] this turn — do not pretend you read their PDF."
@@ -311,11 +367,14 @@ export function assembleManualSameFrame(opts: {
 /**
  * Spec allowlist for this turn.
  * Pending extracts never unlock. Retrieved hits and confirmed garage fluids do.
+ * Oil vs ATF capacity stay isolated by intent when known (never cross-unlock).
  */
 export function buildManualSpecAnchors(opts: {
   retrievedHits: ManualChunkHit[];
   garage: GarageFluidsForPrompt;
   pendingExtracts?: Array<{ field: string; value: string }>;
+  /** When set, oil and ATF capacities do not cross-unlock each other. */
+  intent?: ManualIntent | null;
 }): SpecAnchorContext {
   void opts.pendingExtracts;
   const fromHits = opts.retrievedHits.length
@@ -331,11 +390,29 @@ export function buildManualSpecAnchors(opts: {
     isManualConfirmedSource(opts.garage.brakeFluidSpecSource)
       ? opts.garage.brakeFluidSpecText?.trim() || null
       : null;
+  const garageAtfSpec =
+    isManualConfirmedSource(opts.garage.atfSpecSource)
+      ? opts.garage.atfSpecText?.trim() || null
+      : null;
+  const garageAtfCap =
+    isManualConfirmedSource(opts.garage.atfCapacitySource)
+      ? opts.garage.atfCapacityText?.trim() || null
+      : null;
+  const oilTurn = opts.intent === "fluids_oil";
+  const atfTurn = opts.intent === "fluids_atf";
   return {
-    oilCapacity: garageCap || fromHits.oilCapacity || null,
-    oilViscosity: garageVisc || fromHits.oilViscosity || null,
+    oilCapacity: atfTurn
+      ? null
+      : garageCap || fromHits.oilCapacity || null,
+    oilViscosity: atfTurn
+      ? null
+      : garageVisc || fromHits.oilViscosity || null,
     coolantCapacity: garageCoolCap || fromHits.coolantCapacity || null,
     brakeFluidSpec: garageBrakeSpec || fromHits.brakeFluidSpec || null,
+    atfSpec: oilTurn ? null : garageAtfSpec || fromHits.atfSpec || null,
+    atfCapacity: oilTurn
+      ? null
+      : garageAtfCap || fromHits.atfCapacity || null,
     torqueSpec: fromHits.torqueSpec || null,
   };
 }

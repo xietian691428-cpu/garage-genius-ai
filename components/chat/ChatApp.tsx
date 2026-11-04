@@ -234,6 +234,7 @@ export default function ChatApp({
   const [pendingOilExtracts, setPendingOilExtracts] = useState(0);
   const [pendingCoolantExtracts, setPendingCoolantExtracts] = useState(0);
   const [pendingBrakeExtracts, setPendingBrakeExtracts] = useState(0);
+  const [pendingAtfExtracts, setPendingAtfExtracts] = useState(0);
   const [extractBadgeDismissed, setExtractBadgeDismissed] = useState(false);
   const [manualUploadOpen, setManualUploadOpen] = useState(false);
   useBodyScrollLock(threadSheetOpen || manualUploadOpen);
@@ -376,9 +377,14 @@ export default function ChatApp({
               ex.kind === "brake_fluid" ||
               String(ex.field || "").startsWith("brake_fluid_"),
           ).length;
+          const atf = rows.filter(
+            (ex) =>
+              ex.kind === "atf" || String(ex.field || "").startsWith("atf_"),
+          ).length;
           setPendingOilExtracts(oil);
           setPendingCoolantExtracts(coolant);
           setPendingBrakeExtracts(brake);
+          setPendingAtfExtracts(atf);
         }
       } catch {
         /* ignore */
@@ -2105,7 +2111,8 @@ export default function ChatApp({
         ) : null}
         {(pendingOilExtracts > 0 ||
           pendingCoolantExtracts > 0 ||
-          pendingBrakeExtracts > 0) &&
+          pendingBrakeExtracts > 0 ||
+          pendingAtfExtracts > 0) &&
         currentVehicle &&
         !extractBadgeDismissed &&
         !manualNudgeOpen &&
@@ -2122,13 +2129,16 @@ export default function ChatApp({
                   pendingOilExtracts > 0,
                   pendingCoolantExtracts > 0,
                   pendingBrakeExtracts > 0,
+                  pendingAtfExtracts > 0,
                 ].filter(Boolean).length > 1
                   ? t("ai.manualExtractBadgeBoth")
-                  : pendingBrakeExtracts > 0
-                    ? t("ai.manualExtractBadgeBrake")
-                    : pendingCoolantExtracts > 0
-                      ? t("ai.manualExtractBadgeCoolant")
-                      : t("ai.manualExtractBadge")}
+                  : pendingAtfExtracts > 0
+                    ? t("ai.manualExtractBadgeAtf")
+                    : pendingBrakeExtracts > 0
+                      ? t("ai.manualExtractBadgeBrake")
+                      : pendingCoolantExtracts > 0
+                        ? t("ai.manualExtractBadgeCoolant")
+                        : t("ai.manualExtractBadge")}
               </p>
               <div className="flex shrink-0 items-center gap-1">
                 <button
@@ -2158,6 +2168,7 @@ export default function ChatApp({
         pendingOilExtracts === 0 &&
         pendingCoolantExtracts === 0 &&
         pendingBrakeExtracts === 0 &&
+        pendingAtfExtracts === 0 &&
         messages.filter((m) => m.id !== "welcome").length >= 6 ? (
           <div
             className="shrink-0 border-t border-slate-800/80 bg-slate-950/40 px-3 py-2 sm:px-4"
@@ -2410,9 +2421,15 @@ export default function ChatApp({
                     ex.kind === "brake_fluid" ||
                     String(ex.field || "").startsWith("brake_fluid_"),
                 ).length;
+                const atf = rows.filter(
+                  (ex) =>
+                    ex.kind === "atf" ||
+                    String(ex.field || "").startsWith("atf_"),
+                ).length;
                 setPendingOilExtracts(oil);
                 setPendingCoolantExtracts(coolant);
                 setPendingBrakeExtracts(brake);
+                setPendingAtfExtracts(atf);
               }}
               onFluidsSaved={(v) => void onVehicleChange(v)}
             />

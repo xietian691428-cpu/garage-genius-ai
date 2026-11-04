@@ -47,6 +47,10 @@ export type SpecAnchorContext = {
   coolantCapacity?: string | null;
   /** Confirmed or retrieved brake fluid DOT type. */
   brakeFluidSpec?: string | null;
+  /** Confirmed or retrieved ATF/CVT type phrase. */
+  atfSpec?: string | null;
+  /** Confirmed or retrieved ATF capacity — never treated as engine oil via prompt rules. */
+  atfCapacity?: string | null;
   /** Explicit torque anchors only — oil capacity must never unlock ft-lb / N·m. */
   torqueSpec?: string | null;
   oemNumbers?: Array<string | null | undefined>;
@@ -71,6 +75,8 @@ export function specFluidAllowlistBlob(ctx?: SpecAnchorContext | null): string {
     ctx.oilViscosity,
     ctx.coolantCapacity,
     ...brake,
+    ctx.atfSpec,
+    ctx.atfCapacity,
     ...oems,
   ]
     .filter((s) => s && String(s).trim())

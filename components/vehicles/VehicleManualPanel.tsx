@@ -288,23 +288,31 @@ export default function VehicleManualPanel({
               className="space-y-3"
               data-testid="vehicle-manual-extract"
             >
-              {(["oil", "coolant", "brake_fluid"] as const).map((kind) => {
+              {(["oil", "coolant", "brake_fluid", "atf"] as const).map((kind) => {
                 const group = extracts.filter(
                   (ex) => (ex.kind || "oil") === kind,
                 );
                 if (!group.length) return null;
+                const atfTransmissionKind =
+                  kind === "atf"
+                    ? group.find((ex) => ex.transmissionKind)?.transmissionKind ??
+                      null
+                    : null;
                 return (
                   <div
                     key={kind}
                     className="rounded-xl border border-cyan-800/60 bg-cyan-950/30 p-3"
                     data-testid={`vehicle-manual-extract-${kind}`}
+                    data-transmission-kind={atfTransmissionKind || undefined}
                   >
                     <p className="text-xs font-medium text-cyan-50">
                       {kind === "coolant"
                         ? t("vehicles.manualExtractCoolantTitle")
                         : kind === "brake_fluid"
                           ? t("vehicles.manualExtractBrakeTitle")
-                          : t("vehicles.manualExtractOilTitle")}
+                          : kind === "atf"
+                            ? t("vehicles.manualExtractAtfTitle")
+                            : t("vehicles.manualExtractOilTitle")}
                     </p>
                     {kind === "coolant" ? (
                       <p className="mt-1 text-[11px] font-medium leading-snug text-amber-200">
@@ -314,6 +322,23 @@ export default function VehicleManualPanel({
                       <p className="mt-1 text-[11px] font-medium leading-snug text-amber-200">
                         {t("vehicles.manualExtractBrakeSafety")}
                       </p>
+                    ) : kind === "atf" ? (
+                      <>
+                        {atfTransmissionKind === "cvt" ? (
+                          <p
+                            className="mt-1 text-[11px] font-semibold leading-snug text-amber-100"
+                            data-testid="vehicle-manual-extract-atf-cvt-hint"
+                          >
+                            {t("vehicles.manualExtractAtfCvtHint")}
+                          </p>
+                        ) : null}
+                        <p className="mt-1 text-[11px] font-medium leading-snug text-amber-200">
+                          {t("vehicles.manualExtractAtfSafety")}
+                        </p>
+                        <p className="mt-0.5 text-[11px] leading-snug text-slate-400">
+                          {t("vehicles.manualExtractAtfConfirmHint")}
+                        </p>
+                      </>
                     ) : (
                       <p className="mt-1 text-[11px] leading-snug text-slate-400">
                         {t("vehicles.manualExtractHint")}
@@ -355,7 +380,19 @@ export default function VehicleManualPanel({
                                           ? t("vehicles.manualExtractBrakeSpec", {
                                               value: ex.value,
                                             })
-                                          : ex.value}
+                                          : ex.field === "atf_capacity_text"
+                                            ? t("vehicles.manualExtractAtfCapacity", {
+                                                value: ex.value,
+                                              })
+                                            : ex.field === "atf_notes_text"
+                                              ? t("vehicles.manualExtractAtfNotes", {
+                                                  value: ex.value,
+                                                })
+                                              : ex.field === "atf_spec_text"
+                                                ? t("vehicles.manualExtractAtfSpec", {
+                                                    value: ex.value,
+                                                  })
+                                                : ex.value}
                           </p>
                           {ex.excerpt ? (
                             <p className="mt-0.5 text-[11px] leading-snug text-slate-500">
@@ -498,6 +535,51 @@ export default function VehicleManualPanel({
               ) : null}
               <p className="mt-1 text-[11px] text-amber-200/90">
                 {t("vehicles.manualExtractBrakeSafety")}
+              </p>
+            </div>
+          ) : null}
+          {vehicle.atfSpecText ||
+          vehicle.atfCapacityText ||
+          vehicle.atfNotesText ? (
+            <div
+              className="rounded-xl border border-slate-700/80 bg-slate-950/40 p-3"
+              data-testid="vehicle-manual-saved-atf"
+              data-transmission-kind={vehicle.transmissionKind || undefined}
+            >
+              <p className="text-xs font-medium text-slate-100">
+                {t("vehicles.manualSavedAtfTitle")}
+              </p>
+              {vehicle.transmissionKind === "cvt" ? (
+                <p
+                  className="mt-1 text-[11px] font-semibold text-amber-100"
+                  data-testid="vehicle-manual-saved-atf-cvt-hint"
+                >
+                  {t("vehicles.manualSavedAtfCvtHint")}
+                </p>
+              ) : null}
+              {vehicle.atfSpecText ? (
+                <p className="mt-1 text-[11px] text-slate-300">
+                  {t("vehicles.manualSavedAtfSpec", {
+                    value: vehicle.atfSpecText,
+                  })}
+                </p>
+              ) : null}
+              {vehicle.atfCapacityText ? (
+                <p className="mt-0.5 text-[11px] text-slate-300">
+                  {t("vehicles.manualSavedAtfCapacity", {
+                    value: vehicle.atfCapacityText,
+                  })}
+                </p>
+              ) : null}
+              {vehicle.atfNotesText ? (
+                <p className="mt-0.5 text-[11px] text-slate-300">
+                  {t("vehicles.manualSavedAtfNotes", {
+                    value: vehicle.atfNotesText,
+                  })}
+                </p>
+              ) : null}
+              <p className="mt-1 text-[11px] text-amber-200/90">
+                {t("vehicles.manualExtractAtfSafety")}
               </p>
             </div>
           ) : null}

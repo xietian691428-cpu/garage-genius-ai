@@ -11,6 +11,7 @@ export const MANUAL_INTENTS = [
   "overheat",
   "fluids_brake",
   "brake_warning",
+  "fluids_atf",
   "fluids_other",
   "torque_spec",
   "scheduled_maintenance",
@@ -33,8 +34,10 @@ const INTENT_EXPAND: Record<ManualIntent, string> = {
     "brake fluid DOT reservoir DOT-3 DOT-4 DOT-5.1 hydraulic brake fluid type",
   brake_warning:
     "brake fluid DOT reservoir soft pedal warning light do not drive professional inspection",
+  fluids_atf:
+    "ATF automatic transmission fluid CVT fluid capacity Mercon Dexron WS transmission fluid type",
   fluids_other:
-    "transmission fluid ATF power steering washer fluid",
+    "power steering washer fluid differential gear oil",
   torque_spec: "torque specification ft-lb N·m tighten drain plug",
   scheduled_maintenance:
     "maintenance schedule interval miles km service replace inspect",
@@ -70,8 +73,10 @@ const BRAKE_WARNING_RE =
   /\b((?:soft|spongy)\s+(?:brake\s+)?pedal|pedal\s+(?:feels?\s+)?(?:soft|spongy)|pedal\s+sinks|brake\s+(?:warning\s+)?light\s+(?:is\s+)?on)\b/i;
 const BRAKE_FLUID_RE =
   /\b(brake fluid|DOT[\s-]?[345](?:\.1)?|brake reservoir)\b/i;
+const ATF_RE =
+  /\b(atf\b|automatic transmission fluid|transmission fluid|cvt fluid|cvt[\s-]?fluid|mercon|dexron|transmission fluid type)\b/i;
 const OTHER_FLUID_RE =
-  /\b(transmission fluid|atf\b|power steering|washer fluid)\b/i;
+  /\b(power steering|washer fluid|differential|gear oil)\b/i;
 const TORQUE_RE = /\b(torque|ft-?lb|n[·.\s-]*m|foot[-\s]?pound)\b/i;
 const MAINT_RE =
   /\b(maintenance schedule|service interval|when (?:do|should) i (?:change|replace)|scheduled maintenance|miles.*service)\b/i;
@@ -93,6 +98,7 @@ export function classifyManualIntent(
   if (COOLANT_RE.test(t)) return "fluids_coolant";
   if (BRAKE_WARNING_RE.test(t)) return "brake_warning";
   if (BRAKE_FLUID_RE.test(t)) return "fluids_brake";
+  if (ATF_RE.test(t)) return "fluids_atf";
   if (OTHER_FLUID_RE.test(t)) return "fluids_other";
   if (TORQUE_RE.test(t)) return "torque_spec";
   if (MAINT_RE.test(t)) return "scheduled_maintenance";
@@ -154,7 +160,7 @@ export function buildManualRetrievalQuery(opts: {
 }
 
 const HEADING_BOOST_RE =
-  /\b(specifications?|capacit(?:y|ies)|maintenance|fluids?|engine oil|coolant|antifreeze|brake fluid|lubricants?|capacities)\b/i;
+  /\b(specifications?|capacit(?:y|ies)|maintenance|fluids?|engine oil|coolant|antifreeze|brake fluid|ATF|transmission|CVT|lubricants?|capacities)\b/i;
 
 export function headingRetrievalBoost(heading: string | null | undefined): number {
   if (!heading) return 0;

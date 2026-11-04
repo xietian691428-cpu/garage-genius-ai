@@ -13,6 +13,7 @@ import {
   garagePatchForExtractConfirm,
   listPendingExtracts,
   normalizeExtractKind,
+  normalizeTransmissionKind,
   toExtractClientDto,
   type ExtractField,
   type FluidsSource,
@@ -167,6 +168,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         value,
         source,
         now,
+        transmissionKind: normalizeTransmissionKind(
+          (candidate as { transmission_kind?: string | null }).transmission_kind,
+        ),
       });
       const { error: vehErr } = await userClient
         .from("user_vehicles")

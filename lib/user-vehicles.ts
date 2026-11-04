@@ -52,6 +52,15 @@ function asBrakeFluidSource(
   }
   return undefined;
 }
+
+function asAtfSource(
+  raw: string | null | undefined,
+): VehicleInfo["atfSpecSource"] | undefined {
+  if (raw === "user_entered" || raw === "user_manual_confirmed") {
+    return raw;
+  }
+  return undefined;
+}
 const MIGRATED_KEY_PREFIX = "garageGenius_vehicles_migrated_";
 
 export type UserVehicleRow = {
@@ -88,6 +97,14 @@ export type UserVehicleRow = {
   brake_fluid_spec_source?: string | null;
   brake_fluid_notes_source?: string | null;
   brake_fluid_specs_confirmed_at?: string | null;
+  atf_spec_text?: string | null;
+  atf_capacity_text?: string | null;
+  atf_notes_text?: string | null;
+  atf_spec_source?: string | null;
+  atf_capacity_source?: string | null;
+  atf_notes_source?: string | null;
+  atf_specs_confirmed_at?: string | null;
+  transmission_kind?: string | null;
   vin: string | null;
   license_plate?: string | null;
   last_maintenance: string | null;
@@ -149,6 +166,19 @@ export function rowToVehicleInfo(row: UserVehicleRow): VehicleInfo {
     brakeFluidSpecSource: asBrakeFluidSource(row.brake_fluid_spec_source),
     brakeFluidNotesSource: asBrakeFluidSource(row.brake_fluid_notes_source),
     brakeFluidSpecsConfirmedAt: row.brake_fluid_specs_confirmed_at ?? undefined,
+    atfSpecText: row.atf_spec_text ?? undefined,
+    atfCapacityText: row.atf_capacity_text ?? undefined,
+    atfNotesText: row.atf_notes_text ?? undefined,
+    atfSpecSource: asAtfSource(row.atf_spec_source),
+    atfCapacitySource: asAtfSource(row.atf_capacity_source),
+    atfNotesSource: asAtfSource(row.atf_notes_source),
+    atfSpecsConfirmedAt: row.atf_specs_confirmed_at ?? undefined,
+    transmissionKind:
+      row.transmission_kind === "atf" ||
+      row.transmission_kind === "cvt" ||
+      row.transmission_kind === "unknown"
+        ? row.transmission_kind
+        : undefined,
     vin: row.vin ?? undefined,
     licensePlate: row.license_plate?.trim() || undefined,
     lastMaintenance: row.last_maintenance ?? undefined,

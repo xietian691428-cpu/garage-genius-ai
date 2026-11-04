@@ -167,6 +167,7 @@
     "manualExtractBadge": "Save oil specs from your manual?",
     "manualExtractBadgeCoolant": "Save coolant specs from your manual?",
     "manualExtractBadgeBrake": "Save brake fluid spec from your manual?",
+    "manualExtractBadgeAtf": "Save transmission fluid spec from your manual?",
     "manualExtractBadgeBoth": "Save fluid specs from your manual?",
     "manualExtractReview": "Review"
   },
@@ -509,6 +510,10 @@
     "manualExtractCoolantSafety": "Never open a hot coolant reservoir.",
     "manualExtractBrakeTitle": "We found brake fluid info in your manual. Save to this vehicle’s profile?",
     "manualExtractBrakeSafety": "Brake fluid service beyond a visual level check is best done by a professional.",
+    "manualExtractAtfTitle": "Transmission fluid (ATF/CVT)",
+    "manualExtractAtfSafety": "Transmission fluid checks/changes are often best done by a shop — we only save what your manual states.",
+    "manualExtractAtfCvtHint": "CVT-specific — do not use regular ATF",
+    "manualExtractAtfConfirmHint": "Save transmission fluid spec from your manual?",
     "manualExtractViscosity": "Oil viscosity: {{value}}",
     "manualExtractCapacity": "Oil capacity: {{value}}",
     "manualExtractCoolantSpec": "Coolant type/spec: {{value}}",
@@ -516,6 +521,9 @@
     "manualExtractCoolantMix": "Coolant mix: {{value}}",
     "manualExtractBrakeSpec": "Brake fluid: {{value}}",
     "manualExtractBrakeNotes": "Brake fluid note: {{value}}",
+    "manualExtractAtfSpec": "Transmission fluid: {{value}}",
+    "manualExtractAtfCapacity": "Transmission fluid capacity: {{value}}",
+    "manualExtractAtfNotes": "Transmission fluid note: {{value}}",
     "manualExtractSave": "Save to this vehicle",
     "manualExtractSaveEdited": "Save my value",
     "manualExtractEdit": "Edit",
@@ -527,7 +535,12 @@
     "manualSavedCoolantMix": "Mix: {{value}}",
     "manualSavedBrakeTitle": "Saved brake fluid (this vehicle)",
     "manualSavedBrakeSpec": "Spec: {{value}}",
-    "manualSavedBrakeNotes": "Note: {{value}}"
+    "manualSavedBrakeNotes": "Note: {{value}}",
+    "manualSavedAtfTitle": "Saved transmission fluid (ATF/CVT) (this vehicle)",
+    "manualSavedAtfSpec": "Spec: {{value}}",
+    "manualSavedAtfCapacity": "Capacity: {{value}}",
+    "manualSavedAtfNotes": "Note: {{value}}",
+    "manualSavedAtfCvtHint": "CVT-specific — do not use regular ATF"
   },
   "shopReport": {
     "eyebrow": "Shop handoff",

@@ -9,13 +9,17 @@ import {
   resolveObdStateForPrompt,
 } from "@/lib/vehicle-manual-frame";
 import {
+  classifyTransmissionKind,
+  extractAtfGuessesFromText,
   extractBrakeFluidGuessesFromText,
   extractCoolantGuessesFromText,
   extractOilGuessesFromText,
   garagePatchForExtractConfirm,
+  pickBestAtfGuesses,
   pickBestBrakeFluidGuesses,
   pickBestCoolantGuesses,
   pickBestGuesses,
+  pickBestOilGuesses,
 } from "@/lib/vehicle-manual-extract";
 import {
   buildManualRetrievalQuery,
@@ -116,6 +120,21 @@ describe("intent retrieval query", () => {
     });
     expect(q.intent).toBe("brake_warning");
     expect(q.query).toMatch(/do not drive|professional|DOT/i);
+  });
+
+  it("ATF / transmission fluid → fluids_atf (not fluids_oil)", () => {
+    const q = buildManualRetrievalQuery({
+      userText: "what ATF does this car take?",
+    });
+    expect(q.intent).toBe("fluids_atf");
+    expect(q.query).toMatch(/ATF|transmission fluid|Mercon|Dexron/i);
+  });
+
+  it("oil change quarts stays fluids_oil (does not steal ATF)", () => {
+    const q = buildManualRetrievalQuery({
+      userText: "oil change quarts",
+    });
+    expect(q.intent).toBe("fluids_oil");
   });
 });
 
@@ -443,6 +462,268 @@ describe("brake fluid extract → confirm contract", () => {
     expect(applySpecOutputGate("Your manual lists DOT-4.", ctx)).toMatch(
       /DOT-4/i,
     );
+  });
+});
+
+describe("ATF extract → confirm contract", () => {
+  it("1. Toyota ATF WS → kind=atf candidate", () => {
+    const guesses = extractAtfGuessesFromText(
+      "Use Toyota ATF WS. Automatic transmission fluid type.",
+      { heading: "Automatic transmission", pageFrom: 70, pageTo: 70 },
+    );
+    const best = pickBestAtfGuesses(guesses);
+    expect(
+      best.some(
+        (g) =>
+          g.kind === "atf" &&
+          g.field === "atf_spec_text" &&
+          /ATF\s*WS/i.test(g.value),
+      ),
+    ).toBe(true);
+    expect(best.every((g) => g.transmissionKind === "atf")).toBe(true);
+  });
+
+  it("1b. CVT fluid only → transmission_kind=cvt", () => {
+    expect(
+      classifyTransmissionKind("Use Nissan NS-2 CVT fluid only."),
+    ).toBe("cvt");
+    const guesses = extractAtfGuessesFromText(
+      "Use Nissan NS-2 CVT fluid only. Continuously variable transmission.",
+      { heading: "CVT fluid", pageFrom: 80, pageTo: 80 },
+    );
+    const best = pickBestAtfGuesses(guesses);
+    expect(best.length).toBeGreaterThan(0);
+    expect(best.every((g) => g.transmissionKind === "cvt")).toBe(true);
+    expect(
+      best.some(
+        (g) =>
+          g.field === "atf_spec_text" &&
+          (/CVT|NS-?2/i.test(g.value)),
+      ),
+    ).toBe(true);
+  });
+
+  it("2b. Dexron only → transmission_kind=atf (not CVT)", () => {
+    expect(
+      classifyTransmissionKind("Use Dexron VI automatic transmission fluid."),
+    ).toBe("atf");
+    const guesses = extractAtfGuessesFromText(
+      "Use Dexron VI automatic transmission fluid.",
+      { heading: "Automatic transmission", pageFrom: 71, pageTo: 71 },
+    );
+    const best = pickBestAtfGuesses(guesses);
+    expect(best.every((g) => g.transmissionKind === "atf")).toBe(true);
+    expect(best.every((g) => g.transmissionKind !== "cvt")).toBe(true);
+  });
+
+  it("2. same page 0W-16 oil + ATF → oil and atf stay separate fields", () => {
+    const oilPage =
+      "Engine oil capacity with filter is 4.8 quarts. Recommended viscosity 0W-16.";
+    const atfPage =
+      "Automatic transmission fluid: Toyota ATF WS. ATF capacity 9.0 liters.";
+    const oil = pickBestOilGuesses(
+      extractOilGuessesFromText(oilPage, {
+        heading: "Engine oil",
+        pageFrom: 10,
+        pageTo: 10,
+      }),
+    );
+    const atf = pickBestAtfGuesses(
+      extractAtfGuessesFromText(atfPage, {
+        heading: "Transmission",
+        pageFrom: 70,
+        pageTo: 70,
+      }),
+    );
+    expect(oil.some((g) => g.field === "viscosity" && /0W-16/.test(g.value))).toBe(
+      true,
+    );
+    expect(oil.some((g) => g.field === "capacity" && /4\.8/.test(g.value))).toBe(
+      true,
+    );
+    expect(
+      atf.some((g) => g.field === "atf_spec_text" && /ATF\s*WS/i.test(g.value)),
+    ).toBe(true);
+    expect(
+      atf.some((g) => g.field === "atf_capacity_text" && /\b9(?:\.0)?\b/.test(g.value)),
+    ).toBe(true);
+    expect(oil.every((g) => g.kind === "oil")).toBe(true);
+    expect(atf.every((g) => g.kind === "atf")).toBe(true);
+  });
+
+  it("3. engine oil table only → no atf extract", () => {
+    const guesses = extractAtfGuessesFromText(
+      "Engine oil capacity with filter is 4.8 quarts. Use 0W-16 SAE.",
+      { heading: "Capacities", pageFrom: 10, pageTo: 10 },
+    );
+    expect(guesses).toEqual([]);
+  });
+
+  it("4. oil-change allowlist does not unlock ATF liters as oil", () => {
+    const ctx = buildManualSpecAnchors({
+      intent: "fluids_oil",
+      retrievedHits: [],
+      garage: {
+        oilCapacity: "4.8 qt",
+        oilCapacitySource: "user_manual_confirmed",
+        atfCapacityText: "9.0 L",
+        atfCapacitySource: "user_manual_confirmed",
+        atfSpecText: "Toyota ATF WS",
+        atfSpecSource: "user_manual_confirmed",
+      },
+    });
+    expect(ctx.oilCapacity).toMatch(/4\.8/);
+    expect(ctx.atfCapacity).toBeFalsy();
+    expect(applySpecOutputGate("Fill with 9.0 liters of oil.", ctx)).not.toMatch(
+      /9\.0/,
+    );
+    expect(applySpecOutputGate("Use 4.8 qt.", ctx)).toMatch(/4\.8/);
+  });
+
+  it("confirm patch writes atf_* never oil_*", () => {
+    const patch = garagePatchForExtractConfirm({
+      field: "atf_spec_text",
+      kind: "atf",
+      value: "Toyota ATF WS",
+      source: "user_manual_confirmed",
+      now: "2026-11-04T00:00:00.000Z",
+      transmissionKind: "atf",
+    });
+    expect(patch.atf_spec_text).toBe("Toyota ATF WS");
+    expect(patch.atf_spec_source).toBe("user_manual_confirmed");
+    expect(patch.transmission_kind).toBe("atf");
+    expect(patch.atf_specs_confirmed_at).toBeTruthy();
+    expect(patch).not.toHaveProperty("oil_capacity");
+    expect(patch).not.toHaveProperty("oil_viscosity");
+  });
+
+  it("confirm CVT patch keeps verbatim spec + transmission_kind=cvt", () => {
+    const patch = garagePatchForExtractConfirm({
+      field: "atf_spec_text",
+      kind: "atf",
+      value: "NS-2 CVT fluid",
+      source: "user_manual_confirmed",
+      now: "2026-11-04T00:00:00.000Z",
+      transmissionKind: "cvt",
+    });
+    expect(patch.atf_spec_text).toBe("NS-2 CVT fluid");
+    expect(patch.transmission_kind).toBe("cvt");
+    expect(patch).not.toHaveProperty("oil_capacity");
+  });
+
+  it("confirmed ATF cites Garage profile (from your manual)", () => {
+    const block = formatGarageProfileFluidsForPrompt({
+      atfSpecText: "Toyota ATF WS",
+      atfCapacityText: "9.0 L",
+      atfSpecSource: "user_manual_confirmed",
+      atfCapacitySource: "user_manual_confirmed",
+      atfSpecsConfirmedAt: "2026-11-04T00:00:00.000Z",
+      transmissionKind: "atf",
+    });
+    expect(block).toMatch(/\[GARAGE_PROFILE_FLUIDS\]/);
+    expect(block).toMatch(/transmission_kind: atf/);
+    expect(block).toMatch(/atf_spec: Toyota ATF WS/);
+    expect(block).toContain(GARAGE_PROFILE_MANUAL_SOURCE_LINE);
+    expect(block).toMatch(/never treat as engine oil/i);
+  });
+
+  it("5. saved CVT garage emphasizes CVT-specific; forbids Dexron substitute", () => {
+    const block = formatGarageProfileFluidsForPrompt({
+      atfSpecText: "NS-2 CVT fluid",
+      atfSpecSource: "user_manual_confirmed",
+      transmissionKind: "cvt",
+      atfSpecsConfirmedAt: "2026-11-04T00:00:00.000Z",
+    });
+    expect(block).toMatch(/transmission_kind: cvt/);
+    expect(block).toMatch(/CVT-specific|CVT fluid/i);
+    expect(block).toMatch(/Never recommend substituting conventional ATF/i);
+    expect(block).toMatch(/Dexron\/Mercon/i);
+    const frame = assembleManualSameFrame({
+      intent: "fluids_atf",
+      userText: "what ATF for my CVT car?",
+      obd: resolveObdStateForPrompt({
+        userText: "what ATF for my CVT car?",
+        hasLiveAdapter: false,
+      }),
+      manualHits: [],
+      garageFluids: {
+        atfSpecText: "NS-2 CVT fluid",
+        atfSpecSource: "user_manual_confirmed",
+        transmissionKind: "cvt",
+      },
+    });
+    expect(frame).toMatch(/transmission_kind: cvt/);
+    expect(frame).toMatch(/CVT fluid|CVT-specific/i);
+    expect(frame).toMatch(/never recommend Dexron|Never recommend substituting/i);
+  });
+
+  it("fluids_atf frame binds ATF not oil quarts", () => {
+    const block = assembleManualSameFrame({
+      intent: "fluids_atf",
+      userText: "what ATF?",
+      obd: resolveObdStateForPrompt({
+        userText: "what ATF?",
+        hasLiveAdapter: false,
+      }),
+      manualHits: [],
+      garageFluids: {
+        atfSpecText: "Toyota ATF WS",
+        atfSpecSource: "user_manual_confirmed",
+        transmissionKind: "atf",
+        oilCapacity: "4.8 qt",
+        oilCapacitySource: "user_manual_confirmed",
+      },
+    });
+    expect(block).toMatch(/atf_spec: Toyota ATF WS/);
+    expect(block).toMatch(/Never treat ATF as engine oil|never treat as engine oil|never treat transmission fluid as engine oil/i);
+  });
+
+  it("6. no inject → do not invent ATF type/liters", () => {
+    const ctx = buildManualSpecAnchors({
+      intent: "fluids_atf",
+      retrievedHits: [],
+      garage: {},
+    });
+    expect(
+      applySpecOutputGate("Use Toyota ATF WS and add 9.0 liters.", ctx),
+    ).not.toMatch(/9\.0/);
+  });
+
+  it("3. same manual 0W-16 + CVT fluid → oil and transmission stay separate", () => {
+    const oil = pickBestOilGuesses(
+      extractOilGuessesFromText(
+        "Engine oil capacity with filter is 4.8 quarts. Recommended viscosity 0W-16.",
+        { heading: "Engine oil", pageFrom: 10, pageTo: 10 },
+      ),
+    );
+    const atf = pickBestAtfGuesses(
+      extractAtfGuessesFromText(
+        "CVT fluid capacity 4.5 liters. Use NS-2 CVT fluid.",
+        { heading: "CVT", pageFrom: 80, pageTo: 80 },
+      ),
+    );
+    expect(oil.some((g) => g.field === "capacity" && /4\.8/.test(g.value))).toBe(
+      true,
+    );
+    expect(atf.every((g) => g.transmissionKind === "cvt")).toBe(true);
+    expect(
+      atf.some((g) => g.field === "atf_capacity_text" && /\b4(?:\.5)?\b/.test(g.value)),
+    ).toBe(true);
+    const oilCtx = buildManualSpecAnchors({
+      intent: "fluids_oil",
+      retrievedHits: [],
+      garage: {
+        oilCapacity: "4.8 qt",
+        oilCapacitySource: "user_manual_confirmed",
+        atfCapacityText: "4.5 L",
+        atfCapacitySource: "user_manual_confirmed",
+        transmissionKind: "cvt",
+      },
+    });
+    expect(oilCtx.atfCapacity).toBeFalsy();
+    expect(
+      applySpecOutputGate("Fill with 4.5 liters of oil.", oilCtx),
+    ).not.toMatch(/4\.5/);
   });
 });
 

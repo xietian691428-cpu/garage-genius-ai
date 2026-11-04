@@ -839,6 +839,14 @@ export async function POST(request: NextRequest) {
           brakeFluidSpecSource: currentVehicle.brakeFluidSpecSource,
           brakeFluidNotesSource: currentVehicle.brakeFluidNotesSource,
           brakeFluidSpecsConfirmedAt: currentVehicle.brakeFluidSpecsConfirmedAt,
+          atfSpecText: currentVehicle.atfSpecText,
+          atfCapacityText: currentVehicle.atfCapacityText,
+          atfNotesText: currentVehicle.atfNotesText,
+          atfSpecSource: currentVehicle.atfSpecSource,
+          atfCapacitySource: currentVehicle.atfCapacitySource,
+          atfNotesSource: currentVehicle.atfNotesSource,
+          atfSpecsConfirmedAt: currentVehicle.atfSpecsConfirmedAt,
+          transmissionKind: currentVehicle.transmissionKind,
         },
       });
       if (sameFrame.trim()) {
@@ -1035,17 +1043,30 @@ export async function POST(request: NextRequest) {
       "@/lib/vehicle-manual-frame"
     );
     const manualAllow = buildManualSpecAnchors({
+      intent: manualIntent,
       retrievedHits: userManualHits,
       garage: {
         oilCapacity: currentVehicle.oilCapacity,
         oilViscosity: currentVehicle.oilViscosity,
         oilCapacitySource: currentVehicle.oilCapacitySource,
         oilViscositySource: currentVehicle.oilViscositySource,
+        coolantCapacityText: currentVehicle.coolantCapacityText,
+        coolantCapacitySource: currentVehicle.coolantCapacitySource,
+        brakeFluidSpecText: currentVehicle.brakeFluidSpecText,
+        brakeFluidSpecSource: currentVehicle.brakeFluidSpecSource,
+        atfSpecText: currentVehicle.atfSpecText,
+        atfCapacityText: currentVehicle.atfCapacityText,
+        atfSpecSource: currentVehicle.atfSpecSource,
+        atfCapacitySource: currentVehicle.atfCapacitySource,
       },
     });
     const specCtx = {
       oilCapacity: manualAllow.oilCapacity,
       oilViscosity: manualAllow.oilViscosity,
+      coolantCapacity: manualAllow.coolantCapacity,
+      brakeFluidSpec: manualAllow.brakeFluidSpec,
+      atfSpec: manualAllow.atfSpec,
+      atfCapacity: manualAllow.atfCapacity,
       torqueSpec: manualAllow.torqueSpec || null,
       oemNumbers: prioritized.map((p) => p.oem_number),
     };

@@ -50,6 +50,16 @@ export interface VehicleInfo {
   brakeFluidSpecSource?: "user_entered" | "user_manual_confirmed";
   brakeFluidNotesSource?: "user_entered" | "user_manual_confirmed";
   brakeFluidSpecsConfirmedAt?: string;
+  /** ATF / CVT / transmission fluid type — owner-confirmed. Never oil_*. */
+  atfSpecText?: string;
+  atfCapacityText?: string;
+  atfNotesText?: string;
+  atfSpecSource?: "user_entered" | "user_manual_confirmed";
+  atfCapacitySource?: "user_entered" | "user_manual_confirmed";
+  atfNotesSource?: "user_entered" | "user_manual_confirmed";
+  atfSpecsConfirmedAt?: string;
+  /** atf | cvt | unknown — CVT must never be titled as generic ATF alone. */
+  transmissionKind?: "atf" | "cvt" | "unknown";
   vin?: string;
   /** Optional license / number plate for shop handoff */
   licensePlate?: string;

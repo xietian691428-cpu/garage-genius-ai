@@ -383,15 +383,18 @@ export function extractManualSpecAllowlist(hits: ManualChunkHit[]): {
   oilViscosity?: string;
   coolantCapacity?: string;
   brakeFluidSpec?: string;
+  atfSpec?: string;
+  atfCapacity?: string;
   torqueSpec?: string;
 } {
   const blob = hits.map((h) => `${h.heading || ""}\n${h.content}`).join("\n");
-  const oilCapacity = blob.match(/\b\d+(?:\.\d+)?\s*(?:qts?|quarts?|liters?|litres)\b/i)?.[0];
   const oilViscosity = blob.match(/\b\d+\s*w\s*-?\s*\d+\b/i)?.[0];
   const torqueSpec = blob.match(
     /\b\d+(?:\.\d+)?\s*(?:ft-?lbs?|foot[-\s]?pounds?|n[·.\s-]*m)\b/i,
   )?.[0];
+  let oilCapacity: string | undefined;
   let coolantCapacity: string | undefined;
+  let atfCapacity: string | undefined;
   for (const m of blob.matchAll(
     /\b(\d+(?:\.\d+)?)\s*(?:US\s+|Imp\.?\s+)?(qts?|quarts?|liters?|litres)\b/gi,
   )) {
@@ -401,12 +404,32 @@ export function extractManualSpecAllowlist(hits: ManualChunkHit[]): {
       (m.index ?? 0) + m[0].length + 40,
     );
     const window = `${left}${right}`;
+    // Oil capacity: unlock qt/L from this-turn hits unless ATF/coolant/brake owns the window.
+    // Prefer explicit engine-oil context when present; never take ATF liters as oil.
     if (
+      !oilCapacity &&
+      !/\b(ATF|transmission fluid|CVT|coolant|brake fluid)\b/i.test(window)
+    ) {
+      const oilCtx =
+        /\b(engine oil|motor oil|oil capacity|with filter|crankcase|refill)\b/i.test(
+          window,
+        ) ||
+        /\b(quarts?|qts?)\b/i.test(m[0]);
+      if (oilCtx) oilCapacity = m[0];
+    }
+    if (
+      !coolantCapacity &&
       /\b(coolant|antifreeze)\b/i.test(window) &&
-      !/\b(washer|brake fluid|engine oil|motor oil)\b/i.test(window)
+      !/\b(washer|brake fluid|engine oil|motor oil|ATF)\b/i.test(window)
     ) {
       coolantCapacity = m[0];
-      break;
+    }
+    if (
+      !atfCapacity &&
+      /\b(ATF|transmission fluid|CVT|automatic transmission)\b/i.test(window) &&
+      !/\b(engine oil|motor oil|with filter|coolant|brake fluid)\b/i.test(window)
+    ) {
+      atfCapacity = m[0];
     }
   }
   let brakeFluidSpec: string | undefined;
@@ -423,11 +446,24 @@ export function extractManualSpecAllowlist(hits: ManualChunkHit[]): {
       break;
     }
   }
+  let atfSpec: string | undefined;
+  const atfSpecHit = blob.match(
+    /\b((?:Toyota\s+)?ATF\s*WS|ATF[\s-]?WS|Mercon(?:\s*[LV]+)?|Dexron(?:[\s-]?[III|VI0-9]+)?|CVT[\s-]?fluid)\b/i,
+  );
+  if (atfSpecHit) {
+    const idx = atfSpecHit.index ?? 0;
+    const window = blob.slice(Math.max(0, idx - 40), idx + atfSpecHit[0].length + 40);
+    if (!/\b(engine oil|motor oil|brake fluid|coolant)\b/i.test(window)) {
+      atfSpec = atfSpecHit[0].replace(/\s+/g, " ").trim();
+    }
+  }
   return {
     oilCapacity: oilCapacity || undefined,
     oilViscosity: oilViscosity || undefined,
     coolantCapacity,
     brakeFluidSpec,
+    atfSpec,
+    atfCapacity,
     torqueSpec: torqueSpec || undefined,
   };
 }
