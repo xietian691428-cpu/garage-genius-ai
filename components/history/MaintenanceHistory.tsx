@@ -9,7 +9,7 @@ import { maintenanceService } from "@/lib/maintenance-records";
 import { FREE_MAINTENANCE_PREVIEW } from "@/lib/history-limits";
 import { useSubscription } from "@/hooks/useSubscription";
 import UpgradeModal from "@/components/ui/UpgradeModal";
-import { hideStorePurchaseUi } from "@/lib/native-platform";
+import { canUsePlayBilling, hideStorePurchaseUi } from "@/lib/native-platform";
 import ReceiptConfirmModal from "@/components/history/ReceiptConfirmModal";
 import {
   computeVehicleFamiliarity,
@@ -197,10 +197,10 @@ export default function MaintenanceHistory({
         <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
           This account shows the latest {FREE_MAINTENANCE_PREVIEW} records
           {truncated ? ` (${total} total on file)` : ""}.
-          {hideStorePurchaseUi()
+          {hideStorePurchaseUi() && !canUsePlayBilling()
             ? " Full history isn’t included with the current account."
             : " Upgrade to Pro for full history and multi-vehicle filtering — cancel anytime."}
-          {!hideStorePurchaseUi() && (
+          {(!hideStorePurchaseUi() || canUsePlayBilling()) && (
             <div className="mt-2">
               <button
                 type="button"

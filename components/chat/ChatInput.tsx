@@ -25,7 +25,7 @@ import UpgradeModal, {
   type UpgradeReason,
 } from "@/components/ui/UpgradeModal";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
-import { hideStorePurchaseUi } from "@/lib/native-platform";
+import { canUsePlayBilling, hideStorePurchaseUi } from "@/lib/native-platform";
 import CameraCapture from "@/components/chat/CameraCapture";
 import DtcEntryBar from "@/components/chat/DtcEntryBar";
 import { compressImageDataUrl } from "@/lib/image";
@@ -553,7 +553,7 @@ export default function ChatInput({
         >
           Limited — quota exceeded. This month&apos;s AI allowance is used up
           {usage.visionRemaining <= 0 ? " (including photo analyses)." : "."}
-          {!hideStorePurchaseUi() && (
+          {(!hideStorePurchaseUi() || canUsePlayBilling()) && (
             <>
               {" "}
               <button

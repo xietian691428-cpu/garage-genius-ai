@@ -71,6 +71,26 @@
     "shareError": "No se pudo compartir ahora. Prueba a copiar el enlace.",
     "shareErrorStore": "No se pudo compartir ahora. Copia el enlace."
   },
+  "billing": {
+    "playSubscribe": "Suscribirse con Google Play",
+    "playRestore": "Restaurar compras",
+    "playManage": "Administrar suscripción",
+    "purchasing": "Comprando…",
+    "restoring": "Restaurando…",
+    "opening": "Abriendo…",
+    "playBody": "Pro y Pro Heavy se desbloquean con Google Play. La misma cuenta recibe Pro o Heavy después de que el servidor verifique la compra.",
+    "playPricingTitle": "Suscribirse con Google Play",
+    "playPricingBody": "Pro y Pro Heavy son suscripciones de renovación automática en Google Play, con las mismas funciones que en las otras apps de Garage Genius. El cobro va a tu cuenta de Google al precio mostrado. Se renuevan salvo que canceles en Google Play al menos 24 horas antes de que termine el periodo. Puedes restaurar compras en esta página o en Cuenta.",
+    "playNone": "No hay suscripciones activas de Google Play en esta cuenta de Google.",
+    "playFootnote": "En esta app, Pro y Pro Heavy son suscripciones de renovación automática de Google Play. El cobro se hace en tu cuenta de Google al confirmar. La suscripción se renueva salvo que desactives la renovación al menos 24 horas antes de que termine el periodo. Adminístrala o cancélala en la configuración de suscripciones de Google Play.",
+    "playUpgradeTitle": "Suscribirse con Google Play",
+    "playUpgradeBody": "Las compras usan Google Play y se sincronizan con tu cuenta de Garage Genius después de la verificación.",
+    "playProYearly": "Suscribirse a Pro anual",
+    "playProMonthly": "Suscribirse a Pro mensual",
+    "playHeavyYearly": "Suscribirse a Heavy anual",
+    "playHeavyMonthly": "Suscribirse a Heavy mensual",
+    "playLegal": "El cobro se hace en tu cuenta de Google al confirmar. Las suscripciones se renuevan salvo que las canceles al menos 24 horas antes de que termine el periodo. Adminístralas en la configuración de suscripciones de Google Play."
+  },
   "legal": {
     "disclaimerTitle": "Aviso de seguridad importante",
     "disclaimer": "Esta es solo una orientación general. Consulte siempre el manual oficial del propietario de su vehículo o a un técnico cualificado. Garage Genius AI no se responsabiliza de ningún daño, lesión o costo derivado de acciones DIY o de confiar en esta información.",

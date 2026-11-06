@@ -9,6 +9,7 @@ import {
   recordRevenueEvent,
   upsertStripeSubscriptionRow,
 } from "@/lib/stripe-subscriptions";
+import { shouldCommitEntitlement } from "@/lib/billing-entitlement-commit";
 
 export const runtime = "nodejs";
 
@@ -91,13 +92,22 @@ async function syncSubscriptionToProfile(
       ).toISOString()
     : null;
 
-  const patch = {
+  const commit = await shouldCommitEntitlement(supabaseUserId, {
+    status,
+    expiresAt: periodEnd,
+    source: "stripe",
+  });
+
+  const patch: Record<string, unknown> = {
     stripe_customer_id: customerId,
     stripe_subscription_id: subscription.id,
-    subscription_status: status,
-    trial_ends_at: trialEnd,
-    current_period_end: periodEnd,
   };
+  if (commit) {
+    patch.billing_provider = "stripe";
+    patch.subscription_status = status;
+    patch.trial_ends_at = trialEnd;
+    patch.current_period_end = periodEnd;
+  }
 
   const { data: existing } = await admin
     .from("profiles")
@@ -123,13 +133,25 @@ async function markCanceledByCustomer(
   subscriptionId?: string,
 ) {
   const admin = createSupabaseAdmin();
-  const { error } = await admin
+  const { data: profiles } = await admin
     .from("profiles")
-    .update({
-      subscription_status: "canceled",
-      stripe_subscription_id: null,
-    })
+    .select("id, billing_provider, subscription_status, current_period_end")
     .eq("stripe_customer_id", customerId);
+
+  let error: { message: string } | null = null;
+  for (const profile of profiles ?? []) {
+    const clearStatus =
+      !profile.billing_provider || profile.billing_provider === "stripe";
+    const result = await admin
+      .from("profiles")
+      .update(
+        clearStatus
+          ? { subscription_status: "canceled", stripe_subscription_id: null }
+          : { stripe_subscription_id: null },
+      )
+      .eq("id", profile.id);
+    if (result.error) error = result.error;
+  }
 
   if (error) {
     console.error("Webhook cancel update failed:", error.message);

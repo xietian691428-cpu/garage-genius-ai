@@ -8,8 +8,10 @@ import SubscriptionLegalLinks from "@/components/legal/SubscriptionLegalLinks";
 import { useSubscription } from "@/hooks/useSubscription";
 import { TrialEndedModal } from "@/components/subscription/TrialBanners";
 import { TRIAL_DAYS } from "@/lib/subscription";
+import { useTranslation } from "react-i18next";
 import {
   canUseNativeIap,
+  canUsePlayBilling,
   getBillingMode,
   isStoreShellClient,
   NATIVE_NO_IAP_MESSAGE,
@@ -20,8 +22,10 @@ export default function PricingPageClient({
 }: {
   forceStoreSafe?: boolean;
 }) {
+  const { t } = useTranslation();
   const storeShell = forceStoreSafe || isStoreShellClient();
   const iap = canUseNativeIap();
+  const play = canUsePlayBilling();
   const blocked = getBillingMode() === "native_blocked";
   const {
     isTrialing,
@@ -61,16 +65,20 @@ export default function PricingPageClient({
           <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight text-white sm:text-5xl">
             {blocked
               ? "Garage Genius on this device"
-              : iap || storeShell
-                ? "Subscribe with Apple"
-                : "Simple plans for DIY repair"}
+              : play
+                ? t("billing.playPricingTitle")
+                : iap || storeShell
+                  ? "Subscribe with Apple"
+                  : "Simple plans for DIY repair"}
           </h1>
           <p className="mt-3 text-base text-slate-400 sm:text-lg">
             {blocked
               ? NATIVE_NO_IAP_MESSAGE
-              : iap || storeShell
-                ? "Pro and Pro Heavy are auto-renewable Apple In-App Purchases. Payment is charged to your Apple ID at the price shown. Subscriptions renew unless canceled at least 24 hours before the end of the current period. Manage or cancel in Settings → Apple ID → Subscriptions. Restore purchases anytime from this page or Account."
-                : `Every new account gets a ${TRIAL_DAYS}-day Pro Trial. Free covers basics; Pro unlocks voice, custom tags, annual reports, and higher limits. Cancel anytime.`}
+              : play
+                ? t("billing.playPricingBody")
+                : iap || storeShell
+                  ? "Pro and Pro Heavy are auto-renewable Apple In-App Purchases. Payment is charged to your Apple ID at the price shown. Subscriptions renew unless canceled at least 24 hours before the end of the current period. Manage or cancel in Settings → Apple ID → Subscriptions. Restore purchases anytime from this page or Account."
+                  : `Every new account gets a ${TRIAL_DAYS}-day Pro Trial. Free covers basics; Pro unlocks voice, custom tags, annual reports, and higher limits. Cancel anytime.`}
           </p>
           <SubscriptionLegalLinks className="mt-4 text-sm text-cyan-300/90" />
           {!storeShell && isTrialing && trialCountdown && (

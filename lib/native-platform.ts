@@ -1,6 +1,6 @@
 /**
  * Capacitor / store-shell detection and billing policy helpers.
- * Web → Stripe Checkout. iOS native → StoreKit 2 IAP. Android native → blocked until Play Billing.
+ * Web → Stripe Checkout. iOS native → StoreKit 2. Android native → Google Play Billing.
  */
 
 type CapacitorBridge = {
@@ -8,7 +8,11 @@ type CapacitorBridge = {
   getPlatform?: () => string;
 };
 
-export type NativeBillingMode = "web_stripe" | "native_iap" | "native_blocked";
+export type NativeBillingMode =
+  | "web_stripe"
+  | "native_iap"
+  | "native_play"
+  | "native_blocked";
 
 export type CapacitorPlatformId = "ios" | "android" | "web";
 
@@ -102,9 +106,9 @@ export const NATIVE_LANDING_CTA = "Start free";
 export const NATIVE_LANDING_KICKER =
   "Free to start · Upgrade in-app with Apple In-App Purchase";
 
-/** Play listing / Android WebView — no Apple IAP pitch, no web-pay steering. */
+/** Play listing / Android WebView — Google Play Billing, no web-pay steering. */
 export const NATIVE_LANDING_KICKER_ANDROID =
-  "Free to start · Sign in to save your garage";
+  "Free to start · Upgrade in-app with Google Play";
 
 export function nativeLandingKicker(ua?: string | null): string {
   const resolvedUa =
@@ -159,9 +163,8 @@ export function isStoreShellClient(): boolean {
 }
 
 /**
- * Hide purchase CTAs only when no in-app purchase path exists.
- * iOS Capacitor uses StoreKit — keep upgrade / pricing CTAs visible.
- * Android Capacitor stays blocked until Play Billing ships.
+ * Hide Stripe / website checkout CTAs in store shells that must not link out.
+ * Android still sells plans in-app via Google Play (`canUsePlayBilling`).
  */
 export function hideStorePurchaseUi(): boolean {
   return getCapacitorPlatform() === "android";
@@ -170,11 +173,11 @@ export function hideStorePurchaseUi(): boolean {
 /**
  * Web → Stripe Checkout / portal.
  * iOS native → StoreKit 2.
- * Android native → blocked (no Play Billing yet).
+ * Android native → Google Play Billing.
  */
 export function getBillingMode(): NativeBillingMode {
   const platform = getCapacitorPlatform();
-  if (platform === "android") return "native_blocked";
+  if (platform === "android") return "native_play";
   if (platform === "ios") return "native_iap";
   if (isStoreShellClient()) return "native_iap";
   return "web_stripe";
@@ -186,6 +189,10 @@ export function canUseStripeCheckout(): boolean {
 
 export function canUseNativeIap(): boolean {
   return getBillingMode() === "native_iap";
+}
+
+export function canUsePlayBilling(): boolean {
+  return getBillingMode() === "native_play";
 }
 
 /**
@@ -211,7 +218,7 @@ export const NATIVE_ACCOUNT_LIMITS_BODY =
   "This feature isn’t included with your current plan. Subscribe with Apple In-App Purchase to unlock Pro.";
 
 export const NATIVE_ACCOUNT_LIMITS_BODY_ANDROID =
-  "This feature isn’t included with your current plan on this device.";
+  "This feature isn’t included with your current plan. Subscribe with Google Play to unlock Pro.";
 
 export const NATIVE_WEBSITE_MANAGE_HINT =
   "Purchases in this app use Apple In-App Purchase. Manage or cancel in Settings → Apple ID → Subscriptions.";
@@ -225,25 +232,25 @@ export const NATIVE_TERMS_BILLING_BULLETS = [
   "Deleting your account cancels access immediately; Apple subscriptions are managed in Apple ID settings.",
 ] as const;
 
-/** Play store WebView — do not name an alternate checkout (Stripe / website). */
+/** Play store WebView — Google Play subscriptions, no website checkout. */
 export const NATIVE_TERMS_BILLING_BULLETS_ANDROID = [
-  "This Android version of Garage Genius provides the free DIY coaching features of the service.",
-  "Subscriptions are not sold in this Android app.",
-  "If your signed-in account already includes a plan from another Garage Genius experience, that access may appear here after you sign in.",
-  "Deleting your account cancels access to Garage Genius data we store for you.",
+  "In this Android app, Pro and Pro Heavy are sold as auto-renewing Google Play subscriptions.",
+  "Payment is charged by Google Play. Manage or cancel in Google Play subscription settings.",
+  "Account entitlements follow the signed-in Garage Genius account after Google Play verification.",
+  "Deleting your account cancels access to Garage Genius data we store for you. Cancel the Play subscription separately in Google Play.",
 ] as const;
 
 export const NATIVE_DELETE_ACCOUNT_BODY =
   "Permanently deletes your Garage Genius account, vehicles, chats, maintenance history, and inventory we store for you. This cannot be undone. Apple subscriptions must be canceled separately in your Apple ID settings.";
 
 export const NATIVE_DELETE_ACCOUNT_BODY_ANDROID =
-  "Permanently deletes your Garage Genius account, vehicles, chats, maintenance history, and inventory we store for you. This cannot be undone.";
+  "Permanently deletes your Garage Genius account, vehicles, chats, maintenance history, and inventory we store for you. This cannot be undone. Google Play subscriptions must be canceled separately in Google Play.";
 
 export const NATIVE_PRIVACY_BILLING =
   "Apple App Store transaction identifiers and plan status (for iOS In-App Purchases); Stripe customer IDs and plan status on the website (card details are handled by Apple or Stripe, not stored on our servers).";
 
 export const NATIVE_PRIVACY_BILLING_ANDROID =
-  "Plan status tied to your signed-in Garage Genius account. This Android app does not collect payment card numbers.";
+  "Google Play purchase references and plan status tied to your signed-in Garage Genius account. This Android app does not collect payment card numbers.";
 
 export const NATIVE_PRIVACY_PUSH =
   "reminder endpoint if you enable maintenance reminders.";
@@ -255,18 +262,21 @@ export const NATIVE_PRIVACY_CHOICES =
   "You can sign out, manage Apple subscriptions in your Apple ID settings, review plan details on the Garage Genius website, decline AI provider consent (DeepSeek / Kimi) until you agree, disable push reminders, limit what vehicle or photo data you enter, and delete your account.";
 
 export const NATIVE_PRIVACY_CHOICES_ANDROID =
-  "You can sign out, decline AI provider consent (DeepSeek / Kimi) until you agree, disable push reminders, limit what vehicle or photo data you enter, and delete your account.";
+  "You can sign out, manage Google Play subscriptions in Google Play, decline AI provider consent (DeepSeek / Kimi) until you agree, disable push reminders, limit what vehicle or photo data you enter, and delete your account.";
 
 export function nativeUpgradeBlockedMessage(): string {
   const mode = getBillingMode();
   if (mode === "native_iap") {
     return "Use Apple In-App Purchase in this app to change your plan.";
   }
+  if (mode === "native_play") {
+    return "Use Google Play in this app to change your plan.";
+  }
   return NATIVE_NO_IAP_MESSAGE;
 }
 
 export function nativeAccountLimitsBody(): string {
-  if (getBillingMode() === "native_blocked") {
+  if (getBillingMode() === "native_play" || getBillingMode() === "native_blocked") {
     return NATIVE_ACCOUNT_LIMITS_BODY_ANDROID;
   }
   return NATIVE_ACCOUNT_LIMITS_BODY;

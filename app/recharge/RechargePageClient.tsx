@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 import { startTokenRecharge } from "@/lib/billing";
 import {
@@ -23,8 +24,10 @@ export default function RechargePageClient({
   forceStoreSafe?: boolean;
 }) {
   const storeSafe = forceStoreSafe || hideWebCheckoutUi();
+  const { t } = useTranslation();
+  const storeSafe = forceStoreSafe || hideWebCheckoutUi();
   const iap = canUseNativeIap();
-  const [loading, setLoading] = useState<string | null>(null);
+  const play = canUsePlayBilling();
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -65,14 +68,22 @@ export default function RechargePageClient({
 
         <h1 className="text-3xl font-bold text-white sm:text-4xl">
           {iap ? "Subscribe with Apple" : storeSafe ? "AI quota" : "Buy More Tokens"}
+          {iap
+            ? "Subscribe with Apple"
+            : play
+              ? t("billing.playPricingTitle")
+              : storeSafe
+                ? "AI quota"
+                : "Buy More Tokens"}
         </h1>
         <p className="mt-2 text-sm text-slate-400">
           {iap
             ? "Token packs are not sold in the iOS app. Upgrade to Pro or Pro Heavy with Apple In-App Purchase."
-            : storeSafe
-              ? NATIVE_NO_IAP_MESSAGE
-              : "Top up when your monthly included quota runs out. Pricing follows PROJECT.md (~$0.06–$0.08 per 1k with volume packs)."}
-        </p>
+            : play
+              ? t("billing.playPricingBody")
+              : storeSafe
+                ? NATIVE_NO_IAP_MESSAGE
+                : "Top up when your monthly included quota runs out. Pricing follows PROJECT.md (~$0.06–$0.08 per 1k with volume packs)."}
 
         <div className="mt-6">
           <TokenDisplay />
@@ -90,12 +101,12 @@ export default function RechargePageClient({
         )}
 
         {iap && (
+        {(iap || play) && (
           <Link
             href="/pricing"
             className="mt-6 block rounded-2xl bg-cyan-500 px-4 py-3 text-center text-sm font-semibold text-black hover:bg-cyan-400"
           >
-            View Apple subscriptions
-          </Link>
+            {play ? t("billing.playSubscribe") : "View Apple subscriptions"}
         )}
 
         {!storeSafe && (
@@ -146,9 +157,11 @@ export default function RechargePageClient({
           {iap
             ? "Manage or cancel in Settings → Apple ID → Subscriptions."
             : storeSafe
-              ? NATIVE_NO_IAP_MESSAGE
-              : (
-              <>
+            : play
+              ? t("billing.playLegal")
+              : storeSafe
+                ? NATIVE_NO_IAP_MESSAGE
+                : (
           Payments are processed by Stripe. Tokens are credited after{" "}
           <code className="text-slate-400">checkout.session.completed</code>.
               </>

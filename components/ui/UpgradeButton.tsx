@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
-import { hideStorePurchaseUi } from "@/lib/native-platform";
+import { canUsePlayBilling, hideStorePurchaseUi } from "@/lib/native-platform";
 
 type UpgradeButtonProps = {
   /** Compact for headers; default is medium */
@@ -12,14 +12,14 @@ type UpgradeButtonProps = {
   label?: string;
 };
 
-/** Navigates to /pricing — Stripe checkout happens there after plan pick. Hidden in store shells. */
+/** Navigates to /pricing. Android opens Google Play plans there; iOS opens Apple IAP. */
 export default function UpgradeButton({
   size = "md",
   className = "",
   label = "Upgrade",
 }: UpgradeButtonProps) {
   if (isQaUnlockEnabled()) return null;
-  if (hideStorePurchaseUi()) return null;
+  if (hideStorePurchaseUi() && !canUsePlayBilling()) return null;
 
   const sizeClass =
     size === "sm"

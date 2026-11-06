@@ -71,6 +71,26 @@
     "shareError": "Couldn’t share right now. Try copying the link instead.",
     "shareErrorStore": "Couldn’t share right now. Copy the link instead."
   },
+  "billing": {
+    "playSubscribe": "Subscribe with Google Play",
+    "playRestore": "Restore purchases",
+    "playManage": "Manage subscription",
+    "purchasing": "Purchasing…",
+    "restoring": "Restoring…",
+    "opening": "Opening…",
+    "playBody": "Pro and Pro Heavy unlock with Google Play. The same signed-in account gets Pro or Heavy after the server verifies the purchase.",
+    "playPricingTitle": "Subscribe with Google Play",
+    "playPricingBody": "Pro and Pro Heavy are auto-renewing Google Play subscriptions, with the same features as on other Garage Genius apps. Payment is charged to your Google account at the price shown. Subscriptions renew unless you cancel in Google Play at least 24 hours before the period ends. Restore purchases anytime from this page or Account.",
+    "playNone": "No active Google Play subscriptions found for this Google account.",
+    "playFootnote": "In this app, Pro and Pro Heavy are auto-renewing Google Play subscriptions. Payment is charged to your Google account at confirmation. The subscription renews unless you turn off auto-renew at least 24 hours before the period ends. Manage or cancel in Google Play subscription settings.",
+    "playUpgradeTitle": "Subscribe with Google Play",
+    "playUpgradeBody": "Purchases use Google Play and sync to your Garage Genius account after verification.",
+    "playProYearly": "Subscribe Pro annual",
+    "playProMonthly": "Subscribe Pro monthly",
+    "playHeavyYearly": "Subscribe Heavy annual",
+    "playHeavyMonthly": "Subscribe Heavy monthly",
+    "playLegal": "Payment is charged to your Google account at confirmation. Subscriptions renew unless canceled at least 24 hours before the period ends. Manage in Google Play subscription settings."
+  },
   "legal": {
     "disclaimerTitle": "Important safety notice",
     "disclaimer": "This is general guidance only. Always refer to your vehicle’s official owner’s manual or consult a qualified technician. Garage Genius AI is not responsible for any damage, injury, or costs resulting from DIY actions or reliance on this information.",

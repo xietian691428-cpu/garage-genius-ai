@@ -6,7 +6,7 @@ Do **not** paste passwords into git.
 
 **This Android binary:** versionName **1.0.4**, versionCode **14** (aligned with iOS build 14).  
 **Package:** `com.garagegenius.ai`  
-**This version does not sell subscriptions in the Play app.** No Play Billing SKUs. Do not add paid in-app products until Play Billing is implemented.  
+**This version does not sell subscriptions in the Play app.** No Play Billing SKUs in the published binary. The next versionCode uses `docs/GOOGLE_PLAY_BILLING.md` — do not tell reviewers this binary sells subscriptions until that build is the one under review.  
 **Release notes for this binary:** Cold-start splash/EdgeToEdge fix (Theme.SplashScreen + `installSplashScreen` before `EdgeToEdge`), R8 keep rules for Cap plugins + Classic BT OBD, optional native BLE/Classic OBD.
 
 Website Stripe Checkout stays on **Chrome / desktop / mobile Safari** only. The Android WebView must not start card checkout, and must not tell users to “buy on the website.”
@@ -184,8 +184,8 @@ Optional 7-inch / 10-inch (only if you want tablet listing surfaces): 4 shots ea
 
 ---
 
-## Android Pro later (do not do this in v1)
+## Android subscriptions (next versionCode)
 
-Wait until this **free** Play listing is **production-live**, then ship a **new versionCode** with **Google Play Billing** subscriptions (same Pro / Pro Heavy monthly+yearly as iOS). Server-verify Play purchases into `profiles.subscription_status`.
+The published binary described above does not include Play Billing yet. The next `versionCode` that ships this web build sells Pro / Pro Heavy through Google Play. Product IDs, server verify, and license-test steps: `docs/GOOGLE_PLAY_BILLING.md`.
 
-Never “turn on Stripe inside the Android WebView” after approval — that can get the app removed. Website Stripe stays on Chrome/desktop only. Same-account Pro from web or iOS may continue to work after sign-in; that is not a purchase button.
+Never “turn on Stripe inside the Android WebView” — that can get the app removed. Website Stripe stays on Chrome/desktop only. A plan already on the same account from the website or iOS can still show after sign-in.

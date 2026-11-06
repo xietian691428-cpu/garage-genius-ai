@@ -16,7 +16,7 @@ Native shell: Capacitor 8 (remote URL → production Next.js)
 | Capacitor `ios/` + `android/` | **Scaffolded in repo** |
 | Permission strings (camera / mic / photos / BT) | **Declared** |
 | Stripe inside native WebView | **Blocked client + API** (`lib/billing.ts`, `lib/stripe-web-guard.ts` → 403) |
-| StoreKit / Play Billing IAP | **iOS StoreKit 2 wired**; **Android Play Billing not in this version** (free features only; no web-pay CTA in the Play app) |
+| StoreKit / Play Billing IAP | **iOS StoreKit 2 wired**; **Android Play Billing code is in the repo** (`docs/GOOGLE_PLAY_BILLING.md`). The Play binary only sells after the next `versionCode` and Play Console SKUs. No web-pay CTA in the Play app. |
 | Universal Links / App Links templates | **Present** (Play App Signing SHA-256 set in `assetlinks.json`) |
 | Screenshots / store listing assets | **You — create in consoles** |
 | Sign in with Apple / Google | **Apple live**; **Google Web+Android** — `docs/AUTH_PROVIDERS.md` + `NEXT_PUBLIC_AUTH_GOOGLE=1` |
@@ -216,8 +216,8 @@ StoreKit 2 IAP only (`docs/APP_STORE_REVIEW_NOTES.md`).
 **Google Play (this versionCode 12 / 1.0.2)**  
 Free coaching features only. No Play Billing SKUs. No Stripe in the WebView. No “buy on the website” CTA. R8 minify enabled for Play DEX quality. Listing and review notes: `docs/PLAY_STORE_REVIEW_NOTES.md`.
 
-**Later (after the free Play listing is production-live)**  
-Implement **Google Play Billing** for the same Pro / Heavy products, verify on the server, write `profiles.subscription_status`. Ship a new `versionCode`. Do **not** enable Stripe Checkout in the Android WebView after approval.
+**Play Billing (code ready — ship with the next versionCode)**  
+Google Play Billing for Pro / Heavy monthly and yearly is implemented. Server verify writes `profiles.subscription_status`. Console setup, license testers, and the version bump are in `docs/GOOGLE_PLAY_BILLING.md`. Do **not** enable Stripe Checkout in the Android WebView.
 
 Do **not** mix “open our website to subscribe” into either store binary.
 
@@ -354,7 +354,7 @@ Terms URL: **https://garagegenius.cloud/terms**
 - [ ] Content rating questionnaire
 - [ ] Store listing + phone screenshots (+ 7" / 10" tablet if claimed)
 - [ ] App signing → copy SHA-256 into `assetlinks.json` and redeploy
-- [ ] This version: **no** Play Billing products (free features only)
+- [ ] Play Billing SKUs + service account (`docs/GOOGLE_PLAY_BILLING.md`) before the versionCode that sells subscriptions
 - [ ] Target API level per current Play requirements (repo `targetSdkVersion` 36)
 
 ### Supabase / ops
@@ -372,14 +372,14 @@ Terms URL: **https://garagegenius.cloud/terms**
 4. **Sign in with Apple** must be live if Google is offered on iOS.  
 5. **Store screenshots / icons** not produced yet.  
 6. **Mainland China network** — Vercel may be unreachable without VPN; store builds still load `garagegenius.cloud` (plan CDN/China strategy separately if needed).
-7. **Android paid upgrades** wait on Play Billing — do not add web checkout CTAs in the Play binary.
+7. **Android paid upgrades** use Play Billing in the next versionCode — do not add web checkout CTAs in the Play binary.
 
 ---
 
 ## 10. Next engineering milestones (after this scaffold)
 
 1. ~~Wire `@capacitor/app` URL open → navigate WebView~~ — `NativeDeepLinkBridge` in root layout.  
-2. StoreKit 2 + Play Billing products + server receipt verify.  
+2. ~~StoreKit 2 + Play Billing products + server receipt verify.~~ — iOS live; Android verify is in repo, Play Console SKUs still manual (`docs/GOOGLE_PLAY_BILLING.md`).  
 3. ~~Native BLE OBD (M1) for iOS + Android store apps~~ — see `docs/OBD_BLUETOOTH.md`. Classic BT / Wi‑Fi = Phase 2.  
 4. ~~App icon set + splash assets in `ios/` / `android/`~~ — see §2b (`npm run cap:assets`).  
 5. TestFlight / internal testing track smoke (auth, chat, coach, camera, delete account).

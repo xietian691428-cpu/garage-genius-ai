@@ -6,6 +6,7 @@ import TokenDisplay from "@/components/ui/token-display";
 import { useSubscription } from "@/hooks/useSubscription";
 import { openBillingPortal } from "@/lib/billing";
 import {
+  BILLING_PLAY_UNAVAILABLE,
   BILLING_PORTAL_UNAVAILABLE,
   toUserFacingBillingError,
 } from "@/lib/billing-errors";
@@ -26,6 +27,7 @@ import { supabase } from "@/lib/supabase";
 import type { VehicleInfo } from "@/lib/types/chat";
 import {
   canUseNativeIap,
+  canUsePlayBilling,
   getBillingMode,
   hideStorePurchaseUi,
   nativePlanDisplayLabel,
@@ -41,8 +43,6 @@ import {
 type Props = {
   currentVehicle?: VehicleInfo | null;
   vehiclesLoading?: boolean;
-  onUpdateVehicle?: (vehicle: VehicleInfo) => Promise<VehicleInfo | void>;
-};
 
 export default function SettingsPanel({
   currentVehicle = null,
@@ -72,6 +72,7 @@ export default function SettingsPanel({
 
   const handleManageBilling = async () => {
     setBusy(true);
+  const play = canUsePlayBilling();
     setError(null);
     try {
       if (iap) {
@@ -82,6 +83,9 @@ export default function SettingsPanel({
       }
     } catch (err) {
       setError(toUserFacingBillingError(err, BILLING_PORTAL_UNAVAILABLE));
+      } else if (play) {
+        await openPlayManageSubscriptions();
+        setBusy(false);
       setBusy(false);
     }
   };
@@ -288,14 +292,59 @@ export default function SettingsPanel({
                 : isTrialing
                   ? "Enjoy full Pro features during your trial. Subscribe before it ends to keep voice coaching and higher limits."
                   : "Free includes limited monthly help. Pro unlocks voice coaching, more vehicles, and fuller repair answers. Heavy adds the highest limits."}
-          </p>
-          {billingMode !== "native_blocked" &&
-            (iap ? (
+              : play
+                ? t("billing.playBody")
+                : iap
+                  ? "Pro and Pro Heavy unlock via Apple In-App Purchase. Entitlements sync to this signed-in account after verification."
+                  : isTrialing
+            <div className="mt-4 flex flex-col gap-2">
+              <Link
+                href="/pricing"
+                className="block w-full rounded-2xl bg-cyan-500 px-4 py-3 text-center text-sm font-semibold text-black hover:bg-cyan-400"
+            (play ? (
             <div className="mt-4 flex flex-col gap-2">
               <Link
                 href="/pricing"
                 className="block w-full rounded-2xl bg-cyan-500 px-4 py-3 text-center text-sm font-semibold text-black hover:bg-cyan-400"
               >
+                {t("billing.playSubscribe")}
+              </Link>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void handleManageBilling()}
+                className="w-full rounded-2xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-200 hover:border-cyan-500/40 disabled:opacity-60"
+              >
+                {busy ? t("billing.opening") : t("billing.playManage")}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  void (async () => {
+                    setBusy(true);
+                    setError(null);
+                    try {
+                      const { synced } = await restorePlayPurchases();
+                      await refresh();
+                      if (synced === 0) {
+                        setError(t("billing.playNone"));
+                      }
+                    } catch (err) {
+                      setError(
+                        toUserFacingBillingError(err, BILLING_PLAY_UNAVAILABLE),
+                      );
+                    } finally {
+                      setBusy(false);
+                    }
+                  })();
+                }}
+                className="w-full rounded-2xl border border-slate-700 px-4 py-3 text-sm text-slate-300 hover:border-slate-500 disabled:opacity-60"
+              >
+                {t("billing.playRestore")}
+              </button>
+            </div>
+          ) : iap ? (
                 View plans & subscribe
               </Link>
               <button
@@ -408,7 +457,7 @@ export default function SettingsPanel({
               : billingMode === "native_iap"
                 ? NATIVE_DELETE_ACCOUNT_BODY
                 : "Permanently deletes your Garage Genius account, vehicles, chats, maintenance history, and inventory we store for you. This cannot be undone. Active Stripe subscriptions are cancelled when possible — also confirm in Manage billing if a charge continues."}
-          </p>
+            {billingMode === "native_blocked" || billingMode === "native_play"
           {!deleteOpen ? (
             <button
               type="button"

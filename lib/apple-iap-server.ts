@@ -15,6 +15,7 @@ import {
   planFromAppleProductId,
   subscriptionStatusFromAppleProduct,
 } from "@/lib/apple-iap-products";
+import { shouldCommitEntitlement } from "@/lib/billing-entitlement-commit";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import type { SubscriptionStatus } from "@/lib/types/subscription";
 
@@ -167,22 +168,28 @@ export async function applyAppleTransactionToProfile(opts: {
     { onConflict: "transaction_id" },
   );
 
+  const incomingStatus: SubscriptionStatus =
+    status === "canceled" || status === "free" ? "canceled" : status;
+  const commit = await shouldCommitEntitlement(userId, {
+    status: incomingStatus,
+    expiresAt: periodEnd,
+    source: "apple",
+  });
+
   const patch: Record<string, unknown> = {
-    billing_provider: "apple",
     apple_original_transaction_id: originalTransactionId,
     apple_product_id: productId,
     apple_environment: environment,
-    subscription_status: status,
-    current_period_end: periodEnd,
-    stripe_subscription_id: null,
   };
 
-  if (status === "trialing") {
-    patch.trial_ends_at = periodEnd;
-  }
-
-  if (status === "canceled" || status === "free") {
-    patch.subscription_status = "canceled";
+  if (commit) {
+    patch.billing_provider = "apple";
+    patch.subscription_status = incomingStatus;
+    patch.current_period_end = periodEnd;
+    patch.stripe_subscription_id = null;
+    if (incomingStatus === "trialing") {
+      patch.trial_ends_at = periodEnd;
+    }
   }
 
   const { error } = await admin.from("profiles").update(patch).eq("id", userId);
@@ -190,7 +197,7 @@ export async function applyAppleTransactionToProfile(opts: {
     throw new Error(`Failed to sync Apple entitlement: ${error.message}`);
   }
 
-  return { status };
+  return { status: incomingStatus };
 }
 
 /** Resolve user from appAccountToken (UUID) or existing originalTransactionId. */

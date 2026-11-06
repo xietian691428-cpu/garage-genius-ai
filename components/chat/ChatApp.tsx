@@ -36,7 +36,7 @@ import type { FocusCommand } from "@/lib/types/focus";
 import type { RagKnowledgeHit } from "@/lib/types/rag";
 import { maintenanceService } from "@/lib/maintenance-records";
 import { useTranslation } from "react-i18next";
-import { hideStorePurchaseUi } from "@/lib/native-platform";
+import { canUsePlayBilling, hideStorePurchaseUi } from "@/lib/native-platform";
 import { formatMaintenanceHistoryForPrompt } from "@/lib/chat-repair-loop";
 import {
   detectIntentDrift,
@@ -1911,7 +1911,7 @@ export default function ChatApp({
                 )}
                 {gateBanner.code === "not_in_garage_limit" && (
                   <>
-                    {!hideStorePurchaseUi() ? (
+                    {!hideStorePurchaseUi() || canUsePlayBilling() ? (
                       <button
                         type="button"
                         data-testid="chat-gate-upgrade"

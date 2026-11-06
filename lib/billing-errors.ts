@@ -18,6 +18,9 @@ export const BILLING_IAP_UNAVAILABLE =
 export const BILLING_IAP_SANDBOX_HUNG =
   "The App Store didn’t finish this purchase. Sandbox IAP does not complete in the iOS Simulator — use a physical iPhone or iPad. On a device, add the Sandbox account in Settings → App Store first, then tap Subscribe again.";
 
+export const BILLING_PLAY_UNAVAILABLE =
+  "Google Play Billing isn’t available on this device right now. You can keep using the free features.";
+
 /** Intentional product messages that are safe to show as-is. */
 const SAFE_EXACT = new Set([
   "Sign in to manage your subscription.",
@@ -26,6 +29,17 @@ const SAFE_EXACT = new Set([
   "No Stripe customer on file. Subscribe first.",
   "Stripe did not return a checkout URL.",
   "Card checkout is not available in the store app.",
+  "Purchase canceled.",
+  "You already own this subscription. Tap Restore purchases to sync it to this account.",
+  "Google Play Billing isn’t available on this device right now. You can keep using the free features.",
+  "Google Play is still processing this payment. It will sync after the payment completes. You can tap Restore purchases later.",
+  "Purchase completed but Google Play did not return a token. Try Restore purchases.",
+  "No active Google Play subscriptions found for this Google account.",
+  "This Google Play subscription is not active.",
+  "This Google Play purchase is already linked to another Garage Genius account.",
+  "Google Play Billing is only available in the Android app.",
+  "Restore is only available in the Android app.",
+  "Sign in to purchase.",
 ]);
 
 const SAFE_PATTERNS: RegExp[] = [
@@ -36,6 +50,7 @@ const SAFE_PATTERNS: RegExp[] = [
   /couldn't open billing/i,
   /unavailable in the store app/i,
   /In-App Purchase/i,
+  /Google Play/i,
   /Restore purchases/i,
   /Sandbox IAP/i,
   /physical iPhone or iPad/i,

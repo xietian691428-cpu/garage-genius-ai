@@ -10,8 +10,10 @@ import {
   type PaidPlan,
   type SubscriptionTier,
 } from "@/lib/types/subscription";
+import { useTranslation } from "react-i18next";
 import {
   canUseNativeIap,
+  canUsePlayBilling,
   getBillingMode,
   isStoreShellClient,
   NATIVE_NO_IAP_MESSAGE,
@@ -21,10 +23,16 @@ import {
   purchaseApplePlan,
   restoreApplePurchases,
 } from "@/lib/native-iap";
+import {
+  openPlayManageSubscriptions,
+  purchasePlayPlan,
+  restorePlayPurchases,
+} from "@/lib/native-play-billing";
 import { startCheckout, openBillingPortal } from "@/lib/billing";
 import {
   BILLING_CHECKOUT_UNAVAILABLE,
   BILLING_IAP_UNAVAILABLE,
+  BILLING_PLAY_UNAVAILABLE,
   BILLING_PORTAL_UNAVAILABLE,
   isPurchaseCancelled,
   toUserFacingBillingError,
@@ -36,8 +44,10 @@ import SubscriptionLegalLinks from "@/components/legal/SubscriptionLegalLinks";
 import { TRIAL_DAYS } from "@/lib/subscription";
 import { upgradeCopy, type UpgradeReason } from "@/lib/upgrade-copy";
 import { appleProductIdForSelection } from "@/lib/apple-iap-products";
+import { googleProductIdForSelection } from "@/lib/google-play-products";
 import { displayIapPrice } from "@/lib/storekit-price-display";
 import { useAppleStoreKitPrices } from "@/hooks/useAppleStoreKitPrices";
+import { usePlayProductPrices } from "@/hooks/usePlayProductPrices";
 
 const TIERS: SubscriptionTier[] = ["free", "pro", "pro_heavy"];
 
@@ -76,6 +86,7 @@ export default function PricingCards({
   footnote = true,
   forceStoreSafe = false,
 }: PricingCardsProps) {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const fromRaw = searchParams.get("from") || "";
   const fromReason: UpgradeReason | null = FROM_REASONS.has(
@@ -104,10 +115,14 @@ export default function PricingCards({
   const [error, setError] = useState<string | null>(null);
   const billingMode = getBillingMode();
   const iap = canUseNativeIap();
+  const play = canUsePlayBilling();
   const storeShell = forceStoreSafe || isStoreShellClient();
   const blocked = billingMode === "native_blocked";
   const { prices: storeKitPrices, loaded: storeKitLoaded } =
     useAppleStoreKitPrices(iap);
+  const { prices: playPrices, loaded: playLoaded } = usePlayProductPrices(play);
+  const localizedPrices = play ? playPrices : storeKitPrices;
+  const localizedLoaded = play ? playLoaded : storeKitLoaded;
 
   const yearlySavings = useMemo(() => {
     const pro = PLAN_ENTITLEMENTS.pro;
@@ -144,6 +159,8 @@ export default function PricingCards({
         setBusyPlan(planTier);
         if (iap) {
           await openAppleManageSubscriptions();
+        } else if (play) {
+          await openPlayManageSubscriptions();
         } else {
           await openBillingPortal();
         }
@@ -162,6 +179,12 @@ export default function PricingCards({
           interval,
         });
         await refresh();
+      } else if (play) {
+        await purchasePlayPlan({
+          plan: planTier as PaidPlan,
+          interval,
+        });
+        await refresh();
       } else {
         await startCheckout({ plan: planTier as PaidPlan, interval });
       }
@@ -172,31 +195,42 @@ export default function PricingCards({
       setError(
         toUserFacingBillingError(
           err,
-          iap ? BILLING_IAP_UNAVAILABLE : BILLING_CHECKOUT_UNAVAILABLE,
+          iap
+            ? BILLING_IAP_UNAVAILABLE
+            : play
+              ? BILLING_PLAY_UNAVAILABLE
+              : BILLING_CHECKOUT_UNAVAILABLE,
         ),
       );
     }
   };
 
   const ctaLabel = (planTier: SubscriptionTier): string => {
-    if (busyPlan === planTier) return iap ? "Purchasing…" : "Opening…";
+    if (busyPlan === planTier) {
+      return iap || play ? t("billing.purchasing") : "Opening…";
+    }
     if (planTier === "free") {
       if (tier === "free" && user) return "Open garage";
       return user ? "Continue free" : storeShell ? "Create account" : "Start free";
     }
     if (planTier === "pro" && isTrialing) {
+      if (play) return t("billing.playSubscribe");
       return iap ? "Subscribe to Pro" : "Keep Pro after trial";
     }
     if (planTier === "pro" && isPro && !isHeavy) {
+      if (play) return t("billing.playManage");
       return iap ? "Manage in Apple" : "Manage billing";
     }
     if (planTier === "pro_heavy" && isHeavy) {
+      if (play) return t("billing.playManage");
       return iap ? "Manage in Apple" : "Manage billing";
     }
     if (planTier === "pro" && isHeavy) {
+      if (play) return t("billing.playManage");
       return iap ? "Manage in Apple" : "Switch in portal";
     }
     if (!user) return "Sign in to upgrade";
+    if (play) return t("billing.playSubscribe");
     return planTier === "pro_heavy" ? "Subscribe to Heavy" : "Subscribe to Pro";
   };
 
@@ -225,7 +259,7 @@ export default function PricingCards({
         <TrialStatusBanner resolved={resolved} loading={subLoading} className="mb-6" />
       )}
 
-      {iap && (
+      {(iap || play) && (
         <div className="mb-6 flex flex-wrap gap-2">
           <button
             type="button"
@@ -235,16 +269,23 @@ export default function PricingCards({
                 setError(null);
                 setBusyRestore(true);
                 try {
-                  const { synced } = await restoreApplePurchases();
+                  const { synced } = play
+                    ? await restorePlayPurchases()
+                    : await restoreApplePurchases();
                   await refresh();
                   if (synced === 0) {
                     setError(
-                      "No active Apple subscriptions found for this Apple ID.",
+                      play
+                        ? t("billing.playNone")
+                        : "No active Apple subscriptions found for this Apple ID.",
                     );
                   }
                 } catch (err) {
                   setError(
-                    toUserFacingBillingError(err, BILLING_IAP_UNAVAILABLE),
+                    toUserFacingBillingError(
+                      err,
+                      play ? BILLING_PLAY_UNAVAILABLE : BILLING_IAP_UNAVAILABLE,
+                    ),
                   );
                 } finally {
                   setBusyRestore(false);
@@ -253,7 +294,7 @@ export default function PricingCards({
             }}
             className="min-h-[44px] rounded-2xl border border-slate-600 px-4 text-sm text-slate-200 hover:border-cyan-500/40 disabled:opacity-60"
           >
-            {busyRestore ? "Restoring…" : "Restore purchases"}
+            {busyRestore ? t("billing.restoring") : t("billing.playRestore")}
           </button>
         </div>
       )}
@@ -327,20 +368,26 @@ export default function PricingCards({
           const productId =
             planTier === "free"
               ? ""
-              : appleProductIdForSelection({
-                  plan: planTier as PaidPlan,
-                  interval,
-                });
+              : play
+                ? googleProductIdForSelection({
+                    plan: planTier as PaidPlan,
+                    interval,
+                  })
+                : appleProductIdForSelection({
+                    plan: planTier as PaidPlan,
+                    interval,
+                  });
           const iapPrice =
             planTier === "free"
               ? { label: "$0", fromStoreKit: false }
               : displayIapPrice({
                   productId,
-                  storeKitPrices,
-                  loaded: storeKitLoaded,
+                  storeKitPrices: localizedPrices,
+                  loaded: localizedLoaded,
                   fallbackUsd,
                 });
-          const priceLabel = iap ? iapPrice.label : formatPrice(fallbackUsd);
+          const priceLabel =
+            iap || play ? iapPrice.label : formatPrice(fallbackUsd);
           const period =
             planTier === "free"
               ? ""
@@ -374,7 +421,7 @@ export default function PricingCards({
                 {period && !iapPrice.fromStoreKit && (
                   <span className="text-sm text-slate-500">{period}</span>
                 )}
-                {iap && planTier !== "free" && iapPrice.fromStoreKit && (
+                {(iap || play) && planTier !== "free" && iapPrice.fromStoreKit && (
                   <span className="text-sm text-slate-500">
                     {interval === "yearly" ? "/year" : "/mo"}
                   </span>
@@ -427,7 +474,14 @@ export default function PricingCards({
 
       {footnote && (
         <p className="mt-10 text-center text-xs text-slate-500">
-          {iap || storeShell ? (
+          {play ? (
+            <>
+              {t("billing.playFootnote")}
+              <span className="mt-3 block">
+                <SubscriptionLegalLinks className="text-cyan-300/80" />
+              </span>
+            </>
+          ) : iap || storeShell ? (
             <>
               In the iOS app, Pro and Pro Heavy are auto-renewable Apple In-App
               Purchases. Payment is charged to your Apple ID at confirmation of

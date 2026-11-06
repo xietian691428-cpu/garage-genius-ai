@@ -8,6 +8,7 @@ import {
   NATIVE_NO_IAP_MESSAGE,
   NATIVE_TERMS_BILLING_BULLETS_ANDROID,
   canUseNativeIap,
+  canUsePlayBilling,
   getBillingMode,
   hideStorePurchaseUi,
   nativeLandingKicker,
@@ -140,15 +141,23 @@ describe("Android Play billing policy copy", () => {
     }
   });
 
-  it("blocks billing mode and hides purchase CTAs for Android native UA", () => {
+  it("uses Play Billing on Android and still hides website checkout", () => {
     vi.stubGlobal("window", {});
     vi.stubGlobal("navigator", {
       userAgent:
         "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/131.0.0.0 Mobile Safari/537.36 GarageGeniusNative",
     });
-    expect(getBillingMode()).toBe("native_blocked");
+    expect(getBillingMode()).toBe("native_play");
     expect(canUseNativeIap()).toBe(false);
+    expect(canUsePlayBilling()).toBe(true);
     expect(hideStorePurchaseUi()).toBe(true);
     expect(nativeLandingKicker()).toBe(NATIVE_LANDING_KICKER_ANDROID);
+    const pricing = readFileSync("app/pricing/PricingPageClient.tsx", "utf8");
+    const cards = readFileSync("components/landing/PricingCards.tsx", "utf8");
+    const settings = readFileSync("components/settings/SettingsPanel.tsx", "utf8");
+    const playUi = `${pricing}\n${cards}\n${settings}`;
+    expect(playUi).toMatch(/purchasePlayPlan/);
+    expect(playUi).toMatch(/restorePlayPurchases/);
+    expect(playUi).not.toMatch(/buy on the website|Open pricing on web|open Safari/i);
   });
 });
