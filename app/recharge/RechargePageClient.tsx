@@ -14,6 +14,7 @@ import TokenDisplay from "@/components/ui/token-display";
 import { TokenUsageProvider } from "@/hooks/useTokenUsage";
 import {
   canUseNativeIap,
+  canUsePlayBilling,
   hideWebCheckoutUi,
   NATIVE_NO_IAP_MESSAGE,
 } from "@/lib/native-platform";
@@ -23,11 +24,11 @@ export default function RechargePageClient({
 }: {
   forceStoreSafe?: boolean;
 }) {
-  const storeSafe = forceStoreSafe || hideWebCheckoutUi();
   const { t } = useTranslation();
   const storeSafe = forceStoreSafe || hideWebCheckoutUi();
   const iap = canUseNativeIap();
   const play = canUsePlayBilling();
+  const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -67,7 +68,6 @@ export default function RechargePageClient({
         </Link>
 
         <h1 className="text-3xl font-bold text-white sm:text-4xl">
-          {iap ? "Subscribe with Apple" : storeSafe ? "AI quota" : "Buy More Tokens"}
           {iap
             ? "Subscribe with Apple"
             : play
@@ -84,6 +84,7 @@ export default function RechargePageClient({
               : storeSafe
                 ? NATIVE_NO_IAP_MESSAGE
                 : "Top up when your monthly included quota runs out. Pricing follows PROJECT.md (~$0.06–$0.08 per 1k with volume packs)."}
+        </p>
 
         <div className="mt-6">
           <TokenDisplay />
@@ -100,13 +101,13 @@ export default function RechargePageClient({
           </p>
         )}
 
-        {iap && (
         {(iap || play) && (
           <Link
             href="/pricing"
             className="mt-6 block rounded-2xl bg-cyan-500 px-4 py-3 text-center text-sm font-semibold text-black hover:bg-cyan-400"
           >
             {play ? t("billing.playSubscribe") : "View Apple subscriptions"}
+          </Link>
         )}
 
         {!storeSafe && (
@@ -156,12 +157,12 @@ export default function RechargePageClient({
         <p className="mt-8 text-center text-xs text-slate-500">
           {iap
             ? "Manage or cancel in Settings → Apple ID → Subscriptions."
-            : storeSafe
             : play
               ? t("billing.playLegal")
               : storeSafe
                 ? NATIVE_NO_IAP_MESSAGE
                 : (
+              <>
           Payments are processed by Stripe. Tokens are credited after{" "}
           <code className="text-slate-400">checkout.session.completed</code>.
               </>

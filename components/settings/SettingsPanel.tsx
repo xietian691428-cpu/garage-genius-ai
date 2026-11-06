@@ -39,10 +39,16 @@ import {
   openAppleManageSubscriptions,
   restoreApplePurchases,
 } from "@/lib/native-iap";
+import {
+  openPlayManageSubscriptions,
+  restorePlayPurchases,
+} from "@/lib/native-play-billing";
 
 type Props = {
   currentVehicle?: VehicleInfo | null;
   vehiclesLoading?: boolean;
+  onUpdateVehicle?: (vehicle: VehicleInfo) => Promise<VehicleInfo | void>;
+};
 
 export default function SettingsPanel({
   currentVehicle = null,
@@ -67,25 +73,25 @@ export default function SettingsPanel({
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const iap = canUseNativeIap();
+  const play = canUsePlayBilling();
   const billingMode = getBillingMode();
   const storeSafe = hideStorePurchaseUi();
 
   const handleManageBilling = async () => {
     setBusy(true);
-  const play = canUsePlayBilling();
     setError(null);
     try {
       if (iap) {
         await openAppleManageSubscriptions();
+        setBusy(false);
+      } else if (play) {
+        await openPlayManageSubscriptions();
         setBusy(false);
       } else {
         await openBillingPortal();
       }
     } catch (err) {
       setError(toUserFacingBillingError(err, BILLING_PORTAL_UNAVAILABLE));
-      } else if (play) {
-        await openPlayManageSubscriptions();
-        setBusy(false);
       setBusy(false);
     }
   };
@@ -287,20 +293,15 @@ export default function SettingsPanel({
           <p className="mt-1 text-sm text-slate-400">
             {billingMode === "native_blocked"
               ? NATIVE_NO_IAP_MESSAGE
-              : iap
-                ? "Pro and Pro Heavy unlock via Apple In-App Purchase. Entitlements sync to this signed-in account after verification."
-                : isTrialing
-                  ? "Enjoy full Pro features during your trial. Subscribe before it ends to keep voice coaching and higher limits."
-                  : "Free includes limited monthly help. Pro unlocks voice coaching, more vehicles, and fuller repair answers. Heavy adds the highest limits."}
               : play
                 ? t("billing.playBody")
                 : iap
                   ? "Pro and Pro Heavy unlock via Apple In-App Purchase. Entitlements sync to this signed-in account after verification."
                   : isTrialing
-            <div className="mt-4 flex flex-col gap-2">
-              <Link
-                href="/pricing"
-                className="block w-full rounded-2xl bg-cyan-500 px-4 py-3 text-center text-sm font-semibold text-black hover:bg-cyan-400"
+                    ? "Enjoy full Pro features during your trial. Subscribe before it ends to keep voice coaching and higher limits."
+                    : "Free includes limited monthly help. Pro unlocks voice coaching, more vehicles, and fuller repair answers. Heavy adds the highest limits."}
+          </p>
+          {billingMode !== "native_blocked" &&
             (play ? (
             <div className="mt-4 flex flex-col gap-2">
               <Link
@@ -345,6 +346,11 @@ export default function SettingsPanel({
               </button>
             </div>
           ) : iap ? (
+            <div className="mt-4 flex flex-col gap-2">
+              <Link
+                href="/pricing"
+                className="block w-full rounded-2xl bg-cyan-500 px-4 py-3 text-center text-sm font-semibold text-black hover:bg-cyan-400"
+              >
                 View plans & subscribe
               </Link>
               <button
@@ -452,12 +458,12 @@ export default function SettingsPanel({
             Delete account
           </h2>
           <p className="mt-2 text-sm text-slate-400">
-            {billingMode === "native_blocked"
+            {billingMode === "native_blocked" || billingMode === "native_play"
               ? NATIVE_DELETE_ACCOUNT_BODY_ANDROID
               : billingMode === "native_iap"
                 ? NATIVE_DELETE_ACCOUNT_BODY
                 : "Permanently deletes your Garage Genius account, vehicles, chats, maintenance history, and inventory we store for you. This cannot be undone. Active Stripe subscriptions are cancelled when possible — also confirm in Manage billing if a charge continues."}
-            {billingMode === "native_blocked" || billingMode === "native_play"
+          </p>
           {!deleteOpen ? (
             <button
               type="button"
