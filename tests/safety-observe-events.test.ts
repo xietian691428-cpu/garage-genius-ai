@@ -14,7 +14,7 @@ describe("safety observe events (no PII)", () => {
     const a = hashUserIdForObserve("user-uuid-111");
     const b = hashUserIdForObserve("user-uuid-111");
     expect(a).toBe(b);
-    expect(a).toMatch(/^[a-f0-9]{12}$/);
+    expect(a).toMatch(/^[a-f0-9]{8}$/);
     expect(a).not.toContain("user-uuid");
   });
 

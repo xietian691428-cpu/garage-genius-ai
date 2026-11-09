@@ -81,9 +81,9 @@ describe("store launch crash guards", () => {
     expect(cap).toMatch(/splashImmersive:\s*false/);
   });
 
-  it("Android store binary version is 1.0.4 (14)", () => {
+  it("Android store binary version is 1.0.5 (15)", () => {
     const gradle = readFileSync("android/app/build.gradle", "utf8");
-    expect(gradle).toMatch(/versionCode 14/);
-    expect(gradle).toMatch(/versionName "1\.0\.4"/);
+    expect(gradle).toMatch(/versionCode 15/);
+    expect(gradle).toMatch(/versionName "1\.0\.5"/);
   });
 });
