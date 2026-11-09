@@ -27,9 +27,10 @@ Override IDs only if Play Console already uses different ones. Set both `GOOGLE_
 2. Android loads localized prices with `@capgo/native-purchases` (`getProducts`).
 3. Subscribe calls `purchaseProduct` (subscription + base plan).
 4. The client posts `{ purchaseToken, productId, packageName, orderId? }` to `POST /api/google/play/verify` with the Supabase bearer token.
-5. The UI refreshes from `profiles`. A client purchase success does not grant membership by itself.
-6. Restore queries existing Play subscriptions and verifies each token.
-7. Manage subscription opens Play subscription management (`NativePurchases.manageSubscriptions`, or the Play subscriptions page). It does not open Stripe or the website checkout.
+5. On Android cold start, sign-in, and throttled resume, `NativePlayBillingSync` silently re-posts local Play tokens via `syncPlayPurchasesQuietly` (manual Restore still calls Play `restorePurchases` first).
+6. The UI refreshes from `profiles`. A client purchase success does not grant membership by itself.
+7. Restore queries existing Play subscriptions and verifies each token.
+8. Manage subscription opens Play subscription management (`NativePurchases.manageSubscriptions`, or the Play subscriptions page). It does not open Stripe or the website checkout.
 
 Web and iOS keep their existing paths. Android still hides Stripe Checkout, token packs, and “buy on the website” links.
 

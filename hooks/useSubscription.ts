@@ -182,10 +182,16 @@ export function useSubscription() {
       }, 0);
     });
 
+    const onPlaySyncRefresh = () => {
+      void refresh();
+    };
+    window.addEventListener("gg-subscription-refresh", onPlaySyncRefresh);
+
     const timer = window.setInterval(() => setNowMs(Date.now()), 60_000);
 
     return () => {
       subscription.unsubscribe();
+      window.removeEventListener("gg-subscription-refresh", onPlaySyncRefresh);
       window.clearInterval(timer);
     };
   }, [refresh]);

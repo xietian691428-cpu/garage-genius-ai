@@ -231,6 +231,51 @@ async function syncTransactionToServer(transaction: Transaction): Promise<void> 
   }
 }
 
+/** Send every local Play subscription token to the server (no Store UI). */
+async function syncLocalPlayPurchasesToServer(): Promise<number> {
+  const { purchases } = await NativePurchases.getPurchases({
+    productType: PURCHASE_TYPE.SUBS,
+  });
+
+  let synced = 0;
+  for (const purchase of purchases ?? []) {
+    try {
+      await syncTransactionToServer(purchase as Transaction);
+      synced += 1;
+    } catch (err) {
+      console.warn(
+        "[play] sync skipped",
+        err instanceof Error ? err.name : "error",
+      );
+    }
+  }
+  return synced;
+}
+
+/**
+ * Cold-start / resume re-verify. Does not call Play restore UI — only posts
+ * tokens already on the device. Never throws; safe from layout effects.
+ */
+export async function syncPlayPurchasesQuietly(): Promise<{ synced: number }> {
+  if (!isAndroidPlay()) return { synced: 0 };
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.access_token) return { synced: 0 };
+
+  try {
+    const synced = await syncLocalPlayPurchasesToServer();
+    return { synced };
+  } catch (err) {
+    console.warn(
+      "[play] quiet sync failed",
+      err instanceof Error ? err.name : "error",
+    );
+    return { synced: 0 };
+  }
+}
+
 export async function purchasePlayPlan(selection: CheckoutSelection): Promise<void> {
   if (!isAndroidPlay()) {
     throw new Error("Google Play Billing is only available in the Android app.");
@@ -284,19 +329,7 @@ export async function restorePlayPurchases(): Promise<{ synced: number }> {
     throw friendlyPlayError(err);
   }
 
-  const { purchases } = await NativePurchases.getPurchases({
-    productType: PURCHASE_TYPE.SUBS,
-  });
-
-  let synced = 0;
-  for (const purchase of purchases ?? []) {
-    try {
-      await syncTransactionToServer(purchase as Transaction);
-      synced += 1;
-    } catch (err) {
-      console.warn("[play] restore sync skipped", err instanceof Error ? err.name : "error");
-    }
-  }
+  const synced = await syncLocalPlayPurchasesToServer();
   return { synced };
 }
 

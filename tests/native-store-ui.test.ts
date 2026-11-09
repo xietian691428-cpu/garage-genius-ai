@@ -155,9 +155,18 @@ describe("Android Play billing policy copy", () => {
     const pricing = readFileSync("app/pricing/PricingPageClient.tsx", "utf8");
     const cards = readFileSync("components/landing/PricingCards.tsx", "utf8");
     const settings = readFileSync("components/settings/SettingsPanel.tsx", "utf8");
+    const layout = readFileSync("app/layout.tsx", "utf8");
+    const playBridge = readFileSync(
+      "components/native/NativePlayBillingSync.tsx",
+      "utf8",
+    );
+    const playLib = readFileSync("lib/native-play-billing.ts", "utf8");
     const playUi = `${pricing}\n${cards}\n${settings}`;
     expect(playUi).toMatch(/purchasePlayPlan/);
     expect(playUi).toMatch(/restorePlayPurchases/);
     expect(playUi).not.toMatch(/buy on the website|Open pricing on web|open Safari/i);
+    expect(layout).toMatch(/NativePlayBillingSync/);
+    expect(playBridge).toMatch(/syncPlayPurchasesQuietly/);
+    expect(playLib).toMatch(/export async function syncPlayPurchasesQuietly/);
   });
 });
