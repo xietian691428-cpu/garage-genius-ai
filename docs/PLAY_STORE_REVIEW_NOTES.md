@@ -1,13 +1,13 @@
-# Google Play Console — Garage Genius AI (v1.0.4 / versionCode 14)
+# Google Play Console — Garage Genius AI (v1.0.5 / versionCode 15)
 
 Use this file for **Play Console listing + Data safety + review notes**.
 
 Do **not** paste passwords into git.
 
-**This Android binary:** versionName **1.0.4**, versionCode **14** (aligned with iOS build 14).  
+**This Android binary:** versionName **1.0.5**, versionCode **15**.  
 **Package:** `com.garagegenius.ai`  
-**This version does not sell subscriptions in the Play app.** No Play Billing SKUs in the published binary. The next versionCode uses `docs/GOOGLE_PLAY_BILLING.md` — do not tell reviewers this binary sells subscriptions until that build is the one under review.  
-**Release notes for this binary:** Cold-start splash/EdgeToEdge fix (Theme.SplashScreen + `installSplashScreen` before `EdgeToEdge`), R8 keep rules for Cap plugins + Classic BT OBD, optional native BLE/Classic OBD.
+**This version sells Pro / Pro Heavy via Google Play Billing** (four auto-renewing subscriptions). Server verify: `docs/GOOGLE_PLAY_BILLING.md`. Do **not** add website / Stripe checkout CTAs in this binary.  
+**Release notes for this binary:** Google Play Billing for Pro / Pro Heavy monthly + yearly; restore purchases; same-account entitlement after server verify.
 
 Website Stripe Checkout stays on **Chrome / desktop / mobile Safari** only. The Android WebView must not start card checkout, and must not tell users to “buy on the website.”
 
@@ -176,16 +176,16 @@ Format example (colons required):
 4. **History or receipt** — a logged job or scanned receipt.  
 5. *(optional)* **Parts inventory** — saved parts for the current car.  
 6. *(optional)* **Connect OBD / Enter fault code** — show the connect flow or manual code entry; do not claim every adapter works.  
-7. *(optional)* **Settings** — account + delete-account visible; **no Stripe / Apple / “buy on web”**.
+7. *(optional)* **Settings / Pricing** — Google Play Subscribe + Restore visible; **no Stripe / website checkout / Apple IAP**.
 
-**Do not photograph:** Upgrade/Subscribe, Apple IAP prices, Stripe Checkout, the Unlimited QA account, Chinese UI, “Best app / #1 / Download now” overlays, another store’s badge.
+**Do not photograph:** Stripe Checkout, “buy on the website”, Apple IAP prices, the Unlimited QA account, Chinese UI, “Best app / #1 / Download now” overlays, another store’s badge.
 
 Optional 7-inch / 10-inch (only if you want tablet listing surfaces): 4 shots each; 7" **1200 × 1920**, 10" **1600 × 2560** portrait.
 
 ---
 
-## Android subscriptions (next versionCode)
+## Android subscriptions (this versionCode)
 
-The published binary described above does not include Play Billing yet. The next `versionCode` that ships this web build sells Pro / Pro Heavy through Google Play. Product IDs, server verify, and license-test steps: `docs/GOOGLE_PLAY_BILLING.md`.
+versionCode **15** sells Pro / Pro Heavy through Google Play. Product IDs, prices, server verify, and license-test steps: `docs/GOOGLE_PLAY_BILLING.md`.
 
 Never “turn on Stripe inside the Android WebView” — that can get the app removed. Website Stripe stays on Chrome/desktop only. A plan already on the same account from the website or iOS can still show after sign-in.
