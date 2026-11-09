@@ -36,6 +36,16 @@ export const PLAY_PURCHASE_CANCELED = "Purchase canceled.";
 export const PLAY_PENDING =
   "Google Play is still processing this payment. It will sync after the payment completes. You can tap Restore purchases later.";
 
+export type PlayBillingDiagnosis = {
+  platform: string;
+  isNativeAndroid: boolean;
+  billingSupported: boolean | null;
+  productCount: number;
+  productIds: string[];
+  pluginVersion: string | null;
+  rawError: string | null;
+};
+
 function isAndroidPlay(): boolean {
   try {
     return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
@@ -44,8 +54,31 @@ function isAndroidPlay(): boolean {
   }
 }
 
+/** Capacitor plugin rejects often put the useful text in message and/or code. */
+export function extractPlayPluginMessage(err: unknown): string {
+  if (typeof err === "string") return err.trim();
+  if (!err || typeof err !== "object") return String(err ?? "").trim();
+
+  const rec = err as {
+    message?: unknown;
+    code?: unknown;
+    errorMessage?: unknown;
+    data?: { message?: unknown };
+  };
+  const parts = [rec.message, rec.code, rec.errorMessage, rec.data?.message]
+    .map((v) => (typeof v === "string" ? v.trim() : ""))
+    .filter(Boolean);
+
+  // Deduplicate while preserving order.
+  const unique: string[] = [];
+  for (const part of parts) {
+    if (!unique.includes(part)) unique.push(part);
+  }
+  return unique.join(" · ");
+}
+
 function friendlyPlayError(err: unknown): Error {
-  const msg = err instanceof Error ? err.message : String(err ?? "");
+  const msg = extractPlayPluginMessage(err);
   if (/cancel/i.test(msg) && !/cannot cancel|failed to cancel/i.test(msg)) {
     return new Error(PLAY_PURCHASE_CANCELED);
   }
@@ -53,13 +86,16 @@ function friendlyPlayError(err: unknown): Error {
     return new Error(PLAY_ALREADY_OWNED);
   }
   if (
-    /billing unavailable|BILLING_UNAVAILABLE|service disconnected|not supported|feature not supported/i.test(
+    /billing unavailable|BILLING_UNAVAILABLE|Billing is not available|service disconnected|SERVICE_DISCONNECTED|feature not supported|FEATURE_NOT_SUPPORTED|Billing service unavailable|Billing setup timed out|Billing setup failed/i.test(
       msg,
     )
   ) {
-    return new Error(PLAY_BILLING_UNAVAILABLE);
+    // Keep the plugin detail so closed-test devices show a real clue.
+    const detail = msg && msg !== PLAY_BILLING_UNAVAILABLE ? ` (${msg})` : "";
+    return new Error(`${PLAY_BILLING_UNAVAILABLE}${detail}`);
   }
-  return err instanceof Error ? err : new Error(PLAY_BILLING_UNAVAILABLE);
+  if (msg) return new Error(msg);
+  return new Error(PLAY_BILLING_UNAVAILABLE);
 }
 
 async function authHeaders(): Promise<HeadersInit> {
@@ -82,6 +118,89 @@ export async function fetchPlayProducts(): Promise<Product[]> {
     productType: PURCHASE_TYPE.SUBS,
   });
   return products ?? [];
+}
+
+/**
+ * Lightweight Play Billing self-check. Safe to show in UI during closed testing.
+ * Does not require a new AAB when the shell loads the remote web app.
+ */
+export async function diagnosePlayBilling(): Promise<PlayBillingDiagnosis> {
+  const platform = (() => {
+    try {
+      return Capacitor.getPlatform();
+    } catch {
+      return "unknown";
+    }
+  })();
+  const isNativeAndroid = isAndroidPlay();
+  const out: PlayBillingDiagnosis = {
+    platform,
+    isNativeAndroid,
+    billingSupported: null,
+    productCount: 0,
+    productIds: [],
+    pluginVersion: null,
+    rawError: null,
+  };
+  if (!isNativeAndroid) {
+    out.rawError = "Not running inside the Android Capacitor shell.";
+    return out;
+  }
+
+  try {
+    const supported = await NativePurchases.isBillingSupported();
+    out.billingSupported = Boolean(supported?.isBillingSupported);
+  } catch (err) {
+    out.billingSupported = false;
+    out.rawError = extractPlayPluginMessage(err) || "isBillingSupported failed";
+  }
+
+  try {
+    const version = await NativePurchases.getPluginVersion();
+    out.pluginVersion = version?.version ?? null;
+  } catch {
+    /* optional */
+  }
+
+  try {
+    const products = await fetchPlayProducts();
+    out.productCount = products.length;
+    out.productIds = products
+      .map((p) => p.planIdentifier?.trim() || p.identifier?.trim() || "")
+      .filter(Boolean);
+  } catch (err) {
+    const msg = extractPlayPluginMessage(err);
+    out.rawError = out.rawError ? `${out.rawError} · ${msg}` : msg;
+  }
+
+  return out;
+}
+
+function formatDiagnosis(d: PlayBillingDiagnosis): string {
+  return [
+    `supported=${String(d.billingSupported)}`,
+    `products=${d.productCount}`,
+    d.productIds.length ? `ids=${d.productIds.slice(0, 4).join(",")}` : null,
+    d.pluginVersion ? `plugin=${d.pluginVersion}` : null,
+    d.rawError ? `err=${d.rawError}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+async function assertPlayBillingReady(): Promise<void> {
+  const diagnosis = await diagnosePlayBilling();
+  console.info("[play] diagnose", diagnosis);
+  if (diagnosis.billingSupported === false) {
+    throw new Error(
+      `${PLAY_BILLING_UNAVAILABLE} Detail: ${formatDiagnosis(diagnosis)}. Install this build from the Play closed-testing link, accept the tester invite with the Google account on this phone, and open Play Store once.`,
+    );
+  }
+  if (diagnosis.productCount === 0) {
+    throw new Error(
+      `Google Play returned no subscription products. Detail: ${formatDiagnosis(diagnosis)}. Confirm the four SKUs are Active in Play Console and attached to this app, with base plans monthly/yearly.`,
+    );
+  }
 }
 
 async function syncTransactionToServer(transaction: Transaction): Promise<void> {
@@ -122,6 +241,12 @@ export async function purchasePlayPlan(selection: CheckoutSelection): Promise<vo
   } = await supabase.auth.getUser();
   if (!user?.id) throw new Error("Sign in to purchase.");
 
+  try {
+    await assertPlayBillingReady();
+  } catch (err) {
+    throw friendlyPlayError(err);
+  }
+
   const productIdentifier = googleProductIdForSelection(selection);
   let transaction: Transaction;
   try {
@@ -133,10 +258,16 @@ export async function purchasePlayPlan(selection: CheckoutSelection): Promise<vo
         appAccountToken: user.id,
       }),
       PLAY_PURCHASE_TIMEOUT_MS,
-      PLAY_BILLING_UNAVAILABLE,
+      "Google Play purchase timed out. Check Play Store login and try again.",
     );
   } catch (err) {
-    throw friendlyPlayError(err);
+    let detail = "";
+    try {
+      detail = ` Detail: ${formatDiagnosis(await diagnosePlayBilling())}.`;
+    } catch {
+      /* diagnosis is best-effort */
+    }
+    throw new Error(`${friendlyPlayError(err).message}${detail}`);
   }
 
   await syncTransactionToServer(transaction);

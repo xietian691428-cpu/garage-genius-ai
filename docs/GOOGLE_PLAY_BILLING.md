@@ -93,6 +93,17 @@ Verify + Restore is enough to launch. Play real-time developer notifications (Pu
 
 Do not put a website payment link in the Play listing or the binary.
 
+## Closed testing — Billing isn’t available
+
+If Pricing shows **Google Play Billing isn’t available on this device**:
+
+1. The phone’s **Google account must be a closed tester** and must **accept the Play Console invite** (email or opt-in link). No invite banner usually means this step was skipped.
+2. Install/update the app **from the Play Store testing link**, not a sideloaded APK/AAB. Sideload often returns `BILLING_UNAVAILABLE`.
+3. Open the Play Store app once while logged into that tester account (China devices: Play Store / Play Services must actually work).
+4. Confirm the four subscriptions are **Active** with base plans `monthly` / `yearly`.
+5. Tap Subscribe again. The red error should now include `Detail: supported=… · products=…` (web deploy of the diagnostic; no new AAB required if the shell loads `garagegenius.cloud`).
+6. Optional on a USB-debug phone: `adb logcat | grep -i NativePurchases` — the plugin logs Google’s `debugMessage` for setup failures.
+
 ## Hand test
 
 Use an internal testing track or a license tester. The published binary only picks this up after a web deploy and a new `versionCode` that includes this client.
