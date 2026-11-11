@@ -983,10 +983,11 @@ export default function ChatApp({
           },
         ]);
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user?.id && activeVehicle.id) {
-          const pack = await loadTripPack(user.id, activeVehicle.id);
+          data: { session: offlineSession },
+        } = await supabase.auth.getSession();
+        const offlineUserId = offlineSession?.user?.id;
+        if (offlineUserId && activeVehicle.id) {
+          const pack = await loadTripPack(offlineUserId, activeVehicle.id);
           setOfflineAssistHasPack(Boolean(pack));
           setOfflineAssistPack(pack);
         } else {
@@ -1271,10 +1272,11 @@ export default function ChatApp({
       setRequestError({ ...classified, message });
       if (classified.code === "network") {
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user?.id && activeVehicle.id) {
-          const pack = await loadTripPack(user.id, activeVehicle.id);
+          data: { session: netSession },
+        } = await supabase.auth.getSession();
+        const netUserId = netSession?.user?.id;
+        if (netUserId && activeVehicle.id) {
+          const pack = await loadTripPack(netUserId, activeVehicle.id);
           setOfflineAssistHasPack(Boolean(pack));
           setOfflineAssistPack(pack);
         }
@@ -1603,10 +1605,11 @@ export default function ChatApp({
       setRequestError({ code: "network", message: msg });
       void (async () => {
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user?.id && currentVehicle?.id) {
-          const pack = await loadTripPack(user.id, currentVehicle.id);
+          data: { session: bleSession },
+        } = await supabase.auth.getSession();
+        const bleUserId = bleSession?.user?.id;
+        if (bleUserId && currentVehicle?.id) {
+          const pack = await loadTripPack(bleUserId, currentVehicle.id);
           setOfflineAssistHasPack(Boolean(pack));
           setOfflineAssistPack(pack);
           setShowOfflineAssist(true);

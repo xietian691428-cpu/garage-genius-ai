@@ -181,10 +181,11 @@ export default function VehicleManager({
               void (async () => {
                 if (!currentVehicle) return;
                 const {
-                  data: { user },
-                } = await supabase.auth.getUser();
-                if (!user?.id) return;
-                const p = await loadTripPack(user.id, currentVehicle.id);
+                  data: { session },
+                } = await supabase.auth.getSession();
+                const userId = session?.user?.id;
+                if (!userId) return;
+                const p = await loadTripPack(userId, currentVehicle.id);
                 setAssistPack(p);
                 setShowOfflineAssist(true);
               })();

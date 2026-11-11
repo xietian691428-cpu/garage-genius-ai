@@ -23,6 +23,11 @@ import ShopReportsPanel from "@/components/shop-report/ShopReportsPanel";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 import InsuranceSafetySettings from "@/components/settings/InsuranceSafetySettings";
 import VehicleManualPanel from "@/components/vehicles/VehicleManualPanel";
+import OfflineTripPackDownload from "@/components/offline/OfflineTripPackDownload";
+import OfflineAssistPanel from "@/components/offline/OfflineAssistPanel";
+import { loadTripPack } from "@/lib/offline-trip-pack/store";
+import type { TripPackManifest } from "@/lib/offline-trip-pack/types";
+import { formatVehicleYmmDisplay } from "@/lib/types/vehicle-market";
 import { supabase } from "@/lib/supabase";
 import type { VehicleInfo } from "@/lib/types/chat";
 import {
@@ -72,6 +77,9 @@ export default function SettingsPanel({
   const [showBillingHelp, setShowBillingHelp] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [showOfflineAssist, setShowOfflineAssist] = useState(false);
+  const [offlineAssistPack, setOfflineAssistPack] =
+    useState<TripPackManifest | null>(null);
   const iap = canUseNativeIap();
   const play = canUsePlayBilling();
   const billingMode = getBillingMode();
@@ -279,6 +287,23 @@ export default function SettingsPanel({
             )}
           </div>
         </section>
+
+        <OfflineTripPackDownload
+          vehicle={currentVehicle}
+            onOpenAssist={() => {
+            void (async () => {
+              if (!currentVehicle) return;
+              const {
+                data: { session },
+              } = await supabase.auth.getSession();
+              const userId = session?.user?.id;
+              if (!userId) return;
+              const pack = await loadTripPack(userId, currentVehicle.id);
+              setOfflineAssistPack(pack);
+              setShowOfflineAssist(true);
+            })();
+          }}
+        />
 
         <ShopReportsPanel
           vehicle={currentVehicle}
@@ -532,6 +557,25 @@ export default function SettingsPanel({
           </Link>
         </p>
       </div>
+
+      <OfflineAssistPanel
+        open={showOfflineAssist}
+        onClose={() => setShowOfflineAssist(false)}
+        pack={offlineAssistPack}
+        vehicleId={currentVehicle?.id ?? null}
+        vehicleLabel={
+          currentVehicle
+            ? formatVehicleYmmDisplay(currentVehicle)
+            : t("coach.yourGarage")
+        }
+        vehicleMismatch={
+          Boolean(
+            offlineAssistPack &&
+              currentVehicle &&
+              offlineAssistPack.vehicleId !== currentVehicle.id,
+          )
+        }
+      />
     </div>
   );
 }

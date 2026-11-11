@@ -46,11 +46,14 @@ export default function OfflineTripPackDownload({
         setPack(null);
         return;
       }
+      // Prefer getSession (local) so offline remounts still find the pack.
+      // getUser() hits the network and fails in airplane mode.
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user?.id || cancelled) return;
-      const existing = await loadTripPack(user.id, vehicle.id);
+        data: { session },
+      } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId || cancelled) return;
+      const existing = await loadTripPack(userId, vehicle.id);
       if (cancelled) return;
       setPack(existing);
       if (existing) {
@@ -74,9 +77,10 @@ export default function OfflineTripPackDownload({
         throw new Error(t("offlineTripPack.needOnlineToDownload"));
       }
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user?.id) throw new Error(t("offlineTripPack.signInRequired"));
+        data: { session },
+      } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) throw new Error(t("offlineTripPack.signInRequired"));
 
       const contacts: TripPackEmergencyContacts = {
         roadsidePhone: roadsidePhone.trim() || undefined,
@@ -85,7 +89,7 @@ export default function OfflineTripPackDownload({
       };
 
       const next = buildTripPack({
-        userId: user.id,
+        userId,
         vehicle,
         contacts,
         places,
