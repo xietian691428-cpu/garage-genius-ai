@@ -26,6 +26,7 @@ import VehicleManualPanel from "@/components/vehicles/VehicleManualPanel";
 import OfflineTripPackDownload from "@/components/offline/OfflineTripPackDownload";
 import OfflineAssistPanel from "@/components/offline/OfflineAssistPanel";
 import { loadTripPack } from "@/lib/offline-trip-pack/store";
+import { stashOfflineCarryToChat } from "@/lib/offline-trip-pack/carry-bridge";
 import type { TripPackManifest } from "@/lib/offline-trip-pack/types";
 import { formatVehicleYmmDisplay } from "@/lib/types/vehicle-market";
 import { supabase } from "@/lib/supabase";
@@ -563,6 +564,7 @@ export default function SettingsPanel({
         onClose={() => setShowOfflineAssist(false)}
         pack={offlineAssistPack}
         vehicleId={currentVehicle?.id ?? null}
+        vehicle={currentVehicle}
         vehicleLabel={
           currentVehicle
             ? formatVehicleYmmDisplay(currentVehicle)
@@ -575,6 +577,14 @@ export default function SettingsPanel({
               offlineAssistPack.vehicleId !== currentVehicle.id,
           )
         }
+        onCarryObdToChat={(text) => {
+          stashOfflineCarryToChat(text);
+          setShowOfflineAssist(false);
+          const chatTab = document.querySelector(
+            '[data-testid="app-tab-chat"]',
+          ) as HTMLElement | null;
+          chatTab?.click();
+        }}
       />
     </div>
   );

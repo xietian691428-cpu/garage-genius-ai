@@ -12,10 +12,18 @@ import {
   saveTripPack,
 } from "@/lib/offline-trip-pack/store";
 import {
+  clearOfflineObdSession,
+  formatOfflineCodesForOnlineChat,
   formatOfflineObdForOnlineChat,
+  mergeOfflineObdCodes,
   saveOfflineObdSession,
 } from "@/lib/offline-trip-pack/obd-session";
 import { shouldOfferOfflineAssist } from "@/lib/offline-trip-pack/online";
+import {
+  evaluatePackFreshness,
+  TRIP_PACK_MAX_AGE_DAYS,
+} from "@/lib/offline-trip-pack/freshness";
+import { OFFLINE_SYMPTOM_SHORTCUTS } from "@/lib/offline-trip-pack/symptom-shortcuts";
 import { telHref, systemMapSearchUrl } from "@/lib/offline-trip-pack/maps-links";
 import { DRIVE_SAFETY_COPY } from "@/lib/drive-safety";
 
@@ -135,5 +143,82 @@ describe("Offline Trip Pack P0", () => {
     expect(telHref("555-123-4567")).toBe("tel:5551234567");
     expect(systemMapSearchUrl("tow", "ios")).toMatch(/maps\.apple\.com/);
     expect(systemMapSearchUrl("repair", "android")).toMatch(/google\.com\/maps/);
+  });
+});
+
+describe("Offline Trip Pack P1", () => {
+  beforeEach(() => {
+    clearTripPackMemoryForTests();
+    clearOfflineObdSession("veh-camry");
+  });
+
+  it("P1-1 marks pack stale by age > 30 days", () => {
+    const pack = buildTripPack({
+      userId: "user-1",
+      vehicle: camry,
+      now: new Date("2026-01-01T00:00:00Z"),
+    });
+    const fresh = evaluatePackFreshness(pack, camry, {
+      now: new Date("2026-01-15T00:00:00Z").getTime(),
+    });
+    expect(fresh.needsRefresh).toBe(false);
+    expect(fresh.status).toBe("fresh");
+
+    const stale = evaluatePackFreshness(pack, camry, {
+      now: new Date("2026-03-01T00:00:00Z").getTime(),
+    });
+    expect(stale.ageExceeded).toBe(true);
+    expect(stale.needsRefresh).toBe(true);
+    expect(stale.status).toBe("stale_age");
+    expect(stale.ageDays).toBeGreaterThan(TRIP_PACK_MAX_AGE_DAYS);
+  });
+
+  it("P1-1 marks pack stale when garage fluids fingerprint changes", () => {
+    const pack = buildTripPack({
+      userId: "user-1",
+      vehicle: camry,
+      now: new Date("2026-11-11T00:00:00Z"),
+    });
+    const changed: VehicleInfo = {
+      ...camry,
+      oilViscosity: "0W-20",
+      oilViscositySource: "user_manual_confirmed",
+    };
+    const result = evaluatePackFreshness(pack, changed, {
+      now: new Date("2026-11-11T12:00:00Z").getTime(),
+    });
+    expect(result.fluidsChanged).toBe(true);
+    expect(result.status).toBe("stale_fluids");
+    expect(result.needsRefresh).toBe(true);
+  });
+
+  it("P1-4 symptom shortcuts hit local matchers (no AI)", () => {
+    for (const chip of OFFLINE_SYMPTOM_SHORTCUTS) {
+      const m = matchOfflineAssistQuery(chip.query);
+      if (chip.id === "p0420") {
+        expect(m.dtcRefs.some((d) => d.code === "P0420")).toBe(true);
+      } else if (chip.id === "overheat_steam") {
+        expect(m.doNotDrive).toBe(true);
+        expect(m.eduCardIds).toContain("overheat_observe");
+      } else if (chip.id === "soft_brake") {
+        expect(m.doNotDrive).toBe(true);
+        expect(m.eduCardIds).toContain("soft_brake_observe");
+      } else if (chip.id === "flat_tire") {
+        expect(m.eduCardIds).toContain("flat_tire_observe");
+      } else if (chip.id === "battery") {
+        expect(m.eduCardIds).toContain("battery_jump_observe");
+      }
+    }
+  });
+
+  it("P1-5 carry codes are user-provided and merge into offline session", () => {
+    const session = mergeOfflineObdCodes("veh-camry", ["P0420", "p0171"]);
+    expect(session.source).toBe("offline_session");
+    expect(session.codes).toEqual(["P0420", "P0171"]);
+    const text = formatOfflineCodesForOnlineChat(session.codes);
+    expect(text).toMatch(/user-provided/i);
+    expect(text).toMatch(/not live/i);
+    expect(text).toMatch(/P0420/);
+    expect(formatOfflineObdForOnlineChat(session)).toBe(text);
   });
 });

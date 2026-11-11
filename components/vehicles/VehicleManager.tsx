@@ -199,6 +199,7 @@ export default function VehicleManager({
         onClose={() => setShowOfflineAssist(false)}
         pack={assistPack}
         vehicleId={currentVehicle?.id ?? null}
+        vehicle={currentVehicle}
         vehicleLabel={
           currentVehicle
             ? formatVehicleYmmDisplay(currentVehicle)

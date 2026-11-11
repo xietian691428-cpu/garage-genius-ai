@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Phone, MapPin, AlertTriangle } from "lucide-react";
+import type { VehicleInfo } from "@/lib/types/chat";
 import type { TripPackManifest } from "@/lib/offline-trip-pack/types";
 import {
   matchOfflineAssistQuery,
@@ -15,10 +16,17 @@ import {
   straightLineKm,
 } from "@/lib/offline-trip-pack/maps-links";
 import {
-  formatOfflineObdForOnlineChat,
+  clearOfflineObdSession,
+  formatOfflineCodesForOnlineChat,
   loadOfflineObdSession,
+  mergeOfflineObdCodes,
 } from "@/lib/offline-trip-pack/obd-session";
 import { isBrowserOnline } from "@/lib/offline-trip-pack/online";
+import {
+  evaluatePackFreshness,
+  TRIP_PACK_MAX_AGE_DAYS,
+} from "@/lib/offline-trip-pack/freshness";
+import { OFFLINE_SYMPTOM_SHORTCUTS } from "@/lib/offline-trip-pack/symptom-shortcuts";
 import { getCapacitorPlatform } from "@/lib/native-platform";
 
 type Props = {
@@ -27,6 +35,8 @@ type Props = {
   pack: TripPackManifest | null;
   vehicleId: string | null;
   vehicleLabel: string;
+  /** Used for fluids fingerprint freshness (optional). */
+  vehicle?: VehicleInfo | null;
   /** Wrong-vehicle guard failed */
   vehicleMismatch?: boolean;
   onOpenFullCoach?: () => void;
@@ -46,6 +56,7 @@ export default function OfflineAssistPanel({
   pack,
   vehicleId,
   vehicleLabel,
+  vehicle,
   vehicleMismatch,
   onOpenFullCoach,
   onCarryObdToChat,
@@ -53,17 +64,66 @@ export default function OfflineAssistPanel({
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [submitted, setSubmitted] = useState("");
-  const online = typeof window !== "undefined" ? isBrowserOnline() : true;
+  const [sessionTick, setSessionTick] = useState(0);
+  const [online, setOnline] = useState(true);
+
+  useEffect(() => {
+    const sync = () => setOnline(isBrowserOnline());
+    sync();
+    window.addEventListener("online", sync);
+    window.addEventListener("offline", sync);
+    return () => {
+      window.removeEventListener("online", sync);
+      window.removeEventListener("offline", sync);
+    };
+  }, []);
 
   const match = useMemo(
     () => (submitted ? matchOfflineAssistQuery(submitted) : null),
     [submitted],
   );
 
+  const freshness =
+    pack && vehicle ? evaluatePackFreshness(pack, vehicle) : pack
+      ? evaluatePackFreshness(pack, null)
+      : null;
+
   const obdSession =
     vehicleId && typeof window !== "undefined"
       ? loadOfflineObdSession(vehicleId)
       : null;
+  // sessionTick forces re-read after merge/clear
+  void sessionTick;
+
+  const matchCodes = match?.dtcRefs.map((d) => d.code) ?? [];
+  const carryCodes =
+    obdSession && obdSession.codes.length > 0
+      ? obdSession.codes
+      : matchCodes;
+
+  const runLookup = (text: string) => {
+    const q = text.trim();
+    setQuery(q);
+    setSubmitted(q);
+    if (!vehicleId || !q) return;
+    const hit = matchOfflineAssistQuery(q);
+    if (hit.dtcRefs.length > 0) {
+      mergeOfflineObdCodes(
+        vehicleId,
+        hit.dtcRefs.map((d) => d.code),
+      );
+      setSessionTick((n) => n + 1);
+    }
+  };
+
+  const carryToChat = (codes: string[]) => {
+    if (!onCarryObdToChat || codes.length === 0) return;
+    onCarryObdToChat(formatOfflineCodesForOnlineChat(codes));
+    if (vehicleId) {
+      clearOfflineObdSession(vehicleId);
+      setSessionTick((n) => n + 1);
+    }
+  };
 
   if (!open) return null;
 
@@ -111,6 +171,23 @@ export default function OfflineAssistPanel({
             </div>
           ) : (
             <>
+              {freshness?.needsRefresh ? (
+                <div
+                  className="rounded-2xl border border-amber-700/40 bg-amber-950/30 px-3 py-2 text-xs text-amber-100"
+                  data-testid="offline-assist-stale"
+                >
+                  {freshness.fluidsChanged
+                    ? t("offlineTripPack.staleFluids")
+                    : t("offlineTripPack.staleAge", {
+                        days: Math.floor(freshness.ageDays),
+                        max: TRIP_PACK_MAX_AGE_DAYS,
+                      })}{" "}
+                  {online
+                    ? t("offlineTripPack.refreshPromptOnline")
+                    : t("offlineTripPack.refreshPromptOffline")}
+                </div>
+              ) : null}
+
               <p className="text-xs leading-relaxed text-slate-400">
                 {t("offlineTripPack.assistHint")}
               </p>
@@ -119,7 +196,7 @@ export default function OfflineAssistPanel({
                 className="flex gap-2"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  setSubmitted(query.trim());
+                  runLookup(query);
                 }}
               >
                 <input
@@ -137,6 +214,23 @@ export default function OfflineAssistPanel({
                   {t("offlineTripPack.lookup")}
                 </button>
               </form>
+
+              <div
+                className="flex flex-wrap gap-2"
+                data-testid="offline-symptom-shortcuts"
+              >
+                {OFFLINE_SYMPTOM_SHORTCUTS.map((chip) => (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    data-testid={`offline-shortcut-${chip.id}`}
+                    className="min-h-[36px] rounded-full border border-slate-600 bg-slate-900/80 px-3 text-xs text-slate-200"
+                    onClick={() => runLookup(chip.query)}
+                  >
+                    {t(`offlineTripPack.${chip.labelKey}`)}
+                  </button>
+                ))}
+              </div>
 
               {match ? (
                 <div className="space-y-3" data-testid="offline-assist-result">
@@ -192,9 +286,49 @@ export default function OfflineAssistPanel({
                     </div>
                   ))}
 
+                  {match.eduCardIds.length > 0 ? (
+                    <ul
+                      className="space-y-2"
+                      data-testid="offline-assist-edu-hits"
+                    >
+                      {pack.eduCards
+                        .filter((c) => match.eduCardIds.includes(c.id))
+                        .map((card) => (
+                          <li
+                            key={card.id}
+                            className="rounded-2xl border border-slate-700 bg-slate-900/80 p-3"
+                          >
+                            <p className="text-sm font-medium text-slate-200">
+                              {card.title}
+                            </p>
+                            <ol className="mt-1 list-decimal space-y-1 pl-4 text-xs text-slate-400">
+                              {card.steps.map((s) => (
+                                <li key={s}>{s}</li>
+                              ))}
+                            </ol>
+                            <p className="mt-2 text-[11px] text-amber-200/90">
+                              {t("offlineTripPack.stopIf")}: {card.stopIf}
+                            </p>
+                          </li>
+                        ))}
+                    </ul>
+                  ) : null}
+
+                  {matchCodes.length > 0 && online && onCarryObdToChat ? (
+                    <button
+                      type="button"
+                      data-testid="offline-carry-lookup-codes"
+                      className="text-xs text-cyan-400 underline"
+                      onClick={() => carryToChat(matchCodes)}
+                    >
+                      {t("offlineTripPack.carryObdToChat")}
+                    </button>
+                  ) : null}
+
                   {!match.doNotDrive &&
                   match.dtcRefs.length === 0 &&
-                  match.stopRuleHits.length === 0 ? (
+                  match.stopRuleHits.length === 0 &&
+                  match.eduCardIds.length === 0 ? (
                     <p className="text-sm text-slate-400">
                       {t("offlineTripPack.noLocalHit")}
                     </p>
@@ -250,7 +384,10 @@ export default function OfflineAssistPanel({
               </section>
 
               {obdSession && obdSession.codes.length > 0 ? (
-                <div className="rounded-2xl border border-slate-700 p-3 text-xs text-slate-300">
+                <div
+                  className="rounded-2xl border border-slate-700 p-3 text-xs text-slate-300"
+                  data-testid="offline-obd-session"
+                >
                   <p>
                     {t("offlineTripPack.offlineObd")}:{" "}
                     {obdSession.codes.join(", ")}
@@ -261,12 +398,9 @@ export default function OfflineAssistPanel({
                   {online && onCarryObdToChat ? (
                     <button
                       type="button"
+                      data-testid="offline-carry-obd-session"
                       className="mt-2 text-cyan-400 underline"
-                      onClick={() =>
-                        onCarryObdToChat(
-                          formatOfflineObdForOnlineChat(obdSession),
-                        )
-                      }
+                      onClick={() => carryToChat(obdSession.codes)}
                     >
                       {t("offlineTripPack.carryObdToChat")}
                     </button>
@@ -295,6 +429,19 @@ export default function OfflineAssistPanel({
                 >
                   {t("offlineTripPack.openFullCoach")}
                 </button>
+                {carryCodes.length > 0 && onCarryObdToChat ? (
+                  <button
+                    type="button"
+                    data-testid="offline-carry-codes-online"
+                    className="rounded-xl border border-cyan-600/60 px-3 py-2 text-cyan-200"
+                    onClick={() => {
+                      carryToChat(carryCodes);
+                      onClose();
+                    }}
+                  >
+                    {t("offlineTripPack.carryCodesBackOnline")}
+                  </button>
+                ) : null}
                 <a
                   className="rounded-xl border border-slate-600 px-3 py-2 text-slate-200"
                   href={systemMapSearchUrl("tow", platformForMaps())}

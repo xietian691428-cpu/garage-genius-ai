@@ -15,6 +15,10 @@ import type {
   TripPackSavedPlace,
 } from "@/lib/offline-trip-pack/types";
 import { isBrowserOnline } from "@/lib/offline-trip-pack/online";
+import {
+  evaluatePackFreshness,
+  TRIP_PACK_MAX_AGE_DAYS,
+} from "@/lib/offline-trip-pack/freshness";
 
 type Props = {
   vehicle: VehicleInfo | null;
@@ -38,6 +42,20 @@ export default function OfflineTripPackDownload({
   const [placeLat, setPlaceLat] = useState("");
   const [placeLng, setPlaceLng] = useState("");
   const [places, setPlaces] = useState<TripPackSavedPlace[]>([]);
+  const [online, setOnline] = useState(true);
+  const freshness =
+    pack && vehicle ? evaluatePackFreshness(pack, vehicle) : null;
+
+  useEffect(() => {
+    const sync = () => setOnline(isBrowserOnline());
+    sync();
+    window.addEventListener("online", sync);
+    window.addEventListener("offline", sync);
+    return () => {
+      window.removeEventListener("online", sync);
+      window.removeEventListener("offline", sync);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -230,13 +248,39 @@ export default function OfflineTripPackDownload({
         </p>
       ) : null}
 
+      {freshness?.needsRefresh ? (
+        <div
+          className="mt-2 rounded-xl border border-amber-700/50 bg-amber-950/40 px-3 py-2 text-xs text-amber-100"
+          data-testid="offline-pack-stale"
+          role="status"
+        >
+          <p className="font-medium">
+            {freshness.fluidsChanged
+              ? t("offlineTripPack.staleFluids")
+              : t("offlineTripPack.staleAge", {
+                  days: Math.floor(freshness.ageDays),
+                  max: TRIP_PACK_MAX_AGE_DAYS,
+                })}
+          </p>
+          <p className="mt-1 text-amber-200/80">
+            {online
+              ? t("offlineTripPack.refreshPromptOnline")
+              : t("offlineTripPack.refreshPromptOffline")}
+          </p>
+        </div>
+      ) : null}
+
       <div className="mt-3 flex flex-wrap gap-2">
         <button
           type="button"
-          disabled={busy}
+          disabled={busy || (!online && Boolean(pack))}
           onClick={() => void download()}
           data-testid="offline-pack-download-btn"
-          className="min-h-[44px] rounded-2xl bg-cyan-500 px-4 text-sm font-semibold text-black disabled:opacity-60"
+          className={`min-h-[44px] rounded-2xl px-4 text-sm font-semibold disabled:opacity-60 ${
+            freshness?.needsRefresh && online
+              ? "bg-amber-400 text-black ring-2 ring-amber-200/60"
+              : "bg-cyan-500 text-black"
+          }`}
         >
           {busy
             ? t("offlineTripPack.downloading")

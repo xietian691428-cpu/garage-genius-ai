@@ -17,6 +17,43 @@ function isOverheatSteamSituation(text: string): boolean {
   return false;
 }
 
+/** Map free-text / shortcut queries to static edu card ids (no AI). */
+function matchEduCardIds(text: string): string[] {
+  const t = text.toLowerCase();
+  const ids: string[] = [];
+  if (
+    isOverheatSteamSituation(text) ||
+    /\boverheat/.test(t) ||
+    /\bsteam\b/.test(t)
+  ) {
+    ids.push("overheat_observe");
+  }
+  if (
+    (/\bsoft\b/.test(t) && /\bbrake/.test(t)) ||
+    /\bspongy\b/.test(t) ||
+    /\bbrake\s+warning\b/.test(t)
+  ) {
+    ids.push("soft_brake_observe");
+  }
+  if (
+    /\bflat\s+tire\b/.test(t) ||
+    /\bpuncture\b/.test(t) ||
+    /\blow\s+tire\b/.test(t) ||
+    /\bblowout\b/.test(t)
+  ) {
+    ids.push("flat_tire_observe");
+  }
+  if (
+    /\bbattery\b/.test(t) ||
+    /\bno\s+crank\b/.test(t) ||
+    /\bclick\s+only\b/.test(t) ||
+    /\bwon'?t\s+start\b/.test(t)
+  ) {
+    ids.push("battery_jump_observe");
+  }
+  return [...new Set(ids)];
+}
+
 /**
  * Local-only assist matcher. Reuses production stop-rules + drive-safety + DTC catalog.
  * Never invents specs or calls AI.
@@ -57,6 +94,7 @@ export function matchOfflineAssistQuery(query: string): OfflineAssistMatch {
     driveSafetyHit,
     doNotDrive,
     dtcRefs,
+    eduCardIds: matchEduCardIds(text),
   };
 }
 

@@ -6,4 +6,7 @@ export * from "@/lib/offline-trip-pack/maps-links";
 export * from "@/lib/offline-trip-pack/source-label";
 export * from "@/lib/offline-trip-pack/obd-session";
 export * from "@/lib/offline-trip-pack/online";
+export * from "@/lib/offline-trip-pack/freshness";
+export * from "@/lib/offline-trip-pack/symptom-shortcuts";
+export * from "@/lib/offline-trip-pack/carry-bridge";
 export { TRIP_PACK_EDU_CARDS } from "@/lib/offline-trip-pack/edu-cards";

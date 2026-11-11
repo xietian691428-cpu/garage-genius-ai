@@ -14,7 +14,7 @@ These are product rules, not settings. Owners can dismiss the general Chat discl
 7. **Vision low trust.** Blurry / dark / unreadable / confidence below 0.5 drops readings and DTCs before Chat injection.
 8. **No live OBD theater.** `has_obd_adapter=false` must not claim live/realtime adapter data. Pasted codes are user-provided.
 9. **Diagnostic / report tone.** No unnegated “Replace X now” / “It’s definitely” / “Must be the…” in Chat or Shop Report.
-10. **Offline Trip Pack (limited).** Local DTC + stop-rules / drive-safety + cached garage fluids only. No offline DeepSeek/vision. No invented qt/ft-lb without a pack anchor. Pack key = `user_id × vehicle_id` (never a global library). Full VIN is not stored in the pack (tail ≤ 8). Offline OBD codes are `offline_session` / user-provided when carried online — never labeled live. CoachScenarioPlayer is not used offline.
+10. **Offline Trip Pack (limited).** Local DTC + stop-rules / drive-safety + cached garage fluids only. No offline DeepSeek/vision. No invented qt/ft-lb without a pack anchor. Pack key = `user_id × vehicle_id` (never a global library). Full VIN is not stored in the pack (tail ≤ 8). Offline OBD / looked-up codes are `offline_session` / user-provided when carried online — never labeled live. Packs older than 30 days or with a fluids fingerprint mismatch prompt Refresh while online (stale cache may still be shown offline). CoachScenarioPlayer is not used offline.
 
 ## Freeze
 

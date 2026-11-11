@@ -28,7 +28,7 @@ CoachScenarioPlayer internals were not changed.
 
 ## Offline Trip Pack
 
-**Limited local assist is not roadside rescue.** A downloaded pack helps with cached fluids, local DTC education, stop rules, and saved phones/places. Users may still lack tools, parts, or cell service to fix the car. Packs can be stale after fluid changes; wrong-vehicle packs are rejected in UI but a confused owner might still open the wrong car’s contacts. System map “Find a shop / tow” links require some connectivity or a pre-downloaded OS map region — this app does not embed Apple/Google offline POI databases.
+**Limited local assist is not roadside rescue.** A downloaded pack helps with cached fluids, local DTC education, stop rules, symptom shortcut cards, and saved phones/places. Users may still lack tools, parts, or cell service to fix the car. Packs can be stale after fluid changes or >30 days (UI prompts Refresh online; offline still shows the last cache and will not invent newer specs). Wrong-vehicle packs are rejected in UI but a confused owner might still open the wrong car’s contacts. Carry-to-chat codes are owner-provided text only — not live OBD. System map “Find a shop / tow” links require some connectivity or a pre-downloaded OS map region — this app does not embed Apple/Google offline POI databases. Manual PDF chunks and cloud-synced emergency phones remain follow-ups (P1-2 / P1-3).
 
 ## W3 — Recall market, vision low-trust, official-data degrade
 

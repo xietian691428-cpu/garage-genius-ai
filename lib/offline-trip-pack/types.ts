@@ -112,4 +112,6 @@ export type OfflineAssistMatch = {
     safetyNotes: string | null;
     commonCauses: string[];
   }>;
+  /** Static observation card ids from the trip pack (educational only). */
+  eduCardIds: string[];
 };

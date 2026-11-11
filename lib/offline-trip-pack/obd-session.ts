@@ -1,5 +1,5 @@
 /**
- * Offline OBD code cache — always source=offline_session (never live).
+ * Offline OBD / looked-up code cache — always source=offline_session (never live).
  */
 
 import type { OfflineObdSessionCache } from "@/lib/offline-trip-pack/types";
@@ -10,13 +10,23 @@ function storageKey(vehicleId: string): string {
   return `${PREFIX}${vehicleId}`;
 }
 
+function normalizeCodes(codes: string[]): string[] {
+  return [
+    ...new Set(
+      codes
+        .map((c) => c.trim().toUpperCase().replace(/[\s.\-_]/g, ""))
+        .filter((c) => /^[PCBU][0-9A-F]{4}$/i.test(c)),
+    ),
+  ];
+}
+
 export function saveOfflineObdSession(
   vehicleId: string,
   codes: string[],
 ): OfflineObdSessionCache {
   const row: OfflineObdSessionCache = {
     vehicleId,
-    codes: [...new Set(codes.map((c) => c.trim().toUpperCase()).filter(Boolean))],
+    codes: normalizeCodes(codes),
     source: "offline_session",
     capturedAt: new Date().toISOString(),
   };
@@ -28,6 +38,16 @@ export function saveOfflineObdSession(
     }
   }
   return row;
+}
+
+/** Merge looked-up / scanned codes into the offline session for this vehicle. */
+export function mergeOfflineObdCodes(
+  vehicleId: string,
+  codes: string[],
+): OfflineObdSessionCache {
+  const existing = loadOfflineObdSession(vehicleId);
+  const merged = [...(existing?.codes ?? []), ...codes];
+  return saveOfflineObdSession(vehicleId, merged);
 }
 
 export function loadOfflineObdSession(
@@ -42,9 +62,19 @@ export function loadOfflineObdSession(
     return {
       ...parsed,
       source: "offline_session",
+      codes: normalizeCodes(parsed.codes ?? []),
     };
   } catch {
     return null;
+  }
+}
+
+export function clearOfflineObdSession(vehicleId: string): void {
+  if (typeof sessionStorage === "undefined") return;
+  try {
+    sessionStorage.removeItem(storageKey(vehicleId));
+  } catch {
+    /* ignore */
   }
 }
 
@@ -52,6 +82,14 @@ export function loadOfflineObdSession(
 export function formatOfflineObdForOnlineChat(
   session: OfflineObdSessionCache,
 ): string {
-  const codes = session.codes.join(", ");
-  return `Codes from an offline OBD session (user-provided, not live adapter): ${codes}`;
+  return formatOfflineCodesForOnlineChat(session.codes);
+}
+
+/** Carry looked-up / offline codes into online Chat — always user-provided. */
+export function formatOfflineCodesForOnlineChat(codes: string[]): string {
+  const list = normalizeCodes(codes);
+  if (!list.length) {
+    return "No offline codes to carry (user-provided, not live adapter).";
+  }
+  return `Codes from an offline session (user-provided, not live adapter): ${list.join(", ")}`;
 }

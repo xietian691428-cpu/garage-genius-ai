@@ -97,6 +97,7 @@ import { loadTripPack } from "@/lib/offline-trip-pack/store";
 import type { TripPackManifest } from "@/lib/offline-trip-pack/types";
 import { isBrowserOnline } from "@/lib/offline-trip-pack/online";
 import { saveOfflineObdSession } from "@/lib/offline-trip-pack/obd-session";
+import { consumeOfflineCarryToChat } from "@/lib/offline-trip-pack/carry-bridge";
 import {
   gateCopy,
   resolveGateLanguage,
@@ -322,6 +323,12 @@ export default function ChatApp({
 
   useEffect(() => {
     void ensureSafetyTopicsRemote();
+  }, []);
+
+  // Settings → Chat carry of offline codes (user-provided draft).
+  useEffect(() => {
+    const carried = consumeOfflineCarryToChat();
+    if (carried) setDraftValue(carried);
   }, []);
 
   useEffect(() => {
@@ -2414,6 +2421,7 @@ export default function ChatApp({
         onClose={() => setShowOfflineAssist(false)}
         pack={offlineAssistPack}
         vehicleId={currentVehicle?.id ?? null}
+        vehicle={currentVehicle}
         vehicleLabel={
           currentVehicle
             ? formatVehicleYmmDisplay(currentVehicle)
@@ -2430,6 +2438,13 @@ export default function ChatApp({
         onCarryObdToChat={(text) => {
           setShowOfflineAssist(false);
           setDraftValue(text);
+          // Ensure composer is visible after carry from offline assist.
+          if (typeof window !== "undefined") {
+            const chatTab = document.querySelector(
+              '[data-testid="app-tab-chat"]',
+            ) as HTMLElement | null;
+            chatTab?.click();
+          }
         }}
       />
 

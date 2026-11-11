@@ -1,6 +1,7 @@
 # Offline Trip Pack — 任务规格（按生产代码收紧）
 
-> 状态：P0 已实现（客户端组装 + IDB/内存存储 + Offline assist UI + Chat network CTA）。不是「无网完整 AI 教练」。  
+> 状态：P0 已实现；**P1-1 / P1-4 / P1-5 已实现**（pack 过期·油液指纹 Refresh、症状快捷 chips、回网 carry codes 为 user-provided）。**P1-2 / P1-3 默认不开**（手册 chunks、云同步应急电话），除非有明确产品需求。  
+> **对外口径：** 弱信号应急协助（本地规则 + 缓存规格），**不是**离线 AI 修车。  
 
 > 依据：`VehicleInfo` fluids + 手册确认、`lib/vehicle-data/dtc-local.ts`、`lib/safety/stop-rules.ts`、`lib/drive-safety.ts`、`lib/intake/derive.ts`（过热槽位）、`lib/chat-request-error.ts`、`lib/obd.ts`、`docs/SAFETY_INVARIANTS.md`。
 
@@ -144,7 +145,7 @@ P0 要求：
 
 - Banner：`You're back online — Open full coach / Find a shop`
 - Find a shop / tow → 系统地图 scheme（§3.7）
-- 可选：离线会话码 → Chat 预填为 user-provided
+- **P1-5：** 离线查到的 DTC / offline_session 码 → Chat 草稿预填为 **user-provided / not live**（`formatOfflineCodesForOnlineChat`）；禁止标 `live`
 
 ### D. 系统离线地图说明（文案）
 
@@ -179,7 +180,7 @@ components/offline/
 locales: offlineTripPack.* keys (en-US + es)
 ```
 
-**过期：** `downloaded_at` > N 天（建议 30）或 `fluids_fingerprint` 与当前车不一致 → 提示 Refresh（有网）。
+**过期（P1-1 已实现）：** `downloaded_at` > 30 天或 `fluids_fingerprint` 与当前车库油液不一致 → 下载页 / Offline assist 提示 Refresh（有网高亮；无网仍用缓存包，不编造新规格）。实现：`lib/offline-trip-pack/freshness.ts`。
 
 ---
 
@@ -234,7 +235,16 @@ locales: offlineTripPack.* keys (en-US + es)
 3. **电话 + 保存地点** + `tel:` / 地图 scheme  
 4. **Chat 网络错误 → Offline CTA**；回网 banner  
 5. Vitest（纯函数 + store mock + Chat 降级）+ 文档三处更新  
-6. （P1）可选手册 chunks、云同步应急电话、pack 体积仪表  
+6. **P1（本迭代）**
+   - **P1-1** pack 过期 / fluids fingerprint → Refresh 提示（已做）
+   - **P1-4** Offline assist 症状快捷 chips（过热蒸汽、软刹、P0420、爆胎、无启动）（已做）
+   - **P1-5** 回网 carry codes → Chat 草稿，文案强制 user-provided（已做）
+7. **P1 后续（未做）**
+   - **P1-2** 可选手册 chunks（二次确认 + 体积硬顶；默认不强制打包 PDF）
+   - **P1-3** 应急电话云同步（P0 仍为本地预填）
+   - pack 体积仪表 / 更细的下载进度
+
+**明确不做（本迭代）：** 离线 AI、强制手册、读取系统离线地图 POI。
 
 ---
 
