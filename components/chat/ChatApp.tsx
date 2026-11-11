@@ -92,6 +92,11 @@ import {
   formatChatClientError,
   type ChatClientError,
 } from "@/lib/chat-request-error";
+import OfflineAssistPanel from "@/components/offline/OfflineAssistPanel";
+import { loadTripPack } from "@/lib/offline-trip-pack/store";
+import type { TripPackManifest } from "@/lib/offline-trip-pack/types";
+import { isBrowserOnline } from "@/lib/offline-trip-pack/online";
+import { saveOfflineObdSession } from "@/lib/offline-trip-pack/obd-session";
 import {
   gateCopy,
   resolveGateLanguage,
@@ -197,6 +202,10 @@ export default function ChatApp({
   const [requestError, setRequestError] = useState<ChatClientError | null>(
     null,
   );
+  const [showOfflineAssist, setShowOfflineAssist] = useState(false);
+  const [offlineAssistPack, setOfflineAssistPack] =
+    useState<TripPackManifest | null>(null);
+  const [offlineAssistHasPack, setOfflineAssistHasPack] = useState(false);
   const [pendingGarageSwitch, setPendingGarageSwitch] = useState<{
     content: string;
     images: string[];
@@ -960,6 +969,33 @@ export default function ChatApp({
       });
 
     try {
+      // Offline Trip Pack: never hammer /api/chat when the browser is offline.
+      if (!isBrowserOnline()) {
+        const msg = t("offlineTripPack.networkOffer");
+        setRequestError({ code: "network", message: msg });
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content: `⚠️ ${msg}`,
+            timestamp: new Date(),
+          },
+        ]);
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user?.id && activeVehicle.id) {
+          const pack = await loadTripPack(user.id, activeVehicle.id);
+          setOfflineAssistHasPack(Boolean(pack));
+          setOfflineAssistPack(pack);
+        } else {
+          setOfflineAssistHasPack(false);
+          setOfflineAssistPack(null);
+        }
+        return;
+      }
+
       const imagePayloads: string[] = [];
       for (const img of photoList) {
         imagePayloads.push(
@@ -1233,6 +1269,16 @@ export default function ChatApp({
           ? classified.message || t("ai.requestFailed")
           : formatChatClientError(classified);
       setRequestError({ ...classified, message });
+      if (classified.code === "network") {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user?.id && activeVehicle.id) {
+          const pack = await loadTripPack(user.id, activeVehicle.id);
+          setOfflineAssistHasPack(Boolean(pack));
+          setOfflineAssistPack(pack);
+        }
+      }
       setMessages((prev) => [
         ...prev,
         {
@@ -1545,6 +1591,29 @@ export default function ChatApp({
   };
 
   const handleObdBleSession = (snapshot: ObdSessionSnapshot) => {
+    // Cache codes locally as offline_session — never mark live when carried online later.
+    if (currentVehicle?.id && snapshot.codes?.length) {
+      saveOfflineObdSession(
+        currentVehicle.id,
+        snapshot.codes.map((c) => c.code),
+      );
+    }
+    if (!isBrowserOnline()) {
+      const msg = t("offlineTripPack.networkOffer");
+      setRequestError({ code: "network", message: msg });
+      void (async () => {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user?.id && currentVehicle?.id) {
+          const pack = await loadTripPack(user.id, currentVehicle.id);
+          setOfflineAssistHasPack(Boolean(pack));
+          setOfflineAssistPack(pack);
+          setShowOfflineAssist(true);
+        }
+      })();
+      return;
+    }
     void handleSend(
       buildObdBleDiagnosisPrompt({
         ...snapshot,
@@ -2253,19 +2322,33 @@ export default function ChatApp({
                 </span>
                 {requestError.message}
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setRequestError(null);
-                  void handleRegenerate();
-                }}
-                className={GATE_CTA_PRIMARY}
-              >
-                {gateCopy(
-                  resolveGateLanguage("", i18n.language),
-                  "retry",
-                )}
-              </button>
+              <div className="flex flex-wrap gap-2">
+                {requestError.code === "network" && offlineAssistHasPack ? (
+                  <button
+                    type="button"
+                    data-testid="chat-open-offline-assist"
+                    onClick={() => setShowOfflineAssist(true)}
+                    className={GATE_CTA_PRIMARY}
+                  >
+                    {t("offlineTripPack.openOfflineAssist")}
+                  </button>
+                ) : null}
+                {requestError.code !== "network" || isBrowserOnline() ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRequestError(null);
+                      void handleRegenerate();
+                    }}
+                    className={GATE_CTA_PRIMARY}
+                  >
+                    {gateCopy(
+                      resolveGateLanguage("", i18n.language),
+                      "retry",
+                    )}
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         ) : null}
@@ -2320,6 +2403,30 @@ export default function ChatApp({
           setPostSaveDtcOpen(false);
           setPostSaveNudge(false);
           handleFaultCode(code);
+        }}
+      />
+
+      <OfflineAssistPanel
+        open={showOfflineAssist}
+        onClose={() => setShowOfflineAssist(false)}
+        pack={offlineAssistPack}
+        vehicleId={currentVehicle?.id ?? null}
+        vehicleLabel={
+          currentVehicle
+            ? formatVehicleYmmDisplay(currentVehicle)
+            : t("coach.yourGarage")
+        }
+        vehicleMismatch={
+          Boolean(
+            offlineAssistPack &&
+              currentVehicle &&
+              offlineAssistPack.vehicleId !== currentVehicle.id,
+          )
+        }
+        onOpenFullCoach={() => setRequestError(null)}
+        onCarryObdToChat={(text) => {
+          setShowOfflineAssist(false);
+          setDraftValue(text);
         }}
       />
 

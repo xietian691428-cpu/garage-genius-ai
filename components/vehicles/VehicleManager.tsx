@@ -6,6 +6,8 @@ import { VehicleInfo } from "@/lib/types/chat";
 import VehiclePanel from "@/components/chat/VehiclePanel";
 import VehicleList from "./VehicleList";
 import AddVehicleModal from "./AddVehicleModal";
+import OfflineTripPackDownload from "@/components/offline/OfflineTripPackDownload";
+import OfflineAssistPanel from "@/components/offline/OfflineAssistPanel";
 import { hideStorePurchaseUi } from "@/lib/native-platform";
 import { isNhtsaRecallMarket } from "@/lib/vehicle-data/recall-copy";
 import {
@@ -14,6 +16,9 @@ import {
   isRecallBannerDismissed,
 } from "@/lib/vehicle-data/safety-hints-client";
 import { supabase } from "@/lib/supabase";
+import { loadTripPack } from "@/lib/offline-trip-pack/store";
+import type { TripPackManifest } from "@/lib/offline-trip-pack/types";
+import { formatVehicleYmmDisplay } from "@/lib/types/vehicle-market";
 
 interface Props {
   vehicles: VehicleInfo[];
@@ -43,6 +48,8 @@ export default function VehicleManager({
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<VehicleInfo | null>(null);
   const [recallToast, setRecallToast] = useState<VehicleInfo | null>(null);
+  const [showOfflineAssist, setShowOfflineAssist] = useState(false);
+  const [assistPack, setAssistPack] = useState<TripPackManifest | null>(null);
 
   const maybeShowRecallToast = async (vehicle: VehicleInfo) => {
     if (!isNhtsaRecallMarket(vehicle.market)) return;
@@ -166,7 +173,44 @@ export default function VehicleManager({
               : undefined
           }
         />
+
+        <div className="mt-5">
+          <OfflineTripPackDownload
+            vehicle={currentVehicle}
+            onOpenAssist={() => {
+              void (async () => {
+                if (!currentVehicle) return;
+                const {
+                  data: { user },
+                } = await supabase.auth.getUser();
+                if (!user?.id) return;
+                const p = await loadTripPack(user.id, currentVehicle.id);
+                setAssistPack(p);
+                setShowOfflineAssist(true);
+              })();
+            }}
+          />
+        </div>
       </div>
+
+      <OfflineAssistPanel
+        open={showOfflineAssist}
+        onClose={() => setShowOfflineAssist(false)}
+        pack={assistPack}
+        vehicleId={currentVehicle?.id ?? null}
+        vehicleLabel={
+          currentVehicle
+            ? formatVehicleYmmDisplay(currentVehicle)
+            : t("coach.yourGarage")
+        }
+        vehicleMismatch={
+          Boolean(
+            assistPack &&
+              currentVehicle &&
+              assistPack.vehicleId !== currentVehicle.id,
+          )
+        }
+      />
 
       <AddVehicleModal
         open={showAdd && canAdd}

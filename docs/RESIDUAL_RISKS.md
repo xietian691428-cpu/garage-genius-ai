@@ -26,6 +26,10 @@ Living list of known product gaps after each safety/cost wave. Keep entries shor
 
 CoachScenarioPlayer internals were not changed.
 
+## Offline Trip Pack
+
+**Limited local assist is not roadside rescue.** A downloaded pack helps with cached fluids, local DTC education, stop rules, and saved phones/places. Users may still lack tools, parts, or cell service to fix the car. Packs can be stale after fluid changes; wrong-vehicle packs are rejected in UI but a confused owner might still open the wrong car’s contacts. System map “Find a shop / tow” links require some connectivity or a pre-downloaded OS map region — this app does not embed Apple/Google offline POI databases.
+
 ## W3 — Recall market, vision low-trust, official-data degrade
 
 **YMM recall list ≠ per-VIN status.** NHTSA `recallsByVehicle` is year/make/model. An empty or listed result is not proof that this owner's VIN is open, closed, or unrepaired. Timeout/error must not be described as “no recalls”. Always verify with the VIN at nhtsa.gov/recalls or a dealer.
