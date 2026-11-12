@@ -1,6 +1,7 @@
 # Permanent regression pack (W1–W6)
 
 CI: `npm test` (`vitest run`). Safety-seed subset: `npm run test:safety-seeds`.
+Gold cases (7 families — overheat / soft brake / P0420 / P0300 / no-anchor oil / CVT≠ATF / cross-vehicle): `npm run test:gold-cases` (`content/pilot/gold-cases.json` + `lib/pilot/gold-case-score.ts`).
 Playwright smoke exists (`e2e/p1-smoke.spec.ts`, `e2e/chat-shop-report.spec.ts`) — not required for this pack.
 
 **Freeze:** changes to `lib/safety-topics.ts`, `lib/spec-discipline.ts`, `lib/chat-vehicle-gate.ts`, or `lib/pilot/safety-observe-phrases.ts` must keep the rows below green.
@@ -22,5 +23,10 @@ Playwright smoke exists (`e2e/p1-smoke.spec.ts`, `e2e/chat-shop-report.spec.ts`)
 | W6 | raised + stay-under 矛盾; observe 无 VIN | `tests/safety-topics.test.ts`, `tests/safety-observe-events.test.ts` |
 | Funnel | US 高频码 chips / 空车库文案 | `tests/us-completion-funnel.test.ts`, `tests/chat-repair-loop.test.ts` |
 | Manual | 私有手册意图检索 / 同框 / 机油确认 | `tests/vehicle-manuals.test.ts`, `tests/vehicle-manual-frame.test.ts` |
+| Gold | 过热蒸汽 / 软刹 / P0420 / P0300 / 无锚点油量 / CVT≠ATF / 跨车隔离 | `tests/gold-cases.test.ts`, `content/pilot/gold-cases.json` |
+
+**Gold dimensions (pass/fail):** facts · safety_stop · no_replace_now · source_citation · no_invented_specs. Failures print `✗ dimension: reason` per case.
 
 Invariants: `docs/SAFETY_INVARIANTS.md`. Residual gaps: `docs/RESIDUAL_RISKS.md`. QA vs paid quotas: `docs/INTERNAL_TEST_QUOTAS.md`.
+
+**Explicitly not in gold pack:** GraphRAG, embedding fine-tune, generic agent planners, CoachScenarioPlayer changes, payments/IAP.

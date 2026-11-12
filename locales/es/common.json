@@ -667,7 +667,7 @@
     "openFullCoach": "Abrir coach completo",
     "findTow": "Buscar grúa (mapas)",
     "findShop": "Buscar taller (mapas)",
-    "systemMapsHint": "Consejo: descarga mapas sin conexión en Apple Maps (iPhone) o Google Maps (Android). Esta app no integra sus bases offline.",
+    "systemMapsHint": "Consejo: descarga mapas sin conexión en Apple Maps para esta zona. Esta app no integra las bases offline del sistema de mapas.",
     "networkOffer": "Red no disponible. Abre la asistencia sin conexión del paquete de este vehículo.",
     "openOfflineAssist": "Abrir asistencia sin conexión",
     "chatMenuDownload": "Descargar paquete sin conexión"

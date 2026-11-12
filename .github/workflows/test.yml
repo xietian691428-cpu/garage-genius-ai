@@ -22,6 +22,8 @@ jobs:
       # must keep tests/README.md (W1–W5 pack) green.
       - name: US top-10 safety seeds (CI gate)
         run: npm run test:safety-seeds
+      - name: Gold cases — safety / specs / check_order (CI gate)
+        run: npm run test:gold-cases
       - run: npm run test
 
   e2e:
