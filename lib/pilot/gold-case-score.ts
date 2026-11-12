@@ -59,7 +59,7 @@ export type GoldCaseRecord = {
     market?: string;
     transmissionKind?: "atf" | "cvt" | "unknown";
     atfSpecText?: string;
-    atfSpecSource?: "user_manual_confirmed" | "user_entered" | "vcdb";
+    atfSpecSource?: "user_manual_confirmed" | "user_entered";
   };
   other_vehicle?: {
     id: string;
