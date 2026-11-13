@@ -121,6 +121,14 @@ function profileOilSaved(vehicle: VehicleInfo): boolean {
   return Boolean(vehicle.oilCapacity?.trim() || vehicle.oilViscosity?.trim());
 }
 
+/** Same shape as formatOilLine, from the saved garage fields only. */
+function savedProfileOilLine(vehicle: VehicleInfo): string {
+  const cap = vehicle.oilCapacity?.trim() || "";
+  const visc = vehicle.oilViscosity?.trim() || "";
+  if (cap && visc) return `${cap} · ${visc}`;
+  return cap || visc;
+}
+
 /**
  * User-visible source for oil already stored on the garage vehicle.
  * Explicit `vcdb` (or oil that only lives on the curated blob) stays lookup.
@@ -167,18 +175,7 @@ export function formatVehicleConfigCard(vehicle: VehicleInfo): string {
   // replace them, and lookup/unverified is only for an explicit vcdb source
   // or oil that exists only on the curated vcdb blob.
   const chatOilLine = profileOilSaved(vehicle)
-    ? formatOilLine({
-        fuelGrade: fluids.fuelGrade || "",
-        oilCapacity: (
-          vehicle.oilCapacity?.trim() ||
-          vehicle.oilViscosity?.trim() ||
-          ""
-        ),
-        oilViscosity:
-          vehicle.oilCapacity?.trim() && vehicle.oilViscosity?.trim()
-            ? vehicle.oilViscosity.trim()
-            : undefined,
-      })
+    ? savedProfileOilLine(vehicle)
     : vehicle.vcdb?.oilCapacity?.trim()
       ? fluids.oilLine
       : null;
