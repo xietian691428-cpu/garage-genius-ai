@@ -60,6 +60,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark h-full ${display.variable} ${sans.variable}`}>
       <body className="min-h-full bg-[#0a0f1c] font-[family-name:var(--font-sans)] text-slate-200 antialiased">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem("gg-garage-mode")==="1")document.documentElement.classList.add("gg-garage-mode")}catch(e){}`,
+          }}
+        />
         <I18nProvider>
           <NativeDeepLinkBridge />
           <NativePlayBillingSync />

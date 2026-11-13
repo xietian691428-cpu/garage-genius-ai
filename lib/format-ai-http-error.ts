@@ -1,3 +1,4 @@
+import { AI_ALLOWANCE_EXHAUSTED } from "@/lib/ai-allowance-copy";
 import { formatLimitedQuotaReply } from "@/lib/ai-cost/gate";
 
 export function formatAiHttpError(input: {
@@ -61,16 +62,13 @@ export function formatAiHttpError(input: {
   if (isTokenLimit) {
     if (code === "ai_budget_exceeded") {
       const raw =
-        server ||
-        input.fallback ||
-        "This month's AI allowance is used up. Upgrade for more AI chat.";
+        server && !/\btokens?\b/i.test(server)
+          ? server
+          : input.fallback || AI_ALLOWANCE_EXHAUSTED;
       return formatLimitedQuotaReply(raw);
     }
-    return (
-      server ||
-      input.fallback ||
-      "Insufficient tokens this month. Try again next month."
-    );
+    // Never echo raw token counts or plan ids from the server.
+    return AI_ALLOWANCE_EXHAUSTED;
   }
 
   if (

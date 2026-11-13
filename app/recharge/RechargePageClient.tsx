@@ -37,7 +37,7 @@ export default function RechargePageClient({
     const status = params.get("status");
     if (status === "success") {
       setStatusMessage(
-        "Payment received. Bonus tokens will appear shortly after Stripe confirms.",
+        "Payment received. Your AI top-up will show up shortly after payment confirms.",
       );
     } else if (status === "canceled") {
       setStatusMessage("Checkout canceled. No charge was made.");

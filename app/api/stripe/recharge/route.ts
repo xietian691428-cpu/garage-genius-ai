@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     const token = getAccessToken(req);
     if (!token) {
       return NextResponse.json(
-        { error: "Sign in required to buy tokens." },
+        { error: "Sign in required to add an AI top-up." },
         { status: 401 },
       );
     }

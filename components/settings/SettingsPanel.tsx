@@ -19,6 +19,7 @@ import DiySkillSettings from "@/components/settings/DiySkillSettings";
 import InsuranceProfileSettings from "@/components/settings/InsuranceProfileSettings";
 import ObdToolsSettings from "@/components/settings/ObdToolsSettings";
 import ShareAppCard from "@/components/settings/ShareAppCard";
+import GarageModeToggle from "@/components/settings/GarageModeToggle";
 import ShopReportsPanel from "@/components/shop-report/ShopReportsPanel";
 import LiabilityDisclaimer from "@/components/legal/LiabilityDisclaimer";
 import InsuranceSafetySettings from "@/components/settings/InsuranceSafetySettings";
@@ -449,6 +450,8 @@ export default function SettingsPanel({
             </Link>
           )}
         </section>
+
+        <GarageModeToggle />
 
         <TokenDisplay />
 

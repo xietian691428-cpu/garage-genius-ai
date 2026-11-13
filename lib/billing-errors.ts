@@ -10,7 +10,7 @@ export const BILLING_PORTAL_UNAVAILABLE =
   "We couldn't open billing right now. Please try again in a few minutes.";
 
 export const BILLING_RECHARGE_UNAVAILABLE =
-  "Token top-up is temporarily unavailable. Please try again in a few minutes.";
+  "AI top-up is temporarily unavailable. Please try again in a few minutes.";
 
 export const BILLING_IAP_UNAVAILABLE =
   "Apple In-App Purchase couldn’t complete. Try Restore purchases, or try again in a few minutes.";
@@ -24,7 +24,7 @@ export const BILLING_PLAY_UNAVAILABLE =
 /** Intentional product messages that are safe to show as-is. */
 const SAFE_EXACT = new Set([
   "Sign in to manage your subscription.",
-  "Sign in required to buy tokens.",
+  "Sign in required to add an AI top-up.",
   "Unauthorized",
   "No Stripe customer on file. Subscribe first.",
   "Stripe did not return a checkout URL.",
@@ -46,7 +46,7 @@ const SAFE_PATTERNS: RegExp[] = [
   /^Sign in\b/i,
   /^Verify your email\b/i,
   /Checkout is temporarily unavailable/i,
-  /Token top-up is temporarily unavailable/i,
+  /AI top-up is temporarily unavailable/i,
   /couldn't open billing/i,
   /unavailable in the store app/i,
   /In-App Purchase/i,

@@ -893,3 +893,43 @@ html.gg-native .app-shell {
     animation: none !important;
   }
 }
+
+/* Garage Mode — optional high contrast for outdoor / bright-garage use. */
+html.gg-garage-mode {
+  font-size: 125%;
+}
+@media (min-width: 1280px) {
+  html.gg-garage-mode {
+    font-size: 112.5%;
+  }
+}
+html.gg-garage-mode body {
+  color: #f8fafc;
+  background-color: #020617;
+}
+html.gg-garage-mode .text-slate-300 {
+  color: #f8fafc !important;
+}
+html.gg-garage-mode .text-slate-400,
+html.gg-garage-mode .text-slate-500 {
+  color: #e2e8f0 !important;
+}
+html.gg-garage-mode .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+html.gg-garage-mode .bg-cyan-500 {
+  background-color: #67e8f9 !important;
+  color: #020617 !important;
+}
+html.gg-garage-mode .text-cyan-300,
+html.gg-garage-mode .text-cyan-400 {
+  color: #a5f3fc !important;
+}
+html.gg-garage-mode .border-slate-700,
+html.gg-garage-mode .border-slate-800 {
+  border-color: #64748b !important;
+}
+html.gg-garage-mode .chat-markdown {
+  font-size: 1.05rem;
+  line-height: 1.6;
+}

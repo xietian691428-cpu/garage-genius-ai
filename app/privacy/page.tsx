@@ -69,12 +69,12 @@ export default async function PrivacyPage() {
           <li>
             <strong className="text-slate-200">Chat &amp; coach usage:</strong>{" "}
             messages, coach playbook progress, maintenance notes, inventory
-            items, token usage for plan limits, and optional DIY skill
+            items, AI usage for plan limits, and optional DIY skill
             preferences / feedback.
           </li>
           <li>
             <strong className="text-slate-200">Photos &amp; images you
-            upload:</strong> garage / vehicle photos for diagnosis, OBD screen
+            upload:</strong> garage / vehicle photos for guided checks, OBD screen
             photos, and repair / parts receipts or invoices. Images may be stored
             with your chat or maintenance history (often as image data attached
             to those records) so the feature can work across sessions.

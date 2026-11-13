@@ -999,10 +999,10 @@ export default function Dashboard({
 
         <div className="mb-6 mt-8 flex flex-col gap-3 border-t border-slate-800 pt-8 sm:mb-10 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div>
-            <h1 className="text-xl font-bold sm:text-2xl lg:text-3xl">
+            <h1 className="text-lg font-semibold text-slate-100 sm:text-xl">
               Inspect
             </h1>
-            <p className="mt-1 text-sm text-slate-400 sm:text-base">
+            <p className="mt-1 text-sm text-slate-400">
               {vehicleLabel} • Tap an area — instant checklist, AI only when you
               need it
             </p>
@@ -1143,6 +1143,17 @@ export default function Dashboard({
           />
         )}
 
+        <details
+          data-testid="dashboard-inspect-map"
+          className="mb-6 rounded-2xl border border-slate-800 bg-[#111827]/50"
+        >
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-slate-300 [&::-webkit-details-marker]:hidden">
+            Vehicle map
+            <span className="ml-2 text-xs font-normal text-slate-500">
+              Tap an area for a checklist
+            </span>
+          </summary>
+          <div className="px-3 pb-4 sm:px-4">
         <div className="relative mb-6 max-w-md">
           <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
           <input
@@ -1267,6 +1278,17 @@ export default function Dashboard({
             />
           </div>
         </div>
+          </div>
+        </details>
+
+        <details
+          data-testid="dashboard-status-cards"
+          className="mb-6 rounded-2xl border border-slate-800 bg-[#111827]/50"
+        >
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-slate-300 [&::-webkit-details-marker]:hidden">
+            Health, service, and alerts
+          </summary>
+          <div className="px-3 pb-4">
 
         {/* Status cards — dynamic from vitals + vehicle */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4 xl:gap-6">
@@ -1336,6 +1358,8 @@ export default function Dashboard({
             </div>
           </div>
         </div>
+          </div>
+        </details>
 
         {vehicle ? (
           <div className="mb-8">
@@ -1390,6 +1414,14 @@ export default function Dashboard({
           </div>
         ) : null}
 
+        <details
+          data-testid="dashboard-secondary"
+          className="mt-2 rounded-2xl border border-slate-800 bg-[#111827]/40"
+        >
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-slate-300 [&::-webkit-details-marker]:hidden">
+            Fluids, trends, and reminders
+          </summary>
+          <div className="space-y-4 px-2 pb-4 sm:px-3">
         <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
           <div className="min-w-0 overflow-hidden rounded-3xl border border-slate-700 bg-[#111827] p-6 sm:p-8">
             <h3 className="mb-2 flex items-center gap-3 text-xl font-semibold">
@@ -1709,6 +1741,8 @@ export default function Dashboard({
             )}
           </div>
         )}
+          </div>
+        </details>
       </div>
 
       <CameraCapture

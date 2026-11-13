@@ -6,6 +6,7 @@
  */
 
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
+import { AI_ALLOWANCE_EXHAUSTED } from "@/lib/ai-allowance-copy";
 import type { SubscriptionStatus } from "@/lib/types/subscription";
 import { resolveTier } from "@/lib/subscription";
 import {
@@ -222,7 +223,7 @@ export const tokenService = {
 
     if (availability.remainingThisMonth < rounded) {
       throw new Error(
-        `Insufficient tokens. Remaining this month: ${availability.remainingThisMonth}. Plan: ${availability.plan}.`,
+        AI_ALLOWANCE_EXHAUSTED,
       );
     }
 

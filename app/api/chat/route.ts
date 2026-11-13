@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { AI_ALLOWANCE_EXHAUSTED } from "@/lib/ai-allowance-copy";
 import {
   callDeepSeek,
   estimateTokensFromMessages,
@@ -246,7 +247,7 @@ export async function POST(request: NextRequest) {
       return Response.json(
         {
           error:
-            "Sign in required to use AI chat (token quota tracking). Please sign in and try again.",
+            "Sign in required to use AI chat.",
         },
         { status: 401 },
       );
@@ -1323,12 +1324,13 @@ export async function POST(request: NextRequest) {
       message.includes("402") || message.includes("Insufficient Balance");
     const isQuota =
       message.includes("Insufficient tokens") ||
+      message.includes("AI allowance is used up") ||
       message.includes("Token quota");
 
     return Response.json(
       {
         error: isQuota
-          ? "Monthly AI quota is used up."
+          ? AI_ALLOWANCE_EXHAUSTED
           : isInsufficientBalance
             ? "AI service is temporarily unavailable. Please try again later or contact support."
             : "AI service is temporarily unavailable. Please try again.",

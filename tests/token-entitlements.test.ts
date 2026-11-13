@@ -118,14 +118,15 @@ describe("plan catalog vs token limits", () => {
 });
 
 describe("token 402 copy", () => {
-  it("surfaces remaining-quota server text", () => {
-    expect(
-      formatAiHttpError({
-        status: 402,
-        code: "insufficient_tokens",
-        error: "Insufficient tokens. Remaining this month: 1429. Plan: pro.",
-      }),
-    ).toMatch(/Remaining this month: 1429/);
+  it("replaces raw token counts with AI allowance copy", () => {
+    const text = formatAiHttpError({
+      status: 402,
+      code: "insufficient_tokens",
+      error: "Insufficient tokens. Remaining this month: 1429. Plan: pro.",
+    });
+    expect(text).toMatch(/AI allowance/i);
+    expect(text).not.toMatch(/\btokens?\b/i);
+    expect(text).not.toMatch(/1429/);
   });
 
   it("falls back when the server omitted a message", () => {
@@ -135,6 +136,6 @@ describe("token 402 copy", () => {
         code: "insufficient_tokens",
         error: "",
       }),
-    ).toMatch(/Insufficient tokens/i);
+    ).toMatch(/AI allowance/i);
   });
 });

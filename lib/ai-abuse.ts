@@ -11,6 +11,7 @@ import type { NextRequest } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseAdmin, createSupabaseUserClient } from "@/lib/supabase-admin";
 import { tokenService } from "@/lib/token-service";
+import { AI_ALLOWANCE_EXHAUSTED } from "@/lib/ai-allowance-copy";
 import { isQaUnlockEnabled } from "@/lib/qa-mode";
 import {
   isUnlimitedTokenUser,
@@ -93,7 +94,7 @@ export async function requireAiUser(req: NextRequest): Promise<User> {
   const accessToken = getBearerToken(req);
   if (!accessToken) {
     throw new AiAbuseError(
-      "Sign in required to use AI (quota + abuse protection).",
+      "Sign in required to use AI chat.",
       401,
       "unauthorized",
     );
@@ -268,7 +269,7 @@ export async function assertAiTokenBudget(
   if (!ok) {
     const availability = await tokenService.getAvailableTokens(userId, email);
     throw new AiAbuseError(
-      `Insufficient tokens. Remaining this month: ${availability.remainingThisMonth}. Plan: ${availability.plan}.`,
+      AI_ALLOWANCE_EXHAUSTED,
       402,
       "insufficient_tokens",
     );
