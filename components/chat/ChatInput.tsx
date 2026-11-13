@@ -418,7 +418,7 @@ export default function ChatInput({
       : `${photoLeft} photo ${photoLeft === 1 ? "analysis" : "analyses"} left this month`;
   const quotaLine = [
     usage.signedIn && !usage.unlimited
-      ? `${usage.remainingThisMonth.toLocaleString()} tokens left this month`
+      ? `${Math.round(usage.percentLeft)}% of monthly AI left`
       : null,
     photoRemainingLabel,
   ]

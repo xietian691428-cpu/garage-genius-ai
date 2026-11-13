@@ -13,7 +13,7 @@ export default function QaModeBanner() {
     >
       <span className="font-semibold text-amber-200">QA test mode</span>
       {" — "}
-      All Pro Heavy features unlocked. Payments disabled until launch.
+      All Multi-Car features unlocked. Payments disabled until launch.
     </div>
   );
 }

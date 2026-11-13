@@ -259,6 +259,28 @@ describe("Chat config card is not a silent oil-lookup anchor", () => {
     };
     const card = formatVehicleConfigCard(vehicle);
     expect(card).toMatch(/4\.8 qt/i);
-    expect(card).toMatch(/garage profile/i);
+    expect(card).toMatch(/Engine oil:.*Garage profile/i);
+    expect(card).not.toMatch(/Engine oil:.*lookup \/ unverified/i);
+  });
+
+  it("keeps explicit vcdb lookup oil unverified and not a chat anchor", () => {
+    const vehicle: VehicleInfo = {
+      id: "camry-lookup",
+      name: "Camry",
+      year: 2021,
+      make: "Toyota",
+      model: "Camry",
+      market: "US",
+      mileage: 42000,
+      engine: "2.5L I4",
+      oilCapacity: "4.8 qt with filter",
+      oilViscosity: "0W-16",
+      oilCapacitySource: "vcdb",
+      oilViscositySource: "vcdb",
+    };
+    const card = formatVehicleConfigCard(vehicle);
+    expect(card).toMatch(/lookup \/ unverified/i);
+    expect(card).toMatch(/not a Chat anchor/i);
+    expect(card).not.toMatch(/Garage profile \(from your manual\)/i);
   });
 });

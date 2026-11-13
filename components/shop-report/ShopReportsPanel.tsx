@@ -225,7 +225,7 @@ export default function ShopReportsPanel({ vehicle, loading }: Props) {
             No shop reports yet
           </p>
           <p className="mt-1 text-xs text-slate-500">
-            From Chat, tap Generate Shop Report after a diagnosis — or finish a
+            From Chat, open More on a reply and choose Shop Report — or finish a
             Coach guide and choose Export for Shop.
           </p>
         </div>

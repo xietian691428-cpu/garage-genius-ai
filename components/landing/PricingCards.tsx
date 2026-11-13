@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import {
   PLAN_ENTITLEMENTS,
+  PRO_HEAVY_DISPLAY_NAME,
   type BillingInterval,
   type PaidPlan,
   type SubscriptionTier,
@@ -231,7 +232,9 @@ export default function PricingCards({
     }
     if (!user) return "Sign in to upgrade";
     if (play) return t("billing.playSubscribe");
-    return planTier === "pro_heavy" ? "Subscribe to Heavy" : "Subscribe to Pro";
+    return planTier === "pro_heavy"
+      ? `Subscribe to ${PRO_HEAVY_DISPLAY_NAME}`
+      : "Subscribe to Pro";
   };
 
   if (blocked) {
@@ -338,8 +341,8 @@ export default function PricingCards({
         </div>
         {interval === "yearly" && (
           <span className="text-xs text-emerald-400">
-            Save ~${yearlySavings.pro} on Pro / ~${yearlySavings.heavy} on Heavy
-            vs monthly
+            Save ~${yearlySavings.pro} on Pro / ~${yearlySavings.heavy} on{" "}
+            {PRO_HEAVY_DISPLAY_NAME} vs monthly
           </span>
         )}
       </div>
@@ -428,10 +431,7 @@ export default function PricingCards({
                 )}
               </div>
               <p className="mt-2 text-sm text-slate-400">
-                {(plan.includedTokens / 1000).toFixed(0)}k tokens / month
-                {plan.monthlyHardCap
-                  ? ` · hard cap ${(plan.monthlyHardCap / 1000).toFixed(0)}k`
-                  : ""}
+                {plan.tagline}
               </p>
 
               <ul className="mt-6 flex-1 space-y-3">
@@ -483,8 +483,8 @@ export default function PricingCards({
             </>
           ) : iap || storeShell ? (
             <>
-              In the iOS app, Pro and Pro Heavy are auto-renewable Apple In-App
-              Purchases. Payment is charged to your Apple ID at confirmation of
+              In the iOS app, Pro and {PRO_HEAVY_DISPLAY_NAME} are auto-renewable
+              Apple In-App Purchases. Payment is charged to your Apple ID at confirmation of
               purchase. The subscription automatically renews unless auto-renew
               is turned off at least 24 hours before the end of the current
               period. Manage or cancel in Settings → Apple ID → Subscriptions.
@@ -496,9 +496,9 @@ export default function PricingCards({
             <>
               New accounts get a {TRIAL_DAYS}-day Pro trial automatically — no card
               required to start. Upgrade anytime to keep Pro after the trial.
-              Cancel paid plans anytime. Token top-ups on{" "}
+              Cancel paid plans anytime. Need more AI mid-month?{" "}
               <Link href="/recharge" className="text-cyan-400 hover:underline">
-                /recharge
+                Add a top-up
               </Link>
               .
             </>

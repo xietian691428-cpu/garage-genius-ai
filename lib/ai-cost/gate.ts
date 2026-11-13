@@ -71,20 +71,21 @@ export function visionQuotaMessage(plan: TokenPlan, limit: number): string {
     return `You've used this month's ${limit} photo analyses on Free. Upgrade to Pro for 30 photo analyses / month.`;
   }
   if (plan === "pro") {
-    return `You've used this month's ${limit} photo analyses on Pro. Upgrade to Pro Heavy for 80 photo analyses / month.`;
+    return `You've used this month's ${limit} photo analyses on Pro. Upgrade to Multi-Car for 80 photo analyses / month.`;
   }
-  return `You've used this month's ${limit} photo analyses on Pro Heavy. Try again next month.`;
+  return `You've used this month's ${limit} photo analyses on Multi-Car. Try again next month.`;
 }
 
-export function budgetExceededMessage(plan: TokenPlan, budgetUsd: number): string {
-  const budget = `$${budgetUsd.toFixed(2)}`;
+/** User-facing: never print the internal USD budget (COGS) — only the outcome. */
+export function budgetExceededMessage(plan: TokenPlan, _budgetUsd: number): string {
+  void _budgetUsd;
   if (plan === "free") {
-    return `This month's AI allowance (${budget} on Free) is used up. Upgrade to Pro for a larger AI budget and 30 photo analyses / month.`;
+    return `You've used this month's AI allowance on Free. Upgrade to Pro for much more AI chat and 30 photo analyses / month.`;
   }
   if (plan === "pro") {
-    return `This month's AI allowance (${budget} on Pro) is used up. Upgrade to Pro Heavy for a larger AI budget, or wait until next month.`;
+    return `You've used this month's AI allowance on Pro. Upgrade to Multi-Car for more room, or wait until next month.`;
   }
-  return `This month's AI allowance (${budget} on Pro Heavy) is used up. Try again next month.`;
+  return `You've used this month's AI allowance on Multi-Car. Try again next month.`;
 }
 
 export const LIMITED_QUOTA_PREFIX = "[LIMITED / quota exceeded]";

@@ -27,20 +27,20 @@ const FEATURES = [
   },
   {
     id: "diagnose",
-    title: "AI diagnosis that knows cars",
-    body: "Specialist prompts plus vehicle-aware RAG — clearer than generic chatbots when something squeaks, smells, or throws a code.",
+    title: "Guided troubleshooting for your car",
+    body: "Describe the noise, smell, or code. Get a safe, step-by-step check plan for your exact vehicle — with sources labeled and a clear “stop and call a shop” line.",
     icon: Wrench,
   },
   {
     id: "parts",
     title: "Parts recommendations",
-    body: "See what to buy, keep a garage inventory, and jump from diagnosis to the right part without tab-hopping forums.",
+    body: "See what to verify before you buy, keep a garage inventory, and go from your check plan to a fitment-aware part without tab-hopping forums.",
     icon: Package,
   },
   {
     id: "voice",
     title: "Hands-free voice coaching",
-    body: "Pro / trial mic + auto-read so you can listen while your hands are greasy. Built for under-the-car DIY, not desk chat.",
+    body: "Pro and trial: talk and listen while your hands are greasy. Built for under-the-car DIY, not desk chat.",
     icon: Mic,
   },
 ] as const;
@@ -56,7 +56,7 @@ const SCENARIOS = [
   },
   {
     title: "Receipt after a repair",
-    body: "Snap the invoice, confirm the parsed jobs, and keep the record with your vehicle so the next diagnosis has context.",
+    body: "Snap the invoice, confirm the parsed jobs, and keep the record with your vehicle so the next check has context.",
   },
 ] as const;
 
@@ -134,11 +134,12 @@ export default function LandingPage({
             Garage Genius AI
           </p>
           <h1 className="landing-hero-title font-[family-name:var(--font-display)]">
-            DIY car repair with a coach that actually knows vehicles
+            Safer DIY car troubleshooting, one step at a time
           </h1>
           <p className="landing-hero-sub">
-            Diagnose safer, buy the right parts, and wrench with voice guidance —
-            built for US & EU weekend mechanics, not generic chatbots.
+            Add your car, describe the problem, follow a safe check plan, then
+            save it or hand it to your shop. Educational guidance for US & EU
+            DIYers — not a substitute for a licensed mechanic.
           </p>
           <div className="landing-hero-ctas">
             <Link href={primaryHref} className="landing-btn-primary">
@@ -208,8 +209,8 @@ export default function LandingPage({
             Everything you need before you turn a bolt
           </h2>
           <p>
-            Instant value on open — dashboard, diagnosis, parts, and Pro /
-            trial voice — so you feel confident under the hood.
+            My Garage → Describe the issue → Safe check plan → Save or hand off
+            to a shop. Educational checks, not a verdict.
           </p>
         </div>
 
@@ -267,8 +268,8 @@ export default function LandingPage({
             Start free. Upgrade when you wrench more.
           </h2>
           <p>
-            Free covers basics. Pro unlocks voice coaching and higher token
-            limits. Heavy is for multi-car households.
+            Free is $0 for one car. Pro adds voice, up to 5 cars and more photo
+            checks. Multi-Car is for households with up to 10.
             {storeSafe
               ? " Subscribe in this app with Apple In-App Purchase."
               : ""}
@@ -289,11 +290,11 @@ export default function LandingPage({
 
       <section className="landing-final-cta">
         <h2 className="font-[family-name:var(--font-display)]">
-          Ready to wrench smarter?
+          Ready for a safer first check?
         </h2>
         <p>
-          Open Garage Genius AI, add your vehicle, and get a clear next step in
-          minutes — with safety disclaimers on every reply.
+          Add your vehicle and get a clear next step in minutes — with sources
+          labeled and safety reminders on every reply.
         </p>
         <Link href={primaryHref} className="landing-btn-primary">
           <Sparkles className="h-4 w-4" aria-hidden />
@@ -306,8 +307,9 @@ export default function LandingPage({
           Garage Genius AI
         </p>
         <p className="mt-1 max-w-xl text-xs leading-relaxed text-slate-500">
-          Not a substitute for a licensed mechanic. Always follow safety
-          procedures. Privacy-minded: we do not store raw voice audio from
+          Educational guidance only — not OEM-certified and not a substitute for
+          a licensed mechanic. Always verify specs against your manual and
+          follow safety procedures. Privacy-minded: we do not store raw voice audio from
           browser speech APIs.
         </p>
         <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">

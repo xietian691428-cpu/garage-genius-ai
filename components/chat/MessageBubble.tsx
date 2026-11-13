@@ -18,12 +18,16 @@ import {
   RefreshCw,
   Pencil,
   FileText,
+  MoreHorizontal,
 } from "lucide-react";
 import { extractPartsData } from "@/lib/utils/parts";
 import { extractFocusCommand, sanitizeFocusCommand } from "@/lib/parse-ai-focus";
 import PartsRecommendationTable from "../parts/PartsRecommendationTable";
 import { speakText, stopSpeaking } from "@/lib/browser-voice";
-import { getFollowUpChips } from "@/lib/chat-repair-loop";
+import {
+  getFollowUpChips,
+  selectConvergedFollowUps,
+} from "@/lib/chat-repair-loop";
 import HighRiskSafetyCallout from "./HighRiskSafetyCallout";
 import { formatAppTime } from "@/lib/format-app-date";
 import {
@@ -84,6 +88,7 @@ export default function MessageBubble({
     : null;
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const safetyHits: SafetyTopicHit[] = useMemo(() => {
     if (isUser || message.id === "welcome") return [];
@@ -103,12 +108,16 @@ export default function MessageBubble({
 
   const followUps = useMemo(() => {
     if (!isLastAssistant || !onQuickPrompt || isUser) return [];
-    return getFollowUpChips({
-      focusPart: focusCmd?.part ?? null,
-      assistantText: displayContent,
-      userText: priorUserText,
-      vehicle: vehicle ?? null,
-    }).slice(0, 3);
+    // Converged: max 2, safe-check path first; the first is the one primary CTA.
+    return selectConvergedFollowUps(
+      getFollowUpChips({
+        focusPart: focusCmd?.part ?? null,
+        assistantText: displayContent,
+        userText: priorUserText,
+        vehicle: vehicle ?? null,
+      }),
+      2,
+    );
   }, [
     isLastAssistant,
     onQuickPrompt,
@@ -118,6 +127,9 @@ export default function MessageBubble({
     priorUserText,
     vehicle,
   ]);
+
+  const hasMore =
+    !isUser && (isLastAssistant || Boolean(focusCmd && onOpenFocus));
 
   const handleReplay = () => {
     stopSpeaking();
@@ -250,17 +262,6 @@ export default function MessageBubble({
 
         {safetyHits.length > 0 && <HighRiskSafetyCallout hits={safetyHits} />}
 
-        {!isUser && focusCmd && (
-          <button
-            type="button"
-            onClick={() => onOpenFocus?.(focusCmd)}
-            className="mt-4 flex min-h-[44px] w-full touch-manipulation items-center justify-center gap-2 rounded-2xl border border-cyan-500/40 bg-cyan-500/10 py-3 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20"
-          >
-            <Crosshair className="h-4 w-4" />
-            Highlight {focusCmd.part} on the map
-          </button>
-        )}
-
         {!isUser && partsData && partsData.length > 0 && (
           <PartsRecommendationTable
             parts={partsData}
@@ -269,8 +270,64 @@ export default function MessageBubble({
           />
         )}
 
-        {!isUser && isLastAssistant && (
-          <div className="mt-3 flex flex-wrap justify-end gap-1.5">
+        {/*
+          Action convergence: the single primary CTA lives under the bubble
+          (first follow-up chip). Everything else — Copy, Retry, Shop Report,
+          Listen, map highlight — sits behind one "More" toggle.
+        */}
+        <div className="mt-2 flex items-center justify-end gap-2">
+          {hasMore && (
+            <button
+              type="button"
+              data-testid="chat-more-actions"
+              aria-expanded={moreOpen}
+              aria-controls={`msg-more-${message.id}`}
+              onClick={() => setMoreOpen((v) => !v)}
+              className="inline-flex min-h-[32px] items-center gap-1 rounded-full bg-slate-900/70 px-2.5 py-1 text-[11px] text-slate-400 transition hover:bg-slate-900 hover:text-slate-200"
+              title="More actions"
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+              More
+            </button>
+          )}
+          <span
+            className="text-[10px] text-slate-500"
+            suppressHydrationWarning
+          >
+            {formatAppTime(message.timestamp, i18n.language)}
+          </span>
+        </div>
+
+        {hasMore && moreOpen && (
+          <div
+            id={`msg-more-${message.id}`}
+            data-testid="chat-more-actions-row"
+            className="mt-2 flex flex-wrap justify-end gap-1.5"
+          >
+            {focusCmd && onOpenFocus && (
+              <button
+                type="button"
+                onClick={() => onOpenFocus(focusCmd)}
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-cyan-300 transition hover:bg-slate-900"
+                title={`Highlight ${focusCmd.part} on the map`}
+              >
+                <Crosshair className="h-3.5 w-3.5" />
+                Show {focusCmd.part} on map
+              </button>
+            )}
+            {isLastAssistant && onGenerateShopReport && (
+              <button
+                type="button"
+                onClick={onGenerateShopReport}
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-cyan-300 transition hover:bg-slate-900"
+                title={t("shopReport.openCta")}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                {t("shopReport.openShort")}
+              </button>
+            )}
+            {isLastAssistant && (
+            <>
             <button
               type="button"
               onClick={() => void handleCopy()}
@@ -284,10 +341,25 @@ export default function MessageBubble({
               )}
               {copied ? "Copied" : "Copy"}
             </button>
-            {onRegenerate && (
+            <button
+              type="button"
+              onClick={handleReplay}
+              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-slate-300 transition hover:bg-slate-900"
+              aria-label="Read this reply aloud"
+              title="Read aloud"
+            >
+              <Volume2 className="h-3.5 w-3.5" />
+              Listen
+            </button>
+            </>
+            )}
+            {isLastAssistant && onRegenerate && (
               <button
                 type="button"
-                onClick={onRegenerate}
+                onClick={() => {
+                  setMoreOpen(false);
+                  onRegenerate();
+                }}
                 className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-slate-300 transition hover:bg-slate-900"
                 title="Regenerate"
               >
@@ -295,46 +367,19 @@ export default function MessageBubble({
                 Retry
               </button>
             )}
-            {onGenerateShopReport && (
-              <button
-                type="button"
-                onClick={onGenerateShopReport}
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-cyan-300 transition hover:bg-slate-900"
-                title={t("shopReport.openCta")}
-              >
-                <FileText className="h-3.5 w-3.5" />
-                {t("shopReport.openShort")}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={handleReplay}
-              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-cyan-300 transition hover:bg-slate-900"
-              aria-label="Read this reply aloud"
-              title="Read aloud"
-            >
-              <Volume2 className="h-3.5 w-3.5" />
-              Listen
-            </button>
           </div>
         )}
-
-        <div
-          className="mt-2 text-right text-[10px] text-slate-500"
-          suppressHydrationWarning
-        >
-          {formatAppTime(message.timestamp, i18n.language)}
-        </div>
       </div>
       {followUps.length > 0 && (
         <div
           data-testid="chat-follow-up-chips"
-          className="mt-2 flex max-w-[92%] gap-2 overflow-x-auto overscroll-x-contain pb-1 pr-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:max-w-[80%]"
+          className="mt-2 flex max-w-[92%] flex-wrap items-center gap-2 pb-1 sm:max-w-[80%]"
         >
-          {followUps.map((chip) => (
+          {followUps.map((chip, i) => (
             <button
               key={chip.id}
               type="button"
+              data-testid={i === 0 ? "chat-primary-cta" : "chat-secondary-chip"}
               onClick={() => {
                 if (chip.playbookSlug && onOpenPlaybook) {
                   onOpenPlaybook(chip.playbookSlug);
@@ -342,7 +387,11 @@ export default function MessageBubble({
                 }
                 onQuickPrompt?.(chip.prompt);
               }}
-              className="shrink-0 whitespace-nowrap rounded-full border border-slate-600 bg-slate-800 px-3 py-2 text-[12px] text-slate-200 transition hover:border-cyan-500/50 hover:text-cyan-200"
+              className={
+                i === 0
+                  ? "min-h-[44px] touch-manipulation rounded-full bg-cyan-500 px-4 py-2 text-[13px] font-semibold text-black shadow-sm transition hover:bg-cyan-400"
+                  : "min-h-[36px] touch-manipulation rounded-full border border-slate-700 bg-transparent px-3 py-1.5 text-[12px] text-slate-400 transition hover:border-cyan-500/50 hover:text-cyan-200"
+              }
             >
               {chip.label}
             </button>

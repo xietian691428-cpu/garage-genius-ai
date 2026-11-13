@@ -77,8 +77,8 @@ export default function PricingPageClient({
               : play
                 ? t("billing.playPricingBody")
                 : iap || storeShell
-                  ? "Pro and Pro Heavy are auto-renewable Apple In-App Purchases. Payment is charged to your Apple ID at the price shown. Subscriptions renew unless canceled at least 24 hours before the end of the current period. Manage or cancel in Settings → Apple ID → Subscriptions. Restore purchases anytime from this page or Account."
-                  : `Every new account gets a ${TRIAL_DAYS}-day Pro Trial. Free covers basics; Pro unlocks voice, custom tags, annual reports, and higher limits. Cancel anytime.`}
+                  ? "Pro and Multi-Car are auto-renewable Apple In-App Purchases. Payment is charged to your Apple ID at the price shown. Subscriptions renew unless canceled at least 24 hours before the end of the current period. Manage or cancel in Settings → Apple ID → Subscriptions. Restore purchases anytime from this page or Account."
+                  : `Start free — $0, no card. New accounts also get a ${TRIAL_DAYS}-day Pro Trial. Pro adds hands-free voice, up to 5 cars, 30 photo checks a month and unlimited Shop Reports; Multi-Car is for up to 10 cars. Cancel anytime.`}
           </p>
           <SubscriptionLegalLinks className="mt-4 text-sm text-cyan-300/90" />
           {!storeShell && isTrialing && trialCountdown && (

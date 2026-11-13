@@ -61,22 +61,22 @@ export const TOKEN_RECHARGE_PACKS = [
     id: "pack_80k",
     tokens: 80_000,
     priceUsd: 5,
-    label: "80K Tokens",
-    description: "Light top-up for a few more diagnoses",
+    label: "Small top-up",
+    description: "A few more guided checks when you run out",
   },
   {
     id: "pack_170k",
     tokens: 170_000,
     priceUsd: 10,
-    label: "170K Tokens",
-    description: "Best for regular DIY weeks",
+    label: "Regular top-up",
+    description: "Best value for a busy DIY month",
   },
   {
     id: "pack_350k",
     tokens: 350_000,
     priceUsd: 20,
-    label: "350K Tokens",
-    description: "For heavy users mid-repair season",
+    label: "Large top-up",
+    description: "For big projects and multi-car households",
   },
 ] as const;
 

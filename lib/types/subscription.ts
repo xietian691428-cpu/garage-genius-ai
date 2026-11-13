@@ -77,8 +77,20 @@ export type PlanEntitlements = {
   shopReportsPerMonth: number | null;
   prioritySupport: boolean;
   highlight?: string;
+  /** One-line “who is this for” shown under the price (no internal quota jargon). */
+  tagline: string;
+  /**
+   * User-facing benefit bullets (outcome language). Internal token metering,
+   * hard caps and RAG depth stay in the fields above and are never shown here.
+   */
   features: string[];
 };
+
+/**
+ * Internal tier id `pro_heavy` is a stable key for Stripe / Apple / Google
+ * product ids and gates. Only this label is shown to users.
+ */
+export const PRO_HEAVY_DISPLAY_NAME = "Multi-Car";
 
 /** Active signup/Stripe trial shop-report cap (UTC calendar month). */
 export const TRIAL_SHOP_REPORTS_PER_MONTH = 30;
@@ -103,17 +115,16 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
     playbookRunsPerMonth: 5,
     shopReportsPerMonth: 3,
     prioritySupport: false,
+    tagline: "Try guided troubleshooting on one car — $0, no card.",
     features: [
-      "15k tokens / month",
-      "1 vehicle",
-      "Dashboard + basic AI chat",
+      "Guided AI chat — enough to try it on your car",
+      "1 vehicle in My Garage",
       "3 photo analyses / month",
       "US VIN decode + recall education",
       "OBD code coaching (not a diagnosis)",
       "5 coach playbook starts / 30 days",
       "3 shop reports / calendar month",
       "Parts inventory (basic)",
-      "Text + photo coaching",
       "Quick vehicle snapshot PDF",
     ],
   },
@@ -137,25 +148,24 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
     shopReportsPerMonth: null,
     prioritySupport: false,
     highlight: "Most popular",
+    tagline: "For regular weekend DIY on up to 5 cars.",
     features: [
-      "150k tokens / month (cap 500k)",
+      "Everyday AI chat — about 10× the Free monthly allowance",
       "Up to 5 vehicles",
       "30 photo analyses / month",
       "US VIN decode + NHTSA recall education",
       "OBD code coaching (education, not a guaranteed repair)",
       "Unlimited coach playbooks",
       "Unlimited shop reports",
+      "Hands-free voice coaching",
       "Custom profile tags (Modified, Tow, Classic…)",
-      "Voice coaching (mic + auto-read)",
-      "Standard RAG knowledge depth",
-      "Maintenance history",
-      "Annual vehicle health report",
-      "Token top-ups available",
+      "Maintenance history + annual health report",
+      "Optional top-ups if you run out mid-month",
     ],
   },
   pro_heavy: {
     tier: "pro_heavy",
-    label: "Pro Heavy",
+    label: PRO_HEAVY_DISPLAY_NAME,
     priceMonthly: 19.99,
     priceYearly: 159,
     includedTokens: TOKEN_PLAN_LIMITS.pro_heavy.includedMonthly,
@@ -172,20 +182,20 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionTier, PlanEntitlements> = {
     playbookRunsPerMonth: null,
     shopReportsPerMonth: null,
     prioritySupport: true,
-    highlight: "For power DIYers",
+    highlight: "For multi-car households",
+    tagline: "For households and garages with up to 10 cars.",
     features: [
-      "400k tokens / month (cap 1M)",
+      "Room for every car — more than 2.5× Pro's monthly AI allowance",
       "Up to 10 vehicles",
       "80 photo analyses / month",
       "US VIN decode + NHTSA recall education",
       "OBD code coaching (education, not a guaranteed repair)",
       "Unlimited coach playbooks",
       "Unlimited shop reports",
-      "Custom profile tags + deep RAG",
-      "Unlimited-feel voice coaching",
-      "Annual vehicle health report",
+      "Hands-free voice coaching with the highest limits",
+      "Fuller answers on complex jobs",
+      "Custom profile tags + annual health report",
       "Priority support",
-      "Best for multi-car households",
     ],
   },
 };

@@ -322,10 +322,10 @@ export default function SettingsPanel({
               : play
                 ? t("billing.playBody")
                 : iap
-                  ? "Pro and Pro Heavy unlock via Apple In-App Purchase. Entitlements sync to this signed-in account after verification."
+                  ? "Pro and Multi-Car unlock via Apple In-App Purchase. Entitlements sync to this signed-in account after verification."
                   : isTrialing
                     ? "Enjoy full Pro features during your trial. Subscribe before it ends to keep voice coaching and higher limits."
-                    : "Free includes limited monthly help. Pro unlocks voice coaching, more vehicles, and fuller repair answers. Heavy adds the highest limits."}
+                    : "Free: 1 car and 3 photo checks a month. Pro: up to 5 cars, 30 photo checks, hands-free voice and unlimited Shop Reports. Multi-Car: up to 10 cars and the highest limits."}
           </p>
           {billingMode !== "native_blocked" &&
             (play ? (
@@ -445,7 +445,7 @@ export default function SettingsPanel({
               href="/pricing"
               className="mt-2 block text-center text-xs text-cyan-400 hover:underline"
             >
-              Compare Pro Heavy
+              Compare Multi-Car (up to 10 cars)
             </Link>
           )}
         </section>
@@ -457,7 +457,7 @@ export default function SettingsPanel({
             href="/recharge"
             className="block rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-center text-sm font-medium text-cyan-300 transition hover:border-cyan-500/50"
           >
-            Buy more tokens
+            Add AI top-up
           </Link>
         )}
 

@@ -68,6 +68,30 @@ function unfinishedHintFromMessages(
   return null;
 }
 
+/** Mental model: My Garage → Describe issue → Safe check plan → Save / Hand off. */
+function HomePathStrip() {
+  const steps = [
+    "My Garage",
+    "Describe issue",
+    "Safe check plan",
+    "Save / Hand off",
+  ];
+  return (
+    <ol
+      data-testid="home-path-strip"
+      aria-label="How Garage Genius works"
+      className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-[11px] text-slate-500"
+    >
+      {steps.map((s, i) => (
+        <li key={s} className="flex items-center gap-1.5">
+          <span className={i === 0 ? "font-medium text-slate-300" : ""}>{s}</span>
+          {i < steps.length - 1 ? <span aria-hidden>→</span> : null}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 export default function HomeHub({
   vehicles,
   vehicle,
@@ -92,6 +116,16 @@ export default function HomeHub({
   const [shopOpen, setShopOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const maintRef = useRef<HTMLElement | null>(null);
+  // Secondary modules (maintenance, common codes, recent activity) stay
+  // collapsed so they never compete with the single primary CTA above.
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const revealMaintenance = useCallback(() => {
+    setMoreOpen(true);
+    window.setTimeout(() => {
+      maintRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+  }, []);
 
   const refreshPredictive = useCallback(async () => {
     if (!vehicle) {
@@ -253,7 +287,7 @@ export default function HomeHub({
         setShopOpen(true);
         break;
       case "view_maintenance":
-        maintRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        revealMaintenance();
         break;
       case "predictive_howto":
         if (extra?.coachSlug) onOpenCoach(extra.coachSlug);
@@ -329,12 +363,7 @@ export default function HomeHub({
         </p>
       ) : null}
 
-      {health ? (
-        <VehicleHealthSnapshot
-          snapshot={health}
-          onPrimary={() => runAction(health.primaryCta.action)}
-        />
-      ) : null}
+      {health ? <VehicleHealthSnapshot snapshot={health} /> : null}
 
       {nextAction ? (
         <NextRecommendedAction
@@ -346,14 +375,13 @@ export default function HomeHub({
             runAction(nextAction.primary.action, card);
           }}
           onSecondary={() => {
-            maintRef.current?.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
-            });
+            revealMaintenance();
             onOpenCoach();
           }}
         />
       ) : null}
+
+      <HomePathStrip />
 
       <QuickActionsRow
         showObdConnect={showObd}
@@ -364,6 +392,33 @@ export default function HomeHub({
         onObdSettings={onOpenSettings}
       />
 
+      <section data-testid="home-more">
+        <button
+          type="button"
+          data-testid="home-more-toggle"
+          aria-expanded={moreOpen}
+          aria-controls="home-more-panel"
+          onClick={() => setMoreOpen((v) => !v)}
+          className="flex min-h-[48px] w-full items-center justify-between rounded-2xl border border-slate-800 bg-[#111827]/60 px-4 text-left text-sm text-slate-300 hover:border-slate-700"
+        >
+          <span>
+            <span className="font-medium text-slate-200">More for this car</span>
+            <span className="ml-2 text-xs text-slate-500">
+              Maintenance
+              {predictive.length > 0 ? ` (${predictive.length})` : ""} · Common
+              codes · Recent activity
+            </span>
+          </span>
+          <span aria-hidden className="text-slate-500">
+            {moreOpen ? "−" : "+"}
+          </span>
+        </button>
+
+        <div
+          id="home-more-panel"
+          hidden={!moreOpen}
+          className="mt-5 space-y-5"
+        >
       <section data-testid="home-us-code-chips">
         <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
           Common US codes
@@ -442,6 +497,9 @@ export default function HomeHub({
       </div>
 
       <RecentActivitySection items={recent} />
+        </div>
+      </section>
+
       <HomeTrustStrip />
 
       <DtcCodeModal

@@ -314,6 +314,37 @@ export function getFollowUpChips(options?: {
   }).slice(0, 3);
 }
 
+/**
+ * Lower rank = closer to the safe-check path. Parts / ranking chips come last
+ * so the primary CTA never nudges a purchase before a check is done.
+ */
+const FOLLOW_UP_RANK: Record<string, number> = {
+  "check-done": 1,
+  "dtc-explain": 1,
+  top3: 2,
+  "need-parts": 3,
+};
+
+/**
+ * Converge follow-up chips under a reply: max `limit` (default 2), ordered
+ * safety-check-first. First entry is rendered as the single primary CTA.
+ * Pure UI selection — does not alter any chip prompt or answer content.
+ */
+export function selectConvergedFollowUps(
+  chips: StarterChip[],
+  limit = 2,
+): StarterChip[] {
+  return chips
+    .map((chip, index) => ({
+      chip,
+      index,
+      rank: FOLLOW_UP_RANK[chip.id] ?? 0,
+    }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .slice(0, limit)
+    .map((x) => x.chip);
+}
+
 export function formatMaintenanceHistoryForPrompt(
   records: MaintenanceRecord[],
   options?: {

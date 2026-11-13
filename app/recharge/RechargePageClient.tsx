@@ -74,16 +74,16 @@ export default function RechargePageClient({
               ? t("billing.playPricingTitle")
               : storeSafe
                 ? "AI quota"
-                : "Buy More Tokens"}
+                : "Add AI top-up"}
         </h1>
         <p className="mt-2 text-sm text-slate-400">
           {iap
-            ? "Token packs are not sold in the iOS app. Upgrade to Pro or Pro Heavy with Apple In-App Purchase."
+            ? "AI top-ups are not sold in the iOS app. Upgrade to Pro or Multi-Car with Apple In-App Purchase."
             : play
               ? t("billing.playPricingBody")
               : storeSafe
                 ? NATIVE_NO_IAP_MESSAGE
-                : "Top up when your monthly included quota runs out. Pricing follows PROJECT.md (~$0.06–$0.08 per 1k with volume packs)."}
+                : "Out of AI chat for the month? Add a one-time top-up — it stacks on your plan and is used after your monthly allowance."}
         </p>
 
         <div className="mt-6">
@@ -113,7 +113,6 @@ export default function RechargePageClient({
         {!storeSafe && (
         <div className="mt-8 grid gap-4">
           {TOKEN_RECHARGE_PACKS.map((option) => {
-            const per1k = (option.priceUsd / (option.tokens / 1000)).toFixed(3);
             const isLoading = loading === String(option.tokens);
             return (
               <div
@@ -127,9 +126,6 @@ export default function RechargePageClient({
                     </h3>
                     <p className="mt-1 text-sm text-slate-400">
                       {option.description}
-                    </p>
-                    <p className="mt-2 text-xs text-slate-500">
-                      ≈ ${per1k} / 1k tokens
                     </p>
                   </div>
                   <div className="sm:text-right">

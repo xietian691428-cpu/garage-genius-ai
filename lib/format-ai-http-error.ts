@@ -63,7 +63,7 @@ export function formatAiHttpError(input: {
       const raw =
         server ||
         input.fallback ||
-        "This month's AI allowance is used up. Upgrade for a larger budget.";
+        "This month's AI allowance is used up. Upgrade for more AI chat.";
       return formatLimitedQuotaReply(raw);
     }
     return (

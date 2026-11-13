@@ -4,7 +4,8 @@ export default function HomeTrustStrip() {
       data-testid="home-trust-strip"
       className="text-center text-[11px] leading-relaxed text-slate-600"
     >
-      Reports are educational — always verify with a qualified technician.
+      Educational guidance — not OEM-certified. Verify specs in your manual and
+      with a qualified technician.
     </p>
   );
 }

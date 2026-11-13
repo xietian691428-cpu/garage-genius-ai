@@ -48,7 +48,7 @@ export default function SubscriptionsTermsList({
             Portal (Settings → Manage billing).
           </li>
           <li>
-            Token packs and plan limits (monthly tokens, photo analyses, and
+            AI top-ups and plan limits (monthly AI allowance, photo analyses, and
             vehicle caps) are described on Pricing / Recharge. Fees
             are generally non-refundable except where required by law or our refund
             policy / support process.

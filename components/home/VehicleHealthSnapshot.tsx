@@ -2,7 +2,11 @@ import type { HealthSnapshotModel } from "@/lib/home-health";
 
 type Props = {
   snapshot: HealthSnapshotModel;
-  onPrimary: () => void;
+  /**
+   * Optional quiet text link. Home passes nothing so the first screen has a
+   * single primary CTA (Next recommended action) — this card is status only.
+   */
+  onPrimary?: () => void;
 };
 
 const KIND_STYLE: Record<
@@ -29,36 +33,38 @@ export default function VehicleHealthSnapshot({ snapshot, onPrimary }: Props) {
   return (
     <section
       data-testid="home-health-snapshot"
-      className={`rounded-3xl border p-5 sm:p-6 ${style.ring}`}
+      className={`rounded-3xl border p-4 sm:p-5 ${style.ring}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             Vehicle health
           </p>
-          <h2 className="mt-1 text-xl font-semibold text-white sm:text-2xl">
+          <h2 className="mt-1 text-lg font-semibold text-white sm:text-xl">
             <span
               className={`mr-2 inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${style.badge}`}
             >
               {snapshot.title}
             </span>
           </h2>
-          <p className="mt-3 text-base leading-relaxed text-slate-300">
+          <p className="mt-2 text-sm leading-relaxed text-slate-300 sm:text-base">
             {snapshot.subtitle}
           </p>
-          <p className="mt-3 text-sm text-slate-500">
+          <p className="mt-2 text-xs text-slate-500">
             {snapshot.lastUpdatedLabel}
           </p>
         </div>
       </div>
-      <button
-        type="button"
-        data-testid="home-health-primary"
-        onClick={onPrimary}
-        className="mt-5 inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-cyan-500 px-4 text-base font-semibold text-black hover:bg-cyan-400 sm:w-auto"
-      >
-        {snapshot.primaryCta.label}
-      </button>
+      {onPrimary ? (
+        <button
+          type="button"
+          data-testid="home-health-primary"
+          onClick={onPrimary}
+          className="mt-3 min-h-[44px] text-sm font-medium text-cyan-300 hover:underline"
+        >
+          {snapshot.primaryCta.label}
+        </button>
+      ) : null}
     </section>
   );
 }

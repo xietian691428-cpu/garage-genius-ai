@@ -97,7 +97,7 @@ export function TrialEndedModal({ open, onClose }: TrialEndedModalProps) {
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-400">
           You&apos;re back on Free — still great for basics, but voice coaching,
-          multi-vehicle, and deeper RAG are Pro. Upgrade anytime to pick up where
+          up to 5 cars, and unlimited Shop Reports are Pro. Upgrade anytime to pick up where
           you left off.
         </p>
 

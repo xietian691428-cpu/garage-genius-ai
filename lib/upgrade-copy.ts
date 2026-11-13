@@ -36,7 +36,7 @@ export function upgradeCopy(reason: UpgradeReason): {
     "Unlimited coach playbooks",
     "Annual vehicle health report",
     "Custom profile tags + maintenance history",
-    "Voice coaching + more tokens",
+    "Hands-free voice coaching + far more AI chat",
   ];
 
   switch (reason) {
@@ -96,14 +96,14 @@ export function upgradeCopy(reason: UpgradeReason): {
       return {
         title: "AI quota running low",
         message:
-          "Upgrade to Pro for a larger monthly AI budget and 30 photo analyses / month — or wait until next month.",
+          "Upgrade to Pro for about 10× more AI chat and 30 photo analyses / month — or wait until next month.",
         bullets: commonBullets,
       };
     case "vehicles":
       return {
         title: "Vehicle limit reached",
         message:
-          "Free includes 1 vehicle. Pro supports up to 5 so your whole garage stays covered.",
+          "Free includes 1 vehicle. Pro supports up to 5, and Multi-Car up to 10 — so your whole garage stays covered.",
         bullets: commonBullets,
       };
     case "shop_report":
@@ -182,7 +182,7 @@ export function nativeAccountLimitsCopy(reason: UpgradeReason): {
       return {
         title,
         message:
-          "This account’s monthly AI quota is used up. Extra quota is not sold in this app.",
+          "This account’s monthly AI allowance is used up. Extra top-ups are not sold in this app.",
         bullets,
       };
     case "vehicles":

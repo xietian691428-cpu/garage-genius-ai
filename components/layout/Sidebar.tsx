@@ -70,8 +70,8 @@ export default function Sidebar({ activeTab }: Props) {
       <div className="space-y-3 border-t border-slate-800 p-4">
         <TokenDisplay />
         <p className="px-1 text-[11px] text-slate-500">
-          Quotas: Free 15k tokens · 3 photos · Pro 150k · 30 photos · Heavy
-          400k · 80 photos / month.
+          Free: 1 car · 3 photo checks / month. Pro: 5 cars · 30 photo checks.
+          Multi-Car: 10 cars · 80 photo checks.
         </p>
       </div>
     </div>

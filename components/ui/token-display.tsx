@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useTokenUsage } from "@/hooks/useTokenUsage";
 import { hideWebCheckoutUi } from "@/lib/native-platform";
+import { PRO_HEAVY_DISPLAY_NAME } from "@/lib/types/subscription";
 
 const PLAN_LABEL: Record<string, string> = {
   free: "Free",
   pro: "Pro",
-  pro_heavy: "Pro Heavy",
+  pro_heavy: PRO_HEAVY_DISPLAY_NAME,
 };
 
 export default function TokenDisplay() {
@@ -24,7 +25,7 @@ export default function TokenDisplay() {
   return (
     <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4 text-sm">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-slate-400">Monthly Tokens</span>
+        <span className="text-slate-400">Monthly AI allowance</span>
         <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-cyan-300">
           {usage.unlimited ? "Test unlimited" : planLabel}
         </span>
@@ -36,11 +37,11 @@ export default function TokenDisplay() {
             ? "…"
             : usage.unlimited
               ? "Unlimited"
-              : `${usage.used.toLocaleString()} / ${usage.limit.toLocaleString()}`}
+              : `${Math.round(usage.percentLeft)}% left this month`}
         </span>
         {!usage.unlimited && usage.bonusRemaining > 0 && (
           <span className="text-xs font-normal text-emerald-400">
-            +{usage.bonusRemaining.toLocaleString()} top-up
+            + top-up balance
           </span>
         )}
       </div>
@@ -63,7 +64,7 @@ export default function TokenDisplay() {
             <>
               {" "}
               <Link href="/recharge" className="underline hover:text-red-200">
-                Buy more tokens
+                Add AI top-up
               </Link>
             </>
           )}
@@ -90,7 +91,7 @@ export default function TokenDisplay() {
             <>
               Running low —{" "}
               <Link href="/recharge" className="underline hover:text-amber-300">
-                top up
+                add a top-up
               </Link>{" "}
               or upgrade.
             </>
@@ -98,8 +99,8 @@ export default function TokenDisplay() {
         </p>
       ) : !usage.signedIn ? (
         <p className="mt-2 text-xs text-slate-500">
-          Sign in to track usage across devices. Free plan includes{" "}
-          {usage.limit.toLocaleString()} tokens / month.
+          Sign in to track your allowance across devices. Free includes a
+          small monthly AI allowance.
         </p>
       ) : hideWebCheckoutUi() ? (
         <p className="mt-2 text-xs text-slate-500">
@@ -110,7 +111,7 @@ export default function TokenDisplay() {
       ) : (
         <p className="mt-2 text-xs text-slate-500">
           <Link href="/recharge" className="text-cyan-400 hover:underline">
-            Buy more tokens
+            Add AI top-up
           </Link>
         </p>
       )}

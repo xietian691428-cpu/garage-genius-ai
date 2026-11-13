@@ -177,7 +177,7 @@ export default function CameraCapture({
       className="fixed inset-0 z-[70] flex flex-col bg-black"
       role="dialog"
       aria-modal="true"
-      aria-label="Take a photo for AI diagnosis"
+      aria-label="Take a photo for a guided check"
     >
       {/* Top bar */}
       <div className="flex items-center justify-between gap-3 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">

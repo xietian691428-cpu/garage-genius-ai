@@ -372,7 +372,7 @@ export default function UpgradeModal({
                 >
                   {busy === "heavy_y"
                     ? "Purchasing…"
-                    : `Subscribe Heavy annual — ${heavyYearly.label}${heavyYearly.fromStoreKit ? "" : "/yr"}`}
+                    : `Subscribe Multi-Car annual — ${heavyYearly.label}${heavyYearly.fromStoreKit ? "" : "/yr"}`}
                 </button>
                 <button
                   type="button"

@@ -226,7 +226,7 @@ export const NATIVE_WEBSITE_MANAGE_HINT =
 export const NATIVE_TERMS_BILLING_HEADING = "5. Accounts & billing";
 
 export const NATIVE_TERMS_BILLING_BULLETS = [
-  "In the iOS app, Pro and Pro Heavy are sold as auto-renewable Apple In-App Purchases.",
+  "In the iOS app, Pro and Multi-Car are sold as auto-renewable Apple In-App Purchases.",
   "On the website, paid plans are billed through Stripe.",
   "Account entitlements follow the signed-in Garage Genius account after Apple or Stripe verification.",
   "Deleting your account cancels access immediately; Apple subscriptions are managed in Apple ID settings.",
@@ -234,7 +234,7 @@ export const NATIVE_TERMS_BILLING_BULLETS = [
 
 /** Play store WebView — Google Play subscriptions, no website checkout. */
 export const NATIVE_TERMS_BILLING_BULLETS_ANDROID = [
-  "In this Android app, Pro and Pro Heavy are sold as auto-renewing Google Play subscriptions.",
+  "In this Android app, Pro and Multi-Car are sold as auto-renewing Google Play subscriptions.",
   "Payment is charged by Google Play. Manage or cancel in Google Play subscription settings.",
   "Account entitlements follow the signed-in Garage Genius account after Google Play verification.",
   "Deleting your account cancels access to Garage Genius data we store for you. Cancel the Play subscription separately in Google Play.",
