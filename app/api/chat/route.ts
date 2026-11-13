@@ -620,6 +620,7 @@ export async function POST(request: NextRequest) {
         vehicleId: currentVehicle.id,
         query: planned.query,
         limit: 4,
+        intent: planned.intent,
       });
     } catch (err) {
       console.warn("[/api/chat] private manual retrieve skipped", {
@@ -1091,6 +1092,40 @@ export async function POST(request: NextRequest) {
       { userId: user.id },
     );
 
+    const { classifyChatMiss, missFeedbackMetadata, logMissFeedback } =
+      await import("@/lib/pilot/miss-feedback");
+    const { formatGarageProfileFluidsForPrompt } = await import(
+      "@/lib/vehicle-manual-frame"
+    );
+    const garageFluidsPresent = Boolean(
+      formatGarageProfileFluidsForPrompt({
+        oilCapacity: currentVehicle.oilCapacity,
+        oilViscosity: currentVehicle.oilViscosity,
+        oilCapacitySource: currentVehicle.oilCapacitySource,
+        oilViscositySource: currentVehicle.oilViscositySource,
+        coolantSpecText: currentVehicle.coolantSpecText,
+        coolantCapacityText: currentVehicle.coolantCapacityText,
+        coolantSpecSource: currentVehicle.coolantSpecSource,
+        coolantCapacitySource: currentVehicle.coolantCapacitySource,
+        brakeFluidSpecText: currentVehicle.brakeFluidSpecText,
+        brakeFluidSpecSource: currentVehicle.brakeFluidSpecSource,
+        atfSpecText: currentVehicle.atfSpecText,
+        atfSpecSource: currentVehicle.atfSpecSource,
+        transmissionKind: currentVehicle.transmissionKind,
+      }).trim(),
+    );
+    const missPreview = classifyChatMiss({
+      userText: userPlainForLang,
+      rawReply: reply,
+      specCtx,
+      hadGarageFluids: garageFluidsPresent,
+      crossVehicleSuspected: vehicleThreadReset === true,
+      userId: user.id,
+      vehicleYmm: `${currentVehicle.year} ${currentVehicle.make} ${currentVehicle.model}`,
+      route: "chat",
+      appVersion: process.env.npm_package_version || "1.0.0",
+    });
+
     const resolvedPlaybook =
       (typeof playbookSlug === "string" && playbookSlug.trim()) ||
       (typeof coachSlug === "string" && coachSlug.trim()) ||
@@ -1121,6 +1156,7 @@ export async function POST(request: NextRequest) {
           perceptionDisabled: Boolean(visionPrep?.disabled),
           ...specGapMetadata(classifySpecGapIntents(userPlainForLang)),
           ...safetyEventsMetadata(safetyEvents),
+          ...missFeedbackMetadata(missPreview),
         },
       },
       "[/api/chat]",
@@ -1172,6 +1208,35 @@ export async function POST(request: NextRequest) {
       enforceNoCjkAssistantReply(gatedContent, replyLangHint),
       productAssistantLanguage(replyLangHint),
     );
+
+    // Production miss feedback (desensitized) — fail-open; never blocks reply.
+    try {
+      const miss = classifyChatMiss({
+        userText: userPlainForLang,
+        rawReply: reply,
+        gatedReply: finalContent,
+        specCtx,
+        hadGarageFluids: garageFluidsPresent,
+        crossVehicleSuspected: vehicleThreadReset === true,
+        userId: user.id,
+        vehicleYmm: `${currentVehicle.year} ${currentVehicle.make} ${currentVehicle.model}`,
+        route: "chat",
+        appVersion: process.env.npm_package_version || "1.0.0",
+      });
+      if (miss) {
+        logMissFeedback(miss);
+        const { enqueueMissFeedback } = await import(
+          "@/lib/pilot/miss-feedback-store"
+        );
+        void enqueueMissFeedback(miss);
+      }
+    } catch (missErr) {
+      console.warn("[/api/chat] miss-feedback skipped", {
+        message:
+          missErr instanceof Error ? missErr.message : String(missErr),
+      });
+    }
+
     const suggestedFocus = resolveFocusCommand(finalContent, ragHits);
 
     if (chatThreadId) {

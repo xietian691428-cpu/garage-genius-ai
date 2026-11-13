@@ -1,7 +1,9 @@
 # Permanent regression pack (W1–W6)
 
 CI: `npm test` (`vitest run`). Safety-seed subset: `npm run test:safety-seeds`.
-Gold cases (7 families — overheat / soft brake / P0420 / P0300 / no-anchor oil / CVT≠ATF / cross-vehicle): `npm run test:gold-cases` (`content/pilot/gold-cases.json` + `lib/pilot/gold-case-score.ts`).
+Gold cases (13 families — … + manual table oil cite / vision low-trust no-invent / fuzzy soft brake / fuzzy misfire shake): `npm run test:gold-cases` (`content/pilot/gold-cases.json` + `lib/pilot/gold-case-score.ts`).
+
+Miss feedback (production 错题回流 classify → desensitize → gold draft): `npm run test:miss-feedback` (`lib/pilot/miss-feedback.ts`). Admin: `/admin/ops/miss-feedback`. Migration: `064_miss_feedback_queue.sql`. Promote is **manual** merge into `gold-cases.json` then re-run `test:gold-cases`.
 Playwright smoke exists (`e2e/p1-smoke.spec.ts`, `e2e/chat-shop-report.spec.ts`) — not required for this pack.
 
 **Freeze:** changes to `lib/safety-topics.ts`, `lib/spec-discipline.ts`, `lib/chat-vehicle-gate.ts`, or `lib/pilot/safety-observe-phrases.ts` must keep the rows below green.
@@ -23,7 +25,7 @@ Playwright smoke exists (`e2e/p1-smoke.spec.ts`, `e2e/chat-shop-report.spec.ts`)
 | W6 | raised + stay-under 矛盾; observe 无 VIN | `tests/safety-topics.test.ts`, `tests/safety-observe-events.test.ts` |
 | Funnel | US 高频码 chips / 空车库文案 | `tests/us-completion-funnel.test.ts`, `tests/chat-repair-loop.test.ts` |
 | Manual | 私有手册意图检索 / 同框 / 机油确认 | `tests/vehicle-manuals.test.ts`, `tests/vehicle-manual-frame.test.ts` |
-| Gold | 过热蒸汽 / 软刹 / P0420 / P0300 / 无锚点油量 / CVT≠ATF / 跨车隔离 | `tests/gold-cases.test.ts`, `content/pilot/gold-cases.json` |
+| Gold | 过热蒸汽 / 软刹 / P0420 / P0300 / 无锚点油量 / CVT≠ATF / 跨车隔离 / 有锚点机油引用 / 有锚点冷却+制动液引用 / 模糊软刹 / 模糊发抖失火 | `tests/gold-cases.test.ts`, `content/pilot/gold-cases.json` |
 
 **Gold dimensions (pass/fail):** facts · safety_stop · no_replace_now · source_citation · no_invented_specs. Failures print `✗ dimension: reason` per case.
 

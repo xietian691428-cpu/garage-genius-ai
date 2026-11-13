@@ -26,12 +26,21 @@
       "brake hydraulic",
       "master cylinder rebuild",
       "soft brake pedal",
+      "soft pedal",
       "spongy pedal",
+      "spongy brake",
+      "mushy",
+      "brakes feel soft",
+      "brakes feel mushy",
+      "brakes feel spongy",
+      "soft brakes",
+      "pedal to the floor",
+      "pedal sinks",
       "brake light on soft",
       "brake warning light",
       "abs deep"
     ],
-    "summary_en": "Opening brake hydraulic lines, DIY bleeding, or deep ABS module work is stop-DIY — use a qualified shop. Soft/spongy pedal or brake warning light → do not drive; tow / pro inspection. Observe-only: cold reservoir sight level, warning lights, recent pad work.",
+    "summary_en": "Opening brake hydraulic lines, DIY bleeding, or deep ABS module work is stop-DIY — use a qualified shop. Soft/spongy pedal or brake warning light → do not drive; tow / pro inspection. Observe-only: cold reservoir sight level, warning lights, recent pad work. Never Replace master cylinder now.",
     "owner_prep_en": "Record ABS/brake warning behavior, soft-pedal vs firm, cold reservoir sight level if visible, and any recent pad/rotor/fluid work. Do not open lines or bleed at home."
   },
   {
@@ -41,13 +50,18 @@
       "remove coolant cap while hot",
       "hot cooling system pressurized",
       "overheating steam",
+      "overheating with steam",
       "overheating on the",
       "steam from under",
       "steam from hood",
       "steam from the hood",
-      "gauge in red"
+      "white smoke from the hood",
+      "white smoke from under",
+      "gauge in red",
+      "temp gauge in red",
+      "running hot"
     ],
-    "summary_en": "Never open a pressurized hot cooling system. Stop DIY until fully cool; overheating with steam → safe pull-over / tow — not under-hood heroics or limping on the highway.",
+    "summary_en": "Never open a pressurized hot cooling system. Stop DIY until fully cool; overheating with steam / white smoke from the hood → safe pull-over / tow — not under-hood heroics or limping on the highway. Never Replace water pump now from steam alone.",
     "owner_prep_en": "Note temperature gauge behavior and any coolant smell/steam after cool-down only. Do not keep driving with steam."
   },
   {
@@ -59,7 +73,7 @@
       "sulfation boil battery"
     ],
     "summary_en": "Do not teach dangerous jump-pack placement near SRS/airbag lines or boil-out sulfation DIY. Prefer a qualified tech for deep electrical work.",
-    "owner_prep_en": "Note no-crank vs slow-crank vs clicks, whether lights dim, and any recent battery work."
+    "owner_prep_en": "Note no-crank vs slow-crank vs clicks, whether lights dim, and any recent battery work. Never Replace battery now from a click alone."
   },
   {
     "id": "hv_orange_hybrid",

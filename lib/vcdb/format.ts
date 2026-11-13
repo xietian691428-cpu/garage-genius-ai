@@ -154,10 +154,15 @@ export function formatVehicleConfigCard(vehicle: VehicleInfo): string {
     const fromManual =
       vehicle.oilCapacitySource === "user_manual_confirmed" ||
       vehicle.oilViscositySource === "user_manual_confirmed";
+    const fromEntered =
+      vehicle.oilCapacitySource === "user_entered" ||
+      vehicle.oilViscositySource === "user_entered";
     lines.push(
       fromManual
-        ? `- Engine oil: ${chatOilLine} (Garage profile (from your manual) — verify on the under-hood fill cap; confirm the PDF matches this vehicle)`
-        : `- Engine oil: ${chatOilLine} (garage profile — verify on the under-hood fill cap / owner's manual; garage hand-fill can be wrong)`,
+        ? `- Engine oil: ${chatOilLine} (Garage profile (from your manual) / Your confirmed manual spec — verify on the under-hood fill cap; confirm the PDF matches this vehicle; not OEM-certified by Garage Genius)`
+        : fromEntered
+          ? `- Engine oil: ${chatOilLine} (Garage profile (you entered) — verify on the under-hood fill cap / owner's manual; garage hand-fill can be wrong)`
+          : `- Engine oil: ${chatOilLine} (garage lookup / unverified — not a Chat anchor; tell the owner to check the fill cap / owner's manual; do not treat as confirmed)`,
     );
   }
 
@@ -182,8 +187,15 @@ export function formatVehicleConfigCard(vehicle: VehicleInfo): string {
     `Respect the Market / country version above: owner manuals, lighting, emissions equipment, fuel labeling (AKI vs RON), units (mi/mph vs km/h), and some powertrains differ by market. Prefer ${market}-spec guidance; if uncertain, say to confirm in the local owner's manual.`,
   );
   if (fluids.fuelGrade || chatOilLine) {
+    const ownerOil =
+      vehicle.oilCapacitySource === "user_manual_confirmed" ||
+      vehicle.oilViscositySource === "user_manual_confirmed" ||
+      vehicle.oilCapacitySource === "user_entered" ||
+      vehicle.oilViscositySource === "user_entered";
     lines.push(
-      `When giving oil-change or fuel guidance, cite only garage-saved Fuel / Engine oil values above and name that source; still require the owner to verify capacity and viscosity on the under-hood fill cap / label and in the owner's manual. Curated lookup oil figures are not Chat anchors.`,
+      ownerOil
+        ? `When giving oil-change or fuel guidance, MUST use the garage-saved Fuel / Engine oil values above, name that source (Garage profile (from your manual) / Your confirmed manual spec, or Garage profile (you entered)), and still require under-hood fill-cap verify. Curated/vcdb lookup oil is not a Chat anchor.`
+        : `Engine oil on this card is lookup/unverified — not a Chat anchor. Tell the owner to check the fill cap / owner's manual; do not invent quarts or treat lookup as confirmed.`,
     );
   } else {
     lines.push(

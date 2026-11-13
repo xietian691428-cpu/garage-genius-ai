@@ -314,6 +314,31 @@ describe("oil extract → confirm contract", () => {
       }),
     ).toBe("");
   });
+
+  it("user_entered oil is injected with Garage profile (you entered) cite", () => {
+    const block = formatGarageProfileFluidsForPrompt({
+      oilCapacity: "4.4 qt with filter",
+      oilCapacitySource: "user_entered",
+      oilViscosity: "0W-20",
+      oilViscositySource: "user_entered",
+    });
+    expect(block).toMatch(/\[GARAGE_PROFILE_FLUIDS\]/);
+    expect(block).toMatch(/oil_capacity: 4\.4 qt with filter/);
+    expect(block).toMatch(/Garage profile \(you entered\)/);
+    expect(block).toMatch(/MUST USE/);
+    expect(block).not.toMatch(/source=user_manual_confirmed$/m);
+  });
+
+  it("vcdb oil does not unlock buildManualSpecAnchors", () => {
+    const ctx = buildManualSpecAnchors({
+      retrievedHits: [],
+      garage: {
+        oilCapacity: "4.8 qt",
+        oilCapacitySource: "vcdb",
+      },
+    });
+    expect(ctx.oilCapacity).toBeFalsy();
+  });
 });
 
 describe("coolant extract → confirm contract", () => {

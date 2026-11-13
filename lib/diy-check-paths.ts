@@ -5,6 +5,10 @@
 
 import type { VehicleInfo } from "@/lib/types/chat";
 import type { CoachPlaybookSlug } from "@/lib/coach-scenarios/catalog";
+import {
+  rewriteDiagnosticQuery,
+  rerankDiyCheckPaths,
+} from "@/lib/diagnostic-query-rewrite";
 import { maskParkingBrakeMentions } from "@/lib/safety-topics";
 
 export type DiyPathChip = {
@@ -15,6 +19,10 @@ export type DiyPathChip = {
 };
 
 export type DiyCheckPathId =
+  | "soft_brake"
+  | "overheat_steam"
+  | "misfire_random"
+  | "hard_start"
   | "brake_pads"
   | "coolant_topup"
   | "spark_plugs"
@@ -39,6 +47,130 @@ const SPEC_NO_INVENT =
   "Do not invent oil/coolant capacity (qt/L), torque (ft-lb / N·m), CCA, or OEM part numbers. Use the owner's manual, cap, door sticker, or a figure already in the vehicle config / [VEHICLE_ANCHOR] for THIS car.";
 
 export const DIY_CHECK_PATHS: readonly DiyCheckPath[] = [
+  /**
+   * Safety-first paths listed before routine pad/coolant/plug jobs so soft pedal /
+   * steam / flashing misfire / no-crank win matching order.
+   */
+  {
+    id: "soft_brake",
+    title: "Soft / spongy brake pedal (do-not-drive education)",
+    playbookSlug: "maintenance_brakes",
+    safetyTopicIds: ["brakes", "unsafe_to_drive"],
+    chip: {
+      id: "path-soft-brake",
+      label: "Soft brake — stop",
+      playbookSlug: "maintenance_brakes",
+      prompt:
+        "Soft or spongy brake pedal or brake warning light: give do-not-drive / tow education first, then observe-only cold reservoir sight level. Never teach bleeding or opening hydraulic lines. Do not invent DOT grade or say Replace master cylinder now.",
+    },
+    matches: (text) =>
+      /\b((?:soft|spongy)\s+(?:brake\s+)?pedal|pedal\s+(?:feels?\s+)?(?:soft|spongy)|pedal\s+(?:to\s+the\s+)?floor|pedal\s+sinks|brake\s+(?:warning\s+)?light|soft\s+brake|spongy\s+brake)\b/.test(
+        text,
+      ),
+    checkOrder: [
+      "Treat soft/spongy/sinking pedal or brake warning light as do-not-drive — arrange a tow; do not limp to a shop.",
+      "Observe only if safely parked: cold brake-fluid reservoir sight level (do not open lines or bleed).",
+      "Note ABS/brake lamps, recent pad/rotor/fluid work, and whether the pedal goes to the floor — record for the shop.",
+      "When brakes feel normal again only after a professional repair — educational pad/rotor checks are a separate path.",
+    ],
+    stopDiy: [
+      "Soft/spongy pedal, pedal to the floor, brake warning / ABS with reduced braking, or visible brake-fluid leak — do not drive.",
+      "Do not bleed brakes, open bleeder screws, or open hydraulic lines at home.",
+      "Do not invent DOT grade / capacity or say Replace master cylinder now.",
+    ],
+    specNote: SPEC_NO_INVENT,
+  },
+  {
+    id: "overheat_steam",
+    title: "Overheat with steam / white smoke (do-not-drive education)",
+    playbookSlug: "maintenance_cooling_water_pump",
+    safetyTopicIds: ["cooling_hot", "unsafe_to_drive"],
+    chip: {
+      id: "path-overheat-steam",
+      label: "Overheat / steam — stop",
+      playbookSlug: "maintenance_cooling_water_pump",
+      prompt:
+        "Overheating with steam or a red temp gauge: pull over / tow education first. Never open a hot pressurized coolant cap. After fully cool, cold reservoir sight only — do not invent coolant quarts or say Replace water pump now.",
+    },
+    matches: (text) =>
+      /\b(overheat(?:ing)?|temp(?:erature)?\s+(?:gauge|light)|gauge\s+(?:in\s+)?red|running\s+hot)\b/.test(
+        text,
+      ) ||
+      /\b(steam|white\s+smoke\s+from\s+(?:the\s+)?(?:hood|engine)|boiling\s+coolant)\b/.test(
+        text,
+      ),
+    checkOrder: [
+      "If steam, white smoke from the hood, or gauge in red: pull over safely when you can — do not keep driving to “make it”.",
+      "Shut down; never open a hot radiator or pressurized coolant cap (cooling_hot / hot_cooling_cap).",
+      "After the engine is fully cool to the touch, you may visually check the cold reservoir MIN–MAX only — do not invent capacity or mix.",
+      "Arrange a tow / shop if steam continues, the gauge stays high, or level drops again after a cold top-up from a known bottle/manual.",
+    ],
+    stopDiy: [
+      "Steam, boiling overflow, sweet smell in the cabin, milky oil, or red temp gauge while driving — shut down; do not open the cap; arrange a tow.",
+      "Do not limp on the highway with an overheat warning.",
+      "No garage/manual coolant figure this turn — do not invent quarts/liters or say Replace water pump now.",
+    ],
+    specNote: SPEC_NO_INVENT,
+  },
+  {
+    id: "misfire_random",
+    title: "Random / multi misfire P0300 (education)",
+    playbookSlug: "diagnosis_check_engine",
+    safetyTopicIds: [],
+    chip: {
+      id: "path-misfire",
+      label: "Misfire check order",
+      playbookSlug: "diagnosis_check_engine",
+      prompt:
+        "P0300 / hard shake / flashing CEL: safety first (reduce load), then educational check order — fuel quality, shared vacuum leaks, then coils/plugs. Never Replace all coils now. Do not invent plug gap or torque.",
+    },
+    matches: (text) =>
+      /\bP030[0-8]\b/i.test(text) ||
+      /\b(random\s+misfire|multiple\s+(?:cylinder\s+)?misfire|misfir(?:e|ing)|engine\s+shak(?:e|ing)|flashing\s+(?:cel|check\s+engine|mil)|hard\s+shake)\b/.test(
+        text,
+      ),
+    checkOrder: [
+      "If flashing MIL or hard shake — reduce load; do not keep driving hard (converter overheat risk).",
+      "Record codes (P0300 / P030x) before clearing; note fuel fill / water-in-fuel / bad-gas clues.",
+      "Shared intake vacuum leaks that can hit multiple cylinders — educational inspection only.",
+      "Ignition (coils/plugs) next, then injector/fuel with data — never Replace all coils now from the code alone.",
+    ],
+    stopDiy: [
+      "Flashing CEL, hard shake in traffic, or raw-fuel smell — stop aggressive driving; shop / tow as needed.",
+      "Broken plug, rounded hex, or a plug that will not thread by hand — shop (head damage risk).",
+      "No gap/torque in the manual or config card — do not invent numbers.",
+    ],
+    specNote: SPEC_NO_INVENT,
+  },
+  {
+    id: "hard_start",
+    title: "Hard start / no-crank (education)",
+    playbookSlug: "maintenance_battery",
+    safetyTopicIds: ["battery_12v"],
+    chip: {
+      id: "path-hard-start",
+      label: "No-crank / hard start",
+      playbookSlug: "maintenance_battery",
+      prompt:
+        "Won't start / no crank / click-only: narrow no-crank vs slow-crank vs clicks before parts. Safe jump polarity only; stop if swollen battery or orange HV cables. Never Replace battery now. Do not invent CCA.",
+    },
+    matches: (text) =>
+      /\b(won'?t\s+start|will\s+not\s+start|no\s+start|doesn'?t\s+start|hard\s+start|no\s+crank|click(?:s|ing)?\s+only|click(?:s|ing)?\s+when\s+(?:i\s+)?turn|slow\s+crank|cranks?\s+slow|starter\s+(?:click|solenoid))\b/.test(
+        text,
+      ),
+    checkOrder: [
+      "Note the pattern: no crank vs slow crank vs single/rapid clicks; whether lights/accessories dim — before any parts talk.",
+      "Eye protection; confirm 12V service battery only — never probe orange HV / hybrid traction cables.",
+      "Look for swollen/cracked case or sulfur smell — do not jump or load-test a damaged battery.",
+      "If jumping: correct polarity and away from SRS modules if unsure; then a shop load-test — never Replace battery now or invent CCA.",
+    ],
+    stopDiy: [
+      "Swollen/cracked case, strong sulfur smell, or stalled in a live travel lane — safety first, then roadside/shop.",
+      "Hybrid/EV orange cabling or HV warnings — stop DIY.",
+      "Do not invent CCA / group size; match the existing battery or manual only.",
+    ],
+    specNote: SPEC_NO_INVENT,
+  },
   {
     id: "brake_pads",
     title: "Brake pad inspection / replace (education)",
@@ -53,6 +185,14 @@ export const DIY_CHECK_PATHS: readonly DiyCheckPath[] = [
     },
     matches: (text) => {
       const forBrakes = maskParkingBrakeMentions(text);
+      // Soft/spongy / warning-light turns are owned by soft_brake (matched earlier).
+      if (
+        /\b((?:soft|spongy)\s+(?:brake\s+)?pedal|pedal\s+(?:to\s+the\s+)?floor|brake\s+(?:warning\s+)?light)\b/.test(
+          forBrakes,
+        )
+      ) {
+        return false;
+      }
       return /\bbrake\s*pads?\b|\brotors?\b|\bcalipers?\b|\bbrakes?\b|\bbraking\b/.test(
         forBrakes,
       );
@@ -64,7 +204,7 @@ export const DIY_CHECK_PATHS: readonly DiyCheckPath[] = [
       "Road-test only after the vehicle is fully on the ground with lug hardware snug; confirm pedal firmness in a quiet lot — not in traffic.",
     ],
     stopDiy: [
-      "Pedal goes to the floor, pulls hard, ABS light with reduced braking, or fluid is leaking.",
+      "Pedal goes to the floor, pulls hard, ABS light with reduced braking, or fluid is leaking — treat as soft_brake / tow, not a pad DIY.",
       "You cannot support the vehicle on stands or you are unsure about hardware torque — use a qualified shop.",
       "Do not continue a different job (oil, etc.) if the vehicle is moving or the parking brake is not holding.",
     ],
@@ -82,10 +222,17 @@ export const DIY_CHECK_PATHS: readonly DiyCheckPath[] = [
       prompt:
         "Give a safe educational coolant top-up sequence for THIS vehicle: wait until cool, reservoir only, when to stop and go to a shop. Never open a hot radiator cap. Do not invent mix ratio, capacity quarts, or OEM coolant part numbers.",
     },
-    matches: (text) =>
-      /\b(top\s*up|top\s*off|add|low)\s+coolant\b|\bcoolant\s+(low|reservoir|overflow|top-?up|top-?off)\b|\bradiator\s+cap\b|\bcoolant\s+leak\b/.test(
+    matches: (text) => {
+      // Active overheat / steam is owned by overheat_steam (matched earlier).
+      if (
+        /\b(steam|gauge\s+(?:in\s+)?red|overheat(?:ing)?\s+with)\b/.test(text)
+      ) {
+        return false;
+      }
+      return /\b(top\s*up|top\s*off|add|low)\s+coolant\b|\bcoolant\s+(low|reservoir|overflow|top-?up|top-?off)\b|\bradiator\s+cap\b|\bcoolant\s+leak\b/.test(
         text,
-      ),
+      );
+    },
     checkOrder: [
       "Park level, engine OFF, wait until the engine and radiator are cool to the touch (cooling_hot).",
       "Read the overflow/reservoir MIN–MAX marks — do not open the pressurized radiator cap while hot.",
@@ -112,6 +259,7 @@ export const DIY_CHECK_PATHS: readonly DiyCheckPath[] = [
         "Give an educational spark-plug check order for THIS vehicle (misfire / rough idle): scan codes, inspect one plug if accessible, when to stop DIY. Do not invent gap, torque ft-lb, or OEM plug part numbers — use the manual. Suggest the Check Engine Coach guide if a guided flow helps.",
     },
     matches: (text) =>
+      // P030x / hard-shake / flashing CEL owned by misfire_random (matched earlier).
       /\bspark\s*plugs?\b|\bignition\s+coils?\b|\bplug\s+wires?\b/.test(text),
     checkOrder: [
       "Scan for misfire / coil / O2 codes and note which cylinder if given (P030x). Do not clear codes until you have recorded them.",
@@ -249,26 +397,69 @@ function seasonalSlugForMonth(month: number): CoachPlaybookSlug {
   return "maintenance_winter_prep";
 }
 
+function withSeasonalSlug(
+  path: DiyCheckPath,
+  options?: { month?: number },
+): DiyCheckPath {
+  if (path.id !== "seasonal_wipers_battery") return path;
+  const month = options?.month ?? new Date().getMonth() + 1;
+  const slug = seasonalSlugForMonth(month);
+  return {
+    ...path,
+    playbookSlug: slug,
+    chip: { ...path.chip, playbookSlug: slug },
+  };
+}
+
+/**
+ * Match DIY educational paths. Uses light diagnostic rewrite for fuzzy/colloquial
+ * asks, then simple safety-first re-rank when multiple paths match.
+ * Rewrite failure → original text only (graceful degradation).
+ */
 export function matchDiyCheckPath(
   text: string,
   options?: { month?: number },
 ): DiyCheckPath | null {
-  const raw = (text || "").toLowerCase();
-  if (!raw.trim()) return null;
-  for (const path of DIY_CHECK_PATHS) {
-    if (!path.matches(raw)) continue;
-    if (path.id === "seasonal_wipers_battery") {
-      const month = options?.month ?? new Date().getMonth() + 1;
-      const slug = seasonalSlugForMonth(month);
-      return {
-        ...path,
-        playbookSlug: slug,
-        chip: { ...path.chip, playbookSlug: slug },
-      };
-    }
-    return path;
+  if (!(text || "").trim()) return null;
+
+  let rewrite = rewriteDiagnosticQuery(text || "");
+  let matchText = (rewrite.matchText || text || "").toLowerCase();
+  if (!matchText.trim()) {
+    matchText = (text || "").toLowerCase();
+    rewrite = {
+      original: text || "",
+      matchText: text || "",
+      families: [],
+      rewritten: false,
+    };
   }
-  return null;
+
+  const candidates: DiyCheckPath[] = [];
+  for (const path of DIY_CHECK_PATHS) {
+    try {
+      if (!path.matches(matchText)) continue;
+      candidates.push(withSeasonalSlug(path, options));
+    } catch {
+      continue;
+    }
+  }
+  if (!candidates.length) {
+    // Fallback: try original only if rewrite produced no hits
+    if (rewrite.rewritten) {
+      const raw = (text || "").toLowerCase();
+      for (const path of DIY_CHECK_PATHS) {
+        try {
+          if (!path.matches(raw)) continue;
+          candidates.push(withSeasonalSlug(path, options));
+        } catch {
+          continue;
+        }
+      }
+    }
+  }
+  if (!candidates.length) return null;
+  if (candidates.length === 1) return candidates[0] ?? null;
+  return rerankDiyCheckPaths(candidates, rewrite) ?? candidates[0] ?? null;
 }
 
 function mileageLine(vehicle?: VehicleInfo | null): string {

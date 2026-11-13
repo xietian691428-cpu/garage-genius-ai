@@ -1196,10 +1196,35 @@ export async function clearManualConfirmedFluids(opts: {
   }
 }
 
+/** Manual-confirm path only (owner tapped Save from extract). */
 export function isManualConfirmedSource(
   source: string | null | undefined,
 ): boolean {
   return source === "user_manual_confirmed";
+}
+
+/**
+ * Owner-trusted garage fluid sources that may unlock Chat specs + [GARAGE_PROFILE_FLUIDS].
+ * Includes hand-entered values the owner saved on the vehicle card.
+ * Never includes curated/vcdb lookup.
+ */
+export function isOwnerGarageFluidSource(
+  source: string | null | undefined,
+): boolean {
+  return source === "user_manual_confirmed" || source === "user_entered";
+}
+
+/** Plain-language source label for citations (not OEM certification). */
+export function garageFluidCiteLabel(
+  source: string | null | undefined,
+): string {
+  if (source === "user_manual_confirmed") {
+    return "Garage profile (from your manual) / Your confirmed manual spec";
+  }
+  if (source === "user_entered") {
+    return "Garage profile (you entered)";
+  }
+  return "Garage profile";
 }
 
 export function garagePatchForExtractConfirm(opts: {

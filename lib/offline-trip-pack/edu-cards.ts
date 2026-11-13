@@ -42,10 +42,20 @@ export const TRIP_PACK_EDU_CARDS: TripPackEduCard[] = [
     id: "battery_jump_observe",
     title: "Battery / no-crank (education)",
     steps: [
-      "Note whether lights/accessories work and whether you hear a click or silence.",
+      "Note no-crank vs slow-crank vs clicks, and whether lights/accessories dim — before parts talk.",
       "Jump-start only with correct polarity and away from airbag modules if unsure.",
-      "This is not a “replace battery now” diagnosis — a shop can load-test safely.",
+      "This is not a “replace battery now” diagnosis — a shop can load-test safely. Do not invent CCA.",
     ],
     stopIf: "Smell of sulfur, hot/swollen battery, or hybrid/EV orange cabling — stop DIY.",
+  },
+  {
+    id: "misfire_observe",
+    title: "Misfire / flashing CEL (education)",
+    steps: [
+      "If flashing MIL or hard shake — reduce load; do not keep driving hard.",
+      "Record codes (P0300 / P030x) before clearing; note recent fuel fill / bad-gas clues.",
+      "Shared vacuum leaks, then coils/plugs — educational only; never Replace all coils now.",
+    ],
+    stopIf: "Flashing CEL, hard shake in traffic, or raw-fuel smell — stop aggressive driving; shop / tow as needed.",
   },
 ];

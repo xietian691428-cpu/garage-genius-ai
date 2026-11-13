@@ -1,9 +1,15 @@
 /**
  * Intent-aware query construction for private per-vehicle manuals.
  * Never used for global RAG. No VIN.
+ * Fuzzy asks go through light diagnostic rewrite before classify / expand.
  */
 
 import { extractDtcCodes } from "@/lib/dtc-parse";
+import {
+  intentHintFromRewrite,
+  rewriteDiagnosticQuery,
+  rerankManualHitsForIntent,
+} from "@/lib/diagnostic-query-rewrite";
 
 export const MANUAL_INTENTS = [
   "fluids_oil",
@@ -92,20 +98,29 @@ export function classifyManualIntent(
   text: string,
   dtcs: string[] = extractDtcCodes(text),
 ): ManualIntent {
-  const t = text || "";
-  if (OIL_RE.test(t)) return "fluids_oil";
-  if (OVERHEAT_RE.test(t)) return "overheat";
-  if (COOLANT_RE.test(t)) return "fluids_coolant";
-  if (BRAKE_WARNING_RE.test(t)) return "brake_warning";
-  if (BRAKE_FLUID_RE.test(t)) return "fluids_brake";
-  if (ATF_RE.test(t)) return "fluids_atf";
+  const rewrite = rewriteDiagnosticQuery(text || "");
+  const hint = intentHintFromRewrite(rewrite);
+  const t = rewrite.matchText || text || "";
+
+  // Safety intents from rewrite hint win over weaker keyword order
+  // (e.g. "brakes feel mushy" → brake_warning before lighting/fluids).
+  if (hint === "brake_warning" || BRAKE_WARNING_RE.test(t)) {
+    return "brake_warning";
+  }
+  if (hint === "overheat" || OVERHEAT_RE.test(t)) return "overheat";
+  if (OIL_RE.test(t) || hint === "fluids_oil") return "fluids_oil";
+  if (COOLANT_RE.test(t) || hint === "fluids_coolant") return "fluids_coolant";
+  if (BRAKE_FLUID_RE.test(t) || hint === "fluids_brake") return "fluids_brake";
+  if (ATF_RE.test(t) || hint === "fluids_atf") return "fluids_atf";
   if (OTHER_FLUID_RE.test(t)) return "fluids_other";
   if (TORQUE_RE.test(t)) return "torque_spec";
   if (MAINT_RE.test(t)) return "scheduled_maintenance";
-  if (dtcs.length > 0 || DIAG_RE.test(t)) return "dtc_related";
+  if (dtcs.length > 0 || DIAG_RE.test(t) || hint === "dtc_related") {
+    return "dtc_related";
+  }
   if (FUSE_RE.test(t)) return "electrical_fuse";
   if (LIGHTING_RE.test(t)) return "lighting";
-  return "general";
+  return hint && hint !== "general" ? hint : "general";
 }
 
 export function dtcSystemQueryTerms(codes: string[]): string {
@@ -142,12 +157,13 @@ export function buildManualRetrievalQuery(opts: {
   userText: string;
   dtcs?: string[];
 }): { intent: ManualIntent; query: string; dtcs: string[] } {
+  const rewrite = rewriteDiagnosticQuery(opts.userText);
   const dtcs = opts.dtcs?.length
     ? opts.dtcs
     : extractDtcCodes(opts.userText);
   const intent = classifyManualIntent(opts.userText, dtcs);
   const parts = [
-    questionKeywords(opts.userText),
+    questionKeywords(rewrite.matchText || opts.userText),
     INTENT_EXPAND[intent],
     dtcSystemQueryTerms(dtcs),
   ]
@@ -167,15 +183,16 @@ export function headingRetrievalBoost(heading: string | null | undefined): numbe
   return HEADING_BOOST_RE.test(heading) ? 2 : 0;
 }
 
-export function rerankManualHitsByHeading<T extends { heading: string | null; rank: number }>(
-  hits: T[],
-  limit = 4,
-): T[] {
-  return [...hits]
-    .map((h) => ({
-      ...h,
-      rank: Number(h.rank) + headingRetrievalBoost(h.heading),
-    }))
-    .sort((a, b) => b.rank - a.rank)
-    .slice(0, Math.max(1, Math.min(limit, 5)));
+/**
+ * Re-rank manual chunks: heading boost + optional intent boost.
+ * Callers that only have heading/rank keep working; pass intent when known.
+ */
+export function rerankManualHitsByHeading<
+  T extends { heading: string | null; rank: number; content?: string },
+>(hits: T[], limit = 4, intent?: ManualIntent | null): T[] {
+  const headingBoosted = [...hits].map((h) => ({
+    ...h,
+    rank: Number(h.rank) + headingRetrievalBoost(h.heading),
+  }));
+  return rerankManualHitsForIntent(headingBoosted, { intent, limit });
 }

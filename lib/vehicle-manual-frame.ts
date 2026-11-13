@@ -15,10 +15,19 @@ import {
   wantsRepairFrame,
   type ManualIntent,
 } from "@/lib/vehicle-manual-intent";
-import { isManualConfirmedSource } from "@/lib/vehicle-manual-extract";
+import {
+  garageFluidCiteLabel,
+  isOwnerGarageFluidSource,
+} from "@/lib/vehicle-manual-extract";
 
 export const GARAGE_PROFILE_MANUAL_SOURCE_LINE =
   "Source: Garage profile (from your manual)";
+
+export const GARAGE_PROFILE_ENTERED_SOURCE_LINE =
+  "Source: Garage profile (you entered)";
+
+export const GARAGE_PROFILE_MUST_USE_LINE =
+  "MUST USE: when the owner asks about a fluid listed above, quote the exact garage value and name its Source label. Not OEM-certified by Garage Genius — still verify under-hood fill cap / cold reservoir. Do not invent a different qt/L/viscosity/DOT/ATF number.";
 
 export type ObdStateSource = "live" | "user_provided" | "none";
 
@@ -158,39 +167,45 @@ export function formatObdStateForPrompt(state: ObdStateForPrompt): string {
     .join("\n");
 }
 
+function ownerFluidOk(
+  value: string | null | undefined,
+  source: string | null | undefined,
+): boolean {
+  return Boolean(value?.trim()) && isOwnerGarageFluidSource(source);
+}
+
+function fieldCiteLine(
+  fieldKey: string,
+  source: string | null | undefined,
+): string {
+  return `${fieldKey}_cite: ${garageFluidCiteLabel(source)}`;
+}
+
 export function formatGarageProfileFluidsForPrompt(
   fluids: GarageFluidsForPrompt,
 ): string {
-  const capOk =
-    Boolean(fluids.oilCapacity?.trim()) &&
-    isManualConfirmedSource(fluids.oilCapacitySource);
-  const viscOk =
-    Boolean(fluids.oilViscosity?.trim()) &&
-    isManualConfirmedSource(fluids.oilViscositySource);
-  const coolSpecOk =
-    Boolean(fluids.coolantSpecText?.trim()) &&
-    isManualConfirmedSource(fluids.coolantSpecSource);
-  const coolCapOk =
-    Boolean(fluids.coolantCapacityText?.trim()) &&
-    isManualConfirmedSource(fluids.coolantCapacitySource);
-  const coolMixOk =
-    Boolean(fluids.coolantMixText?.trim()) &&
-    isManualConfirmedSource(fluids.coolantMixSource);
-  const brakeSpecOk =
-    Boolean(fluids.brakeFluidSpecText?.trim()) &&
-    isManualConfirmedSource(fluids.brakeFluidSpecSource);
-  const brakeNotesOk =
-    Boolean(fluids.brakeFluidNotesText?.trim()) &&
-    isManualConfirmedSource(fluids.brakeFluidNotesSource);
-  const atfSpecOk =
-    Boolean(fluids.atfSpecText?.trim()) &&
-    isManualConfirmedSource(fluids.atfSpecSource);
-  const atfCapOk =
-    Boolean(fluids.atfCapacityText?.trim()) &&
-    isManualConfirmedSource(fluids.atfCapacitySource);
-  const atfNotesOk =
-    Boolean(fluids.atfNotesText?.trim()) &&
-    isManualConfirmedSource(fluids.atfNotesSource);
+  const capOk = ownerFluidOk(fluids.oilCapacity, fluids.oilCapacitySource);
+  const viscOk = ownerFluidOk(fluids.oilViscosity, fluids.oilViscositySource);
+  const coolSpecOk = ownerFluidOk(
+    fluids.coolantSpecText,
+    fluids.coolantSpecSource,
+  );
+  const coolCapOk = ownerFluidOk(
+    fluids.coolantCapacityText,
+    fluids.coolantCapacitySource,
+  );
+  const coolMixOk = ownerFluidOk(fluids.coolantMixText, fluids.coolantMixSource);
+  const brakeSpecOk = ownerFluidOk(
+    fluids.brakeFluidSpecText,
+    fluids.brakeFluidSpecSource,
+  );
+  const brakeNotesOk = ownerFluidOk(
+    fluids.brakeFluidNotesText,
+    fluids.brakeFluidNotesSource,
+  );
+  const atfSpecOk = ownerFluidOk(fluids.atfSpecText, fluids.atfSpecSource);
+  const atfCapOk = ownerFluidOk(fluids.atfCapacityText, fluids.atfCapacitySource);
+  const atfNotesOk = ownerFluidOk(fluids.atfNotesText, fluids.atfNotesSource);
   const transmissionKind =
     fluids.transmissionKind === "atf" ||
     fluids.transmissionKind === "cvt" ||
@@ -210,6 +225,22 @@ export function formatGarageProfileFluidsForPrompt(
   ) {
     return "";
   }
+
+  const sources = [
+    capOk ? fluids.oilCapacitySource : null,
+    viscOk ? fluids.oilViscositySource : null,
+    coolSpecOk ? fluids.coolantSpecSource : null,
+    coolCapOk ? fluids.coolantCapacitySource : null,
+    coolMixOk ? fluids.coolantMixSource : null,
+    brakeSpecOk ? fluids.brakeFluidSpecSource : null,
+    brakeNotesOk ? fluids.brakeFluidNotesSource : null,
+    atfSpecOk ? fluids.atfSpecSource : null,
+    atfCapOk ? fluids.atfCapacitySource : null,
+    atfNotesOk ? fluids.atfNotesSource : null,
+  ].filter(Boolean) as string[];
+  const anyManual = sources.some((s) => s === "user_manual_confirmed");
+  const anyEntered = sources.some((s) => s === "user_entered");
+
   const cvtLines =
     atfAny && transmissionKind === "cvt"
       ? [
@@ -228,19 +259,39 @@ export function formatGarageProfileFluidsForPrompt(
   const lines = [
     "[GARAGE_PROFILE_FLUIDS]",
     capOk ? `oil_capacity: ${fluids.oilCapacity}` : null,
+    capOk ? fieldCiteLine("oil_capacity", fluids.oilCapacitySource) : null,
     viscOk ? `oil_viscosity: ${fluids.oilViscosity}` : null,
+    viscOk ? fieldCiteLine("oil_viscosity", fluids.oilViscositySource) : null,
     coolSpecOk ? `coolant_spec: ${fluids.coolantSpecText}` : null,
+    coolSpecOk ? fieldCiteLine("coolant_spec", fluids.coolantSpecSource) : null,
     coolCapOk ? `coolant_capacity: ${fluids.coolantCapacityText}` : null,
+    coolCapOk
+      ? fieldCiteLine("coolant_capacity", fluids.coolantCapacitySource)
+      : null,
     coolMixOk ? `coolant_mix: ${fluids.coolantMixText}` : null,
+    coolMixOk ? fieldCiteLine("coolant_mix", fluids.coolantMixSource) : null,
     brakeSpecOk ? `brake_fluid_spec: ${fluids.brakeFluidSpecText}` : null,
+    brakeSpecOk
+      ? fieldCiteLine("brake_fluid_spec", fluids.brakeFluidSpecSource)
+      : null,
     brakeNotesOk ? `brake_fluid_notes: ${fluids.brakeFluidNotesText}` : null,
+    brakeNotesOk
+      ? fieldCiteLine("brake_fluid_notes", fluids.brakeFluidNotesSource)
+      : null,
     atfAny && transmissionKind
       ? `transmission_kind: ${transmissionKind}`
       : null,
     atfSpecOk ? `atf_spec: ${fluids.atfSpecText}` : null,
+    atfSpecOk ? fieldCiteLine("atf_spec", fluids.atfSpecSource) : null,
     atfCapOk ? `atf_capacity: ${fluids.atfCapacityText}` : null,
+    atfCapOk ? fieldCiteLine("atf_capacity", fluids.atfCapacitySource) : null,
     atfNotesOk ? `atf_notes: ${fluids.atfNotesText}` : null,
-    "source=user_manual_confirmed",
+    atfNotesOk ? fieldCiteLine("atf_notes", fluids.atfNotesSource) : null,
+    anyManual && !anyEntered
+      ? "source=user_manual_confirmed"
+      : anyEntered && !anyManual
+        ? "source=user_entered"
+        : "source=owner_garage_mixed",
     fluids.oilSpecsConfirmedAt
       ? `oil_confirmed_at: ${fluids.oilSpecsConfirmedAt}`
       : null,
@@ -253,8 +304,10 @@ export function formatGarageProfileFluidsForPrompt(
     fluids.atfSpecsConfirmedAt
       ? `atf_confirmed_at: ${fluids.atfSpecsConfirmedAt}`
       : null,
-    GARAGE_PROFILE_MANUAL_SOURCE_LINE,
-    "Cite as Garage profile (from your manual). Still require under-hood fill-cap / cold-reservoir verify.",
+    anyManual ? GARAGE_PROFILE_MANUAL_SOURCE_LINE : null,
+    anyEntered ? GARAGE_PROFILE_ENTERED_SOURCE_LINE : null,
+    GARAGE_PROFILE_MUST_USE_LINE,
+    "Still require under-hood fill-cap / cold-reservoir verify. Not OEM-certified by Garage Genius.",
     "Never open a hot coolant reservoir. Steam / red temp gauge → stop driving / tow education first.",
     "Brake fluid: visual level check when cold/safe only. Do not instruct bleeding, opening hydraulic lines, or DIY ABS work — recommend professional service for soft pedal or fluid service beyond a safe visual check.",
     "ATF/CVT: never treat as engine oil. Do not invent drain-and-fill procedures; recommend professional service when equipment-heavy. No absolute “lifetime fluid never change” or “replace ATF now” without evidence.",
@@ -280,27 +333,35 @@ export function formatRepairFrameForPrompt(opts: {
       : null;
   const oilBind =
     opts.intent === "fluids_oil"
-      ? "Oil-change: cite capacity/viscosity only from [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS]. Do not bind unrelated DTCs to the oil job."
+      ? opts.hasGarageFluids
+        ? "Oil-change: MUST quote oil_capacity / oil_viscosity from [GARAGE_PROFILE_FLUIDS] when listed, and cite that field’s Source label (Garage profile (from your manual) / Your confirmed manual spec, or Garage profile (you entered)). Do not invent a different qt/viscosity. Do not bind unrelated DTCs to the oil job."
+        : "Oil-change: cite capacity/viscosity only from [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS]. If neither lists a figure this turn, do not invent quarts — tell the owner to confirm on the fill cap / manual / garage save. Do not bind unrelated DTCs to the oil job."
       : null;
   const coolantBind =
     opts.intent === "fluids_coolant"
-      ? "Coolant: cite type/capacity/mix only from [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS]. Never invent brand, freeze point, or liters. Never open a hot coolant reservoir."
+      ? opts.hasGarageFluids
+        ? "Coolant: MUST quote coolant_spec / coolant_capacity / coolant_mix from [GARAGE_PROFILE_FLUIDS] when listed, with Source label. Never invent brand, freeze point, or liters. Never open a hot coolant reservoir."
+        : "Coolant: cite type/capacity/mix only from [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS]. If neither lists a figure this turn, do not invent liters — cold reservoir / manual only. Never open a hot coolant reservoir."
       : null;
   const overheatBind =
     opts.intent === "overheat"
-      ? "Overheat: Stop if (steam / red gauge / do not drive / never open a hot cap) MUST come before any manual capacity or mixture detail. Manual may only add cold-check / after-cool guidance when present."
+      ? "Overheat: Stop if (steam / red gauge / do not drive / never open a hot cap) MUST come before any manual capacity or mixture detail. Manual / garage may only add cold-check / after-cool guidance when present — still cite Source."
       : null;
   const brakeFluidBind =
     opts.intent === "fluids_brake"
-      ? "Brake fluid: cite DOT type / notes only from [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS]. Never invent DOT grade. Visual cold reservoir level only — never bleed brakes or open lines."
+      ? opts.hasGarageFluids
+        ? "Brake fluid: MUST quote brake_fluid_spec / notes from [GARAGE_PROFILE_FLUIDS] when listed, with Source label. Never invent DOT grade. Visual cold reservoir level only — never bleed brakes or open lines."
+        : "Brake fluid: cite DOT type / notes only from [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS]. If neither lists DOT this turn, do not invent grade. Visual cold reservoir level only — never bleed brakes or open lines."
       : null;
   const brakeWarningBind =
     opts.intent === "brake_warning"
-      ? "Brake warning / soft pedal: STOP / do-not-drive / tow education FIRST (drive-safety). A manual DOT line may be cited after stop rules — never teach bleeding, opening hydraulic lines, or DIY ABS."
+      ? "Brake warning / soft pedal: STOP / do-not-drive / tow education FIRST (drive-safety). A garage/manual DOT line may be cited after stop rules — never teach bleeding, opening hydraulic lines, or DIY ABS."
       : null;
   const atfBind =
     opts.intent === "fluids_atf"
-      ? "ATF/CVT: cite type/capacity only from [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS] transmission_kind + atf_* fields. Never treat transmission fluid as engine oil quarts. If transmission_kind=cvt: say CVT fluid / CVT-specific; never recommend Dexron/Mercon/conventional ATF as a substitute; never say any ATF is fine. If atf: may say ATF / automatic transmission fluid with the exact spec text. Do not invent drain-and-fill steps; prefer shop when equipment-heavy. No absolute lifetime-never / replace-now claims."
+      ? opts.hasGarageFluids
+        ? "ATF/CVT: MUST quote transmission_kind + atf_* from [GARAGE_PROFILE_FLUIDS] with Source label. Never treat as engine oil quarts. If transmission_kind=cvt: say CVT fluid / CVT-specific; never recommend Dexron/Mercon/conventional ATF as a substitute; never say any ATF is fine. Do not invent drain-and-fill steps; prefer shop when equipment-heavy. No absolute lifetime-never / replace-now claims."
+        : "ATF/CVT: cite type/capacity only from [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS] transmission_kind + atf_* fields. If neither lists a figure this turn, do not invent ATF/CVT type or liters. Never treat transmission fluid as engine oil quarts. If transmission_kind=cvt: say CVT fluid / CVT-specific; never recommend Dexron/Mercon/conventional ATF as a substitute; never say any ATF is fine. Do not invent drain-and-fill steps; prefer shop when equipment-heavy. No absolute lifetime-never / replace-now claims."
       : null;
   const dtcFirst =
     opts.intent === "dtc_related"
@@ -310,7 +371,7 @@ export function formatRepairFrameForPrompt(opts: {
     "[MANUAL_REPLY_FRAME]",
     "For maintenance / spec / diagnosis this turn, prefer this educational shape:",
     "- Now: OBD/state from [OBD_STATE] only (none → say not connected; never fake live).",
-    "- Per your manual or garage profile: quote numbers/steps only if they appear in [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS] this turn. Label Your manual vs Garage profile (from your manual).",
+    "- Per your manual or garage profile: quote numbers/steps only if they appear in [USER_MANUAL] or [GARAGE_PROFILE_FLUIDS] this turn. Label Your manual vs Garage profile (from your manual) / Your confirmed manual spec vs Garage profile (you entered).",
     "- Do next: 2–5 ordered steps (align with [DTC_REF] check_order when present).",
     "- Stop if: existing [STOP_RULE] / drive-safety / exit-under / steam / soft brakes still win — even if a manual chunk was retrieved. Never teach opening a hot coolant reservoir. Never instruct brake bleeding or opening hydraulic lines.",
     "Evidence order: safety stop-rules > unsafe OBD / live [OBD_STATE] > [USER_MANUAL] > [GARAGE_PROFILE_FLUIDS] > model guess.",
@@ -329,9 +390,9 @@ export function formatRepairFrameForPrompt(opts: {
     !opts.hasUserManual
       ? "No [USER_MANUAL] this turn — do not pretend you read their PDF."
       : null,
-    !opts.hasGarageFluids
-      ? "No confirmed garage fluids from the manual this turn."
-      : null,
+    opts.hasGarageFluids
+      ? "Confirmed garage fluids are present — for any listed field that answers this ask, MUST quote the exact value and cite its Source label. Do not skip the citation."
+      : "No confirmed garage fluids this turn — do not invent oil/coolant/brake/ATF numbers; tell the owner to confirm on the fill cap / manual or save specs to the garage.",
     `OBD source this turn: ${opts.obdSource}.`,
   ]
     .filter(Boolean)
@@ -380,24 +441,43 @@ export function buildManualSpecAnchors(opts: {
   const fromHits = opts.retrievedHits.length
     ? extractManualSpecAllowlist(opts.retrievedHits)
     : {};
-  const garageCap = opts.garage.oilCapacity?.trim() || null;
-  const garageVisc = opts.garage.oilViscosity?.trim() || null;
-  const garageCoolCap =
-    isManualConfirmedSource(opts.garage.coolantCapacitySource)
-      ? opts.garage.coolantCapacityText?.trim() || null
-      : null;
-  const garageBrakeSpec =
-    isManualConfirmedSource(opts.garage.brakeFluidSpecSource)
-      ? opts.garage.brakeFluidSpecText?.trim() || null
-      : null;
-  const garageAtfSpec =
-    isManualConfirmedSource(opts.garage.atfSpecSource)
-      ? opts.garage.atfSpecText?.trim() || null
-      : null;
-  const garageAtfCap =
-    isManualConfirmedSource(opts.garage.atfCapacitySource)
-      ? opts.garage.atfCapacityText?.trim() || null
-      : null;
+  // Owner-trusted garage only (manual-confirmed or user-entered). Never unlock vcdb/curated.
+  const garageCap = ownerFluidOk(
+    opts.garage.oilCapacity,
+    opts.garage.oilCapacitySource,
+  )
+    ? opts.garage.oilCapacity?.trim() || null
+    : null;
+  const garageVisc = ownerFluidOk(
+    opts.garage.oilViscosity,
+    opts.garage.oilViscositySource,
+  )
+    ? opts.garage.oilViscosity?.trim() || null
+    : null;
+  const garageCoolCap = ownerFluidOk(
+    opts.garage.coolantCapacityText,
+    opts.garage.coolantCapacitySource,
+  )
+    ? opts.garage.coolantCapacityText?.trim() || null
+    : null;
+  const garageBrakeSpec = ownerFluidOk(
+    opts.garage.brakeFluidSpecText,
+    opts.garage.brakeFluidSpecSource,
+  )
+    ? opts.garage.brakeFluidSpecText?.trim() || null
+    : null;
+  const garageAtfSpec = ownerFluidOk(
+    opts.garage.atfSpecText,
+    opts.garage.atfSpecSource,
+  )
+    ? opts.garage.atfSpecText?.trim() || null
+    : null;
+  const garageAtfCap = ownerFluidOk(
+    opts.garage.atfCapacityText,
+    opts.garage.atfCapacitySource,
+  )
+    ? opts.garage.atfCapacityText?.trim() || null
+    : null;
   const oilTurn = opts.intent === "fluids_oil";
   const atfTurn = opts.intent === "fluids_atf";
   return {

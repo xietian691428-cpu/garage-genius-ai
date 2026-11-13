@@ -23,6 +23,43 @@ const camry: VehicleInfo = {
 const noMiles: VehicleInfo = { ...camry, mileage: 0 };
 
 describe("US DIY check paths", () => {
+  it("maps safety-first scenes before routine pad/coolant/plug jobs", () => {
+    const priority: Array<{ q: string; id: string; slug: string }> = [
+      {
+        q: "soft brake pedal, spongy pedal, and brake warning light on",
+        id: "soft_brake",
+        slug: "maintenance_brakes",
+      },
+      {
+        q: "overheating with steam from the hood and white smoke",
+        id: "overheat_steam",
+        slug: "maintenance_cooling_water_pump",
+      },
+      {
+        q: "engine shaking hard with P0300 and flashing check engine light",
+        id: "misfire_random",
+        slug: "diagnosis_check_engine",
+      },
+      {
+        q: "won't start — no crank, click only",
+        id: "hard_start",
+        slug: "maintenance_battery",
+      },
+    ];
+    for (const row of priority) {
+      const path = matchDiyCheckPath(row.q);
+      expect(path?.id, row.q).toBe(row.id);
+      expect(path?.playbookSlug, row.q).toBe(row.slug);
+      expect(path?.checkOrder[0], row.q).toMatch(
+        /do-not-drive|tow|pull over|shut down|flashing|shake|reduce load|no crank|crank/i,
+      );
+      expect(path?.stopDiy.join(" ")).toMatch(/do not|never|shop|tow/i);
+      expect(path?.checkOrder.concat(path.stopDiy).join(" ")).not.toMatch(
+        /(?<!never )Replace \w+ now/i,
+      );
+    }
+  });
+
   it("maps high-frequency scenes to playbooks, check order, and stop-DIY", () => {
     const cases: Array<{ q: string; id: string; slug: string; topic?: string }> =
       [

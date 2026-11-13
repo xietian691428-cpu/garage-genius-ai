@@ -2,6 +2,7 @@ import {
   DRIVE_SAFETY_COPY,
   isHighRiskDrivingSituation,
 } from "@/lib/drive-safety";
+import { rewriteDiagnosticQuery } from "@/lib/diagnostic-query-rewrite";
 import { matchStopRules } from "@/lib/safety/stop-rules";
 import { extractDtcCodes } from "@/lib/dtc-parse";
 import { lookupLocalDtc } from "@/lib/vehicle-data/dtc-local";
@@ -14,6 +15,7 @@ function isOverheatSteamSituation(text: string): boolean {
   if (/\boverheat(?:ing)?\b/.test(t) && /\b(steam|red|temp)\b/.test(t)) {
     return true;
   }
+  if (/\brunning\s+hot\b/.test(t)) return true;
   return false;
 }
 
@@ -31,6 +33,7 @@ function matchEduCardIds(text: string): string[] {
   if (
     (/\bsoft\b/.test(t) && /\bbrake/.test(t)) ||
     /\bspongy\b/.test(t) ||
+    /\bmushy\b/.test(t) ||
     /\bbrake\s+warning\b/.test(t)
   ) {
     ids.push("soft_brake_observe");
@@ -47,19 +50,31 @@ function matchEduCardIds(text: string): string[] {
     /\bbattery\b/.test(t) ||
     /\bno\s+crank\b/.test(t) ||
     /\bclick\s+only\b/.test(t) ||
-    /\bwon'?t\s+start\b/.test(t)
+    /\bwon'?t\s+start\b/.test(t) ||
+    /\bhard\s+start\b/.test(t)
   ) {
     ids.push("battery_jump_observe");
+  }
+  if (
+    /\bP030[0-8]\b/i.test(text) ||
+    /\bmisfir/.test(t) ||
+    /\bflashing\s+(?:cel|check\s+engine|mil)\b/.test(t) ||
+    /\bhard\s+shake\b/.test(t) ||
+    /\bengine\s+shak/.test(t)
+  ) {
+    ids.push("misfire_observe");
   }
   return [...new Set(ids)];
 }
 
 /**
  * Local-only assist matcher. Reuses production stop-rules + drive-safety + DTC catalog.
- * Never invents specs or calls AI.
+ * Never invents specs or calls AI. Fuzzy asks get light rewrite first.
  */
 export function matchOfflineAssistQuery(query: string): OfflineAssistMatch {
-  const text = query?.trim() ?? "";
+  const raw = query?.trim() ?? "";
+  const rewrite = rewriteDiagnosticQuery(raw);
+  const text = rewrite.matchText || raw;
   const stopRuleHits = matchStopRules(text);
   const driveSafetyHit = isHighRiskDrivingSituation(text);
   const overheatSteam = isOverheatSteamSituation(text);

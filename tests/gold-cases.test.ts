@@ -1,5 +1,5 @@
 /**
- * Gold-case CI gate — 7 required families.
+ * Gold-case CI gate — safety / specs / check_order / anchored citation.
  * Run: npm run test:gold-cases
  * Full suite: npm test (includes this file).
  */
@@ -20,10 +20,16 @@ const REQUIRED_FAMILIES = [
   "no_anchor_oil_capacity",
   "cvt_not_atf",
   "cross_vehicle",
+  "anchored_oil_cite",
+  "anchored_coolant_brake_cite",
+  "manual_table_oil",
+  "vision_low_trust_no_invent",
+  "fuzzy_soft_brake",
+  "fuzzy_misfire_shake",
 ] as const;
 
 describe("Gold cases (safety / specs / check_order CI)", () => {
-  it("catalog covers the 7 required families exactly once each", () => {
+  it("catalog covers each required family exactly once", () => {
     const families = GOLD_CASES.map((c) => c.family);
     for (const f of REQUIRED_FAMILIES) {
       expect(families.filter((x) => x === f), `missing family ${f}`).toHaveLength(

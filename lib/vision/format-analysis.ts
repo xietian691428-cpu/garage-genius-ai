@@ -2,6 +2,11 @@ import { formatDtcRefBlock } from "@/lib/vehicle-data/dtc-local";
 import { CRITICAL_RAISED_STATE_PROMPT } from "@/lib/chat-intent-drift";
 import { sanitizeAnalysisForCoach } from "@/lib/vision/parse-analysis";
 import {
+  extractVisionSpecCandidates,
+  formatVisionSpecCandidateBlock,
+  visionSpecShouldDegrade,
+} from "@/lib/vision/spec-label-from-vision";
+import {
   analysisAsksRetake,
   analysisHasRaisedVehicle,
   isLowTrustAnalysis,
@@ -71,10 +76,20 @@ export function formatImageAnalysisBlock(
       ? `\n${formatImageSceneConflictNote(analysis.scene)}`
       : "";
 
+  const specCandidates = visionSpecShouldDegrade(safe)
+    ? []
+    : extractVisionSpecCandidates(safe);
+  const specBlock = formatVisionSpecCandidateBlock(specCandidates);
+  const specNote = specBlock
+    ? `\n${specBlock}`
+    : visionSpecShouldDegrade(safe)
+      ? `\n[VISION_SPEC_CANDIDATE] Degraded — low confidence or unclear photo. Do not invent oil/coolant/DOT/ATF/torque from this image.`
+      : "";
+
   const confidence = Number(safe.confidence.toFixed(2));
   return `[IMAGE_ANALYSIS source=${sourceModel} confidence=${confidence}]
 ${VERIFY}
-${JSON.stringify(payload)}${retake}${housingNote}${conflict}`;
+${JSON.stringify(payload)}${retake}${housingNote}${conflict}${specNote}`;
 }
 
 export function formatPerceptionFailedBlock(): string {

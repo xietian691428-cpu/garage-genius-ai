@@ -62,6 +62,11 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/ops", label: "运营总览", module: "ops" },
       { href: "/admin/ops/tokens", label: "Token 用量", module: "ops" },
       { href: "/admin/ops/manuals", label: "手册观察", module: "ops" },
+      {
+        href: "/admin/ops/miss-feedback",
+        label: "错题回流",
+        module: "ops",
+      },
       { href: "/admin/ops/revenue", label: "收入与会员", module: "ops" },
       {
         href: "/admin/ops/refunds",

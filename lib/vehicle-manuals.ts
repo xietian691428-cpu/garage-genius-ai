@@ -15,6 +15,7 @@ import {
   clearManualConfirmedFluids,
 } from "@/lib/vehicle-manual-extract";
 import { logManualObserve } from "@/lib/manual-observe";
+import { preprocessManualPageText } from "@/lib/vehicle-manual-tables";
 
 type PdfParseCtor = {
   new (opts: { data: Uint8Array }): {
@@ -260,7 +261,7 @@ export function chunkManualPages(pages: ManualPage[]): BuiltChunk[] {
   };
 
   for (const page of pages) {
-    const pageText = cleanText(page.text);
+    const pageText = cleanText(preprocessManualPageText(page.text));
     // Skip near-empty pages (covers/blanks) so page ranges stay meaningful.
     // Keep a low floor so short but real oil-spec excerpts still index.
     if (pageText.length < 24) continue;
@@ -387,6 +388,7 @@ export function extractManualSpecAllowlist(hits: ManualChunkHit[]): {
   atfCapacity?: string;
   torqueSpec?: string;
 } {
+  // Prefer flattened [TABLE_ROWS] adjacency from preprocessManualPageText.
   const blob = hits.map((h) => `${h.heading || ""}\n${h.content}`).join("\n");
   const oilViscosity = blob.match(/\b\d+\s*w\s*-?\s*\d+\b/i)?.[0];
   const torqueSpec = blob.match(
@@ -395,41 +397,61 @@ export function extractManualSpecAllowlist(hits: ManualChunkHit[]): {
   let oilCapacity: string | undefined;
   let coolantCapacity: string | undefined;
   let atfCapacity: string | undefined;
+  // Accept "4.8 qt", "7.1 liters", and table-style "7.1 L" (space before L).
+  // Do NOT match glued displacement like "2.5L".
   for (const m of blob.matchAll(
-    /\b(\d+(?:\.\d+)?)\s*(?:US\s+|Imp\.?\s+)?(qts?|quarts?|liters?|litres)\b/gi,
+    /\b(\d+(?:\.\d+)?)\s+(?:US\s+|Imp\.?\s+)?(qts?|quarts?|liters?|litres|L)\b|\b(\d+(?:\.\d+)?)(qts?|quarts?)\b/gi,
   )) {
+    const amount = m[1] || m[3];
+    const unit = m[2] || m[4];
+    if (!amount || !unit) continue;
+    const span = m[0];
     const left = blob.slice(Math.max(0, (m.index ?? 0) - 56), m.index ?? 0);
     const right = blob.slice(
       m.index ?? 0,
-      (m.index ?? 0) + m[0].length + 40,
+      (m.index ?? 0) + span.length + 40,
     );
     const window = `${left}${right}`;
-    // Oil capacity: unlock qt/L from this-turn hits unless ATF/coolant/brake owns the window.
-    // Prefer explicit engine-oil context when present; never take ATF liters as oil.
-    if (
-      !oilCapacity &&
-      !/\b(ATF|transmission fluid|CVT|coolant|brake fluid)\b/i.test(window)
-    ) {
-      const oilCtx =
+    // Oil capacity: unlock qt/L from this-turn hits. Prefer left-context oil labels
+    // so adjacent TABLE_ROWS coolant lines do not poison the window.
+    if (!oilCapacity) {
+      const oilLeft =
         /\b(engine oil|motor oil|oil capacity|with filter|crankcase|refill)\b/i.test(
+          left,
+        );
+      const foreignLeft =
+        /\b(ATF|transmission fluid|CVT|coolant|antifreeze|brake fluid)\b/i.test(
+          left,
+        );
+      if (oilLeft && !foreignLeft) {
+        oilCapacity = span;
+      } else if (
+        !foreignLeft &&
+        !/\b(ATF|transmission fluid|CVT|coolant|brake fluid)\b/i.test(window) &&
+        (/\b(engine oil|motor oil|oil capacity|with filter|crankcase|refill)\b/i.test(
           window,
         ) ||
-        /\b(quarts?|qts?)\b/i.test(m[0]);
-      if (oilCtx) oilCapacity = m[0];
+          /\b(quarts?|qts?)\b/i.test(span))
+      ) {
+        oilCapacity = span;
+      }
     }
-    if (
-      !coolantCapacity &&
-      /\b(coolant|antifreeze)\b/i.test(window) &&
-      !/\b(washer|brake fluid|engine oil|motor oil|ATF)\b/i.test(window)
-    ) {
-      coolantCapacity = m[0];
+    if (!coolantCapacity) {
+      // Prefer same-line label so adjacent TABLE_ROWS oil lines do not poison coolant.
+      const sameLine = left.slice(left.lastIndexOf("\n") + 1);
+      if (
+        /\b(coolant|antifreeze)\b/i.test(sameLine) &&
+        !/\b(washer|brake fluid|engine oil|motor oil|ATF)\b/i.test(sameLine)
+      ) {
+        coolantCapacity = span;
+      }
     }
     if (
       !atfCapacity &&
       /\b(ATF|transmission fluid|CVT|automatic transmission)\b/i.test(window) &&
       !/\b(engine oil|motor oil|with filter|coolant|brake fluid)\b/i.test(window)
     ) {
-      atfCapacity = m[0];
+      atfCapacity = span;
     }
   }
   let brakeFluidSpec: string | undefined;
@@ -547,6 +569,8 @@ export async function retrieveVehicleManualHits(opts: {
   vehicleId: string;
   query: string;
   limit?: number;
+  /** Optional intent for light re-rank (safety / fluid headings). */
+  intent?: import("@/lib/vehicle-manual-intent").ManualIntent | null;
 }): Promise<ManualChunkHit[]> {
   const manual = await getActiveVehicleManual(
     opts.client,
@@ -563,7 +587,7 @@ export async function retrieveVehicleManualHits(opts: {
     p_user_id: opts.userId,
     p_vehicle_id: opts.vehicleId,
     p_query: q,
-    p_limit: limit,
+    p_limit: Math.min(limit + 4, 8),
   });
 
   if (!error && Array.isArray(data) && data.length) {
@@ -576,7 +600,7 @@ export async function retrieveVehicleManualHits(opts: {
       content: String(row.content || ""),
       rank: Number(row.rank) || 0,
     }));
-    return rerankManualHitsByHeading(mapped, limit);
+    return rerankManualHitsByHeading(mapped, limit, opts.intent);
   }
 
   // Fallback: keyword scan within this user×vehicle only (never global).
@@ -616,7 +640,7 @@ export async function retrieveVehicleManualHits(opts: {
     content: String(r.content || ""),
     rank: score,
   }));
-  return rerankManualHitsByHeading(mapped, limit);
+  return rerankManualHitsByHeading(mapped, limit, opts.intent);
 }
 
 export async function processUploadedManual(opts: {

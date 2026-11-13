@@ -21,6 +21,8 @@ export const IMAGE_SCENES = [
   "engine",
   "gauge",
   "fluid_level",
+  "fluid_cap_label",
+  "spec_table_photo",
   "part_closeup",
   "underbody",
   "tire",

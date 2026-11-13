@@ -122,7 +122,13 @@
     "severity_hint": "high",
     "common_causes": ["Coil or plug on cylinder 1", "Injector or wiring on that cylinder", "Compression or mechanical issue (shop)"],
     "diy_level": "basic",
-    "safety_notes": "Flashing MIL: stop aggressive driving and verify professionally."
+    "safety_notes": "Flashing MIL: stop aggressive driving and verify professionally.",
+    "check_order": [
+      "If flashing MIL or hard shake — reduce load; do not keep driving hard",
+      "Confirm the code still points at cylinder 1 (coil/plug swap with another cylinder is educational only)",
+      "Inspect coil connector and plug well for oil/coolant — do not invent plug gap or torque",
+      "Injector/compression with a shop only after ignition basics — never Replace coil now from the code alone"
+    ]
   },
   {
     "code": "P0302",
@@ -132,7 +138,13 @@
     "severity_hint": "high",
     "common_causes": ["Coil or plug on cylinder 2", "Injector or wiring on that cylinder", "Shared intake leak affecting several cylinders"],
     "diy_level": "basic",
-    "safety_notes": "Flashing MIL: reduce load and verify professionally."
+    "safety_notes": "Flashing MIL: reduce load and verify professionally.",
+    "check_order": [
+      "If flashing MIL or hard shake — reduce load; do not keep driving hard",
+      "Confirm the code still points at cylinder 2 (coil/plug swap with another cylinder is educational only)",
+      "Inspect coil connector and plug well for oil/coolant — do not invent plug gap or torque",
+      "Injector/compression with a shop only after ignition basics — never Replace coil now from the code alone"
+    ]
   },
   {
     "code": "P0303",
@@ -142,7 +154,13 @@
     "severity_hint": "high",
     "common_causes": ["Coil or plug on cylinder 3", "Injector or wiring on that cylinder", "Mechanical issue best confirmed at a shop"],
     "diy_level": "basic",
-    "safety_notes": "Flashing MIL: reduce load and verify professionally."
+    "safety_notes": "Flashing MIL: reduce load and verify professionally.",
+    "check_order": [
+      "If flashing MIL or hard shake — reduce load; do not keep driving hard",
+      "Confirm the code still points at cylinder 3 (coil/plug swap with another cylinder is educational only)",
+      "Inspect coil connector and plug well for oil/coolant — do not invent plug gap or torque",
+      "Injector/compression with a shop only after ignition basics — never Replace coil now from the code alone"
+    ]
   },
   {
     "code": "P0304",
@@ -152,7 +170,13 @@
     "severity_hint": "high",
     "common_causes": ["Coil or plug on cylinder 4", "Injector or wiring on that cylinder", "Mechanical issue best confirmed at a shop"],
     "diy_level": "basic",
-    "safety_notes": "Flashing MIL: reduce load and verify professionally."
+    "safety_notes": "Flashing MIL: reduce load and verify professionally.",
+    "check_order": [
+      "If flashing MIL or hard shake — reduce load; do not keep driving hard",
+      "Confirm the code still points at cylinder 4 (coil/plug swap with another cylinder is educational only)",
+      "Inspect coil connector and plug well for oil/coolant — do not invent plug gap or torque",
+      "Injector/compression with a shop only after ignition basics — never Replace coil now from the code alone"
+    ]
   },
   {
     "code": "P0305",
@@ -162,7 +186,13 @@
     "severity_hint": "high",
     "common_causes": ["Coil or plug on cylinder 5", "Injector or wiring on that cylinder", "Mechanical issue best confirmed at a shop"],
     "diy_level": "basic",
-    "safety_notes": "Flashing MIL: reduce load and verify professionally."
+    "safety_notes": "Flashing MIL: reduce load and verify professionally.",
+    "check_order": [
+      "If flashing MIL or hard shake — reduce load; do not keep driving hard",
+      "Confirm the code still points at cylinder 5 (coil/plug swap with another cylinder is educational only)",
+      "Inspect coil connector and plug well for oil/coolant — do not invent plug gap or torque",
+      "Injector/compression with a shop only after ignition basics — never Replace coil now from the code alone"
+    ]
   },
   {
     "code": "P0306",
@@ -172,7 +202,13 @@
     "severity_hint": "high",
     "common_causes": ["Coil or plug on cylinder 6", "Injector or wiring on that cylinder", "Mechanical issue best confirmed at a shop"],
     "diy_level": "basic",
-    "safety_notes": "Flashing MIL: reduce load and verify professionally."
+    "safety_notes": "Flashing MIL: reduce load and verify professionally.",
+    "check_order": [
+      "If flashing MIL or hard shake — reduce load; do not keep driving hard",
+      "Confirm the code still points at cylinder 6 (coil/plug swap with another cylinder is educational only)",
+      "Inspect coil connector and plug well for oil/coolant — do not invent plug gap or torque",
+      "Injector/compression with a shop only after ignition basics — never Replace coil now from the code alone"
+    ]
   },
   {
     "code": "P0307",
@@ -182,7 +218,13 @@
     "severity_hint": "high",
     "common_causes": ["Coil or plug on cylinder 7", "Injector or wiring on that cylinder", "Mechanical issue best confirmed at a shop"],
     "diy_level": "basic",
-    "safety_notes": "Flashing MIL: reduce load and verify professionally."
+    "safety_notes": "Flashing MIL: reduce load and verify professionally.",
+    "check_order": [
+      "If flashing MIL or hard shake — reduce load; do not keep driving hard",
+      "Confirm the code still points at cylinder 7 (coil/plug swap with another cylinder is educational only)",
+      "Inspect coil connector and plug well for oil/coolant — do not invent plug gap or torque",
+      "Injector/compression with a shop only after ignition basics — never Replace coil now from the code alone"
+    ]
   },
   {
     "code": "P0308",
@@ -192,7 +234,13 @@
     "severity_hint": "high",
     "common_causes": ["Coil or plug on cylinder 8", "Injector or wiring on that cylinder", "Mechanical issue best confirmed at a shop"],
     "diy_level": "basic",
-    "safety_notes": "Flashing MIL: reduce load and verify professionally."
+    "safety_notes": "Flashing MIL: reduce load and verify professionally.",
+    "check_order": [
+      "If flashing MIL or hard shake — reduce load; do not keep driving hard",
+      "Confirm the code still points at cylinder 8 (coil/plug swap with another cylinder is educational only)",
+      "Inspect coil connector and plug well for oil/coolant — do not invent plug gap or torque",
+      "Injector/compression with a shop only after ignition basics — never Replace coil now from the code alone"
+    ]
   },
   {
     "code": "P0335",

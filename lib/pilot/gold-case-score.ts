@@ -5,12 +5,27 @@
 
 import goldCatalog from "@/content/pilot/gold-cases.json";
 import { diagnosticToneFailures } from "@/lib/diagnostic-tone";
+import { rewriteDiagnosticQuery } from "@/lib/diagnostic-query-rewrite";
+import { matchDiyCheckPath } from "@/lib/diy-check-paths";
 import { isHighRiskDrivingSituation } from "@/lib/drive-safety";
 import { matchStopRules } from "@/lib/safety/stop-rules";
-import { inventedSpecFailures } from "@/lib/spec-discipline";
+import {
+  inventedSpecFailures,
+  type SpecAnchorContext,
+} from "@/lib/spec-discipline";
 import { lookupLocalDtc } from "@/lib/vehicle-data/dtc-local";
 import { matchOfflineAssistQuery } from "@/lib/offline-trip-pack/match";
 import { formatGarageProfileFluidsForPrompt } from "@/lib/vehicle-manual-frame";
+import {
+  chunkManualPages,
+  extractManualSpecAllowlist,
+} from "@/lib/vehicle-manuals";
+import { formatImageAnalysisBlock } from "@/lib/vision/format-analysis";
+import {
+  extractVisionSpecCandidates,
+  visionSpecShouldDegrade,
+} from "@/lib/vision/spec-label-from-vision";
+import type { ImageAnalysis } from "@/lib/vision/types";
 import {
   historyConflictsWithVehicleAnchor,
   isolateMessagesForVehicleThreadReset,
@@ -39,7 +54,16 @@ export type GoldCaseExpect = {
   check_order_forbids_unnegated?: string[];
   check_order_mentions_safety_first?: boolean;
   safety_notes_required?: boolean;
+  /** Production DIY path id that must win matchDiyCheckPath for this turn. */
+  diy_path_id?: string;
+  diy_check_order_min?: number;
+  diy_check_order_mentions_safety_first?: boolean;
   garage_block_must_include?: string[];
+  sample_good_must_include?: string[];
+  /** Aligned manual table text — must unlock oil allowlist via preprocess. */
+  manual_table_snippet?: string;
+  vision_condition?: "clear" | "blurry" | "dark" | "partial" | "unreadable";
+  vision_confidence?: number;
   sample_good?: string;
   sample_bad?: string;
   prior_history?: Array<{ role: string; content: string }>;
@@ -57,6 +81,16 @@ export type GoldCaseRecord = {
     make: string;
     model: string;
     market?: string;
+    oilCapacity?: string;
+    oilViscosity?: string;
+    oilCapacitySource?: "user_manual_confirmed" | "user_entered";
+    oilViscositySource?: "user_manual_confirmed" | "user_entered";
+    coolantSpecText?: string;
+    coolantCapacityText?: string;
+    coolantSpecSource?: "user_manual_confirmed" | "user_entered";
+    coolantCapacitySource?: "user_manual_confirmed" | "user_entered";
+    brakeFluidSpecText?: string;
+    brakeFluidSpecSource?: "user_manual_confirmed" | "user_entered";
     transmissionKind?: "atf" | "cvt" | "unknown";
     atfSpecText?: string;
     atfSpecSource?: "user_manual_confirmed" | "user_entered";
@@ -171,15 +205,111 @@ function scoreFacts(c: GoldCaseRecord): DimensionResult {
     }
   }
 
+  if (exp.diy_path_id) {
+    const path = matchDiyCheckPath(c.user_text);
+    if (!path) {
+      return fail(dim, `diy path ${exp.diy_path_id} not matched`);
+    }
+    if (path.id !== exp.diy_path_id) {
+      return fail(
+        dim,
+        `diy path matched ${path.id}, expected ${exp.diy_path_id}`,
+      );
+    }
+    if (
+      exp.diy_check_order_min &&
+      path.checkOrder.length < exp.diy_check_order_min
+    ) {
+      return fail(
+        dim,
+        `diy check_order length ${path.checkOrder.length} < ${exp.diy_check_order_min}`,
+      );
+    }
+    if (exp.diy_check_order_mentions_safety_first) {
+      const first = (path.checkOrder[0] ?? "").toLowerCase();
+      if (
+        !/do-not-drive|tow|pull over|shut down|flashing|shake|reduce load|steam|soft|spongy|never open|do not keep driving/i.test(
+          first,
+        )
+      ) {
+        return fail(dim, `diy check_order[0] not safety-first: ${path.checkOrder[0]}`);
+      }
+    }
+    const joined = path.checkOrder.concat(path.stopDiy).join(" | ");
+    if (/Replace \w+ now/i.test(joined) && !/never Replace/i.test(joined)) {
+      return fail(dim, `diy path ${path.id} has unnegated Replace-now`);
+    }
+  }
+
+  if (exp.manual_table_snippet) {
+    const chunks = chunkManualPages([
+      { page: 1, text: exp.manual_table_snippet },
+    ]);
+    const content = chunks.map((ch) => ch.content).join("\n");
+    if (!/TABLE_ROWS|\|/.test(content)) {
+      return fail(dim, "manual_table_snippet did not produce table structure");
+    }
+    const allow = extractManualSpecAllowlist([
+      {
+        id: "gold-table",
+        manualId: "gold",
+        pageFrom: 1,
+        pageTo: 1,
+        heading: "Capacities",
+        content,
+        rank: 1,
+      },
+    ]);
+    if (!allow.oilCapacity || !/4\.8/.test(allow.oilCapacity)) {
+      return fail(dim, `table oil capacity not unlocked: ${allow.oilCapacity}`);
+    }
+    if (!allow.oilViscosity || !/0W-16/i.test(allow.oilViscosity)) {
+      return fail(dim, `table oil viscosity not unlocked: ${allow.oilViscosity}`);
+    }
+  }
+
+  if (c.family === "vision_low_trust_no_invent") {
+    const analysis: ImageAnalysis = {
+      condition: exp.vision_condition || "blurry",
+      confidence: exp.vision_confidence ?? 0.25,
+      scene: "fluid_cap_label",
+      ocr_text: [],
+      dtc_codes: [],
+      readings: [],
+      objects: ["oil fill cap"],
+      safety_flags: ["none"],
+      notes: "Unreadable fill-cap photo.",
+      housing_guess: "unclear",
+      housing_confidence: "low",
+    };
+    if (!visionSpecShouldDegrade(analysis)) {
+      return fail(dim, "blurry vision should degrade for specs");
+    }
+    if (extractVisionSpecCandidates(analysis).length) {
+      return fail(dim, "low-trust vision must not emit spec candidates");
+    }
+    const block = formatImageAnalysisBlock(analysis, "test-vision");
+    if (!/Degraded|retake|insufficient/i.test(block)) {
+      return fail(dim, "vision block should ask retake / degrade");
+    }
+  }
+
   return pass(dim);
 }
 
 function scoreSafetyStop(c: GoldCaseRecord): DimensionResult {
   const dim: GoldDimension = "safety_stop";
   const exp = c.expect;
-  const hits = matchStopRules(c.user_text);
+  // Fuzzy asks: also score rewritten match text (same path as Chat / offline assist).
+  const rewritten = rewriteDiagnosticQuery(c.user_text).matchText || c.user_text;
+  const hits = [
+    ...matchStopRules(c.user_text),
+    ...matchStopRules(rewritten),
+  ].filter((h, i, arr) => arr.findIndex((x) => x.id === h.id) === i);
   const offline = matchOfflineAssistQuery(c.user_text);
-  const drive = isHighRiskDrivingSituation(c.user_text);
+  const drive =
+    isHighRiskDrivingSituation(c.user_text) ||
+    isHighRiskDrivingSituation(rewritten);
 
   if (exp.stop_rule_ids?.length) {
     for (const id of exp.stop_rule_ids) {
@@ -254,31 +384,65 @@ function scoreNoReplaceNow(c: GoldCaseRecord): DimensionResult {
   return pass(dim);
 }
 
+function garageFluidsFromGoldVehicle(
+  v: GoldCaseRecord["vehicle"],
+): Parameters<typeof formatGarageProfileFluidsForPrompt>[0] {
+  return {
+    oilCapacity: v.oilCapacity,
+    oilViscosity: v.oilViscosity,
+    oilCapacitySource: v.oilCapacitySource,
+    oilViscositySource: v.oilViscositySource,
+    coolantSpecText: v.coolantSpecText,
+    coolantCapacityText: v.coolantCapacityText,
+    coolantSpecSource: v.coolantSpecSource,
+    coolantCapacitySource: v.coolantCapacitySource,
+    brakeFluidSpecText: v.brakeFluidSpecText,
+    brakeFluidSpecSource: v.brakeFluidSpecSource,
+    transmissionKind: v.transmissionKind,
+    atfSpecText: v.atfSpecText,
+    atfSpecSource: v.atfSpecSource,
+  };
+}
+
 function scoreSourceCitation(c: GoldCaseRecord): DimensionResult {
   const dim: GoldDimension = "source_citation";
 
-  if (c.family === "cvt_not_atf" || c.anchors.garage_fluids_confirmed) {
-    const block = formatGarageProfileFluidsForPrompt({
-      oilCapacity: undefined,
-      oilCapacitySource: undefined,
-      oilViscosity: undefined,
-      oilViscositySource: undefined,
-      transmissionKind: c.vehicle.transmissionKind,
-      atfSpecText: c.vehicle.atfSpecText,
-      atfSpecSource: c.vehicle.atfSpecSource,
-    });
-    if (c.anchors.garage_fluids_confirmed && c.vehicle.atfSpecText) {
+  if (c.anchors.garage_fluids_confirmed) {
+    const block = formatGarageProfileFluidsForPrompt(
+      garageFluidsFromGoldVehicle(c.vehicle),
+    );
+    const hasOwnerFluid =
+      Boolean(c.vehicle.atfSpecText) ||
+      Boolean(c.vehicle.oilCapacity) ||
+      Boolean(c.vehicle.oilViscosity) ||
+      Boolean(c.vehicle.coolantSpecText) ||
+      Boolean(c.vehicle.coolantCapacityText) ||
+      Boolean(c.vehicle.brakeFluidSpecText);
+    if (hasOwnerFluid) {
       if (!block.includes("[GARAGE_PROFILE_FLUIDS]")) {
-        return fail(dim, "confirmed CVT/ATF garage fluids missing prompt block");
+        return fail(dim, "confirmed garage fluids missing prompt block");
       }
-      if (!/Garage profile \(from your manual\)/i.test(block)) {
+      if (
+        !/Garage profile \(from your manual\)|Garage profile \(you entered\)/i.test(
+          block,
+        )
+      ) {
         return fail(dim, "garage fluids block missing source citation label");
+      }
+      if (!/MUST USE/i.test(block)) {
+        return fail(dim, "garage fluids block missing MUST USE directive");
       }
       for (const needle of c.expect.garage_block_must_include ?? []) {
         if (!block.includes(needle)) {
           return fail(dim, `garage block missing "${needle}"`);
         }
       }
+    }
+  }
+
+  for (const needle of c.expect.sample_good_must_include ?? []) {
+    if (!(c.expect.sample_good ?? "").includes(needle)) {
+      return fail(dim, `sample_good missing required cite/value "${needle}"`);
     }
   }
 
@@ -323,12 +487,34 @@ function scoreNoInventedSpecs(c: GoldCaseRecord): DimensionResult {
   const good = c.expect.sample_good ?? "";
   const bad = c.expect.sample_bad ?? "";
 
-  const allow =
-    c.anchors.garage_fluids_confirmed && c.vehicle.atfSpecText
-      ? {
-          // ATF/CVT liters still not unlocked as engine oil; leave oil empty
-        }
-      : undefined;
+  let allow: SpecAnchorContext | undefined = c.anchors
+    .garage_fluids_confirmed
+    ? {
+        oilCapacity: c.vehicle.oilCapacity,
+        oilViscosity: c.vehicle.oilViscosity,
+        coolantCapacity: c.vehicle.coolantCapacityText,
+        brakeFluidSpec: c.vehicle.brakeFluidSpecText,
+        atfSpec: c.vehicle.atfSpecText,
+      }
+    : undefined;
+
+  if (c.family === "manual_table_oil" && c.expect.manual_table_snippet) {
+    const chunks = chunkManualPages([
+      { page: 1, text: c.expect.manual_table_snippet },
+    ]);
+    const content = chunks.map((ch) => ch.content).join("\n");
+    allow = extractManualSpecAllowlist([
+      {
+        id: "gold-table",
+        manualId: "gold",
+        pageFrom: 1,
+        pageTo: 1,
+        heading: "Capacities",
+        content,
+        rank: 1,
+      },
+    ]);
+  }
 
   if (good) {
     const fails = inventedSpecFailures(good, allow);
@@ -337,10 +523,26 @@ function scoreNoInventedSpecs(c: GoldCaseRecord): DimensionResult {
     }
   }
 
-  if (bad && (c.family === "no_anchor_oil_capacity" || c.family === "overheat_steam" || c.family === "p0420" || c.family === "cvt_not_atf")) {
+  if (
+    bad &&
+    (c.family === "no_anchor_oil_capacity" ||
+      c.family === "overheat_steam" ||
+      c.family === "p0420" ||
+      c.family === "cvt_not_atf" ||
+      c.family === "anchored_oil_cite" ||
+      c.family === "anchored_coolant_brake_cite" ||
+      c.family === "manual_table_oil" ||
+      c.family === "vision_low_trust_no_invent")
+  ) {
     const fails = inventedSpecFailures(bad, allow);
-    if (!fails.length && !/replace .+ now|any ATF is fine/i.test(bad)) {
+    if (!fails.length && !/replace .+ now|any ATF is fine|bleed/i.test(bad)) {
       return fail(dim, "sample_bad should invent specs or banned ATF substitute");
+    }
+  }
+
+  if (c.family === "vision_low_trust_no_invent" && good) {
+    if (!/retake|blurry|will not invent|do not invent|unclear/i.test(good)) {
+      return fail(dim, "vision low-trust sample_good should refuse invent / ask retake");
     }
   }
 

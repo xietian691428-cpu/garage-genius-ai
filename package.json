@@ -60,6 +60,7 @@
     "test": "vitest run",
     "test:safety-seeds": "vitest run tests/us-top10-safety-seeds.test.ts tests/safety-topics.test.ts tests/chat-intent-drift.test.ts tests/chat-repair-loop.test.ts",
     "test:gold-cases": "vitest run tests/gold-cases.test.ts",
+    "test:miss-feedback": "vitest run tests/miss-feedback.test.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

@@ -27,7 +27,7 @@ JSON schema:
 {
   "condition": "clear" | "blurry" | "dark" | "partial" | "unreadable",
   "confidence": 0.0,
-  "scene": "obd_screen" | "engine" | "gauge" | "fluid_level" | "part_closeup" | "underbody" | "tire" | "headlight_housing" | "other",
+  "scene": "obd_screen" | "engine" | "gauge" | "fluid_level" | "fluid_cap_label" | "spec_table_photo" | "part_closeup" | "underbody" | "tire" | "headlight_housing" | "other",
   "ocr_text": ["visible text snippets"],
   "dtc_codes": ["P0420"],
   "readings": [{ "name": "oil_level", "value": "between_min_max", "unit": null }],
@@ -52,6 +52,12 @@ US scene examples (copy the shape; only fill what is actually visible):
 4) Tire sidewall:
 {"condition":"clear","confidence":0.78,"scene":"tire","ocr_text":["P215/55R17"],"dtc_codes":[],"readings":[{"name":"tire_size","value":"P215/55R17","unit":null}],"objects":["tire sidewall"],"safety_flags":["none"],"notes":"Sidewall size P215/55R17 is readable."}
 
+5) Oil fill-cap / viscosity label (printed text only):
+{"condition":"clear","confidence":0.86,"scene":"fluid_cap_label","ocr_text":["0W-16","SAE"],"dtc_codes":[],"readings":[{"name":"oil_viscosity","value":"0W-16","unit":null}],"objects":["oil fill cap"],"safety_flags":["none"],"notes":"Fill-cap label shows SAE 0W-16."}
+
+6) Clear printed fluid/torque table photo (not wiring diagrams):
+{"condition":"clear","confidence":0.8,"scene":"spec_table_photo","ocr_text":["Engine oil","4.8 qt","0W-16"],"dtc_codes":[],"readings":[{"name":"oil_capacity","value":"4.8 qt","unit":"qt"}],"objects":["manual table"],"safety_flags":["none"],"notes":"Printed table lists engine oil 4.8 qt 0W-16."}
+
 Headlight housing (rear of lamp / under-hood back of headlamp) — optional assist only:
 - Use scene "headlight_housing" when the photo shows the back of a headlamp / dust cover / LED heatsink.
 - housing_guess=dust_cap only if a twist-off round dust cover / bulb access is clearly visible.
@@ -63,6 +69,8 @@ Headlight housing (rear of lamp / under-hood back of headlamp) — optional assi
 Rules:
 - confidence is 0–1. If blurry, dark, or unreadable, set condition accordingly, set confidence below 0.5, leave ocr_text/dtc_codes/readings empty, set housing_guess=unclear and housing_confidence=low, and say the photo must be retaken.
 - Never guess a DTC, oil quarts, PSI, DOT date, or load index that is not clearly printed.
+- fluid_cap_label / spec_table_photo: ONLY when printed viscosity, DOT, ATF/CVT, or capacity text is clearly readable. Prefer confidence ≥ 0.75. If the table is skewed/glare/half-cut, use condition=partial or unreadable and leave readings empty.
+- Never invent capacities from a cap photo that only shows viscosity. Never deep-read wiring/exploded diagrams (scene=other, empty readings).
 - dtc_codes must be OBD-II style (P/C/B/U + 4 hex digits) copied from the photo when visible.
 - safety_flags: vehicle_raised if the car appears jacked/lifted; hot_surface if steam/glowing metal is visible.
 - ocr_text: at most 8 short snippets. notes: one sentence, max 200 characters.
