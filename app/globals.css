@@ -933,3 +933,23 @@ html.gg-garage-mode .chat-markdown {
   font-size: 1.05rem;
   line-height: 1.6;
 }
+
+/* Paper-style Shop Handoff example stays dark-on-light in Garage Mode. */
+.gg-paper {
+  color-scheme: light;
+}
+html.gg-garage-mode .gg-paper .text-slate-500 {
+  color: #64748b !important;
+}
+html.gg-garage-mode .gg-paper .text-slate-600 {
+  color: #475569 !important;
+}
+html.gg-garage-mode .gg-paper .text-slate-800 {
+  color: #1e293b !important;
+}
+html.gg-garage-mode .gg-paper .text-slate-900 {
+  color: #0f172a !important;
+}
+html.gg-garage-mode .gg-paper .text-cyan-700 {
+  color: #0e7490 !important;
+}

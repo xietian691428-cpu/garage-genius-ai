@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import PricingCards from "@/components/landing/PricingCards";
+import ProofExamples from "@/components/landing/ProofExamples";
 import {
   isStoreShellClient,
   NATIVE_LANDING_CTA,
@@ -261,6 +262,8 @@ export default function LandingPage({
           ))}
         </div>
       </section>
+
+      <ProofExamples />
 
       <section id="pricing" className="landing-section">
         <div className="landing-section-head">

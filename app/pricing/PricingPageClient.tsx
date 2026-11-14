@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import PricingCards from "@/components/landing/PricingCards";
+import ProofExamples from "@/components/landing/ProofExamples";
 import SubscriptionLegalLinks from "@/components/legal/SubscriptionLegalLinks";
 import { useSubscription } from "@/hooks/useSubscription";
 import { TrialEndedModal } from "@/components/subscription/TrialBanners";
@@ -95,6 +96,8 @@ export default function PricingPageClient({
         >
           <PricingCards className="mt-10" forceStoreSafe={forceStoreSafe} />
         </Suspense>
+
+        <ProofExamples variant="compact" />
 
         <p className="mt-12 text-center text-xs text-slate-500">
           <SubscriptionLegalLinks />
